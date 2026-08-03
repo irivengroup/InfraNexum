@@ -1,0 +1,20 @@
+{
+  "schema": "infranexum.logical-schema/v1",
+  "objects": [
+    {
+      "kind": "table-alteration",
+      "logical_name": "core.inbox_receipt",
+      "columns": [
+        {"name": "status", "type": "enum", "values": ["PROCESSING", "COMPLETED"], "nullable": false, "default": "COMPLETED"},
+        {"name": "completed_at", "type": "timestamp-with-time-zone", "nullable": true}
+      ],
+      "constraints": [
+        "PROCESSING requires completed_at null",
+        "COMPLETED requires completed_at at or after received_at"
+      ],
+      "indexes": [
+        {"name": "processing", "columns": ["status", "received_at", "consumer_name"]}
+      ]
+    }
+  ]
+}

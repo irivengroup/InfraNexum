@@ -1,4 +1,4 @@
-# InfraNexum 2.0.0-alpha.0.3 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.4 — état d’implémentation
 
 ## Organisation des sources
 
@@ -6,37 +6,64 @@ Toutes les sources applicatives, composants, migrations, tests, validateurs et o
 
 ## Implémenté dans cet incrément
 
-- enveloppe événementielle canonique, versionnée et limitée aux huit champs normatifs ;
-- schéma JSON strict et gate de dérive entre contrat, schéma, record Java, modèle logique et SQL ;
-- port `TransactionalEventStore` indépendant des frameworks et des moteurs de données ;
-- unité de travail copy-on-write atomique de référence ;
-- outbox visible uniquement après commit et hooks exécutés strictement post-commit ;
-- claims bornés avec lease, récupération des leases expirées et concurrence sans double attribution ;
-- retries exponentiels bornés, jitter déterministe injectable et passage en dead-letter ;
-- inbox transactionnelle et déduplication par `(consumerName, eventId)` ;
-- atomicité entre handler, receipt inbox et nouveaux événements outbox ;
-- non-régressions de rollback, reprise, interruption, concurrence et idempotence ;
-- migration `0002-core-transactional-events` appariée PostgreSQL/Oracle avec contraintes UUIDv7, contrat d’événement, index, vérification et rollback ;
-- intégration des gates événementiels au Makefile, au reactor Maven et à GitHub Actions.
+### Adaptateur JDBC de production
 
-Les incréments précédents restent présents : monorepo huit espaces, Architecture-as-Code, catalogue de toolchains, Agent Go, Server Java, runtime Web, Domain Contract Pack Core et migration `0001`.
+- port `JdbcConnectionAccess` exposant uniquement la connexion de l’unité de travail courante ;
+- `JdbcTransactionalEventStore` thread-safe et unités de travail confinées au thread appelant ;
+- refus explicite des unités de travail imbriquées ;
+- même connexion physique pour les écritures métier, l’inbox et l’outbox ;
+- commit avant exécution des hooks post-commit ;
+- rollback préservant la cause d’origine et ses erreurs supprimées éventuelles ;
+- isolation JDBC configurable, sans autoriser `TRANSACTION_NONE` ;
+- absence de dépendance aux drivers PostgreSQL/Oracle dans le code de production.
+
+### Sémantiques outbox/inbox
+
+- claims bornés de 1 à 1 000 événements ;
+- PostgreSQL : claim atomique par CTE, `FOR UPDATE SKIP LOCKED` et `UPDATE ... RETURNING` ;
+- Oracle : sélection verrouillée ordonnée et mise à jour dans la même transaction ;
+- récupération des leases expirées ;
+- contrôle strict du propriétaire avant publication ou échec ;
+- retries exponentiels et passage en `DEAD_LETTER` ;
+- réservation inbox `PROCESSING` avant handler, puis `COMPLETED` au commit ;
+- rollback intégral du handler et de la réservation en cas d’échec ;
+- déduplication durable par `(consumerName, eventId)`.
+
+### Schéma et intégration Server
+
+- migration appariée `0003-core-inbox-reservation` PostgreSQL/Oracle ;
+- modèle logique, vérifications, rollback conditionnel et checksums ;
+- modes Server exclusifs `MEMORY`, `POSTGRESQL`, `ORACLE` ;
+- mode mémoire limité au standalone local ;
+- absence de fallback silencieux lorsqu’un `DataSource` JDBC manque ;
+- aucune auto-configuration implicite d’un pool ou de secrets ;
+- job GitHub Actions PostgreSQL 17/18 appliquant `0001→0003` et exécutant les contrats JDBC réels.
+
+### Validation locale
+
+- driver JDBC simulé sans dépendance externe couvrant commit, rollback, outbox, inbox, claims, retry, dead-letter et lease ownership ;
+- gate statique de persistance couvrant architecture, SQL, migrations, composition Server et reactor Maven ;
+- maintien des gates Architecture-as-Code, toolchains, migrations, événements, Agent et Web.
 
 ## Limites explicites
 
 Le produit complet reste **NON TERMINÉ**.
 
-`InMemoryEventStore` est exclusivement un adaptateur de référence pour les contrats et les tests. Les éléments suivants ne sont pas encore implémentés ou certifiés :
+Sont implémentés mais non exécutés sur les cibles réelles dans l’environnement local :
 
-- adaptateurs JDBC PostgreSQL et Oracle ;
-- exécution des migrations `0001` et `0002` sur moteurs réels ;
+- reactor Maven sous Java 25 ;
+- contrats JDBC sur PostgreSQL 17 et 18 ;
+- migrations, transactions et concurrence sur Oracle 19c/26ai ;
+- wiring d’un pool de connexions de déploiement et de ses secrets externes.
+
+Restent non implémentés dans cette tranche :
+
 - transport Kafka 4.3.x KRaft ;
-- DLQ broker durable, replay autorisé et audit du replay ;
+- DLQ broker durable et replay autorisé/audité ;
 - worker/scheduler de production, métriques de backpressure et runbooks ;
 - shell React/TypeScript piloté par capabilities et internationalisation DE/EN/ES/FR/IT ;
 - bounded contexts métier, IAM, activation, audit, installateurs et packaging de production.
 
-Le reactor Java 25, Go 1.26.5 exact et Node.js 24.18.1/pnpm 11.17.0 restent non exécutés localement dans cet environnement.
-
 ## Prochaine tranche
 
-La prochaine tranche doit compléter le prérequis `PGM-04-E01` par les adaptateurs JDBC PostgreSQL/Oracle, les transactions réelles, l’application/reprise/rollback des migrations et les tests de concurrence sur moteurs supportés. Après cette fermeture, `PGM-02-E03` pourra intégrer le transport Kafka, la DLQ durable et le replay audité sans modifier les contrats du cœur.
+Après exécution de la CI PostgreSQL et du laboratoire Oracle, la prochaine tranche logique est l’adaptateur de transport Kafka avec publication post-commit, retry borné, DLQ durable, backpressure observable et replay audité, sans modifier le contrat événementiel canonique.

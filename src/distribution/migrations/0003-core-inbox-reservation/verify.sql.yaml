@@ -1,0 +1,27 @@
+schema: infranexum.migration-verification/v1
+checks:
+  - id: inbox-status-column-exists
+    postgresql: >-
+      SELECT COUNT(*) = 1 FROM information_schema.columns
+      WHERE table_schema = 'infranexum_core' AND table_name = 'inbox_receipt'
+      AND column_name = 'status' AND is_nullable = 'NO'
+    oracle: >-
+      SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM user_tab_columns
+      WHERE table_name = 'INFRANEXUM_CORE_INBOX_RECEIPT'
+      AND column_name = 'STATUS' AND nullable = 'N'
+  - id: inbox-completion-is-nullable-during-processing
+    postgresql: >-
+      SELECT COUNT(*) = 1 FROM information_schema.columns
+      WHERE table_schema = 'infranexum_core' AND table_name = 'inbox_receipt'
+      AND column_name = 'completed_at' AND is_nullable = 'YES'
+    oracle: >-
+      SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM user_tab_columns
+      WHERE table_name = 'INFRANEXUM_CORE_INBOX_RECEIPT'
+      AND column_name = 'COMPLETED_AT' AND nullable = 'Y'
+  - id: inbox-processing-index-exists
+    postgresql: >-
+      SELECT COUNT(*) = 1 FROM pg_indexes
+      WHERE schemaname = 'infranexum_core' AND indexname = 'ix_inx_inbox_processing'
+    oracle: >-
+      SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM user_indexes
+      WHERE index_name = 'IX_INX_INBOX_PROCESSING'

@@ -5,10 +5,12 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -289,7 +291,8 @@ public final class InMemoryEventStore implements TransactionalEventStore {
     private final class Transaction implements EventTransaction {
         private final State working;
         private final List<PostCommitAction> postCommitActions = new ArrayList<>();
-        private final Map<InboxKey, Boolean> acceptedInbox = new LinkedHashMap<>();
+        private final Map<InboxKey, InboxReservation> acceptedInbox = new LinkedHashMap<>();
+        private final Set<InboxKey> completedInbox = new HashSet<>();
 
         private Transaction(State working) {
             this.working = working;
@@ -304,35 +307,36 @@ public final class InMemoryEventStore implements TransactionalEventStore {
         }
 
         @Override
-        public InboxDecision beginInbox(InboxKey key) {
-            Objects.requireNonNull(key, "key");
+        public InboxDecision beginInbox(InboxReservation reservation) {
+            Objects.requireNonNull(reservation, "reservation");
+            InboxKey key = reservation.key();
             if (working.inbox.containsKey(key)) {
                 return InboxDecision.DUPLICATE;
             }
-            if (acceptedInbox.putIfAbsent(key, Boolean.FALSE) != null) {
+            if (acceptedInbox.putIfAbsent(key, reservation) != null) {
                 throw new IllegalStateException("inbox key already reserved in this transaction: " + key);
             }
             return InboxDecision.ACCEPTED;
         }
 
         @Override
-        public void completeInbox(
-                InboxKey key,
-                EventType eventType,
-                String payloadSha256,
-                Instant receivedAt,
-                Instant completedAt) {
+        public void completeInbox(InboxKey key, Instant completedAt) {
             Objects.requireNonNull(key, "key");
-            Boolean completed = acceptedInbox.get(key);
-            if (completed == null) {
+            Objects.requireNonNull(completedAt, "completedAt");
+            InboxReservation reservation = acceptedInbox.get(key);
+            if (reservation == null) {
                 throw new IllegalStateException("inbox key was not accepted in this transaction: " + key);
             }
-            if (completed) {
+            if (!completedInbox.add(key)) {
                 throw new IllegalStateException("inbox key already completed in this transaction: " + key);
             }
-            InboxReceipt receipt = new InboxReceipt(key, eventType, payloadSha256, receivedAt, completedAt);
+            InboxReceipt receipt = new InboxReceipt(
+                    key,
+                    reservation.eventType(),
+                    reservation.payloadSha256(),
+                    reservation.receivedAt(),
+                    completedAt);
             working.inbox.put(key, receipt);
-            acceptedInbox.put(key, Boolean.TRUE);
         }
 
         @Override
@@ -341,8 +345,8 @@ public final class InMemoryEventStore implements TransactionalEventStore {
         }
 
         private void validateComplete() {
-            acceptedInbox.forEach((key, completed) -> {
-                if (!completed) {
+            acceptedInbox.keySet().forEach(key -> {
+                if (!completedInbox.contains(key)) {
                     throw new IllegalStateException("accepted inbox key was not completed: " + key);
                 }
             });

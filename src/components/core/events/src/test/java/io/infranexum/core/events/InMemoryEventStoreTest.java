@@ -50,7 +50,7 @@ class InMemoryEventStoreTest {
         InMemoryEventStore store = new InMemoryEventStore();
         InboxKey key = new InboxKey("core.consumer", event(1).eventId());
         assertThrows(TransactionExecutionException.class, () -> store.execute(transaction -> {
-            assertEquals(InboxDecision.ACCEPTED, transaction.beginInbox(key));
+            assertEquals(InboxDecision.ACCEPTED, transaction.beginInbox(reservation(key, event(1))));
             return null;
         }));
         assertTrue(store.inboxSnapshot().isEmpty());
@@ -109,6 +109,14 @@ class InMemoryEventStoreTest {
             transaction.append(event(1));
             return null;
         }));
+    }
+
+    private static InboxReservation reservation(InboxKey key, EventEnvelope event) {
+        return new InboxReservation(
+                key,
+                event.eventType(),
+                "0".repeat(64),
+                event.occurredAt());
     }
 
     static EventEnvelope event(int sequence) {

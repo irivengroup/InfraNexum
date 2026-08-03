@@ -23,6 +23,7 @@
     "applications/web",
     "components",
     "components/adapters",
+    "components/adapters/persistence-jdbc",
     "components/core",
     "components/core/contracts",
     "components/core/events",

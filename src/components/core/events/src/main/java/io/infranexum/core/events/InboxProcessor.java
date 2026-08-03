@@ -21,7 +21,7 @@ public final class InboxProcessor {
     /**
      * Runs the handler once per consumer/event pair.
      *
-     * <p>A handler failure rolls back the inbox receipt and any newly staged
+     * <p>A handler failure rolls back the inbox reservation and any newly staged
      * outbox events, allowing a later transport redelivery to retry safely.
      */
     public TransactionOutcome<InboxProcessingResult> process(
@@ -29,14 +29,15 @@ public final class InboxProcessor {
         Objects.requireNonNull(event, "event");
         Objects.requireNonNull(handler, "handler");
         InboxKey key = new InboxKey(consumerName, event.eventId());
-        String payloadHash = sha256(event.payload());
         Instant receivedAt = clock.instant();
+        InboxReservation reservation = new InboxReservation(
+                key, event.eventType(), sha256(event.payload()), receivedAt);
         return store.execute(transaction -> {
-            if (transaction.beginInbox(key) == InboxDecision.DUPLICATE) {
+            if (transaction.beginInbox(reservation) == InboxDecision.DUPLICATE) {
                 return InboxProcessingResult.DUPLICATE;
             }
             handler.handle(event, transaction);
-            transaction.completeInbox(key, event.eventType(), payloadHash, receivedAt, clock.instant());
+            transaction.completeInbox(key, clock.instant());
             return InboxProcessingResult.PROCESSED;
         });
     }

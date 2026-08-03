@@ -18,7 +18,7 @@ The module does **not** claim exactly-once delivery or global ordering.
 
 ## Architecture boundary
 
-`TransactionalEventStore` is the persistence port. `InMemoryEventStore` is a deterministic, thread-safe reference adapter used for contract tests and local smoke validation only. It is not a production persistence implementation and must not be used as a substitute for PostgreSQL or Oracle.
+`TransactionalEventStore` is the persistence port. `InMemoryEventStore` remains a deterministic, thread-safe reference adapter for contract tests and local smoke validation. Production JDBC persistence is implemented by `components.adapters.persistence-jdbc`, which uses one deployment-provided `DataSource` and one physical connection per unit of work.
 
 Each bounded context owns its own unit of work, outbox and inbox tables. The migration under `src/distribution/migrations/0002-core-transactional-events` establishes the Core-owned reference schema only; it is not a cross-context shared business-event table.
 
@@ -26,8 +26,8 @@ Each bounded context owns its own unit of work, outbox and inbox tables. The mig
 
 The following capabilities are intentionally outside this increment:
 
-- JDBC adapters for PostgreSQL and Oracle;
-- execution and recovery tests on supported database engines;
+- observed execution of the PostgreSQL 17/18 CI matrix and Oracle 19c/26ai laboratory suite;
+- deployment packaging for maintained JDBC drivers, connection pooling and external secrets;
 - Kafka 4.3.x KRaft transport adapter;
 - durable broker-side dead-letter topics and replay workflow;
 - audited replay authorization and operational tooling;

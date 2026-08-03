@@ -2,35 +2,43 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.3",
-  "profile": "development-foundation-contracts-migrations-web-runtime-and-transactional-events",
+  "version": "2.0.0-alpha.0.4",
+  "profile": "development-foundation-jdbc-persistence",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
-  "delivery_contents": "source-only; generated Agent binary and temporary validation artifacts excluded",
+  "delivery_contents": "source and validation evidence; generated Agent binary, caches and temporary artifacts excluded",
   "artifacts": [
     {
       "id": "infranexum-server",
-      "status": "source-created-target-java25-build-not-executed"
+      "status": "source-integrated-memory-postgresql-oracle-persistence-selection-java25-reactor-pending"
     },
     {
       "id": "infranexum-agent",
-      "status": "source-local-go1.23.2-vet-race-coverage-static-build-and-runtime-smoke-validated-go1.26.5-pending"
+      "status": "source-local-go1.23.2-vet-race-coverage-static-build-runtime-smoke-validated-go1.26.5-pending"
     },
     {
       "id": "infranexum-web",
-      "status": "runtime-source-node22.16.0-unit-coverage-and-process-smoke-validated-node24.18.1-pnpm11.17.0-pending"
+      "status": "runtime-source-node22.16.0-unit-coverage-process-smoke-validated-node24.18.1-pnpm11.17.0-pending"
     },
     {
       "id": "core-domain-contract-pack-v1",
-      "status": "source-and-offline-java21-behavior-smoke-validated-java25-reactor-pending"
+      "status": "source-offline-java21-behavior-smoke-validated-java25-reactor-pending"
     },
     {
-      "id": "core-transactional-events-v1",
-      "status": "source-offline-java21-behavior-concurrency-smoke-validated-java25-junit-jacoco-jdbc-and-kafka-pending"
+      "id": "core-transactional-events-v1.1",
+      "status": "source-offline-java21-behavior-concurrency-smoke-validated-java25-junit-jacoco-and-kafka-pending"
     },
     {
-      "id": "migration-catalogue-0001-0002",
-      "status": "static-pairing-checksum-logical-model-event-contract-and-rollback-validated-database-execution-pending"
+      "id": "adapter-persistence-jdbc",
+      "status": "source-static-gate-and-dependency-free-jdbc-driver-simulation-validated-live-postgresql-oracle-execution-pending"
+    },
+    {
+      "id": "migration-catalogue-0001-0003",
+      "status": "static-pairing-checksum-logical-model-contract-and-rollback-validated-live-database-execution-pending"
+    },
+    {
+      "id": "postgresql-17-18-live-ci",
+      "status": "workflow-configured-not-executed"
     }
   ],
   "validation_reports": [
@@ -42,6 +50,8 @@
     "../../artifacts/validation/migration-coverage.txt",
     "../../artifacts/validation/eventing.json",
     "../../artifacts/validation/eventing-coverage.txt",
+    "../../artifacts/validation/persistence.json",
+    "../../artifacts/validation/persistence-coverage.txt",
     "../../artifacts/validation/agent-coverage.txt",
     "../../artifacts/validation/agent-smoke.json",
     "../../artifacts/validation/web-coverage.txt",
@@ -49,7 +59,7 @@
     "../../artifacts/validation/validation-status.json"
   ],
   "validation_summary": {
-    "python_tests": 69,
+    "python_tests": 79,
     "architecture_tests": 28,
     "architecture_coverage_percent": 100,
     "architecture_violations": 0,
@@ -62,7 +72,11 @@
     "eventing_tests": 10,
     "eventing_coverage_percent": 100,
     "eventing_violations": 0,
+    "persistence_tests": 10,
+    "persistence_coverage_percent": 98,
+    "persistence_violations": 0,
     "agent_coverage_percent": 98.4,
+    "agent_runtime_stress_repetitions": 20,
     "web_tests": 27,
     "web_line_coverage_percent": 99.65,
     "web_branch_coverage_percent": 98.28,
@@ -70,10 +84,10 @@
   },
   "source_layout": "all implementation sources, tests, validation code, migrations and build-support scripts are grouped below src/",
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.3-transactional-events",
+    "prefix": "infranexum-2.0.0-alpha.0.4-jdbc-persistence",
     "checksum_manifest": "source-files.sha256",
-    "recorded_files": 189,
-    "archive_entries": 190,
+    "recorded_files": 220,
+    "archive_entries": 221,
     "reproducible": true
   }
 }

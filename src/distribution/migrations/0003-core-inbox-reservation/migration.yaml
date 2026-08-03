@@ -1,0 +1,26 @@
+schema: infranexum.migration/v1
+id: '0003'
+name: core-inbox-reservation
+owner_context: core
+dependencies:
+- '0002'
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 20
+preconditions:
+- core-inbox-receipt-exists
+- event-workers-stopped
+postconditions:
+- inbox-processing-state-enforced
+- completed-receipts-remain-compatible
+recovery: rerun-idempotently-with-event-workers-stopped
+rollback: supported-only-when-no-processing-reservation-exists
+checksums:
+  postgresql.sql: 0407fbfffd4ad0e328ef494760248b6066cad7c4812d64bfb3d19be72e7dc7a2
+  oracle.sql: afa5fd8aa62c3111911a3a9800f6d69af0490742aa5fdee217e2e5bba963599b
+  rollback/postgresql.sql: eab081754b3c901b0dce1d6d47359c986ad50e49a31a1b6e1f0792dc45c6a430
+  rollback/oracle.sql: b47ff5bece50e23766713b9712258e69b3bf49add0bc5b9a29daf2bd6ab3348f
+  logical-model.json: bb47e7a5df99f3b309b794c86a3772db3d8f0e2eb1dddc6b504de7862af16021
+  verify.sql.yaml: 8e22dc46bd1fca5846d72fed3d1faae238a8803e09e75b43ec40faac99f3fdc1

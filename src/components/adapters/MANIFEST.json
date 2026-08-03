@@ -3,18 +3,18 @@
   "id": "components.adapters",
   "kind": "component-group",
   "owner": "team.platform-engineering",
-  "lifecycle": "planned",
+  "lifecycle": "active",
   "languages": [
     "java",
     "python"
   ],
   "dependencies": [
-    "components.core.contracts"
+    "components.core.contracts",
+    "components.core.events"
   ],
   "source_baseline": [
-    "IAR-01 §4-5",
-    "ADR-0003",
-    "ADR-0004",
-    "PGM-01-E01"
+    "PGM-04-E01",
+    "PGM-02-E03",
+    "ADR-0062"
   ]
 }

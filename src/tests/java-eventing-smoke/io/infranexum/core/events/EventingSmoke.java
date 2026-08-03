@@ -190,7 +190,11 @@ public final class EventingSmoke {
 
         InMemoryEventStore store = new InMemoryEventStore();
         expect(TransactionExecutionException.class, () -> store.execute(transaction -> {
-            transaction.beginInbox(new InboxKey("core.consumer", event(1).eventId()));
+            transaction.beginInbox(new InboxReservation(
+                    new InboxKey("core.consumer", event(1).eventId()),
+                    event(1).eventType(),
+                    "0".repeat(64),
+                    NOW));
             return null;
         }));
         expect(IllegalArgumentException.class,

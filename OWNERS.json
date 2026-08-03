@@ -47,6 +47,15 @@
         "data contracts",
         "SDK contracts"
       ]
+    },
+    {
+      "id": "team.data-platform",
+      "name": "Data Platform",
+      "responsibilities": [
+        "JDBC persistence",
+        "database migrations",
+        "PostgreSQL and Oracle parity"
+      ]
     }
   ]
 }

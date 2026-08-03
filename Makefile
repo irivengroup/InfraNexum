@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 
-.PHONY: architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check java-contract-smoke java-eventing-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-test verify-foundation verify clean-generated
+.PHONY: architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check java-contract-smoke java-eventing-smoke java-jdbc-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-test verify-foundation verify clean-generated
 
 PYTHON ?= python3
 GO ?= go
@@ -59,6 +59,13 @@ eventing-check:
 	@mkdir -p $(REPORT_ROOT)
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.eventing.cli --root . --json-report $(REPORT_ROOT)/eventing.json
 
+persistence-test:
+	@$(call PY_COVERAGE,validation.persistence,$(TEST_ROOT)/persistence,$(REPORT_ROOT)/persistence-coverage.txt)
+
+persistence-check:
+	@mkdir -p $(REPORT_ROOT)
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.persistence.cli --root . --json-report $(REPORT_ROOT)/persistence.json
+
 java-contract-smoke:
 	@build_dir="$$(mktemp -d)"; \
 	trap 'rm -rf "$$build_dir"' EXIT; \
@@ -75,6 +82,16 @@ java-eventing-smoke:
 		$(COMPONENT_ROOT)/core/events/src/main/java/io/infranexum/core/events/*.java \
 		$(TEST_ROOT)/java-eventing-smoke/io/infranexum/core/events/EventingSmoke.java; \
 	$(JAVA) -ea -cp "$$build_dir" io.infranexum.core.events.EventingSmoke
+
+java-jdbc-smoke:
+	@build_dir="$$(mktemp -d)"; \
+	trap 'rm -rf "$$build_dir"' EXIT; \
+	$(JAVAC) -Xlint:all -Werror -d "$$build_dir" \
+		$(COMPONENT_ROOT)/core/contracts/src/main/java/io/infranexum/core/contracts/*.java \
+		$(COMPONENT_ROOT)/core/events/src/main/java/io/infranexum/core/events/*.java \
+		$(COMPONENT_ROOT)/adapters/persistence-jdbc/src/main/java/io/infranexum/adapters/persistence/jdbc/*.java \
+		$(COMPONENT_ROOT)/adapters/persistence-jdbc/src/test/java/io/infranexum/adapters/persistence/jdbc/JdbcAdapterSmoke.java; \
+	$(JAVA) -ea -cp "$$build_dir" io.infranexum.adapters.persistence.jdbc.JdbcAdapterSmoke
 
 agent-vet:
 	cd $(AGENT_ROOT) && GOTOOLCHAIN=$${GOTOOLCHAIN:-auto} $(GO) vet ./...
@@ -114,7 +131,7 @@ web-verify: web-test web-smoke
 java-test:
 	./mvnw --batch-mode --no-transfer-progress verify
 
-verify-foundation: architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check java-contract-smoke java-eventing-smoke agent-vet agent-test agent-build web-verify
+verify-foundation: architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check java-contract-smoke java-eventing-smoke java-jdbc-smoke agent-vet agent-test agent-build web-verify
 
 verify: verify-foundation java-test
 
