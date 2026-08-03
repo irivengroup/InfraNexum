@@ -1,0 +1,14 @@
+schema: infranexum.migration-verification/v1
+checks:
+- id: installation-identity-exists
+  postgresql: "SELECT COUNT(*) = 1 FROM information_schema.tables WHERE table_name = 'core_installation_identity'"
+  oracle: "SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM user_tables WHERE table_name = 'CORE_INSTALLATION_IDENTITY'"
+- id: entitlement-state-exists
+  postgresql: "SELECT COUNT(*) = 1 FROM information_schema.tables WHERE table_name = 'core_entitlement_state'"
+  oracle: "SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM user_tables WHERE table_name = 'CORE_ENTITLEMENT_STATE'"
+- id: activation-manifest-exists
+  postgresql: "SELECT COUNT(*) = 1 FROM information_schema.tables WHERE table_name = 'core_activation_manifest'"
+  oracle: "SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM user_tables WHERE table_name = 'CORE_ACTIVATION_MANIFEST'"
+- id: activation-revocation-exists
+  postgresql: "SELECT COUNT(*) = 1 FROM information_schema.tables WHERE table_name = 'core_activation_revocation'"
+  oracle: "SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM user_tables WHERE table_name = 'CORE_ACTIVATION_REVOCATION'"

@@ -1,0 +1,89 @@
+{
+  "schema": "infranexum.logical-schema/v1",
+  "objects": [
+    {
+      "kind": "table",
+      "logical_name": "core.installation_identity",
+      "columns": [
+        {"name": "installation_id", "type": "uuid", "nullable": false},
+        {"name": "fingerprint_version", "type": "string", "length": 16, "nullable": false},
+        {"name": "fingerprint", "type": "string", "length": 64, "nullable": false},
+        {"name": "created_at", "type": "timestamp-with-time-zone", "nullable": false}
+      ],
+      "primary_key": ["installation_id"], "unique_constraints": [], "foreign_keys": []
+    },
+    {
+      "kind": "table",
+      "logical_name": "core.entitlement_state",
+      "columns": [
+        {"name": "installation_id", "type": "uuid", "nullable": false},
+        {"name": "profile", "type": "enum", "values": ["LITE", "PRO", "ENTERPRISE"], "nullable": false},
+        {"name": "allocation_tier", "type": "enum", "values": ["STANDARD", "ADVANCED", "ULTIMATE"], "nullable": false},
+        {"name": "evaluation_started_at", "type": "timestamp-with-time-zone", "nullable": true},
+        {"name": "last_reliable_at", "type": "timestamp-with-time-zone", "nullable": false},
+        {"name": "time_generation", "type": "long", "nullable": false},
+        {"name": "max_activation_sequence", "type": "long", "nullable": false},
+        {"name": "accepted_activation_id", "type": "uuid", "nullable": true},
+        {"name": "activation_state", "type": "string", "length": 32, "nullable": false},
+        {"name": "valid_until", "type": "timestamp-with-time-zone", "nullable": true},
+        {"name": "grace_until", "type": "timestamp-with-time-zone", "nullable": true},
+        {"name": "updated_at", "type": "timestamp-with-time-zone", "nullable": false}
+      ],
+      "primary_key": ["installation_id"], "unique_constraints": [],
+      "foreign_keys": [{"columns": ["installation_id"], "references": "core.installation_identity(installation_id)"}]
+    },
+    {
+      "kind": "table",
+      "logical_name": "core.entitlement_integrity_proof",
+      "columns": [
+        {"name": "installation_id", "type": "uuid", "nullable": false},
+        {"name": "fingerprint", "type": "string", "length": 64, "nullable": false},
+        {"name": "evaluation_started_at", "type": "timestamp-with-time-zone", "nullable": false},
+        {"name": "last_reliable_at", "type": "timestamp-with-time-zone", "nullable": false},
+        {"name": "generation", "type": "long", "nullable": false},
+        {"name": "mac_base64", "type": "string", "length": 64, "nullable": false},
+        {"name": "updated_at", "type": "timestamp-with-time-zone", "nullable": false}
+      ],
+      "primary_key": ["installation_id"], "unique_constraints": [],
+      "foreign_keys": [{"columns": ["installation_id"], "references": "core.installation_identity(installation_id)"}]
+    },
+    {
+      "kind": "table",
+      "logical_name": "core.activation_manifest",
+      "columns": [
+        {"name": "activation_id", "type": "uuid", "nullable": false},
+        {"name": "installation_id", "type": "uuid", "nullable": false},
+        {"name": "customer_id", "type": "string", "length": 255, "nullable": false},
+        {"name": "profile", "type": "enum", "values": ["PRO", "ENTERPRISE"], "nullable": false},
+        {"name": "allocation_tier", "type": "enum", "values": ["STANDARD", "ADVANCED", "ULTIMATE"], "nullable": false},
+        {"name": "catalog_version", "type": "string", "length": 64, "nullable": false},
+        {"name": "host_limit", "type": "long", "nullable": false},
+        {"name": "capabilities_json", "type": "json", "nullable": false},
+        {"name": "quotas_json", "type": "json", "nullable": false},
+        {"name": "valid_from", "type": "timestamp-with-time-zone", "nullable": false},
+        {"name": "valid_until", "type": "timestamp-with-time-zone", "nullable": false},
+        {"name": "grace_period_days", "type": "integer", "nullable": false},
+        {"name": "sequence", "type": "long", "nullable": false},
+        {"name": "key_id", "type": "string", "length": 160, "nullable": false},
+        {"name": "signature_base64", "type": "string", "length": 128, "nullable": false},
+        {"name": "manifest_sha256", "type": "string", "length": 64, "nullable": false}
+      ],
+      "primary_key": ["activation_id"],
+      "unique_constraints": [["installation_id", "sequence"]],
+      "foreign_keys": [{"columns": ["installation_id"], "references": "core.installation_identity(installation_id)"}],
+      "indexes": [{"name": "validity", "columns": ["installation_id", "valid_until", "sequence"]}]
+    },
+    {
+      "kind": "table",
+      "logical_name": "core.activation_revocation",
+      "columns": [
+        {"name": "revocation_type", "type": "enum", "values": ["KEY", "ACTIVATION"], "nullable": false},
+        {"name": "revocation_key", "type": "string", "length": 160, "nullable": false},
+        {"name": "effective_at", "type": "timestamp-with-time-zone", "nullable": false},
+        {"name": "reason", "type": "string", "length": 512, "nullable": false},
+        {"name": "recorded_at", "type": "timestamp-with-time-zone", "nullable": false}
+      ],
+      "primary_key": ["revocation_type", "revocation_key"], "unique_constraints": [], "foreign_keys": []
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "schema": "infranexum.component-manifest/v1",
+  "id": "components.core.entitlements",
+  "kind": "component",
+  "owner": "team.core-platform",
+  "lifecycle": "active",
+  "languages": ["java", "json"],
+  "dependencies": ["components.core.contracts", "components.core.capabilities"],
+  "source_baseline": ["PGM-02-E05", "CDC-10", "CDC-12", "CDC-14"]
+}

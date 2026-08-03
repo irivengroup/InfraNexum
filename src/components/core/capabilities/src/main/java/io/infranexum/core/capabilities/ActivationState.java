@@ -1,6 +1,6 @@
 package io.infranexum.core.capabilities;
 
-/** Activation state supplied by Core Entitlements; signature verification is a later boundary. */
+/** Activation state supplied by Core Entitlements after signature and lifecycle evaluation. */
 public enum ActivationState {
     NOT_REQUIRED,
     ACTIVE,
@@ -9,6 +9,6 @@ public enum ActivationState {
     INVALID;
 
     public boolean permitsProtectedCapabilities() {
-        return this == ACTIVE || this == GRACE;
+        return this == NOT_REQUIRED || this == ACTIVE || this == GRACE;
     }
 }

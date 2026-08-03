@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 
-.PHONY: architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check java-contract-smoke java-eventing-smoke java-jdbc-smoke java-capabilities-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-test verify-foundation verify clean-generated
+.PHONY: architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check java-contract-smoke java-eventing-smoke java-jdbc-smoke java-capabilities-smoke java-entitlements-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-test verify-foundation verify clean-generated
 
 PYTHON ?= python3
 GO ?= go
@@ -73,6 +73,13 @@ capabilities-check:
 	@mkdir -p $(REPORT_ROOT)
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.capabilities.cli --root . --json-report $(REPORT_ROOT)/capabilities.json
 
+entitlements-test:
+	@$(call PY_COVERAGE,validation.entitlements,$(TEST_ROOT)/entitlements,$(REPORT_ROOT)/entitlements-coverage.txt)
+
+entitlements-check:
+	@mkdir -p $(REPORT_ROOT)
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.entitlements.cli --root . --json-report $(REPORT_ROOT)/entitlements.json
+
 java-contract-smoke:
 	@build_dir="$$(mktemp -d)"; \
 	trap 'rm -rf "$$build_dir"' EXIT; \
@@ -107,6 +114,18 @@ java-capabilities-smoke:
 		$(COMPONENT_ROOT)/core/capabilities/src/main/java/io/infranexum/core/capabilities/*.java \
 		$(TEST_ROOT)/java-capabilities-smoke/io/infranexum/core/capabilities/CapabilitiesSmoke.java; \
 	$(JAVA) -ea -cp "$$build_dir" io.infranexum.core.capabilities.CapabilitiesSmoke \
+		$(COMPONENT_ROOT)/core/capabilities/src/main/resources/io/infranexum/core/capabilities/capability-catalog.csv \
+		$(COMPONENT_ROOT)/core/capabilities/src/main/resources/io/infranexum/core/capabilities/quota-catalog.csv
+
+java-entitlements-smoke:
+	@build_dir="$$(mktemp -d)"; \
+	trap 'rm -rf "$$build_dir"' EXIT; \
+	$(JAVAC) -Xlint:all -Werror -d "$$build_dir" \
+		$(COMPONENT_ROOT)/core/contracts/src/main/java/io/infranexum/core/contracts/*.java \
+		$(COMPONENT_ROOT)/core/capabilities/src/main/java/io/infranexum/core/capabilities/*.java \
+		$(COMPONENT_ROOT)/core/entitlements/src/main/java/io/infranexum/core/entitlements/*.java \
+		$(TEST_ROOT)/java-entitlements-smoke/io/infranexum/core/entitlements/EntitlementsSmoke.java; \
+	$(JAVA) -ea -cp "$$build_dir" io.infranexum.core.entitlements.EntitlementsSmoke \
 		$(COMPONENT_ROOT)/core/capabilities/src/main/resources/io/infranexum/core/capabilities/capability-catalog.csv \
 		$(COMPONENT_ROOT)/core/capabilities/src/main/resources/io/infranexum/core/capabilities/quota-catalog.csv
 
@@ -148,7 +167,7 @@ web-verify: web-test web-smoke
 java-test:
 	./mvnw --batch-mode --no-transfer-progress verify
 
-verify-foundation: architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check java-contract-smoke java-eventing-smoke java-jdbc-smoke java-capabilities-smoke agent-vet agent-test agent-build web-verify
+verify-foundation: architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check java-contract-smoke java-eventing-smoke java-jdbc-smoke java-capabilities-smoke java-entitlements-smoke agent-vet agent-test agent-build web-verify
 
 verify: verify-foundation java-test
 

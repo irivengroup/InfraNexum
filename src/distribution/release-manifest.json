@@ -2,15 +2,15 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.5",
-  "profile": "development-foundation-capabilities-quotas",
+  "version": "2.0.0-alpha.0.6",
+  "profile": "development-foundation-signed-activation-entitlements",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "source and validation evidence; generated Agent binary, caches and temporary artifacts excluded",
   "artifacts": [
     {
       "id": "infranexum-server",
-      "status": "source-integrated-memory-postgresql-oracle-persistence-selection-java25-reactor-pending"
+      "status": "source-integrated-entitlements-dependency-capability-api-and-persistence-selection-java25-reactor-and-authoritative-activation-wiring-pending"
     },
     {
       "id": "infranexum-agent",
@@ -33,7 +33,7 @@
       "status": "source-static-gate-and-dependency-free-jdbc-driver-simulation-validated-live-postgresql-oracle-execution-pending"
     },
     {
-      "id": "migration-catalogue-0001-0003",
+      "id": "migration-catalogue-0001-0004",
       "status": "static-pairing-checksum-logical-model-contract-and-rollback-validated-live-database-execution-pending"
     },
     {
@@ -42,7 +42,11 @@
     },
     {
       "id": "core-capabilities-quotas-v1",
-      "status": "source-static-gate-and-dependency-free-java21-smoke-validated-java25-junit-jacoco-and-signed-activation-pending"
+      "status": "source-static-gate-and-dependency-free-java21-smoke-validated-entitlement-contract-integrated-java25-junit-jacoco-pending"
+    },
+    {
+      "id": "core-entitlements-v1",
+      "status": "source-static-gate-schema-digest-ed25519-lite-lifecycle-access-guards-trusted-time-and-java21-smoke-validated-java25-junit-jacoco-jdbc-repositories-and-external-time-anchor-pending"
     }
   ],
   "validation_reports": [
@@ -62,10 +66,12 @@
     "../../artifacts/validation/web-smoke.json",
     "../../artifacts/validation/capabilities.json",
     "../../artifacts/validation/capabilities-coverage.txt",
+    "../../artifacts/validation/entitlements.json",
+    "../../artifacts/validation/entitlements-coverage.txt",
     "../../artifacts/validation/validation-status.json"
   ],
   "validation_summary": {
-    "python_tests": 89,
+    "python_tests": 98,
     "architecture_tests": 28,
     "architecture_coverage_percent": 100,
     "architecture_violations": 0,
@@ -89,14 +95,17 @@
     "web_function_coverage_percent": 100,
     "capability_tests": 10,
     "capability_coverage_percent": 99,
-    "capability_violations": 0
+    "capability_violations": 0,
+    "entitlement_tests": 9,
+    "entitlement_coverage_percent": 100,
+    "entitlement_violations": 0
   },
   "source_layout": "all implementation sources, tests, validation code, migrations and build-support scripts are grouped below src/",
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.5-capabilities-quotas",
+    "prefix": "infranexum-2.0.0-alpha.0.6-activation-entitlements",
     "checksum_manifest": "source-files.sha256",
-    "recorded_files": 277,
-    "archive_entries": 278,
+    "recorded_files": 328,
+    "archive_entries": 329,
     "reproducible": true
   }
 }

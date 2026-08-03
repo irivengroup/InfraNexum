@@ -1,0 +1,28 @@
+schema: infranexum.migration/v1
+id: '0004'
+name: core-entitlements
+owner_context: core
+dependencies:
+- '0003'
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 30
+preconditions:
+- core-schema-history-exists
+- database-user-can-create-table-and-index
+postconditions:
+- installation-identity-persisted
+- entitlement-state-constrained
+- activation-sequence-unique
+- revocation-registry-present
+recovery: rerun-idempotently-before-accepting-any-activation
+rollback: supported-only-before-any-activation-manifest-is-accepted
+checksums:
+  postgresql.sql: e348db1d474540c6b27eed4bd20bc980dbdaa64e2f1a45977e93a93405aec9c3
+  oracle.sql: f4d442addf95797c5315d1de71da6706cc1760a7e6598e758a950a65a81ea36c
+  rollback/postgresql.sql: f7d81b65d65ad751ff42dad7b7336b5087a17f8741a1d47340e2c041ee767941
+  rollback/oracle.sql: 5be429ba4c1883f0906ce0bf1f4f16f700ad2951b12bb1bda48261e94e53dbc8
+  logical-model.json: 9fce92530c0bb2c17b4b14bd1e542278d78021998850c96ed3ab6d8f88b8b9ac
+  verify.sql.yaml: 48a1e32b4c9a5fe59e3cd001475a1dd1c7d9fbfa4d401b1e8e6e3f557d093259
