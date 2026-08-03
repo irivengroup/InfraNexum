@@ -27,6 +27,8 @@ class ToolchainCheckerTest(unittest.TestCase):
             ".python-version",
             "pom.xml",
             ".mvn/wrapper/maven-wrapper.properties",
+            "applications/web/package.json",
+            "applications/web/pnpm-lock.yaml",
         ):
             target = self.root / relative
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -96,6 +98,39 @@ class ToolchainCheckerTest(unittest.TestCase):
         self.assertIn("CHECK-TOOLCHAIN-009", self.ids())
         path.unlink()
         self.assertIn("CHECK-TOOLCHAIN-013", self.ids())
+
+
+    def test_web_runtime_package_and_lockfile_are_strictly_pinned(self) -> None:
+        package_path = self.root / "applications/web/package.json"
+        package = json.loads(package_path.read_text(encoding="utf-8"))
+        package["packageManager"] = "pnpm@latest"
+        package["engines"] = {"node": ">=22"}
+        package["private"] = False
+        package["type"] = "commonjs"
+        package["scripts"] = {}
+        package["dependencies"] = {"example": "^1.0.0"}
+        package["devDependencies"] = []
+        package_path.write_text(json.dumps(package), encoding="utf-8")
+        self.assertTrue({
+            "CHECK-TOOLCHAIN-016",
+            "CHECK-TOOLCHAIN-017",
+            "CHECK-TOOLCHAIN-018",
+            "CHECK-TOOLCHAIN-019",
+            "CHECK-TOOLCHAIN-020",
+            "CHECK-TOOLCHAIN-021",
+        } <= self.ids())
+
+        package_path.write_text("[]", encoding="utf-8")
+        self.assertIn("CHECK-TOOLCHAIN-015", self.ids())
+        package_path.write_text("{", encoding="utf-8")
+        self.assertIn("CHECK-TOOLCHAIN-014", self.ids())
+
+    def test_web_lockfile_is_required_and_uses_expected_format(self) -> None:
+        lock_path = self.root / "applications/web/pnpm-lock.yaml"
+        lock_path.write_text("lockfileVersion: '8.0'\n", encoding="utf-8")
+        self.assertIn("CHECK-TOOLCHAIN-023", self.ids())
+        lock_path.unlink()
+        self.assertIn("CHECK-TOOLCHAIN-022", self.ids())
 
     def test_external_paths_are_rendered_absolutely(self) -> None:
         checker = ToolchainChecker(self.root)

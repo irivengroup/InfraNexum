@@ -46,6 +46,26 @@ jobs:
       - name: Vet, test with race detection, enforce coverage and build Agent
         run: make agent-vet agent-test agent-build
 
+  web:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24.18.1'
+          cache: pnpm
+          cache-dependency-path: applications/web/pnpm-lock.yaml
+      - name: Enable exact pnpm toolchain
+        run: corepack enable && corepack prepare pnpm@11.17.0 --activate
+      - name: Verify empty dependency graph and immutable lockfile
+        working-directory: applications/web
+        run: pnpm install --frozen-lockfile --offline
+      - name: Test and smoke Web runtime
+        run: make web-verify
+
   java:
     runs-on: ubuntu-24.04
     timeout-minutes: 20

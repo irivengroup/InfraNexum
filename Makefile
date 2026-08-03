@@ -1,4 +1,4 @@
-.PHONY: architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check java-contract-smoke agent-vet agent-test agent-build java-test verify-foundation verify clean-generated
+.PHONY: architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check java-contract-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-test verify-foundation verify clean-generated
 
 PYTHON ?= python3
 GO ?= go
@@ -68,14 +68,29 @@ agent-build:
 	version="$$(cat ../../VERSION)"; \
 	GOTOOLCHAIN=$${GOTOOLCHAIN:-auto} CGO_ENABLED=0 $(GO) build -trimpath -ldflags="-s -w -X main.version=$$version" -o ../../bin/infranexum-agent ./cmd/infranexum-agent
 
+web-test:
+	@set -o pipefail; \
+		mkdir -p validation/reports; \
+		cd applications/web; \
+		node --test --experimental-test-coverage --test-coverage-lines=98 --test-coverage-branches=98 --test-coverage-functions=98 --test-coverage-include='runtime/config.mjs' --test-coverage-include='runtime/logger.mjs' --test-coverage-include='runtime/static-assets.mjs' --test-coverage-include='runtime/web-application.mjs' runtime/tests/*.test.mjs \
+			| tee ../../validation/reports/web-coverage.txt
+
+web-smoke:
+	@set -o pipefail; \
+		mkdir -p validation/reports; \
+		cd applications/web; \
+		node runtime/tests/smoke.mjs | tee ../../validation/reports/web-smoke.json
+
+web-verify: web-test web-smoke
+
 java-test:
 	./mvnw --batch-mode --no-transfer-progress verify
 
-verify-foundation: architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check java-contract-smoke agent-vet agent-test agent-build
+verify-foundation: architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check java-contract-smoke agent-vet agent-test agent-build web-verify
 
 verify: verify-foundation java-test
 
 clean-generated:
 	rm -rf .coverage bin validation/reports/*.tmp applications/agent/coverage.out applications/agent/coverage-summary.txt
 	find . -type d -name __pycache__ -prune -exec rm -rf {} +
-	find . -type f \\( -name '*.pyc' -o -name '*.pyo' \\) -delete
+	find . -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete

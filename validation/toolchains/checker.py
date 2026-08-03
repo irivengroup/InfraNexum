@@ -54,6 +54,7 @@ class ToolchainChecker:
         self._match_file(lock_path, ".python-version", tools, "python")
         self._check_maven(tools)
         self._check_go(tools)
+        self._check_web(tools)
         return tuple(sorted(set(self.violations)))
 
     def _load_lock(self, path: Path) -> Any | None:
@@ -111,6 +112,45 @@ class ToolchainChecker:
         version = self._version(tools, "go")
         if f"toolchain go{version}" not in text:
             self._add("CHECK-TOOLCHAIN-009", path, "Go toolchain does not match lock")
+
+    def _check_web(self, tools: dict[str, Any]) -> None:
+        package_path = self.root / "applications/web/package.json"
+        try:
+            package = json.loads(package_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as error:
+            self._add("CHECK-TOOLCHAIN-014", package_path, f"invalid Web package model: {error}")
+            return
+        if not isinstance(package, dict):
+            self._add("CHECK-TOOLCHAIN-015", package_path, "Web package model must be an object")
+            return
+
+        node_version = self._version(tools, "node")
+        pnpm_version = self._version(tools, "pnpm")
+        expected_engine = f">={node_version} <25"
+        if package.get("packageManager") != f"pnpm@{pnpm_version}":
+            self._add("CHECK-TOOLCHAIN-016", package_path, "Web packageManager must match pnpm toolchain lock")
+        engines = package.get("engines")
+        if not isinstance(engines, dict) or engines.get("node") != expected_engine:
+            self._add("CHECK-TOOLCHAIN-017", package_path, "Web Node engine must match toolchain lock and LTS major")
+        if package.get("private") is not True or package.get("type") != "module":
+            self._add("CHECK-TOOLCHAIN-018", package_path, "Web package must be private and ESM-only")
+        scripts = package.get("scripts")
+        required_scripts = {"start", "test", "smoke", "verify"}
+        if not isinstance(scripts, dict) or not required_scripts.issubset(scripts):
+            self._add("CHECK-TOOLCHAIN-019", package_path, "Web package scripts are incomplete")
+        for field in ("dependencies", "devDependencies", "optionalDependencies"):
+            values = package.get(field, {})
+            if not isinstance(values, dict):
+                self._add("CHECK-TOOLCHAIN-020", package_path, f"{field} must be an object when present")
+                continue
+            floating = sorted(name for name, version in values.items() if not isinstance(version, str) or not _VERSION.fullmatch(version))
+            if floating:
+                self._add("CHECK-TOOLCHAIN-021", package_path, f"Web dependencies must use exact versions: {floating}")
+
+        lock_path = self.root / "applications/web/pnpm-lock.yaml"
+        lock_text = self._read_text(lock_path, "CHECK-TOOLCHAIN-022", "Web pnpm lockfile cannot be read")
+        if lock_text is not None and ("lockfileVersion: '9.0'" not in lock_text or "importers:" not in lock_text):
+            self._add("CHECK-TOOLCHAIN-023", lock_path, "Web pnpm lockfile format is invalid")
 
     @staticmethod
     def _version(tools: dict[str, Any], key: str) -> str:

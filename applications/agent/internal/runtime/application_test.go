@@ -24,6 +24,24 @@ func freeAddress(t *testing.T) string {
 	return address
 }
 
+func waitForTCPListener(t *testing.T, address string) {
+	t.Helper()
+	deadline := time.Now().Add(3 * time.Second)
+	for {
+		connection, err := net.DialTimeout("tcp", address, 100*time.Millisecond)
+		if err == nil {
+			if closeErr := connection.Close(); closeErr != nil {
+				t.Fatalf("close readiness connection: %v", closeErr)
+			}
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("agent listener %s did not become reachable: %v", address, err)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+
 func TestNewRejectsInvalidConfiguration(t *testing.T) {
 	_, err := New(config.Config{}, "test", nil)
 	if err == nil {
@@ -117,6 +135,7 @@ func TestRunReportsGracefulShutdownTimeout(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
 	go func() { done <- app.Run(ctx) }()
+	waitForTCPListener(t, cfg.ListenAddress)
 
 	requestDone := make(chan struct{})
 	go func() {

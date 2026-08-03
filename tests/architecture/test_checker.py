@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -34,6 +35,26 @@ class ArchitectureCheckerTest(unittest.TestCase):
         report = self.run_check()
         self.assertTrue(report.ok, report.to_dict())
         self.assertEqual("PASS", report.to_dict()["status"])
+
+    def test_clean_generated_target_removes_artifacts_portably(self) -> None:
+        generated_directory = self.root / "bin"
+        generated_directory.mkdir(exist_ok=True)
+        (generated_directory / "generated-binary").write_text("generated", encoding="utf-8")
+        cache = self.root / "validation" / "__pycache__"
+        cache.mkdir(exist_ok=True)
+        (cache / "generated.pyc").write_bytes(b"generated")
+
+        completed = subprocess.run(
+            ["make", "clean-generated"],
+            cwd=self.root,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        self.assertFalse(generated_directory.exists())
+        self.assertFalse(cache.exists())
 
     def test_missing_structural_space_is_blocked(self) -> None:
         shutil.rmtree(self.root / "engines")
@@ -125,6 +146,17 @@ class ArchitectureCheckerTest(unittest.TestCase):
         violations = [item for item in report.violations if item.check_id == "CHECK-SECRET-001"]
         self.assertEqual(1, len(violations))
         self.assertNotIn(fake_access_key, violations[0].message)
+
+    def test_secret_material_is_scanned_in_web_runtime_modules(self) -> None:
+        secret_path = self.root / "applications/web/runtime/compromised.mjs"
+        secret_path.parent.mkdir(parents=True, exist_ok=True)
+        fake_token = "gh" + "p_" + "ABCDEFGHIJKLMNOPQRSTUVWX"
+        secret_path.write_text(f"export const token = {fake_token!r};\n", encoding="utf-8")
+        violations = [
+            item for item in self.run_check().violations if item.check_id == "CHECK-SECRET-001"
+        ]
+        self.assertEqual(1, len(violations))
+        self.assertNotIn(fake_token, violations[0].message)
 
     def test_invalid_secret_policy_is_blocked(self) -> None:
         policy_path = self.root / "validation/architecture/policy.json"

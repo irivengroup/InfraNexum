@@ -1,35 +1,37 @@
-# InfraNexum 2.0.0-alpha.0.1 — Foundation, Contracts & Migrations
+# InfraNexum 2.0.0-alpha.0.2 — Foundation, Contracts, Migrations & Web Runtime
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
-This repository is the second executable implementation increment derived from architecture baseline `2.0.0-draft.21` and the complete implementation roadmap. It preserves the canonical monorepo and adds exact polyglot toolchain governance, the first Core Domain Contract Pack, and the first paired PostgreSQL/Oracle migration.
+This repository is the third executable implementation increment derived from architecture baseline `2.0.0-draft.21` and the complete implementation roadmap.
 
 ## Implemented
 
 - canonical eight-space repository structure and machine-readable ownership manifests;
 - blocking Architecture-as-Code and high-confidence secret-material validation;
-- exact toolchain lock for Java, Maven, Spring Boot, Spring Modulith, Go, Node.js, pnpm, TypeScript, Python, CMake and GCC;
-- Maven Wrapper distribution pinned to Maven `3.9.16` with SHA-512 verification;
-- Core Domain Contract Pack `1.0.0` with semantic compatibility, UUIDv7 identifiers and stable domain failures;
-- locally monotonic RFC 9562 UUIDv7 generation, including clock-regression and payload-exhaustion handling;
-- paired migration catalogue with immutable checksums, PostgreSQL/Oracle apply scripts, paired rollback scripts, logical schema and verification queries;
-- Java Server composition root and Go Agent runtime with strict configuration, health endpoints, build identity and graceful shutdown;
+- exact polyglot toolchain catalogue and drift gates;
+- Java Server composition root and Go Agent runtime with strict configuration and health contracts;
+- Core Domain Contract Pack with UUIDv7, semantic compatibility and stable domain failures;
+- paired PostgreSQL/Oracle migration catalogue with checksums, logical model, verification and rollback;
+- standalone Node.js Web runtime host with validated public configuration;
+- `/health/live`, `/health/ready`, `/health/startup`, `/runtime-config.json` and build identity contracts;
+- bounded graceful shutdown, secure static assets, traversal/symlink protection and strict browser security headers;
+- accessible, responsive operational bootstrap page that contains no authoritative business logic;
 - regression gates with a project threshold of at least 98% coverage.
 
 ## Explicit limits
 
-The product is **NON TERMINÉ**. No business bounded context is yet active. The Web application, database-backed migration executor, PostgreSQL persistence, IAM, RSOT, DCIM, ITAM, DDI, Discovery collectors, activation, audit, automation, provisioning, transactional installer and production packaging remain outside this increment.
+The product is **NON TERMINÉ**. The capability-driven React/TypeScript shell, i18n, business bounded contexts, database-backed migration executor, IAM, RSOT, DCIM, ITAM, DDI, Discovery collectors, activation, audit, automation, provisioning, transactional installer and production packaging remain outside this increment.
 
-The local environment does not provide JDK 25, Go 1.26.5, PostgreSQL or Oracle. Exact target-toolchain and database-engine validations are therefore recorded as `NON EXÉCUTÉ` in `validation/reports/validation-status.json`.
+Local validation uses Node.js 22.16.0, Go 1.23.2 and JDK 21. Exact Node.js 24.18.1/pnpm 11.17.0, Go 1.26.5 and Java 25 validation remains assigned to the corresponding CI jobs.
 
 ## Required toolchains
 
-The exact catalogue is `toolchains.lock.json`. The principal targets are:
+The exact catalogue is `toolchains.lock.json`. Principal targets:
 
 - Eclipse Temurin/OpenJDK `25.0.4+7`;
 - Spring Boot `4.1.0` and Spring Modulith `2.1.0`;
 - Go `1.26.5`;
-- Node.js `24.18.1` LTS, pnpm `11.17.0`, TypeScript `7.0.2`;
+- Node.js `24.18.1` LTS and pnpm `11.17.0`;
 - Python `3.13.5`;
 - CMake `3.31.6` and GCC `14.2.0`.
 
@@ -42,31 +44,32 @@ make toolchain-test toolchain-check
 make migration-test migration-check
 make java-contract-smoke
 GOTOOLCHAIN=local make agent-vet agent-test agent-build
+make web-test web-smoke
 ```
 
 Exact target validation:
 
 ```bash
+corepack enable
+corepack prepare pnpm@11.17.0 --activate
+cd applications/web && pnpm install --frozen-lockfile --offline && pnpm verify
 GOTOOLCHAIN=go1.26.5 make agent-vet agent-test agent-build
 ./mvnw --batch-mode --no-transfer-progress verify
 ```
 
-## Agent smoke
+## Web runtime
 
 ```bash
-cp applications/agent/configs/agent.example.json /tmp/infranexum-agent.json
-./bin/infranexum-agent --config /tmp/infranexum-agent.json
-curl --fail http://127.0.0.1:8091/health/live
-curl --fail http://127.0.0.1:8091/health/ready
-curl --fail http://127.0.0.1:8091/api/v1/system/build
-```
+cd applications/web
+INFRANEXUM_WEB_LISTEN_ADDRESS=127.0.0.1:8080 \
+INFRANEXUM_WEB_API_BASE_URL=/api \
+INFRANEXUM_WEB_ENVIRONMENT=production \
+node runtime/main.mjs
 
-## Server smoke after Java 25 build
-
-```bash
-java -jar applications/server/target/infranexum-server-2.0.0-alpha.0.1.jar
-curl --fail http://127.0.0.1:8080/actuator/health/liveness
-curl --fail http://127.0.0.1:8080/actuator/health/readiness
+curl --fail http://127.0.0.1:8080/health/live
+curl --fail http://127.0.0.1:8080/health/ready
+curl --fail http://127.0.0.1:8080/health/startup
+curl --fail http://127.0.0.1:8080/runtime-config.json
 curl --fail http://127.0.0.1:8080/api/v1/system/build
 ```
 
