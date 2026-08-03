@@ -1,0 +1,27 @@
+schema: infranexum.migration/v1
+id: '0002'
+name: core-transactional-events
+owner_context: core
+dependencies:
+- '0001'
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 15
+preconditions:
+- core-schema-history-exists
+- database-user-can-create-table-and-index
+postconditions:
+- transactional-outbox-exists
+- inbox-deduplication-primary-key-enforced
+- dispatcher-indexes-exist
+recovery: rerun-idempotently-before-enabling-event-workers
+rollback: supported-before-any-bounded-context-persists-outbox-events
+checksums:
+  postgresql.sql: 929bc21ef406ebf19c5bc270655590c7cc3c5349c7943b35074f0d15089fa5ba
+  oracle.sql: bb1da94be201de3673df35b7f5599d7443de33006aa047d6e8901561a854fd02
+  rollback/postgresql.sql: c79c4f83c149e589925ab57271930b72d4b9ef8684bf39c12db7555c7db02470
+  rollback/oracle.sql: ff226eddc9c3ef78d3b44fb01da8fc1b3b3989e9177785c648f342ae2a3f53a2
+  logical-model.json: 0a6221c5f495c30a79d49e9221b3eb7affd4728a2825eb7577dfee372f3ef30e
+  verify.sql.yaml: c56898fed269296684a85f98dcb6c06b37d36b61e20b8e72db97a0d9fe91645d

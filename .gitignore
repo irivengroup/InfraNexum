@@ -39,5 +39,5 @@ bin/
 !*.example
 
 # Generated validation reports
-validation/reports/*.json
-validation/reports/*.txt
+artifacts/validation/*.json
+artifacts/validation/*.txt

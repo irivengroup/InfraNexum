@@ -1,5 +1,0 @@
-schema: infranexum.migration-catalogue/v1
-version: 1.0.0
-entries:
-- id: '0001'
-  path: 0001-core-schema-history/migration.yaml

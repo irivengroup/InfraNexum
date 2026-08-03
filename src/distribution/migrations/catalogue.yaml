@@ -1,0 +1,7 @@
+schema: infranexum.migration-catalogue/v1
+version: 1.1.0
+entries:
+- id: '0001'
+  path: 0001-core-schema-history/migration.yaml
+- id: '0002'
+  path: 0002-core-transactional-events/migration.yaml

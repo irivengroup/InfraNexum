@@ -1,0 +1,53 @@
+{
+  "schema": "infranexum.logical-schema/v1",
+  "objects": [
+    {
+      "kind": "table",
+      "logical_name": "core.outbox_event",
+      "columns": [
+        {"name": "event_id", "type": "uuid", "nullable": false},
+        {"name": "event_type", "type": "string", "length": 200, "nullable": false},
+        {"name": "schema_version", "type": "string", "length": 32, "nullable": false},
+        {"name": "occurred_at", "type": "timestamp-with-time-zone", "nullable": false},
+        {"name": "source", "type": "string", "length": 255, "nullable": false},
+        {"name": "correlation_id", "type": "uuid", "nullable": false},
+        {"name": "causation_id", "type": "uuid", "nullable": true},
+        {"name": "payload_json", "type": "json", "nullable": false},
+        {"name": "status", "type": "enum", "values": ["PENDING", "IN_FLIGHT", "PUBLISHED", "DEAD_LETTER"], "nullable": false},
+        {"name": "attempts", "type": "integer", "nullable": false},
+        {"name": "available_at", "type": "timestamp-with-time-zone", "nullable": false},
+        {"name": "lease_owner", "type": "string", "length": 160, "nullable": true},
+        {"name": "lease_until", "type": "timestamp-with-time-zone", "nullable": true},
+        {"name": "published_at", "type": "timestamp-with-time-zone", "nullable": true},
+        {"name": "last_failure", "type": "string", "length": 1024, "nullable": true},
+        {"name": "created_at", "type": "timestamp-with-time-zone", "nullable": false},
+        {"name": "updated_at", "type": "timestamp-with-time-zone", "nullable": false}
+      ],
+      "primary_key": ["event_id"],
+      "unique_constraints": [],
+      "foreign_keys": [],
+      "indexes": [
+        {"name": "dispatch", "columns": ["status", "available_at", "occurred_at", "event_id"]},
+        {"name": "lease-recovery", "columns": ["lease_until", "status"]}
+      ]
+    },
+    {
+      "kind": "table",
+      "logical_name": "core.inbox_receipt",
+      "columns": [
+        {"name": "consumer_name", "type": "string", "length": 160, "nullable": false},
+        {"name": "event_id", "type": "uuid", "nullable": false},
+        {"name": "event_type", "type": "string", "length": 200, "nullable": false},
+        {"name": "payload_sha256", "type": "string", "length": 64, "nullable": false},
+        {"name": "received_at", "type": "timestamp-with-time-zone", "nullable": false},
+        {"name": "completed_at", "type": "timestamp-with-time-zone", "nullable": false}
+      ],
+      "primary_key": ["consumer_name", "event_id"],
+      "unique_constraints": [],
+      "foreign_keys": [],
+      "indexes": [
+        {"name": "completed", "columns": ["completed_at", "consumer_name"]}
+      ]
+    }
+  ]
+}

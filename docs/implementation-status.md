@@ -1,28 +1,42 @@
-# InfraNexum 2.0.0-alpha.0.2 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.3 — état d’implémentation
+
+## Organisation des sources
+
+Toutes les sources applicatives, composants, migrations, tests, validateurs et outils sont regroupés sous `src/`. Les preuves générées sont séparées sous `artifacts/validation/`. Un gate Architecture-as-Code interdit toute nouvelle source placée hors de `src/`.
 
 ## Implémenté dans cet incrément
 
-- runtime Web autonome Node.js, sans accès base ni communication Agent ;
-- composition root explicite avec configuration validée avant ouverture du listener ;
-- configuration publique distincte des secrets et exposée sous contrat versionné ;
-- probes `/health/live`, `/health/ready` et `/health/startup` ;
-- identité de build Web sous `/api/v1/system/build` ;
-- service sécurisé des assets avec défense path traversal/symlink, limites de taille et cache immuable ;
-- en-têtes CSP, isolation, anti-framing, anti-MIME-sniffing et absence de cache sur les diagnostics ;
-- arrêt gracieux borné, collisions de port et erreurs de fermeture testées ;
-- page de bootstrap accessible et responsive, sans autorité métier ;
-- gate Node intégré à la CI avec Node.js 24.18.1 et pnpm 11.17.0 exacts ;
-- extension du gate de secrets aux sources JavaScript, MJS, HTML et CSS.
-- stabilisation du test de timeout d’arrêt Agent par une barrière TCP explicite, vérifiée sur 20 répétitions sous race detector.
+- enveloppe événementielle canonique, versionnée et limitée aux huit champs normatifs ;
+- schéma JSON strict et gate de dérive entre contrat, schéma, record Java, modèle logique et SQL ;
+- port `TransactionalEventStore` indépendant des frameworks et des moteurs de données ;
+- unité de travail copy-on-write atomique de référence ;
+- outbox visible uniquement après commit et hooks exécutés strictement post-commit ;
+- claims bornés avec lease, récupération des leases expirées et concurrence sans double attribution ;
+- retries exponentiels bornés, jitter déterministe injectable et passage en dead-letter ;
+- inbox transactionnelle et déduplication par `(consumerName, eventId)` ;
+- atomicité entre handler, receipt inbox et nouveaux événements outbox ;
+- non-régressions de rollback, reprise, interruption, concurrence et idempotence ;
+- migration `0002-core-transactional-events` appariée PostgreSQL/Oracle avec contraintes UUIDv7, contrat d’événement, index, vérification et rollback ;
+- intégration des gates événementiels au Makefile, au reactor Maven et à GitHub Actions.
 
-Les incréments précédents restent présents : monorepo huit espaces, Architecture-as-Code, Agent Go, Server Java, Domain Contract Pack Core et catalogue de migrations PostgreSQL/Oracle appariées.
+Les incréments précédents restent présents : monorepo huit espaces, Architecture-as-Code, catalogue de toolchains, Agent Go, Server Java, runtime Web, Domain Contract Pack Core et migration `0001`.
 
 ## Limites explicites
 
-Le produit complet reste **NON TERMINÉ**. Le shell React/TypeScript piloté par capabilities, l’internationalisation DE/EN/ES/FR/IT, les bounded contexts métier, IAM, activation, audit, persistence et installateurs ne sont pas encore implémentés.
+Le produit complet reste **NON TERMINÉ**.
 
-Le runtime Web est exécuté localement sous Node.js 22.16.0 pour validation de compatibilité. La campagne normative Node.js 24.18.1/pnpm 11.17.0 reste à exécuter dans la CI. Le reactor Java 25, Go 1.26.5 exact et les migrations sur moteurs réels restent également non exécutés dans cet environnement.
+`InMemoryEventStore` est exclusivement un adaptateur de référence pour les contrats et les tests. Les éléments suivants ne sont pas encore implémentés ou certifiés :
+
+- adaptateurs JDBC PostgreSQL et Oracle ;
+- exécution des migrations `0001` et `0002` sur moteurs réels ;
+- transport Kafka 4.3.x KRaft ;
+- DLQ broker durable, replay autorisé et audit du replay ;
+- worker/scheduler de production, métriques de backpressure et runbooks ;
+- shell React/TypeScript piloté par capabilities et internationalisation DE/EN/ES/FR/IT ;
+- bounded contexts métier, IAM, activation, audit, installateurs et packaging de production.
+
+Le reactor Java 25, Go 1.26.5 exact et Node.js 24.18.1/pnpm 11.17.0 restent non exécutés localement dans cet environnement.
 
 ## Prochaine tranche
 
-La prochaine tranche doit exécuter les toolchains normatives disponibles en CI, puis démarrer `PGM-02-E03` — événements transactionnels, outbox, inbox, déduplication et idempotence — sur la base du Domain Contract Pack et du catalogue de migrations. Le shell React métier de `PGM-05-E02` restera dépendant de `PGM-02-E04` conformément à la roadmap.
+La prochaine tranche doit compléter le prérequis `PGM-04-E01` par les adaptateurs JDBC PostgreSQL/Oracle, les transactions réelles, l’application/reprise/rollback des migrations et les tests de concurrence sur moteurs supportés. Après cette fermeture, `PGM-02-E03` pourra intégrer le transport Kafka, la DLQ durable et le replay audité sans modifier les contrats du cœur.

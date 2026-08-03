@@ -1,0 +1,148 @@
+{
+  "schema": "infranexum.architecture-policy/v1",
+  "source_root": "src",
+  "required_structural_spaces": [
+    "applications",
+    "components",
+    "engines",
+    "provisioning",
+    "installer",
+    "deployment",
+    "distribution",
+    "sdk"
+  ],
+  "allowed_applications": [
+    "agent",
+    "server",
+    "web"
+  ],
+  "required_manifest_paths": [
+    "applications",
+    "applications/agent",
+    "applications/server",
+    "applications/web",
+    "components",
+    "components/adapters",
+    "components/core",
+    "components/core/contracts",
+    "components/core/events",
+    "components/domains",
+    "deployment",
+    "distribution",
+    "engines",
+    "installer",
+    "provisioning",
+    "sdk"
+  ],
+  "manifest_schema": "infranexum.component-manifest/v1",
+  "owner_registry": "OWNERS.json",
+  "forbidden_artifact_names": [
+    "__pycache__",
+    ".pytest_cache",
+    ".venv",
+    "node_modules",
+    "target",
+    "coverage.out"
+  ],
+  "language_extensions": {
+    "java": [
+      ".java"
+    ],
+    "go": [
+      ".go"
+    ],
+    "typescript": [
+      ".ts",
+      ".tsx"
+    ],
+    "javascript": [
+      ".js",
+      ".jsx",
+      ".mjs",
+      ".cjs"
+    ],
+    "html": [
+      ".html"
+    ],
+    "css": [
+      ".css"
+    ],
+    "python": [
+      ".py"
+    ],
+    "cpp": [
+      ".cc",
+      ".cpp",
+      ".cxx",
+      ".h",
+      ".hpp"
+    ],
+    "shell": [
+      ".sh"
+    ],
+    "powershell": [
+      ".ps1"
+    ],
+    "json": [
+      ".json"
+    ],
+    "yaml": [
+      ".yaml",
+      ".yml"
+    ]
+  },
+  "ignored_code_files": [
+    "MANIFEST.json"
+  ],
+  "forbidden_name_parts": [
+    [
+      "open",
+      "infra"
+    ]
+  ],
+  "secret_scan_extensions": [
+    ".bat",
+    ".cmd",
+    ".css",
+    ".go",
+    ".html",
+    ".java",
+    ".js",
+    ".json",
+    ".jsx",
+    ".md",
+    ".mjs",
+    ".properties",
+    ".ps1",
+    ".py",
+    ".sh",
+    ".ts",
+    ".tsx",
+    ".xml",
+    ".yaml",
+    ".yml"
+  ],
+  "secret_scan_filenames": [
+    ".env",
+    ".npmrc",
+    ".pypirc"
+  ],
+  "secret_patterns": [
+    {
+      "id": "private-key",
+      "regex": "-----BEGIN(?: [A-Z0-9]+)? PRIVATE KEY-----"
+    },
+    {
+      "id": "aws-access-key",
+      "regex": "AKIA[0-9A-Z]{16}"
+    },
+    {
+      "id": "github-token",
+      "regex": "gh(?:p|o|u|s|r)_[A-Za-z0-9]{20,}"
+    },
+    {
+      "id": "slack-token",
+      "regex": "xox(?:b|p|a|r|s)-[A-Za-z0-9-]{20,}"
+    }
+  ]
+}

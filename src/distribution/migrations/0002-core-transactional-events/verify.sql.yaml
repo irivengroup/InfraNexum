@@ -1,0 +1,31 @@
+schema: infranexum.migration-verification/v1
+checks:
+  - id: outbox-table-exists
+    postgresql: >-
+      SELECT COUNT(*) = 1 FROM information_schema.tables
+      WHERE table_schema = 'infranexum_core' AND table_name = 'outbox_event'
+    oracle: >-
+      SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM user_tables
+      WHERE table_name = 'INFRANEXUM_CORE_OUTBOX_EVENT'
+  - id: inbox-table-exists
+    postgresql: >-
+      SELECT COUNT(*) = 1 FROM information_schema.tables
+      WHERE table_schema = 'infranexum_core' AND table_name = 'inbox_receipt'
+    oracle: >-
+      SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM user_tables
+      WHERE table_name = 'INFRANEXUM_CORE_INBOX_RECEIPT'
+  - id: outbox-dispatch-index-exists
+    postgresql: >-
+      SELECT COUNT(*) = 1 FROM pg_indexes
+      WHERE schemaname = 'infranexum_core' AND indexname = 'ix_inx_outbox_dispatch'
+    oracle: >-
+      SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM user_indexes
+      WHERE index_name = 'IX_INX_OUTBOX_DISPATCH'
+  - id: inbox-deduplication-primary-key-exists
+    postgresql: >-
+      SELECT COUNT(*) = 1 FROM information_schema.table_constraints
+      WHERE table_schema = 'infranexum_core' AND table_name = 'inbox_receipt'
+      AND constraint_type = 'PRIMARY KEY'
+    oracle: >-
+      SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM user_constraints
+      WHERE table_name = 'INFRANEXUM_CORE_INBOX_RECEIPT' AND constraint_type = 'P'
