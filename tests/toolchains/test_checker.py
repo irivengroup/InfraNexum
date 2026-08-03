@@ -1,0 +1,121 @@
+from __future__ import annotations
+
+import contextlib
+import io
+import json
+import shutil
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
+from validation.toolchains.checker import ToolchainChecker
+from validation.toolchains.cli import main as cli_main
+
+SOURCE = Path(__file__).resolve().parents[2]
+
+
+class ToolchainCheckerTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temp = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp.name) / "repository"
+        self.root.mkdir()
+        for relative in (
+            "toolchains.lock.json",
+            ".node-version",
+            ".python-version",
+            "pom.xml",
+            ".mvn/wrapper/maven-wrapper.properties",
+        ):
+            target = self.root / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(SOURCE / relative, target)
+        go_target = self.root / "applications/agent/go.mod"
+        go_target.parent.mkdir(parents=True)
+        shutil.copy2(SOURCE / "applications/agent/go.mod", go_target)
+
+    def tearDown(self) -> None:
+        self.temp.cleanup()
+
+    def ids(self) -> set[str]:
+        return {item.check_id for item in ToolchainChecker(self.root).run()}
+
+    def lock(self) -> dict:
+        return json.loads((self.root / "toolchains.lock.json").read_text(encoding="utf-8"))
+
+    def write_lock(self, payload: object) -> None:
+        (self.root / "toolchains.lock.json").write_text(json.dumps(payload), encoding="utf-8")
+
+    def test_reference_toolchains_are_valid(self) -> None:
+        self.assertEqual(set(), self.ids())
+
+    def test_missing_or_invalid_lock_is_blocked(self) -> None:
+        (self.root / "toolchains.lock.json").unlink()
+        self.assertEqual({"CHECK-TOOLCHAIN-001"}, self.ids())
+        self.write_lock("not-an-object")
+        self.assertEqual({"CHECK-TOOLCHAIN-002"}, self.ids())
+        (self.root / "toolchains.lock.json").write_text("{", encoding="utf-8")
+        self.assertEqual({"CHECK-TOOLCHAIN-001"}, self.ids())
+
+    def test_toolchain_set_and_exact_versions_are_enforced(self) -> None:
+        payload = self.lock()
+        del payload["toolchains"]["gcc"]
+        payload["toolchains"]["unexpected"] = {"version": "1.0.0"}
+        payload["toolchains"]["node"]["version"] = "24.x"
+        payload["toolchains"]["pnpm"] = "11.17.0"
+        self.write_lock(payload)
+        self.assertTrue({"CHECK-TOOLCHAIN-003", "CHECK-TOOLCHAIN-004"} <= self.ids())
+
+    def test_version_files_must_exist_and_match(self) -> None:
+        (self.root / ".node-version").unlink()
+        (self.root / ".python-version").write_text("3.12.0\n", encoding="utf-8")
+        self.assertTrue({"CHECK-TOOLCHAIN-005", "CHECK-TOOLCHAIN-006"} <= self.ids())
+
+    def test_maven_model_must_match_java_and_frameworks(self) -> None:
+        path = self.root / "pom.xml"
+        text = path.read_text(encoding="utf-8")
+        text = text.replace("<java.version>25</java.version>", "<java.version>24</java.version>")
+        text = text.replace("<spring-boot.version>4.1.0", "<spring-boot.version>4.0.0")
+        text = text.replace("<spring-modulith.version>2.1.0", "<spring-modulith.version>2.0.0")
+        path.write_text(text, encoding="utf-8")
+        self.assertTrue({"CHECK-TOOLCHAIN-007", "CHECK-TOOLCHAIN-008"} <= self.ids())
+        path.unlink()
+        self.assertIn("CHECK-TOOLCHAIN-010", self.ids())
+
+    def test_maven_wrapper_is_required_and_cryptographically_pinned(self) -> None:
+        path = self.root / ".mvn/wrapper/maven-wrapper.properties"
+        path.write_text("distributionUrl=https://example.invalid/maven.tar.gz\n", encoding="utf-8")
+        self.assertIn("CHECK-TOOLCHAIN-012", self.ids())
+        path.unlink()
+        self.assertIn("CHECK-TOOLCHAIN-011", self.ids())
+
+    def test_go_module_must_exist_and_match(self) -> None:
+        path = self.root / "applications/agent/go.mod"
+        path.write_text(path.read_text(encoding="utf-8").replace("toolchain go1.26.5", "toolchain go1.25.0"), encoding="utf-8")
+        self.assertIn("CHECK-TOOLCHAIN-009", self.ids())
+        path.unlink()
+        self.assertIn("CHECK-TOOLCHAIN-013", self.ids())
+
+    def test_external_paths_are_rendered_absolutely(self) -> None:
+        checker = ToolchainChecker(self.root)
+        external = self.root.parent / "outside.txt"
+        checker._add("TEST", external, "outside")
+        self.assertEqual(external.resolve().as_posix(), checker.violations[0].path)
+
+    def test_cli_writes_report_and_returns_nonzero_on_drift(self) -> None:
+        report = self.root / "reports/toolchains.json"
+        with patch.object(sys, "argv", ["toolchains", "--root", str(self.root), "--json-report", str(report)]):
+            with contextlib.redirect_stdout(io.StringIO()) as output:
+                self.assertEqual(0, cli_main())
+        self.assertEqual(0, json.loads(report.read_text(encoding="utf-8"))["violation_count"])
+        self.assertIn("infranexum.toolchain-validation/v1", output.getvalue())
+
+        (self.root / ".node-version").write_text("0.0.0\n", encoding="utf-8")
+        with patch.object(sys, "argv", ["toolchains", "--root", str(self.root)]):
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(1, cli_main())
+
+
+if __name__ == "__main__":
+    unittest.main()

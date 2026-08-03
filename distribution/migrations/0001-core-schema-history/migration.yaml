@@ -1,0 +1,24 @@
+schema: infranexum.migration/v1
+id: '0001'
+name: core-schema-history
+owner_context: core
+dependencies: []
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 5
+preconditions:
+- database-user-can-create-table
+postconditions:
+- core-schema-history-exists
+- primary-key-enforced
+recovery: rerun-idempotently-before-any-business-migration
+rollback: supported-before-first-business-migration
+checksums:
+  postgresql.sql: 4ec0579a5f49ed7d96bcf564e33a6ec73029155f2e9be4cd0cc16b9e6df6ef45
+  oracle.sql: f9e739218dbc25604a8b55ae5999a5c72b8a2a7ba18d0cc65f3b73e9494fc462
+  rollback/postgresql.sql: d85c7f93722f3f8aba2d78822d15495d3d74179c727384f1be9c05f27e0298f7
+  rollback/oracle.sql: 0a4c6a80c40e37273814e2e1a8d452579d979f09f2e798578511095aa7b98f4a
+  logical-model.json: 88f9fbe066871198d08a5fe1e78c07c83f39bea840c41c654d5944efc608562e
+  verify.sql.yaml: a62d5208f4eb541d427ed7b78e091d937174c44dc45a500f1089e3b83eb6c1ee

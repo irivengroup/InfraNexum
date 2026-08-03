@@ -1,5 +1,5 @@
 [tool.coverage.run]
-source = ["validation.architecture"]
+source = ["validation.architecture", "validation.migrations", "validation.toolchains"]
 branch = true
 
 [tool.coverage.report]

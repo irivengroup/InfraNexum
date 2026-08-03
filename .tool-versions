@@ -1,0 +1,6 @@
+java temurin-25.0.4+7
+maven 3.9.16
+golang 1.26.5
+nodejs 24.18.1
+python 3.13.5
+cmake 3.31.6

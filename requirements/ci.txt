@@ -1,2 +1,3 @@
-# Foundation validation tooling; runtime product modules have no Python dependency.
+# Validation tooling; runtime product modules have no Python dependency.
 coverage==7.13.3
+PyYAML==6.0.3

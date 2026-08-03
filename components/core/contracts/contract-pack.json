@@ -1,0 +1,21 @@
+{
+  "schema": "infranexum.domain-contract-pack/v1",
+  "id": "core.contracts.v1",
+  "owner": "team.core-platform",
+  "status": "active",
+  "version": "1.0.0",
+  "compatibility": {
+    "minimum_reader": "1.0.0",
+    "breaking_change_requires_major": true
+  },
+  "contracts": [
+    "UUIDv7 identifiers",
+    "stable domain error codes",
+    "contract semantic versions"
+  ],
+  "source_baseline": [
+    "ADR-0062",
+    "PGM-02-E02",
+    "IAC-03"
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "schema": "infranexum.logical-schema/v1",
+  "objects": [
+    {
+      "kind": "table",
+      "logical_name": "core.schema_history",
+      "columns": [
+        {
+          "name": "migration_id",
+          "type": "string",
+          "length": 32,
+          "nullable": false
+        },
+        {
+          "name": "logical_checksum",
+          "type": "string",
+          "length": 64,
+          "nullable": false
+        },
+        {
+          "name": "application_version",
+          "type": "string",
+          "length": 64,
+          "nullable": false
+        },
+        {
+          "name": "applied_at",
+          "type": "timestamp-with-time-zone",
+          "nullable": false
+        },
+        {
+          "name": "applied_by",
+          "type": "string",
+          "length": 255,
+          "nullable": false
+        }
+      ],
+      "primary_key": [
+        "migration_id"
+      ],
+      "unique_constraints": [],
+      "foreign_keys": []
+    }
+  ]
+}

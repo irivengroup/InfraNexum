@@ -1,0 +1,17 @@
+schema: infranexum.migration-verification/v1
+checks:
+  - id: schema-history-table-exists
+    postgresql: >-
+      SELECT COUNT(*) = 1 FROM information_schema.tables
+      WHERE table_schema = 'infranexum_core' AND table_name = 'schema_history'
+    oracle: >-
+      SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM user_tables
+      WHERE table_name = 'INFRANEXUM_CORE_SCHEMA_HISTORY'
+  - id: schema-history-primary-key-exists
+    postgresql: >-
+      SELECT COUNT(*) = 1 FROM information_schema.table_constraints
+      WHERE table_schema = 'infranexum_core' AND table_name = 'schema_history'
+      AND constraint_type = 'PRIMARY KEY'
+    oracle: >-
+      SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM user_constraints
+      WHERE table_name = 'INFRANEXUM_CORE_SCHEMA_HISTORY' AND constraint_type = 'P'
