@@ -1,7 +1,7 @@
 {
   "schema": "infranexum.source-baseline/v1",
   "product": "InfraNexum — Infrastructure Control & Governance Platform",
-  "implementation_version": "2.0.0-alpha.0.4",
+  "implementation_version": "2.0.0-alpha.0.5",
   "architecture_baseline": "2.0.0-draft.21",
   "roadmap_baseline": "1.0.0-draft.1",
   "architecture_archive_sha256": "372cf19929f8ea3b7586c3af3e7c5004e590cf746ff2d6d59d4d0b88912aea64",
@@ -12,7 +12,8 @@
     "PGM-02-E01 Server, Web and Agent composition roots with strict startup configuration, health contracts and bounded graceful shutdown; exact target-toolchain execution remains pending where stated",
     "PGM-02-E02 Core Domain Contract Pack with UUIDv7, contract versions and stable domain failures",
     "PGM-02-E03 transactional-event core with canonical envelope, post-commit outbox, inbox deduplication, bounded retries and dead-letter state; Kafka transport and durable replay remain pending",
-    "PGM-04-E01 JDBC unit-of-work and TransactionalEventStore strategies for PostgreSQL/Oracle, paired migrations 0001-0003 and PostgreSQL 17/18 live CI contracts; hosted database execution remains pending"
+    "PGM-04-E01 JDBC unit-of-work and TransactionalEventStore strategies for PostgreSQL/Oracle, paired migrations 0001-0003 and PostgreSQL 17/18 live CI contracts; hosted database execution remains pending",
+    "PGM-02-E04 centralized capability registry, entitlements, 119-quota policy engine, profile/tier separation and no-profile-branching gate; signed activation remains pending"
   ],
   "roadmap_archive_sha256": "11db7d27bbc79f688cd1fda31a24aaf31b56a56db36b6487b64154c148ab54d3",
   "engineering_governance_sha256": "f24357051a5401f598c3d77bbe5814d3759a176095537659243658ba3ff109c7"

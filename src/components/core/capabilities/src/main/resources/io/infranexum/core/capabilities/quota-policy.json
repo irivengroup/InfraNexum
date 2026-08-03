@@ -1,0 +1,2547 @@
+{
+  "capability_restrictions": {
+    "enterprise_only": [
+      "agent.enabled",
+      "automation.multi_region",
+      "database.oracle",
+      "ddi.multi_region",
+      "deployment.multi_region",
+      "deployment.regional",
+      "discovery.distributed_collectors",
+      "governance.multi_region",
+      "reporting.multi_region"
+    ],
+    "pro_or_enterprise": [
+      "deployment.high_availability",
+      "deployment.split_web",
+      "iam.active_directory",
+      "iam.freeipa",
+      "iam.ldap",
+      "iam.mfa",
+      "iam.oauth2",
+      "iam.oidc",
+      "iam.saml"
+    ]
+  },
+  "catalog_version": "2.0.0-draft.20",
+  "non_issuable_profiles": [
+    "lite"
+  ],
+  "profiles": {
+    "enterprise": [
+      "standard",
+      "ultimate"
+    ],
+    "pro": [
+      "standard",
+      "advanced"
+    ]
+  },
+  "quotas": {
+    "automation.concurrent_executions.max": {
+      "class": "commercial_scalable",
+      "component": "automation",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "exécutions",
+      "values": {
+        "enterprise": {
+          "standard": 10000,
+          "ultimate_max": 50000
+        },
+        "lite": {
+          "standard": 2
+        },
+        "pro": {
+          "advanced_max": 500,
+          "standard": 100
+        }
+      }
+    },
+    "automation.execution_retention_days": {
+      "class": "commercial_scalable",
+      "component": "automation",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "jours",
+      "values": {
+        "enterprise": {
+          "standard": 2555,
+          "ultimate_max": 3650
+        },
+        "lite": {
+          "standard": 30
+        },
+        "pro": {
+          "advanced_max": 1095,
+          "standard": 365
+        }
+      }
+    },
+    "automation.executions_per_day.max": {
+      "class": "commercial_scalable",
+      "component": "automation",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "exécutions",
+      "values": {
+        "enterprise": {
+          "standard": 100000000,
+          "ultimate_max": 500000000
+        },
+        "lite": {
+          "standard": 500
+        },
+        "pro": {
+          "advanced_max": 5000000,
+          "standard": 1000000
+        }
+      }
+    },
+    "automation.pending_approvals.max": {
+      "class": "commercial_scalable",
+      "component": "automation",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "approbations",
+      "values": {
+        "enterprise": {
+          "standard": 1000000,
+          "ultimate_max": 5000000
+        },
+        "lite": {
+          "standard": 0
+        },
+        "pro": {
+          "advanced_max": 50000,
+          "standard": 10000
+        }
+      }
+    },
+    "automation.schedules.max": {
+      "class": "commercial_scalable",
+      "component": "automation",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "planifications",
+      "values": {
+        "enterprise": {
+          "standard": 50000,
+          "ultimate_max": 250000
+        },
+        "lite": {
+          "standard": 10
+        },
+        "pro": {
+          "advanced_max": 5000,
+          "standard": 1000
+        }
+      }
+    },
+    "automation.workflow_versions.max": {
+      "class": "commercial_scalable",
+      "component": "automation",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "versions",
+      "values": {
+        "enterprise": {
+          "standard": 500000,
+          "ultimate_max": 2000000
+        },
+        "lite": {
+          "standard": 50
+        },
+        "pro": {
+          "advanced_max": 50000,
+          "standard": 10000
+        }
+      }
+    },
+    "automation.workflows.max": {
+      "class": "commercial_scalable",
+      "component": "automation",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "workflows",
+      "values": {
+        "enterprise": {
+          "standard": 50000,
+          "ultimate_max": 250000
+        },
+        "lite": {
+          "standard": 10
+        },
+        "pro": {
+          "advanced_max": 5000,
+          "standard": 1000
+        }
+      }
+    },
+    "core.api.requests_per_minute": {
+      "class": "commercial_scalable",
+      "component": "core",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "requêtes/minute",
+      "values": {
+        "enterprise": {
+          "standard": 500000,
+          "ultimate_max": 2000000
+        },
+        "lite": {
+          "standard": 300
+        },
+        "pro": {
+          "advanced_max": 100000,
+          "standard": 30000
+        }
+      }
+    },
+    "core.async_tasks.concurrent": {
+      "class": "commercial_scalable",
+      "component": "core",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "tâches",
+      "values": {
+        "enterprise": {
+          "standard": 20000,
+          "ultimate_max": 100000
+        },
+        "lite": {
+          "standard": 2
+        },
+        "pro": {
+          "advanced_max": 1000,
+          "standard": 200
+        }
+      }
+    },
+    "core.custom_reference_sets.max": {
+      "class": "commercial_scalable",
+      "component": "core",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "référentiels",
+      "values": {
+        "enterprise": {
+          "standard": 50000,
+          "ultimate_max": 250000
+        },
+        "lite": {
+          "standard": 20
+        },
+        "pro": {
+          "advanced_max": 5000,
+          "standard": 1000
+        }
+      }
+    },
+    "core.event_throughput_per_second": {
+      "class": "commercial_scalable",
+      "component": "core",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "événements/s",
+      "values": {
+        "enterprise": {
+          "standard": 250000,
+          "ultimate_max": 1000000
+        },
+        "lite": {
+          "standard": 50
+        },
+        "pro": {
+          "advanced_max": 25000,
+          "standard": 5000
+        }
+      }
+    },
+    "core.object_storage.max_bytes": {
+      "class": "commercial_scalable",
+      "component": "core",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "stockage",
+      "values": {
+        "enterprise": {
+          "standard": 549755813888000,
+          "ultimate_max": 2251799813685248
+        },
+        "lite": {
+          "standard": 21474836480
+        },
+        "pro": {
+          "advanced_max": 27487790694400,
+          "standard": 5497558138880
+        }
+      }
+    },
+    "core.organizations.max": {
+      "class": "commercial_scalable",
+      "component": "core",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "organisations",
+      "values": {
+        "enterprise": {
+          "standard": 100,
+          "ultimate_max": 1000
+        },
+        "lite": {
+          "standard": 1
+        },
+        "pro": {
+          "advanced_max": 49,
+          "standard": 10
+        }
+      }
+    },
+    "dcim.buildings.max": {
+      "class": "commercial_scalable",
+      "component": "dcim",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "bâtiments",
+      "values": {
+        "enterprise": {
+          "standard": 50000,
+          "ultimate_max": 250000
+        },
+        "lite": {
+          "standard": 10
+        },
+        "pro": {
+          "advanced_max": 5000,
+          "standard": 1000
+        }
+      }
+    },
+    "dcim.capacity_reservations.max": {
+      "class": "commercial_scalable",
+      "component": "dcim",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "réservations",
+      "values": {
+        "enterprise": {
+          "standard": 10000000,
+          "ultimate_max": 50000000
+        },
+        "lite": {
+          "standard": 100
+        },
+        "pro": {
+          "advanced_max": 500000,
+          "standard": 100000
+        }
+      }
+    },
+    "dcim.connections.max": {
+      "class": "commercial_scalable",
+      "component": "dcim",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "connexions",
+      "values": {
+        "enterprise": {
+          "standard": 125000000,
+          "ultimate_max": 500000000
+        },
+        "lite": {
+          "standard": 5000
+        },
+        "pro": {
+          "advanced_max": 10000000,
+          "standard": 2500000
+        }
+      }
+    },
+    "dcim.ports.max": {
+      "class": "commercial_scalable",
+      "component": "dcim",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "ports",
+      "values": {
+        "enterprise": {
+          "standard": 250000000,
+          "ultimate_max": 1000000000
+        },
+        "lite": {
+          "standard": 10000
+        },
+        "pro": {
+          "advanced_max": 20000000,
+          "standard": 5000000
+        }
+      }
+    },
+    "dcim.power_chains.max": {
+      "class": "commercial_scalable",
+      "component": "dcim",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "chaînes",
+      "values": {
+        "enterprise": {
+          "standard": 500000,
+          "ultimate_max": 2000000
+        },
+        "lite": {
+          "standard": 20
+        },
+        "pro": {
+          "advanced_max": 50000,
+          "standard": 10000
+        }
+      }
+    },
+    "dcim.rack_positions.max": {
+      "class": "commercial_scalable",
+      "component": "dcim",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "positions U",
+      "values": {
+        "enterprise": {
+          "standard": 100000000,
+          "ultimate_max": 500000000
+        },
+        "lite": {
+          "standard": 2500
+        },
+        "pro": {
+          "advanced_max": 8000000,
+          "standard": 2000000
+        }
+      }
+    },
+    "dcim.racks.max": {
+      "class": "commercial_scalable",
+      "component": "dcim",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "racks",
+      "values": {
+        "enterprise": {
+          "standard": 1000000,
+          "ultimate_max": 5000000
+        },
+        "lite": {
+          "standard": 50
+        },
+        "pro": {
+          "advanced_max": 100000,
+          "standard": 25000
+        }
+      }
+    },
+    "dcim.rooms.max": {
+      "class": "commercial_scalable",
+      "component": "dcim",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "salles",
+      "values": {
+        "enterprise": {
+          "standard": 500000,
+          "ultimate_max": 2000000
+        },
+        "lite": {
+          "standard": 25
+        },
+        "pro": {
+          "advanced_max": 50000,
+          "standard": 10000
+        }
+      }
+    },
+    "dcim.sites.max": {
+      "class": "commercial_scalable",
+      "component": "dcim",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "sites",
+      "values": {
+        "enterprise": {
+          "standard": 5000,
+          "ultimate_max": 25000
+        },
+        "lite": {
+          "standard": 5
+        },
+        "pro": {
+          "advanced_max": 500,
+          "standard": 100
+        }
+      }
+    },
+    "ddi.change_requests.concurrent": {
+      "class": "commercial_scalable",
+      "component": "ddi",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "changements",
+      "values": {
+        "enterprise": {
+          "standard": 10000,
+          "ultimate_max": 50000
+        },
+        "lite": {
+          "standard": 1
+        },
+        "pro": {
+          "advanced_max": 500,
+          "standard": 100
+        }
+      }
+    },
+    "ddi.dhcp_reservations.max": {
+      "class": "commercial_scalable",
+      "component": "ddi",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "réservations",
+      "values": {
+        "enterprise": {
+          "standard": 100000000,
+          "ultimate_max": 500000000
+        },
+        "lite": {
+          "standard": 200
+        },
+        "pro": {
+          "advanced_max": 10000000,
+          "standard": 2000000
+        }
+      }
+    },
+    "ddi.dhcp_scopes.max": {
+      "class": "commercial_scalable",
+      "component": "ddi",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "scopes",
+      "values": {
+        "enterprise": {
+          "standard": 1000000,
+          "ultimate_max": 5000000
+        },
+        "lite": {
+          "standard": 5
+        },
+        "pro": {
+          "advanced_max": 100000,
+          "standard": 25000
+        }
+      }
+    },
+    "ddi.dns_records.max": {
+      "class": "commercial_scalable",
+      "component": "ddi",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "enregistrements",
+      "values": {
+        "enterprise": {
+          "standard": 500000000,
+          "ultimate_max": 2000000000
+        },
+        "lite": {
+          "standard": 200
+        },
+        "pro": {
+          "advanced_max": 50000000,
+          "standard": 10000000
+        }
+      }
+    },
+    "ddi.dns_zones.max": {
+      "class": "commercial_scalable",
+      "component": "ddi",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "zones",
+      "values": {
+        "enterprise": {
+          "standard": 500000,
+          "ultimate_max": 2000000
+        },
+        "lite": {
+          "standard": 5
+        },
+        "pro": {
+          "advanced_max": 50000,
+          "standard": 10000
+        }
+      }
+    },
+    "ddi.ip_addresses.max": {
+      "class": "commercial_scalable",
+      "component": "ddi",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "adresses",
+      "values": {
+        "enterprise": {
+          "standard": 250000000,
+          "ultimate_max": 1000000000
+        },
+        "lite": {
+          "standard": 200
+        },
+        "pro": {
+          "advanced_max": 25000000,
+          "standard": 5000000
+        }
+      }
+    },
+    "ddi.prefixes.max": {
+      "class": "commercial_scalable",
+      "component": "ddi",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "préfixes",
+      "values": {
+        "enterprise": {
+          "standard": 5000000,
+          "ultimate_max": 25000000
+        },
+        "lite": {
+          "standard": 20
+        },
+        "pro": {
+          "advanced_max": 500000,
+          "standard": 100000
+        }
+      }
+    },
+    "ddi.vlans.max": {
+      "class": "commercial_scalable",
+      "component": "ddi",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "VLAN",
+      "values": {
+        "enterprise": {
+          "standard": 2000000,
+          "ultimate_max": 10000000
+        },
+        "lite": {
+          "standard": 20
+        },
+        "pro": {
+          "advanced_max": 250000,
+          "standard": 50000
+        }
+      }
+    },
+    "ddi.vrfs.max": {
+      "class": "commercial_scalable",
+      "component": "ddi",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "VRF",
+      "values": {
+        "enterprise": {
+          "standard": 100000,
+          "ultimate_max": 500000
+        },
+        "lite": {
+          "standard": 5
+        },
+        "pro": {
+          "advanced_max": 10000,
+          "standard": 2000
+        }
+      }
+    },
+    "deployment.agent.clusters.max": {
+      "class": "architectural_fixed",
+      "component": "deployment",
+      "enforcement": "mode-clustered-only",
+      "generator_adjustable": false,
+      "scope": "installation",
+      "unit": "clusters",
+      "values": {
+        "enterprise": {
+          "standard": 10,
+          "ultimate_max": 10
+        },
+        "lite": {
+          "standard": 0
+        },
+        "pro": {
+          "advanced_max": 0,
+          "standard": 0
+        }
+      }
+    },
+    "deployment.agent.nodes_per_cluster.max": {
+      "class": "architectural_fixed",
+      "component": "deployment",
+      "enforcement": "mode-clustered-only",
+      "generator_adjustable": false,
+      "scope": "cluster",
+      "unit": "agents",
+      "values": {
+        "enterprise": {
+          "standard": 2,
+          "ultimate_max": 2
+        },
+        "lite": {
+          "standard": 0
+        },
+        "pro": {
+          "advanced_max": 0,
+          "standard": 0
+        }
+      }
+    },
+    "deployment.agent.nodes_total.max": {
+      "class": "architectural_fixed",
+      "component": "deployment",
+      "enforcement": "hard-block-agent-registration",
+      "generator_adjustable": false,
+      "scope": "installation",
+      "unit": "agents",
+      "values": {
+        "enterprise": {
+          "standard": 20,
+          "ultimate_max": 20
+        },
+        "lite": {
+          "standard": 0
+        },
+        "pro": {
+          "advanced_max": 0,
+          "standard": 0
+        }
+      }
+    },
+    "deployment.agent.standalone.max": {
+      "class": "architectural_fixed",
+      "component": "deployment",
+      "enforcement": "mode-standalone-only",
+      "generator_adjustable": false,
+      "scope": "installation",
+      "unit": "agents",
+      "values": {
+        "enterprise": {
+          "standard": 20,
+          "ultimate_max": 20
+        },
+        "lite": {
+          "standard": 0
+        },
+        "pro": {
+          "advanced_max": 0,
+          "standard": 0
+        }
+      }
+    },
+    "deployment.server.clusters.max": {
+      "class": "architectural_fixed",
+      "component": "deployment",
+      "enforcement": "hard-block-topology-change",
+      "generator_adjustable": false,
+      "scope": "installation",
+      "unit": "clusters",
+      "values": {
+        "enterprise": {
+          "standard": 5,
+          "ultimate_max": 5
+        },
+        "lite": {
+          "standard": 0
+        },
+        "pro": {
+          "advanced_max": 2,
+          "standard": 2
+        }
+      }
+    },
+    "deployment.server.nodes_per_cluster.max": {
+      "class": "architectural_fixed",
+      "component": "deployment",
+      "enforcement": "conditional-topology-validation",
+      "generator_adjustable": false,
+      "scope": "cluster",
+      "unit": "nodes",
+      "values": {
+        "enterprise": {
+          "standard": 4,
+          "ultimate_max": 4
+        },
+        "lite": {
+          "standard": 1
+        },
+        "pro": {
+          "advanced_max": 4,
+          "standard": 4
+        }
+      }
+    },
+    "deployment.server.nodes_total.max": {
+      "class": "architectural_fixed",
+      "component": "deployment",
+      "enforcement": "hard-block-node-registration",
+      "generator_adjustable": false,
+      "scope": "installation",
+      "unit": "nodes",
+      "values": {
+        "enterprise": {
+          "standard": 20,
+          "ultimate_max": 20
+        },
+        "lite": {
+          "standard": 1
+        },
+        "pro": {
+          "advanced_max": 4,
+          "standard": 4
+        }
+      }
+    },
+    "deployment.web.clusters.max": {
+      "class": "architectural_fixed",
+      "component": "deployment",
+      "enforcement": "hard-block-topology-change",
+      "generator_adjustable": false,
+      "scope": "installation",
+      "unit": "clusters",
+      "values": {
+        "enterprise": {
+          "standard": 5,
+          "ultimate_max": 5
+        },
+        "lite": {
+          "standard": 0
+        },
+        "pro": {
+          "advanced_max": 1,
+          "standard": 1
+        }
+      }
+    },
+    "deployment.web.nodes_per_cluster.max": {
+      "class": "architectural_fixed",
+      "component": "deployment",
+      "enforcement": "hard-block-node-registration",
+      "generator_adjustable": false,
+      "scope": "cluster",
+      "unit": "nodes",
+      "values": {
+        "enterprise": {
+          "standard": 2,
+          "ultimate_max": 2
+        },
+        "lite": {
+          "standard": 1
+        },
+        "pro": {
+          "advanced_max": 2,
+          "standard": 2
+        }
+      }
+    },
+    "deployment.web.nodes_total.max": {
+      "class": "architectural_fixed",
+      "component": "deployment",
+      "enforcement": "hard-block-node-registration",
+      "generator_adjustable": false,
+      "scope": "installation",
+      "unit": "nodes",
+      "values": {
+        "enterprise": {
+          "standard": 10,
+          "ultimate_max": 10
+        },
+        "lite": {
+          "standard": 1
+        },
+        "pro": {
+          "advanced_max": 2,
+          "standard": 2
+        }
+      }
+    },
+    "deployment.zones.max": {
+      "class": "architectural_fixed",
+      "component": "deployment",
+      "enforcement": "hard-block-topology-change",
+      "generator_adjustable": false,
+      "scope": "installation",
+      "unit": "zones",
+      "values": {
+        "enterprise": {
+          "standard": 5,
+          "ultimate_max": 5
+        },
+        "lite": {
+          "standard": 1
+        },
+        "pro": {
+          "advanced_max": 2,
+          "standard": 2
+        }
+      }
+    },
+    "discovery.cloud_accounts.max": {
+      "class": "commercial_scalable",
+      "component": "discovery",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "comptes",
+      "values": {
+        "enterprise": {
+          "standard": 10000,
+          "ultimate_max": 50000
+        },
+        "lite": {
+          "standard": 0
+        },
+        "pro": {
+          "advanced_max": 500,
+          "standard": 100
+        }
+      }
+    },
+    "discovery.collectors.max": {
+      "class": "commercial_scalable",
+      "component": "discovery",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "agents",
+      "values": {
+        "enterprise": {
+          "standard": 5000,
+          "ultimate_max": 25000
+        },
+        "lite": {
+          "standard": 0
+        },
+        "pro": {
+          "advanced_max": 0,
+          "standard": 0
+        }
+      }
+    },
+    "discovery.concurrent_scans.max": {
+      "class": "commercial_scalable",
+      "component": "discovery",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "scans",
+      "values": {
+        "enterprise": {
+          "standard": 5000,
+          "ultimate_max": 20000
+        },
+        "lite": {
+          "standard": 1
+        },
+        "pro": {
+          "advanced_max": 200,
+          "standard": 50
+        }
+      }
+    },
+    "discovery.kubernetes_clusters.max": {
+      "class": "commercial_scalable",
+      "component": "discovery",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "clusters",
+      "values": {
+        "enterprise": {
+          "standard": 25000,
+          "ultimate_max": 100000
+        },
+        "lite": {
+          "standard": 0
+        },
+        "pro": {
+          "advanced_max": 1000,
+          "standard": 250
+        }
+      }
+    },
+    "discovery.observations_per_day.max": {
+      "class": "commercial_scalable",
+      "component": "discovery",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "observations",
+      "values": {
+        "enterprise": {
+          "standard": 5000000000,
+          "ultimate_max": 20000000000
+        },
+        "lite": {
+          "standard": 50000
+        },
+        "pro": {
+          "advanced_max": 250000000,
+          "standard": 50000000
+        }
+      }
+    },
+    "discovery.profiles.max": {
+      "class": "commercial_scalable",
+      "component": "discovery",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "profils",
+      "values": {
+        "enterprise": {
+          "standard": 25000,
+          "ultimate_max": 100000
+        },
+        "lite": {
+          "standard": 5
+        },
+        "pro": {
+          "advanced_max": 2000,
+          "standard": 500
+        }
+      }
+    },
+    "discovery.raw_evidence_retention_days": {
+      "class": "commercial_scalable",
+      "component": "discovery",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "jours",
+      "values": {
+        "enterprise": {
+          "standard": 365,
+          "ultimate_max": 2555
+        },
+        "lite": {
+          "standard": 7
+        },
+        "pro": {
+          "advanced_max": 182,
+          "standard": 90
+        }
+      }
+    },
+    "discovery.schedules.max": {
+      "class": "commercial_scalable",
+      "component": "discovery",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "planifications",
+      "values": {
+        "enterprise": {
+          "standard": 250000,
+          "ultimate_max": 1000000
+        },
+        "lite": {
+          "standard": 5
+        },
+        "pro": {
+          "advanced_max": 20000,
+          "standard": 5000
+        }
+      }
+    },
+    "discovery.targets.max": {
+      "class": "commercial_scalable",
+      "component": "discovery",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "cibles",
+      "values": {
+        "enterprise": {
+          "standard": 1000000,
+          "ultimate_max": 5000000
+        },
+        "lite": {
+          "standard": 200
+        },
+        "pro": {
+          "advanced_max": 100000,
+          "standard": 25000
+        }
+      }
+    },
+    "governance.audit_retention_days": {
+      "class": "commercial_scalable",
+      "component": "governance",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "jours",
+      "values": {
+        "enterprise": {
+          "standard": 2555,
+          "ultimate_max": 3650
+        },
+        "lite": {
+          "standard": 365
+        },
+        "pro": {
+          "advanced_max": 1277,
+          "standard": 1095
+        }
+      }
+    },
+    "governance.compliance_frameworks.max": {
+      "class": "commercial_scalable",
+      "component": "governance",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "référentiels",
+      "values": {
+        "enterprise": {
+          "standard": 100,
+          "ultimate_max": 500
+        },
+        "lite": {
+          "standard": 1
+        },
+        "pro": {
+          "advanced_max": 49,
+          "standard": 10
+        }
+      }
+    },
+    "governance.control_mappings.max": {
+      "class": "commercial_scalable",
+      "component": "governance",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "associations",
+      "values": {
+        "enterprise": {
+          "standard": 5000000,
+          "ultimate_max": 25000000
+        },
+        "lite": {
+          "standard": 100
+        },
+        "pro": {
+          "advanced_max": 250000,
+          "standard": 50000
+        }
+      }
+    },
+    "governance.evidence_objects.max": {
+      "class": "commercial_scalable",
+      "component": "governance",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "preuves",
+      "values": {
+        "enterprise": {
+          "standard": 500000000,
+          "ultimate_max": 2000000000
+        },
+        "lite": {
+          "standard": 10000
+        },
+        "pro": {
+          "advanced_max": 25000000,
+          "standard": 5000000
+        }
+      }
+    },
+    "governance.legal_holds.max": {
+      "class": "commercial_scalable",
+      "component": "governance",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "gels",
+      "values": {
+        "enterprise": {
+          "standard": 100000,
+          "ultimate_max": 500000
+        },
+        "lite": {
+          "standard": 0
+        },
+        "pro": {
+          "advanced_max": 5000,
+          "standard": 1000
+        }
+      }
+    },
+    "governance.policies.max": {
+      "class": "commercial_scalable",
+      "component": "governance",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "politiques",
+      "values": {
+        "enterprise": {
+          "standard": 250000,
+          "ultimate_max": 1000000
+        },
+        "lite": {
+          "standard": 50
+        },
+        "pro": {
+          "advanced_max": 20000,
+          "standard": 5000
+        }
+      }
+    },
+    "governance.retention_policies.max": {
+      "class": "commercial_scalable",
+      "component": "governance",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "politiques",
+      "values": {
+        "enterprise": {
+          "standard": 25000,
+          "ultimate_max": 100000
+        },
+        "lite": {
+          "standard": 10
+        },
+        "pro": {
+          "advanced_max": 2000,
+          "standard": 500
+        }
+      }
+    },
+    "iam.active_sessions.max": {
+      "class": "commercial_scalable",
+      "component": "iam",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "sessions",
+      "values": {
+        "enterprise": {
+          "standard": 500000,
+          "ultimate_max": 5000000
+        },
+        "lite": {
+          "standard": 10
+        },
+        "pro": {
+          "advanced_max": 50000,
+          "standard": 5000
+        }
+      }
+    },
+    "iam.api_tokens.max_per_actor": {
+      "class": "commercial_scalable",
+      "component": "iam",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "jetons",
+      "values": {
+        "enterprise": {
+          "standard": 100,
+          "ultimate_max": 500
+        },
+        "lite": {
+          "standard": 2
+        },
+        "pro": {
+          "advanced_max": 49,
+          "standard": 20
+        }
+      }
+    },
+    "iam.groups.max": {
+      "class": "commercial_scalable",
+      "component": "iam",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "groupes",
+      "values": {
+        "enterprise": {
+          "standard": 100000,
+          "ultimate_max": 1000000
+        },
+        "lite": {
+          "standard": 20
+        },
+        "pro": {
+          "advanced_max": 20000,
+          "standard": 2000
+        }
+      }
+    },
+    "iam.identity_providers.max": {
+      "class": "commercial_scalable",
+      "component": "iam",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "fournisseurs",
+      "values": {
+        "enterprise": {
+          "standard": 100,
+          "ultimate_max": 1000
+        },
+        "lite": {
+          "standard": 0
+        },
+        "pro": {
+          "advanced_max": 32,
+          "standard": 8
+        }
+      }
+    },
+    "iam.mfa_devices.max_per_user": {
+      "class": "commercial_scalable",
+      "component": "iam",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "dispositifs",
+      "values": {
+        "enterprise": {
+          "standard": 10,
+          "ultimate_max": 20
+        },
+        "lite": {
+          "standard": 0
+        },
+        "pro": {
+          "advanced_max": 4,
+          "standard": 4
+        }
+      }
+    },
+    "iam.oauth_clients.max": {
+      "class": "commercial_scalable",
+      "component": "iam",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "clients",
+      "values": {
+        "enterprise": {
+          "standard": 100000,
+          "ultimate_max": 1000000
+        },
+        "lite": {
+          "standard": 0
+        },
+        "pro": {
+          "advanced_max": 5000,
+          "standard": 250
+        }
+      }
+    },
+    "iam.permissions.custom.max": {
+      "class": "commercial_scalable",
+      "component": "iam",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "permissions",
+      "values": {
+        "enterprise": {
+          "standard": 50000,
+          "ultimate_max": 250000
+        },
+        "lite": {
+          "standard": 0
+        },
+        "pro": {
+          "advanced_max": 10000,
+          "standard": 2000
+        }
+      }
+    },
+    "iam.roles.max": {
+      "class": "commercial_scalable",
+      "component": "iam",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "rôles",
+      "values": {
+        "enterprise": {
+          "standard": 10000,
+          "ultimate_max": 100000
+        },
+        "lite": {
+          "standard": 20
+        },
+        "pro": {
+          "advanced_max": 4999,
+          "standard": 500
+        }
+      }
+    },
+    "iam.service_accounts.max": {
+      "class": "commercial_scalable",
+      "component": "iam",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "comptes",
+      "values": {
+        "enterprise": {
+          "standard": 50000,
+          "ultimate_max": 500000
+        },
+        "lite": {
+          "standard": 0
+        },
+        "pro": {
+          "advanced_max": 5000,
+          "standard": 250
+        }
+      }
+    },
+    "iam.users.max": {
+      "class": "commercial_scalable",
+      "component": "iam",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "utilisateurs",
+      "values": {
+        "enterprise": {
+          "standard": 20000,
+          "ultimate_max": 250000
+        },
+        "lite": {
+          "standard": 5
+        },
+        "pro": {
+          "advanced_max": 5000,
+          "standard": 500
+        }
+      }
+    },
+    "integrations.concurrent_jobs.max": {
+      "class": "commercial_scalable",
+      "component": "integrations",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "jobs",
+      "values": {
+        "enterprise": {
+          "standard": 10000,
+          "ultimate_max": 50000
+        },
+        "lite": {
+          "standard": 2
+        },
+        "pro": {
+          "advanced_max": 500,
+          "standard": 100
+        }
+      }
+    },
+    "integrations.connector_instances.max": {
+      "class": "commercial_scalable",
+      "component": "integrations",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "instances",
+      "values": {
+        "enterprise": {
+          "standard": 10000,
+          "ultimate_max": 50000
+        },
+        "lite": {
+          "standard": 2
+        },
+        "pro": {
+          "advanced_max": 500,
+          "standard": 100
+        }
+      }
+    },
+    "integrations.custom_packages.max": {
+      "class": "commercial_scalable",
+      "component": "integrations",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "packages",
+      "values": {
+        "enterprise": {
+          "standard": 10000,
+          "ultimate_max": 50000
+        },
+        "lite": {
+          "standard": 0
+        },
+        "pro": {
+          "advanced_max": 500,
+          "standard": 100
+        }
+      }
+    },
+    "integrations.dead_letter_retention_days": {
+      "class": "commercial_scalable",
+      "component": "integrations",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "jours",
+      "values": {
+        "enterprise": {
+          "standard": 365,
+          "ultimate_max": 2555
+        },
+        "lite": {
+          "standard": 7
+        },
+        "pro": {
+          "advanced_max": 182,
+          "standard": 90
+        }
+      }
+    },
+    "integrations.events_per_day.max": {
+      "class": "commercial_scalable",
+      "component": "integrations",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "événements",
+      "values": {
+        "enterprise": {
+          "standard": 5000000000,
+          "ultimate_max": 20000000000
+        },
+        "lite": {
+          "standard": 100000
+        },
+        "pro": {
+          "advanced_max": 250000000,
+          "standard": 50000000
+        }
+      }
+    },
+    "integrations.import_rows.max_per_job": {
+      "class": "commercial_scalable",
+      "component": "integrations",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "lignes",
+      "values": {
+        "enterprise": {
+          "standard": 50000000,
+          "ultimate_max": 250000000
+        },
+        "lite": {
+          "standard": 10000
+        },
+        "pro": {
+          "advanced_max": 5000000,
+          "standard": 1000000
+        }
+      }
+    },
+    "integrations.webhooks.max": {
+      "class": "commercial_scalable",
+      "component": "integrations",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "webhooks",
+      "values": {
+        "enterprise": {
+          "standard": 500000,
+          "ultimate_max": 2000000
+        },
+        "lite": {
+          "standard": 10
+        },
+        "pro": {
+          "advanced_max": 20000,
+          "standard": 5000
+        }
+      }
+    },
+    "itam.assets.max": {
+      "class": "commercial_scalable",
+      "component": "itam",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "actifs",
+      "values": {
+        "enterprise": {
+          "standard": 1000000,
+          "ultimate_max": 5000000
+        },
+        "lite": {
+          "standard": 200
+        },
+        "pro": {
+          "advanced_max": 100000,
+          "standard": 25000
+        }
+      }
+    },
+    "itam.attachments.max_bytes": {
+      "class": "commercial_scalable",
+      "component": "itam",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "stockage",
+      "values": {
+        "enterprise": {
+          "standard": 54975581388800,
+          "ultimate_max": 549755813888000
+        },
+        "lite": {
+          "standard": 10737418240
+        },
+        "pro": {
+          "advanced_max": 5497558138880,
+          "standard": 1099511627776
+        }
+      }
+    },
+    "itam.contracts.max": {
+      "class": "commercial_scalable",
+      "component": "itam",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "contrats",
+      "values": {
+        "enterprise": {
+          "standard": 500000,
+          "ultimate_max": 2000000
+        },
+        "lite": {
+          "standard": 50
+        },
+        "pro": {
+          "advanced_max": 50000,
+          "standard": 10000
+        }
+      }
+    },
+    "itam.import_rows.max_per_job": {
+      "class": "commercial_scalable",
+      "component": "itam",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "lignes",
+      "values": {
+        "enterprise": {
+          "standard": 50000000,
+          "ultimate_max": 250000000
+        },
+        "lite": {
+          "standard": 10000
+        },
+        "pro": {
+          "advanced_max": 5000000,
+          "standard": 1000000
+        }
+      }
+    },
+    "itam.partners.max": {
+      "class": "commercial_scalable",
+      "component": "itam",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "partenaires",
+      "values": {
+        "enterprise": {
+          "standard": 250000,
+          "ultimate_max": 1000000
+        },
+        "lite": {
+          "standard": 50
+        },
+        "pro": {
+          "advanced_max": 25000,
+          "standard": 5000
+        }
+      }
+    },
+    "itam.purchase_orders.max": {
+      "class": "commercial_scalable",
+      "component": "itam",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "commandes",
+      "values": {
+        "enterprise": {
+          "standard": 2000000,
+          "ultimate_max": 10000000
+        },
+        "lite": {
+          "standard": 100
+        },
+        "pro": {
+          "advanced_max": 250000,
+          "standard": 50000
+        }
+      }
+    },
+    "itam.software_products.max": {
+      "class": "commercial_scalable",
+      "component": "itam",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "produits",
+      "values": {
+        "enterprise": {
+          "standard": 2000000,
+          "ultimate_max": 10000000
+        },
+        "lite": {
+          "standard": 100
+        },
+        "pro": {
+          "advanced_max": 250000,
+          "standard": 50000
+        }
+      }
+    },
+    "itam.third_party_entitlements.max": {
+      "class": "commercial_scalable",
+      "component": "itam",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "droits tiers",
+      "values": {
+        "enterprise": {
+          "standard": 50000000,
+          "ultimate_max": 250000000
+        },
+        "lite": {
+          "standard": 500
+        },
+        "pro": {
+          "advanced_max": 2000000,
+          "standard": 500000
+        }
+      }
+    },
+    "observability.active_metric_series.max": {
+      "class": "commercial_scalable",
+      "component": "observability",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "séries",
+      "values": {
+        "enterprise": {
+          "standard": 250000000,
+          "ultimate_max": 1000000000
+        },
+        "lite": {
+          "standard": 10000
+        },
+        "pro": {
+          "advanced_max": 10000000,
+          "standard": 2000000
+        }
+      }
+    },
+    "observability.alert_rules.max": {
+      "class": "commercial_scalable",
+      "component": "observability",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "règles",
+      "values": {
+        "enterprise": {
+          "standard": 250000,
+          "ultimate_max": 1000000
+        },
+        "lite": {
+          "standard": 50
+        },
+        "pro": {
+          "advanced_max": 20000,
+          "standard": 5000
+        }
+      }
+    },
+    "observability.dashboards.max": {
+      "class": "commercial_scalable",
+      "component": "observability",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "tableaux",
+      "values": {
+        "enterprise": {
+          "standard": 25000,
+          "ultimate_max": 100000
+        },
+        "lite": {
+          "standard": 10
+        },
+        "pro": {
+          "advanced_max": 2000,
+          "standard": 500
+        }
+      }
+    },
+    "observability.logs_per_day.max_bytes": {
+      "class": "commercial_scalable",
+      "component": "observability",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "volume/jour",
+      "values": {
+        "enterprise": {
+          "standard": 10995116277760,
+          "ultimate_max": 54975581388800
+        },
+        "lite": {
+          "standard": 1073741824
+        },
+        "pro": {
+          "advanced_max": 536870912000,
+          "standard": 107374182400
+        }
+      }
+    },
+    "observability.logs_retention_days": {
+      "class": "commercial_scalable",
+      "component": "observability",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "jours",
+      "values": {
+        "enterprise": {
+          "standard": 365,
+          "ultimate_max": 2555
+        },
+        "lite": {
+          "standard": 7
+        },
+        "pro": {
+          "advanced_max": 182,
+          "standard": 30
+        }
+      }
+    },
+    "observability.metrics_retention_days": {
+      "class": "commercial_scalable",
+      "component": "observability",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "jours",
+      "values": {
+        "enterprise": {
+          "standard": 400,
+          "ultimate_max": 1825
+        },
+        "lite": {
+          "standard": 7
+        },
+        "pro": {
+          "advanced_max": 199,
+          "standard": 90
+        }
+      }
+    },
+    "observability.traces_per_day.max": {
+      "class": "commercial_scalable",
+      "component": "observability",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "traces",
+      "values": {
+        "enterprise": {
+          "standard": 5000000000,
+          "ultimate_max": 20000000000
+        },
+        "lite": {
+          "standard": 100000
+        },
+        "pro": {
+          "advanced_max": 250000000,
+          "standard": 50000000
+        }
+      }
+    },
+    "observability.traces_retention_days": {
+      "class": "commercial_scalable",
+      "component": "observability",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "jours",
+      "values": {
+        "enterprise": {
+          "standard": 30,
+          "ultimate_max": 365
+        },
+        "lite": {
+          "standard": 1
+        },
+        "pro": {
+          "advanced_max": 14,
+          "standard": 7
+        }
+      }
+    },
+    "organization.contacts.max": {
+      "class": "commercial_scalable",
+      "component": "organization",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "contacts",
+      "values": {
+        "enterprise": {
+          "standard": 1000000,
+          "ultimate_max": 5000000
+        },
+        "lite": {
+          "standard": 25
+        },
+        "pro": {
+          "advanced_max": 50000,
+          "standard": 10000
+        }
+      }
+    },
+    "organization.custom_fields.max_per_type": {
+      "class": "commercial_scalable",
+      "component": "organization",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "champs",
+      "values": {
+        "enterprise": {
+          "standard": 250,
+          "ultimate_max": 500
+        },
+        "lite": {
+          "standard": 5
+        },
+        "pro": {
+          "advanced_max": 100,
+          "standard": 50
+        }
+      }
+    },
+    "organization.hierarchy_depth.max": {
+      "class": "commercial_scalable",
+      "component": "organization",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "niveaux",
+      "values": {
+        "enterprise": {
+          "standard": 10,
+          "ultimate_max": 20
+        },
+        "lite": {
+          "standard": 1
+        },
+        "pro": {
+          "advanced_max": 4,
+          "standard": 3
+        }
+      }
+    },
+    "organization.labels.max_per_object": {
+      "class": "commercial_scalable",
+      "component": "organization",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "labels",
+      "values": {
+        "enterprise": {
+          "standard": 100,
+          "ultimate_max": 250
+        },
+        "lite": {
+          "standard": 10
+        },
+        "pro": {
+          "advanced_max": 49,
+          "standard": 40
+        }
+      }
+    },
+    "organization.organizations.max": {
+      "class": "commercial_scalable",
+      "component": "organization",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "organisations",
+      "values": {
+        "enterprise": {
+          "standard": 100,
+          "ultimate_max": 1000
+        },
+        "lite": {
+          "standard": 1
+        },
+        "pro": {
+          "advanced_max": 49,
+          "standard": 10
+        }
+      }
+    },
+    "organization.subdivisions.max": {
+      "class": "commercial_scalable",
+      "component": "organization",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "subdivisions",
+      "values": {
+        "enterprise": {
+          "standard": 25000,
+          "ultimate_max": 250000
+        },
+        "lite": {
+          "standard": 0
+        },
+        "pro": {
+          "advanced_max": 5000,
+          "standard": 500
+        }
+      }
+    },
+    "provisioning.artifact_storage.max_bytes": {
+      "class": "commercial_scalable",
+      "component": "provisioning",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "stockage",
+      "values": {
+        "enterprise": {
+          "standard": 549755813888000,
+          "ultimate_max": 2251799813685248
+        },
+        "lite": {
+          "standard": 53687091200
+        },
+        "pro": {
+          "advanced_max": 27487790694400,
+          "standard": 5497558138880
+        }
+      }
+    },
+    "provisioning.boot_profiles.max": {
+      "class": "commercial_scalable",
+      "component": "provisioning",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "profils",
+      "values": {
+        "enterprise": {
+          "standard": 50000,
+          "ultimate_max": 250000
+        },
+        "lite": {
+          "standard": 5
+        },
+        "pro": {
+          "advanced_max": 5000,
+          "standard": 1000
+        }
+      }
+    },
+    "provisioning.concurrent_deployments.max": {
+      "class": "commercial_scalable",
+      "component": "provisioning",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "déploiements",
+      "values": {
+        "enterprise": {
+          "standard": 5000,
+          "ultimate_max": 20000
+        },
+        "lite": {
+          "standard": 1
+        },
+        "pro": {
+          "advanced_max": 200,
+          "standard": 50
+        }
+      }
+    },
+    "provisioning.distribution_points.max": {
+      "class": "commercial_scalable",
+      "component": "provisioning",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "points",
+      "values": {
+        "enterprise": {
+          "standard": 1000,
+          "ultimate_max": 5000
+        },
+        "lite": {
+          "standard": 1
+        },
+        "pro": {
+          "advanced_max": 50,
+          "standard": 10
+        }
+      }
+    },
+    "provisioning.execution_retention_days": {
+      "class": "commercial_scalable",
+      "component": "provisioning",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "jours",
+      "values": {
+        "enterprise": {
+          "standard": 2555,
+          "ultimate_max": 3650
+        },
+        "lite": {
+          "standard": 30
+        },
+        "pro": {
+          "advanced_max": 1095,
+          "standard": 365
+        }
+      }
+    },
+    "provisioning.images.max": {
+      "class": "commercial_scalable",
+      "component": "provisioning",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "images",
+      "values": {
+        "enterprise": {
+          "standard": 10000,
+          "ultimate_max": 50000
+        },
+        "lite": {
+          "standard": 2
+        },
+        "pro": {
+          "advanced_max": 1000,
+          "standard": 250
+        }
+      }
+    },
+    "provisioning.targets.max": {
+      "class": "commercial_scalable",
+      "component": "provisioning",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "cibles",
+      "values": {
+        "enterprise": {
+          "standard": 500000,
+          "ultimate_max": 2000000
+        },
+        "lite": {
+          "standard": 50
+        },
+        "pro": {
+          "advanced_max": 50000,
+          "standard": 10000
+        }
+      }
+    },
+    "reporting.async_export_rows.max": {
+      "class": "commercial_scalable",
+      "component": "reporting",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "lignes",
+      "values": {
+        "enterprise": {
+          "standard": 2000000000,
+          "ultimate_max": 10000000000
+        },
+        "lite": {
+          "standard": 50000
+        },
+        "pro": {
+          "advanced_max": 250000000,
+          "standard": 50000000
+        }
+      }
+    },
+    "reporting.concurrent_exports.max": {
+      "class": "commercial_scalable",
+      "component": "reporting",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "exports",
+      "values": {
+        "enterprise": {
+          "standard": 1000,
+          "ultimate_max": 5000
+        },
+        "lite": {
+          "standard": 1
+        },
+        "pro": {
+          "advanced_max": 100,
+          "standard": 20
+        }
+      }
+    },
+    "reporting.dashboards.max": {
+      "class": "commercial_scalable",
+      "component": "reporting",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "tableaux",
+      "values": {
+        "enterprise": {
+          "standard": 25000,
+          "ultimate_max": 100000
+        },
+        "lite": {
+          "standard": 5
+        },
+        "pro": {
+          "advanced_max": 2000,
+          "standard": 500
+        }
+      }
+    },
+    "reporting.interactive_export_rows.max": {
+      "class": "commercial_scalable",
+      "component": "reporting",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "lignes",
+      "values": {
+        "enterprise": {
+          "standard": 10000000,
+          "ultimate_max": 50000000
+        },
+        "lite": {
+          "standard": 10000
+        },
+        "pro": {
+          "advanced_max": 4999999,
+          "standard": 1000000
+        }
+      }
+    },
+    "reporting.saved_reports.max": {
+      "class": "commercial_scalable",
+      "component": "reporting",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "rapports",
+      "values": {
+        "enterprise": {
+          "standard": 100000,
+          "ultimate_max": 500000
+        },
+        "lite": {
+          "standard": 20
+        },
+        "pro": {
+          "advanced_max": 10000,
+          "standard": 2000
+        }
+      }
+    },
+    "reporting.scheduled_reports.max": {
+      "class": "commercial_scalable",
+      "component": "reporting",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "planifications",
+      "values": {
+        "enterprise": {
+          "standard": 25000,
+          "ultimate_max": 100000
+        },
+        "lite": {
+          "standard": 0
+        },
+        "pro": {
+          "advanced_max": 2000,
+          "standard": 500
+        }
+      }
+    },
+    "reporting.temporary_export_retention_days": {
+      "class": "commercial_scalable",
+      "component": "reporting",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "jours",
+      "values": {
+        "enterprise": {
+          "standard": 30,
+          "ultimate_max": 90
+        },
+        "lite": {
+          "standard": 1
+        },
+        "pro": {
+          "advanced_max": 14,
+          "standard": 7
+        }
+      }
+    },
+    "rsot.canonical_objects.max": {
+      "class": "commercial_scalable",
+      "component": "rsot",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "objets",
+      "values": {
+        "enterprise": {
+          "standard": 50000000,
+          "ultimate_max": 250000000
+        },
+        "lite": {
+          "standard": 5000
+        },
+        "pro": {
+          "advanced_max": 5000000,
+          "standard": 1000000
+        }
+      }
+    },
+    "rsot.events_per_day.max": {
+      "class": "commercial_scalable",
+      "component": "rsot",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "événements",
+      "values": {
+        "enterprise": {
+          "standard": 2000000000,
+          "ultimate_max": 10000000000
+        },
+        "lite": {
+          "standard": 100000
+        },
+        "pro": {
+          "advanced_max": 100000000,
+          "standard": 20000000
+        }
+      }
+    },
+    "rsot.ingestion_records_per_batch.max": {
+      "class": "commercial_scalable",
+      "component": "rsot",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "enregistrements",
+      "values": {
+        "enterprise": {
+          "standard": 5000000,
+          "ultimate_max": 25000000
+        },
+        "lite": {
+          "standard": 1000
+        },
+        "pro": {
+          "advanced_max": 500000,
+          "standard": 100000
+        }
+      }
+    },
+    "rsot.managed_hosts.max": {
+      "class": "commercial_scalable",
+      "component": "rsot",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "hôtes canoniques",
+      "values": {
+        "enterprise": {
+          "standard": 1000000,
+          "ultimate_max": 5000000
+        },
+        "lite": {
+          "standard": 200
+        },
+        "pro": {
+          "advanced_max": 100000,
+          "standard": 25000
+        }
+      }
+    },
+    "rsot.open_conflicts.max": {
+      "class": "commercial_scalable",
+      "component": "rsot",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "conflits",
+      "values": {
+        "enterprise": {
+          "standard": 10000000,
+          "ultimate_max": 50000000
+        },
+        "lite": {
+          "standard": 500
+        },
+        "pro": {
+          "advanced_max": 1000000,
+          "standard": 100000
+        }
+      }
+    },
+    "rsot.reconciliation_rules.max": {
+      "class": "commercial_scalable",
+      "component": "rsot",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "règles",
+      "values": {
+        "enterprise": {
+          "standard": 100000,
+          "ultimate_max": 500000
+        },
+        "lite": {
+          "standard": 25
+        },
+        "pro": {
+          "advanced_max": 10000,
+          "standard": 2000
+        }
+      }
+    },
+    "rsot.schema_versions.max_per_type": {
+      "class": "commercial_scalable",
+      "component": "rsot",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "versions",
+      "values": {
+        "enterprise": {
+          "standard": 100,
+          "ultimate_max": 500
+        },
+        "lite": {
+          "standard": 3
+        },
+        "pro": {
+          "advanced_max": 49,
+          "standard": 25
+        }
+      }
+    },
+    "rsot.sources.max": {
+      "class": "commercial_scalable",
+      "component": "rsot",
+      "enforcement": "hard-block-new-allocation",
+      "generator_adjustable": true,
+      "scope": "installation sauf précision de la clé",
+      "unit": "sources",
+      "values": {
+        "enterprise": {
+          "standard": 2000,
+          "ultimate_max": 10000
+        },
+        "lite": {
+          "standard": 3
+        },
+        "pro": {
+          "advanced_max": 200,
+          "standard": 50
+        }
+      }
+    }
+  },
+  "rules": {
+    "architectural_quotas_are_not_generator_adjustable": true,
+    "pro_advanced_strict_ratio": "2 * pro_advanced_value < enterprise_standard_value",
+    "tiers_do_not_unlock_capabilities": true
+  },
+  "schema": "infranexum.quota-policy/v1"
+}

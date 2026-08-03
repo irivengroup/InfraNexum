@@ -1,69 +1,72 @@
-# InfraNexum 2.0.0-alpha.0.4 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.5 — état d’implémentation
 
 ## Organisation des sources
 
-Toutes les sources applicatives, composants, migrations, tests, validateurs et outils sont regroupés sous `src/`. Les preuves générées sont séparées sous `artifacts/validation/`. Un gate Architecture-as-Code interdit toute nouvelle source placée hors de `src/`.
+Toutes les sources applicatives, composants, migrations, tests, validateurs et outils sont regroupés sous `src/`. Les preuves générées sont séparées sous `artifacts/validation/`. Architecture-as-Code interdit toute nouvelle source placée hors de `src/`.
 
 ## Implémenté dans cet incrément
 
-### Adaptateur JDBC de production
+### Registre central des capacités
 
-- port `JdbcConnectionAccess` exposant uniquement la connexion de l’unité de travail courante ;
-- `JdbcTransactionalEventStore` thread-safe et unités de travail confinées au thread appelant ;
-- refus explicite des unités de travail imbriquées ;
-- même connexion physique pour les écritures métier, l’inbox et l’outbox ;
-- commit avant exécution des hooks post-commit ;
-- rollback préservant la cause d’origine et ses erreurs supprimées éventuelles ;
-- isolation JDBC configurable, sans autoriser `TRANSACTION_NONE` ;
-- absence de dépendance aux drivers PostgreSQL/Oracle dans le code de production.
+- 21 capacités gouvernées par un catalogue versionné ;
+- décisions fondées sur profil installé, composant, rôle, topologie, trait, dépendance, activation et entitlement ;
+- codes de raison stables et explications déterministes ;
+- snapshot immutable avec hash de surface fonctionnelle ;
+- `CapabilityGuard` pour bloquer les opérations non disponibles ;
+- absence de dépendance du cœur aux frameworks Web ou Spring.
 
-### Sémantiques outbox/inbox
+### Profils et tiers
 
-- claims bornés de 1 à 1 000 événements ;
-- PostgreSQL : claim atomique par CTE, `FOR UPDATE SKIP LOCKED` et `UPDATE ... RETURNING` ;
-- Oracle : sélection verrouillée ordonnée et mise à jour dans la même transaction ;
-- récupération des leases expirées ;
-- contrôle strict du propriétaire avant publication ou échec ;
-- retries exponentiels et passage en `DEAD_LETTER` ;
-- réservation inbox `PROCESSING` avant handler, puis `COMPLETED` au commit ;
-- rollback intégral du handler et de la réservation en cas d’échec ;
-- déduplication durable par `(consumerName, eventId)`.
+- profils `LITE`, `PRO`, `ENTERPRISE` ;
+- tiers `STANDARD`, `ADVANCED`, `ULTIMATE` validés selon le profil ;
+- Pro Advanced et Enterprise Ultimate limités aux quotas ;
+- tier exclu du hash de capacités ;
+- gate interdisant les branches métier Java fondées sur le nom du profil ou du tier.
 
-### Schéma et intégration Server
+### Quotas
 
-- migration appariée `0003-core-inbox-reservation` PostgreSQL/Oracle ;
-- modèle logique, vérifications, rollback conditionnel et checksums ;
-- modes Server exclusifs `MEMORY`, `POSTGRESQL`, `ORACLE` ;
-- mode mémoire limité au standalone local ;
-- absence de fallback silencieux lorsqu’un `DataSource` JDBC manque ;
-- aucune auto-configuration implicite d’un pool ou de secrets ;
-- job GitHub Actions PostgreSQL 17/18 appliquant `0001→0003` et exécutant les contrats JDBC réels.
+- 119 quotas normatifs chargés depuis le catalogue documentaire ;
+- 108 quotas commerciaux ajustables et 11 limites architecturales fixes ;
+- validation des overrides, clés, classes et plafonds ;
+- ratio strict `2 × Pro Advanced < Enterprise Standard` ;
+- réduction non destructive des limites ;
+- blocage des allocations augmentatives à la limite ou au-delà ;
+- niveaux d’usage et protection contre les dépassements arithmétiques.
 
-### Validation locale
+### Intégration Server
 
-- driver JDBC simulé sans dépendance externe couvrant commit, rollback, outbox, inbox, claims, retry, dead-letter et lease ownership ;
-- gate statique de persistance couvrant architecture, SQL, migrations, composition Server et reactor Maven ;
-- maintien des gates Architecture-as-Code, toolchains, migrations, événements, Agent et Web.
+- configuration typée `infranexum.platform` ;
+- snapshot calculé une seule fois au démarrage ;
+- endpoints read-only de snapshot, explication et quotas ;
+- réponses `Cache-Control: no-store` ;
+- valeurs Lite sûres par défaut, sans fallback vers une capacité non installée.
+
+### Validation
+
+- nouveau gate statique des capabilities/quotas ;
+- smoke Java dépendance-zéro couvrant catalogue, hash, profils, tiers et quotas ;
+- intégration dans `verify-foundation` et GitHub Actions ;
+- maintien des gates architecture, toolchains, migrations, événements, JDBC, Agent et Web.
 
 ## Limites explicites
 
 Le produit complet reste **NON TERMINÉ**.
 
-Sont implémentés mais non exécutés sur les cibles réelles dans l’environnement local :
+Restent à valider sur les toolchains cibles :
 
-- reactor Maven sous Java 25 ;
-- contrats JDBC sur PostgreSQL 17 et 18 ;
-- migrations, transactions et concurrence sur Oracle 19c/26ai ;
-- wiring d’un pool de connexions de déploiement et de ses secrets externes.
+- reactor Maven, tests Spring/JUnit/Modulith et JaCoCo sous Java 25 ;
+- Agent sous Go 1.26.5 ;
+- Web sous Node.js 24.18.1 et pnpm 11.17.0 ;
+- contrats PostgreSQL 17/18 et Oracle 19c/26ai sur moteurs réels.
 
 Restent non implémentés dans cette tranche :
 
-- transport Kafka 4.3.x KRaft ;
-- DLQ broker durable et replay autorisé/audité ;
-- worker/scheduler de production, métriques de backpressure et runbooks ;
-- shell React/TypeScript piloté par capabilities et internationalisation DE/EN/ES/FR/IT ;
-- bounded contexts métier, IAM, activation, audit, installateurs et packaging de production.
+- manifeste d’activation signé et identité d’installation ;
+- validation offline, révocation, grâce et anti-retour d’horloge ;
+- consommation de la surface fonctionnelle par le shell React ;
+- transport Kafka, DLQ et replay audité ;
+- bounded contexts métier, IAM complet, audit, installateur et packaging de production.
 
 ## Prochaine tranche
 
-Après exécution de la CI PostgreSQL et du laboratoire Oracle, la prochaine tranche logique est l’adaptateur de transport Kafka avec publication post-commit, retry borné, DLQ durable, backpressure observable et replay audité, sans modifier le contrat événementiel canonique.
+La prochaine tranche logique est `PGM-02-E05` : identité d’installation et activation signée, avec validation offline, liaison client/installation, expiration, période de grâce, révocation, compte de secours et protection contre les retours d’horloge.

@@ -1,0 +1,120 @@
+component,quota_key,unit,quota_class,generator_adjustable,lite_fixed,pro_standard,pro_advanced_ceiling,enterprise_standard,enterprise_ultimate_ceiling,scope,enforcement
+core,core.organizations.max,organisations,commercial_scalable,true,1,10,49,100,1000,installation sauf précision de la clé,hard-block-new-allocation
+core,core.api.requests_per_minute,requêtes/minute,commercial_scalable,true,300,30000,100000,500000,2000000,installation sauf précision de la clé,hard-block-new-allocation
+core,core.async_tasks.concurrent,tâches,commercial_scalable,true,2,200,1000,20000,100000,installation sauf précision de la clé,hard-block-new-allocation
+core,core.event_throughput_per_second,événements/s,commercial_scalable,true,50,5000,25000,250000,1000000,installation sauf précision de la clé,hard-block-new-allocation
+core,core.object_storage.max_bytes,stockage,commercial_scalable,true,21474836480,5497558138880,27487790694400,549755813888000,2251799813685248,installation sauf précision de la clé,hard-block-new-allocation
+core,core.custom_reference_sets.max,référentiels,commercial_scalable,true,20,1000,5000,50000,250000,installation sauf précision de la clé,hard-block-new-allocation
+organization,organization.organizations.max,organisations,commercial_scalable,true,1,10,49,100,1000,installation sauf précision de la clé,hard-block-new-allocation
+organization,organization.subdivisions.max,subdivisions,commercial_scalable,true,0,500,5000,25000,250000,installation sauf précision de la clé,hard-block-new-allocation
+organization,organization.hierarchy_depth.max,niveaux,commercial_scalable,true,1,3,4,10,20,installation sauf précision de la clé,hard-block-new-allocation
+organization,organization.contacts.max,contacts,commercial_scalable,true,25,10000,50000,1000000,5000000,installation sauf précision de la clé,hard-block-new-allocation
+organization,organization.custom_fields.max_per_type,champs,commercial_scalable,true,5,50,100,250,500,installation sauf précision de la clé,hard-block-new-allocation
+organization,organization.labels.max_per_object,labels,commercial_scalable,true,10,40,49,100,250,installation sauf précision de la clé,hard-block-new-allocation
+iam,iam.users.max,utilisateurs,commercial_scalable,true,5,500,5000,20000,250000,installation sauf précision de la clé,hard-block-new-allocation
+iam,iam.groups.max,groupes,commercial_scalable,true,20,2000,20000,100000,1000000,installation sauf précision de la clé,hard-block-new-allocation
+iam,iam.roles.max,rôles,commercial_scalable,true,20,500,4999,10000,100000,installation sauf précision de la clé,hard-block-new-allocation
+iam,iam.permissions.custom.max,permissions,commercial_scalable,true,0,2000,10000,50000,250000,installation sauf précision de la clé,hard-block-new-allocation
+iam,iam.service_accounts.max,comptes,commercial_scalable,true,0,250,5000,50000,500000,installation sauf précision de la clé,hard-block-new-allocation
+iam,iam.identity_providers.max,fournisseurs,commercial_scalable,true,0,8,32,100,1000,installation sauf précision de la clé,hard-block-new-allocation
+iam,iam.active_sessions.max,sessions,commercial_scalable,true,10,5000,50000,500000,5000000,installation sauf précision de la clé,hard-block-new-allocation
+iam,iam.oauth_clients.max,clients,commercial_scalable,true,0,250,5000,100000,1000000,installation sauf précision de la clé,hard-block-new-allocation
+iam,iam.mfa_devices.max_per_user,dispositifs,commercial_scalable,true,0,4,4,10,20,installation sauf précision de la clé,hard-block-new-allocation
+iam,iam.api_tokens.max_per_actor,jetons,commercial_scalable,true,2,20,49,100,500,installation sauf précision de la clé,hard-block-new-allocation
+rsot,rsot.managed_hosts.max,hôtes canoniques,commercial_scalable,true,200,25000,100000,1000000,5000000,installation sauf précision de la clé,hard-block-new-allocation
+rsot,rsot.canonical_objects.max,objets,commercial_scalable,true,5000,1000000,5000000,50000000,250000000,installation sauf précision de la clé,hard-block-new-allocation
+rsot,rsot.sources.max,sources,commercial_scalable,true,3,50,200,2000,10000,installation sauf précision de la clé,hard-block-new-allocation
+rsot,rsot.reconciliation_rules.max,règles,commercial_scalable,true,25,2000,10000,100000,500000,installation sauf précision de la clé,hard-block-new-allocation
+rsot,rsot.open_conflicts.max,conflits,commercial_scalable,true,500,100000,1000000,10000000,50000000,installation sauf précision de la clé,hard-block-new-allocation
+rsot,rsot.schema_versions.max_per_type,versions,commercial_scalable,true,3,25,49,100,500,installation sauf précision de la clé,hard-block-new-allocation
+rsot,rsot.ingestion_records_per_batch.max,enregistrements,commercial_scalable,true,1000,100000,500000,5000000,25000000,installation sauf précision de la clé,hard-block-new-allocation
+rsot,rsot.events_per_day.max,événements,commercial_scalable,true,100000,20000000,100000000,2000000000,10000000000,installation sauf précision de la clé,hard-block-new-allocation
+itam,itam.assets.max,actifs,commercial_scalable,true,200,25000,100000,1000000,5000000,installation sauf précision de la clé,hard-block-new-allocation
+itam,itam.contracts.max,contrats,commercial_scalable,true,50,10000,50000,500000,2000000,installation sauf précision de la clé,hard-block-new-allocation
+itam,itam.purchase_orders.max,commandes,commercial_scalable,true,100,50000,250000,2000000,10000000,installation sauf précision de la clé,hard-block-new-allocation
+itam,itam.software_products.max,produits,commercial_scalable,true,100,50000,250000,2000000,10000000,installation sauf précision de la clé,hard-block-new-allocation
+itam,itam.third_party_entitlements.max,droits tiers,commercial_scalable,true,500,500000,2000000,50000000,250000000,installation sauf précision de la clé,hard-block-new-allocation
+itam,itam.partners.max,partenaires,commercial_scalable,true,50,5000,25000,250000,1000000,installation sauf précision de la clé,hard-block-new-allocation
+itam,itam.attachments.max_bytes,stockage,commercial_scalable,true,10737418240,1099511627776,5497558138880,54975581388800,549755813888000,installation sauf précision de la clé,hard-block-new-allocation
+itam,itam.import_rows.max_per_job,lignes,commercial_scalable,true,10000,1000000,5000000,50000000,250000000,installation sauf précision de la clé,hard-block-new-allocation
+dcim,dcim.sites.max,sites,commercial_scalable,true,5,100,500,5000,25000,installation sauf précision de la clé,hard-block-new-allocation
+dcim,dcim.buildings.max,bâtiments,commercial_scalable,true,10,1000,5000,50000,250000,installation sauf précision de la clé,hard-block-new-allocation
+dcim,dcim.rooms.max,salles,commercial_scalable,true,25,10000,50000,500000,2000000,installation sauf précision de la clé,hard-block-new-allocation
+dcim,dcim.racks.max,racks,commercial_scalable,true,50,25000,100000,1000000,5000000,installation sauf précision de la clé,hard-block-new-allocation
+dcim,dcim.rack_positions.max,positions U,commercial_scalable,true,2500,2000000,8000000,100000000,500000000,installation sauf précision de la clé,hard-block-new-allocation
+dcim,dcim.ports.max,ports,commercial_scalable,true,10000,5000000,20000000,250000000,1000000000,installation sauf précision de la clé,hard-block-new-allocation
+dcim,dcim.connections.max,connexions,commercial_scalable,true,5000,2500000,10000000,125000000,500000000,installation sauf précision de la clé,hard-block-new-allocation
+dcim,dcim.power_chains.max,chaînes,commercial_scalable,true,20,10000,50000,500000,2000000,installation sauf précision de la clé,hard-block-new-allocation
+dcim,dcim.capacity_reservations.max,réservations,commercial_scalable,true,100,100000,500000,10000000,50000000,installation sauf précision de la clé,hard-block-new-allocation
+ddi,ddi.vrfs.max,VRF,commercial_scalable,true,5,2000,10000,100000,500000,installation sauf précision de la clé,hard-block-new-allocation
+ddi,ddi.prefixes.max,préfixes,commercial_scalable,true,20,100000,500000,5000000,25000000,installation sauf précision de la clé,hard-block-new-allocation
+ddi,ddi.ip_addresses.max,adresses,commercial_scalable,true,200,5000000,25000000,250000000,1000000000,installation sauf précision de la clé,hard-block-new-allocation
+ddi,ddi.vlans.max,VLAN,commercial_scalable,true,20,50000,250000,2000000,10000000,installation sauf précision de la clé,hard-block-new-allocation
+ddi,ddi.dns_zones.max,zones,commercial_scalable,true,5,10000,50000,500000,2000000,installation sauf précision de la clé,hard-block-new-allocation
+ddi,ddi.dns_records.max,enregistrements,commercial_scalable,true,200,10000000,50000000,500000000,2000000000,installation sauf précision de la clé,hard-block-new-allocation
+ddi,ddi.dhcp_scopes.max,scopes,commercial_scalable,true,5,25000,100000,1000000,5000000,installation sauf précision de la clé,hard-block-new-allocation
+ddi,ddi.dhcp_reservations.max,réservations,commercial_scalable,true,200,2000000,10000000,100000000,500000000,installation sauf précision de la clé,hard-block-new-allocation
+ddi,ddi.change_requests.concurrent,changements,commercial_scalable,true,1,100,500,10000,50000,installation sauf précision de la clé,hard-block-new-allocation
+discovery,discovery.targets.max,cibles,commercial_scalable,true,200,25000,100000,1000000,5000000,installation sauf précision de la clé,hard-block-new-allocation
+discovery,discovery.profiles.max,profils,commercial_scalable,true,5,500,2000,25000,100000,installation sauf précision de la clé,hard-block-new-allocation
+discovery,discovery.schedules.max,planifications,commercial_scalable,true,5,5000,20000,250000,1000000,installation sauf précision de la clé,hard-block-new-allocation
+discovery,discovery.concurrent_scans.max,scans,commercial_scalable,true,1,50,200,5000,20000,installation sauf précision de la clé,hard-block-new-allocation
+discovery,discovery.collectors.max,agents,commercial_scalable,true,0,0,0,5000,25000,installation sauf précision de la clé,hard-block-new-allocation
+discovery,discovery.cloud_accounts.max,comptes,commercial_scalable,true,0,100,500,10000,50000,installation sauf précision de la clé,hard-block-new-allocation
+discovery,discovery.kubernetes_clusters.max,clusters,commercial_scalable,true,0,250,1000,25000,100000,installation sauf précision de la clé,hard-block-new-allocation
+discovery,discovery.observations_per_day.max,observations,commercial_scalable,true,50000,50000000,250000000,5000000000,20000000000,installation sauf précision de la clé,hard-block-new-allocation
+discovery,discovery.raw_evidence_retention_days,jours,commercial_scalable,true,7,90,182,365,2555,installation sauf précision de la clé,hard-block-new-allocation
+automation,automation.workflows.max,workflows,commercial_scalable,true,10,1000,5000,50000,250000,installation sauf précision de la clé,hard-block-new-allocation
+automation,automation.workflow_versions.max,versions,commercial_scalable,true,50,10000,50000,500000,2000000,installation sauf précision de la clé,hard-block-new-allocation
+automation,automation.executions_per_day.max,exécutions,commercial_scalable,true,500,1000000,5000000,100000000,500000000,installation sauf précision de la clé,hard-block-new-allocation
+automation,automation.concurrent_executions.max,exécutions,commercial_scalable,true,2,100,500,10000,50000,installation sauf précision de la clé,hard-block-new-allocation
+automation,automation.schedules.max,planifications,commercial_scalable,true,10,1000,5000,50000,250000,installation sauf précision de la clé,hard-block-new-allocation
+automation,automation.pending_approvals.max,approbations,commercial_scalable,true,0,10000,50000,1000000,5000000,installation sauf précision de la clé,hard-block-new-allocation
+automation,automation.execution_retention_days,jours,commercial_scalable,true,30,365,1095,2555,3650,installation sauf précision de la clé,hard-block-new-allocation
+integrations,integrations.connector_instances.max,instances,commercial_scalable,true,2,100,500,10000,50000,installation sauf précision de la clé,hard-block-new-allocation
+integrations,integrations.custom_packages.max,packages,commercial_scalable,true,0,100,500,10000,50000,installation sauf précision de la clé,hard-block-new-allocation
+integrations,integrations.webhooks.max,webhooks,commercial_scalable,true,10,5000,20000,500000,2000000,installation sauf précision de la clé,hard-block-new-allocation
+integrations,integrations.events_per_day.max,événements,commercial_scalable,true,100000,50000000,250000000,5000000000,20000000000,installation sauf précision de la clé,hard-block-new-allocation
+integrations,integrations.concurrent_jobs.max,jobs,commercial_scalable,true,2,100,500,10000,50000,installation sauf précision de la clé,hard-block-new-allocation
+integrations,integrations.import_rows.max_per_job,lignes,commercial_scalable,true,10000,1000000,5000000,50000000,250000000,installation sauf précision de la clé,hard-block-new-allocation
+integrations,integrations.dead_letter_retention_days,jours,commercial_scalable,true,7,90,182,365,2555,installation sauf précision de la clé,hard-block-new-allocation
+observability,observability.active_metric_series.max,séries,commercial_scalable,true,10000,2000000,10000000,250000000,1000000000,installation sauf précision de la clé,hard-block-new-allocation
+observability,observability.logs_per_day.max_bytes,volume/jour,commercial_scalable,true,1073741824,107374182400,536870912000,10995116277760,54975581388800,installation sauf précision de la clé,hard-block-new-allocation
+observability,observability.traces_per_day.max,traces,commercial_scalable,true,100000,50000000,250000000,5000000000,20000000000,installation sauf précision de la clé,hard-block-new-allocation
+observability,observability.alert_rules.max,règles,commercial_scalable,true,50,5000,20000,250000,1000000,installation sauf précision de la clé,hard-block-new-allocation
+observability,observability.dashboards.max,tableaux,commercial_scalable,true,10,500,2000,25000,100000,installation sauf précision de la clé,hard-block-new-allocation
+observability,observability.metrics_retention_days,jours,commercial_scalable,true,7,90,199,400,1825,installation sauf précision de la clé,hard-block-new-allocation
+observability,observability.logs_retention_days,jours,commercial_scalable,true,7,30,182,365,2555,installation sauf précision de la clé,hard-block-new-allocation
+observability,observability.traces_retention_days,jours,commercial_scalable,true,1,7,14,30,365,installation sauf précision de la clé,hard-block-new-allocation
+governance,governance.policies.max,politiques,commercial_scalable,true,50,5000,20000,250000,1000000,installation sauf précision de la clé,hard-block-new-allocation
+governance,governance.control_mappings.max,associations,commercial_scalable,true,100,50000,250000,5000000,25000000,installation sauf précision de la clé,hard-block-new-allocation
+governance,governance.evidence_objects.max,preuves,commercial_scalable,true,10000,5000000,25000000,500000000,2000000000,installation sauf précision de la clé,hard-block-new-allocation
+governance,governance.retention_policies.max,politiques,commercial_scalable,true,10,500,2000,25000,100000,installation sauf précision de la clé,hard-block-new-allocation
+governance,governance.legal_holds.max,gels,commercial_scalable,true,0,1000,5000,100000,500000,installation sauf précision de la clé,hard-block-new-allocation
+governance,governance.compliance_frameworks.max,référentiels,commercial_scalable,true,1,10,49,100,500,installation sauf précision de la clé,hard-block-new-allocation
+governance,governance.audit_retention_days,jours,commercial_scalable,true,365,1095,1277,2555,3650,installation sauf précision de la clé,hard-block-new-allocation
+provisioning,provisioning.images.max,images,commercial_scalable,true,2,250,1000,10000,50000,installation sauf précision de la clé,hard-block-new-allocation
+provisioning,provisioning.boot_profiles.max,profils,commercial_scalable,true,5,1000,5000,50000,250000,installation sauf précision de la clé,hard-block-new-allocation
+provisioning,provisioning.targets.max,cibles,commercial_scalable,true,50,10000,50000,500000,2000000,installation sauf précision de la clé,hard-block-new-allocation
+provisioning,provisioning.concurrent_deployments.max,déploiements,commercial_scalable,true,1,50,200,5000,20000,installation sauf précision de la clé,hard-block-new-allocation
+provisioning,provisioning.distribution_points.max,points,commercial_scalable,true,1,10,50,1000,5000,installation sauf précision de la clé,hard-block-new-allocation
+provisioning,provisioning.artifact_storage.max_bytes,stockage,commercial_scalable,true,53687091200,5497558138880,27487790694400,549755813888000,2251799813685248,installation sauf précision de la clé,hard-block-new-allocation
+provisioning,provisioning.execution_retention_days,jours,commercial_scalable,true,30,365,1095,2555,3650,installation sauf précision de la clé,hard-block-new-allocation
+reporting,reporting.saved_reports.max,rapports,commercial_scalable,true,20,2000,10000,100000,500000,installation sauf précision de la clé,hard-block-new-allocation
+reporting,reporting.dashboards.max,tableaux,commercial_scalable,true,5,500,2000,25000,100000,installation sauf précision de la clé,hard-block-new-allocation
+reporting,reporting.scheduled_reports.max,planifications,commercial_scalable,true,0,500,2000,25000,100000,installation sauf précision de la clé,hard-block-new-allocation
+reporting,reporting.concurrent_exports.max,exports,commercial_scalable,true,1,20,100,1000,5000,installation sauf précision de la clé,hard-block-new-allocation
+reporting,reporting.interactive_export_rows.max,lignes,commercial_scalable,true,10000,1000000,4999999,10000000,50000000,installation sauf précision de la clé,hard-block-new-allocation
+reporting,reporting.async_export_rows.max,lignes,commercial_scalable,true,50000,50000000,250000000,2000000000,10000000000,installation sauf précision de la clé,hard-block-new-allocation
+reporting,reporting.temporary_export_retention_days,jours,commercial_scalable,true,1,7,14,30,90,installation sauf précision de la clé,hard-block-new-allocation
+deployment,deployment.zones.max,zones,architectural_fixed,false,1,2,2,5,5,installation,hard-block-topology-change
+deployment,deployment.server.clusters.max,clusters,architectural_fixed,false,0,2,2,5,5,installation,hard-block-topology-change
+deployment,deployment.server.nodes_per_cluster.max,nodes,architectural_fixed,false,1,4,4,4,4,cluster,conditional-topology-validation
+deployment,deployment.server.nodes_total.max,nodes,architectural_fixed,false,1,4,4,20,20,installation,hard-block-node-registration
+deployment,deployment.web.clusters.max,clusters,architectural_fixed,false,0,1,1,5,5,installation,hard-block-topology-change
+deployment,deployment.web.nodes_per_cluster.max,nodes,architectural_fixed,false,1,2,2,2,2,cluster,hard-block-node-registration
+deployment,deployment.web.nodes_total.max,nodes,architectural_fixed,false,1,2,2,10,10,installation,hard-block-node-registration
+deployment,deployment.agent.clusters.max,clusters,architectural_fixed,false,0,0,0,10,10,installation,mode-clustered-only
+deployment,deployment.agent.nodes_per_cluster.max,agents,architectural_fixed,false,0,0,0,2,2,cluster,mode-clustered-only
+deployment,deployment.agent.nodes_total.max,agents,architectural_fixed,false,0,0,0,20,20,installation,hard-block-agent-registration
+deployment,deployment.agent.standalone.max,agents,architectural_fixed,false,0,0,0,20,20,installation,mode-standalone-only

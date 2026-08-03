@@ -27,7 +27,7 @@ jobs:
       - name: Install pinned validation tooling
         run: python -m pip install --disable-pip-version-check --requirement requirements/ci.txt
       - name: Run architecture, toolchain, migration and contract gates
-        run: make architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check java-contract-smoke java-eventing-smoke java-jdbc-smoke
+        run: make architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check java-contract-smoke java-eventing-smoke java-jdbc-smoke java-capabilities-smoke
 
   agent:
     runs-on: ubuntu-24.04

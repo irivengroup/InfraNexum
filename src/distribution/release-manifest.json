@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.4",
-  "profile": "development-foundation-jdbc-persistence",
+  "version": "2.0.0-alpha.0.5",
+  "profile": "development-foundation-capabilities-quotas",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "source and validation evidence; generated Agent binary, caches and temporary artifacts excluded",
@@ -39,6 +39,10 @@
     {
       "id": "postgresql-17-18-live-ci",
       "status": "workflow-configured-not-executed"
+    },
+    {
+      "id": "core-capabilities-quotas-v1",
+      "status": "source-static-gate-and-dependency-free-java21-smoke-validated-java25-junit-jacoco-and-signed-activation-pending"
     }
   ],
   "validation_reports": [
@@ -56,10 +60,12 @@
     "../../artifacts/validation/agent-smoke.json",
     "../../artifacts/validation/web-coverage.txt",
     "../../artifacts/validation/web-smoke.json",
+    "../../artifacts/validation/capabilities.json",
+    "../../artifacts/validation/capabilities-coverage.txt",
     "../../artifacts/validation/validation-status.json"
   ],
   "validation_summary": {
-    "python_tests": 79,
+    "python_tests": 89,
     "architecture_tests": 28,
     "architecture_coverage_percent": 100,
     "architecture_violations": 0,
@@ -80,14 +86,17 @@
     "web_tests": 27,
     "web_line_coverage_percent": 99.65,
     "web_branch_coverage_percent": 98.28,
-    "web_function_coverage_percent": 100
+    "web_function_coverage_percent": 100,
+    "capability_tests": 10,
+    "capability_coverage_percent": 99,
+    "capability_violations": 0
   },
   "source_layout": "all implementation sources, tests, validation code, migrations and build-support scripts are grouped below src/",
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.4-jdbc-persistence",
+    "prefix": "infranexum-2.0.0-alpha.0.5-capabilities-quotas",
     "checksum_manifest": "source-files.sha256",
-    "recorded_files": 220,
-    "archive_entries": 221,
+    "recorded_files": 277,
+    "archive_entries": 278,
     "reproducible": true
   }
 }

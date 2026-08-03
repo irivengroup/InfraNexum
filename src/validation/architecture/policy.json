@@ -26,6 +26,7 @@
     "components/adapters/persistence-jdbc",
     "components/core",
     "components/core/contracts",
+    "components/core/capabilities",
     "components/core/events",
     "components/domains",
     "deployment",

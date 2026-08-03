@@ -1,0 +1,45 @@
+package io.infranexum.server.platform;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import io.infranexum.core.capabilities.ActivationState;
+import io.infranexum.core.capabilities.AllocationTier;
+import io.infranexum.core.capabilities.CapabilityCatalog;
+import io.infranexum.core.capabilities.CapabilityCode;
+import io.infranexum.core.capabilities.CapabilityEnvironment;
+import io.infranexum.core.capabilities.CapabilityRegistry;
+import io.infranexum.core.capabilities.DeploymentRole;
+import io.infranexum.core.capabilities.InstallationProfile;
+import io.infranexum.core.capabilities.InstallationTopology;
+import io.infranexum.core.capabilities.QuotaCatalog;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.Map;
+import java.util.Set;
+import org.junit.jupiter.api.Test;
+
+class PlatformCapabilityServiceTest {
+    @Test
+    void publishesOneImmutableStartupSnapshotAndQuotaPlan() {
+        String version = "2.0.0-draft.20";
+        var environment = new CapabilityEnvironment(
+                InstallationProfile.LITE, AllocationTier.STANDARD, InstallationTopology.SINGLE_NODE,
+                Set.of(DeploymentRole.SERVER, DeploymentRole.WEB), Set.of(),
+                Set.of(new CapabilityCode("iam.local-auth"), new CapabilityCode("database.postgresql"),
+                        new CapabilityCode("discovery.agentless")),
+                Map.of(), Set.of(), ActivationState.NOT_REQUIRED, version, 1);
+        var registry = new CapabilityRegistry(
+                CapabilityCatalog.loadEmbedded(version),
+                Clock.fixed(Instant.parse("2026-08-03T12:00:00Z"), ZoneOffset.UTC));
+        var plan = QuotaCatalog.loadEmbedded(version).allocate(
+                InstallationProfile.LITE, AllocationTier.STANDARD, version, Map.of());
+        var service = new PlatformCapabilityService(registry, environment, plan);
+        assertEquals(21, service.snapshot().decisions().size());
+        assertTrue(service.explain("iam.local-auth").available());
+        assertFalse(service.explain("iam.ldap").available());
+        assertEquals(5, service.quotaPlan().limit("iam.users.max"));
+    }
+}
