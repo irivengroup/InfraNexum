@@ -1,0 +1,8 @@
+[tool.coverage.run]
+source = ["validation.architecture"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 98
+show_missing = true
+skip_covered = false

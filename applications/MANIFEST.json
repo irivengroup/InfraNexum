@@ -1,0 +1,15 @@
+{
+  "schema": "infranexum.component-manifest/v1",
+  "id": "applications",
+  "kind": "space",
+  "owner": "team.platform-engineering",
+  "lifecycle": "active",
+  "languages": [],
+  "dependencies": [],
+  "source_baseline": [
+    "IAR-01 §4-5",
+    "ADR-0003",
+    "ADR-0004",
+    "PGM-01-E01"
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "schema": "infranexum.release-manifest/v1",
+  "product": "InfraNexum",
+  "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
+  "version": "2.0.0-alpha.0",
+  "profile": "development-foundation",
+  "overall_status": "NON_TERMINE",
+  "artifacts": [
+    {
+      "id": "infranexum-server",
+      "status": "source-created-target-java25-build-not-executed"
+    },
+    {
+      "id": "infranexum-agent",
+      "status": "source-and-local-go1.23.2-compatibility-build-validated-go1.26.5-pending"
+    },
+    {
+      "id": "infranexum-web",
+      "status": "not-implemented"
+    }
+  ],
+  "baseline": "../BASELINE.json",
+  "validation_reports": [
+    "../validation/reports/architecture.json",
+    "../validation/reports/architecture-coverage.txt",
+    "../validation/reports/agent-coverage.txt",
+    "../validation/reports/agent-smoke.json"
+  ]
+}

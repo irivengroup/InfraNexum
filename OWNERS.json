@@ -1,0 +1,52 @@
+{
+  "schema": "infranexum.owner-registry/v1",
+  "owners": [
+    {
+      "id": "team.platform-engineering",
+      "name": "Platform Engineering",
+      "responsibilities": [
+        "monorepo",
+        "CI/CD",
+        "build",
+        "distribution"
+      ]
+    },
+    {
+      "id": "team.core-platform",
+      "name": "Core Platform",
+      "responsibilities": [
+        "kernel",
+        "Server composition",
+        "contracts"
+      ]
+    },
+    {
+      "id": "team.edge-platform",
+      "name": "Edge & Network Platform",
+      "responsibilities": [
+        "Agent",
+        "installer",
+        "DDI engines",
+        "provisioning"
+      ]
+    },
+    {
+      "id": "team.product-web",
+      "name": "Product Web",
+      "responsibilities": [
+        "Web application",
+        "accessibility",
+        "internationalization"
+      ]
+    },
+    {
+      "id": "team.data-rsot",
+      "name": "Data & RSOT",
+      "responsibilities": [
+        "domains",
+        "data contracts",
+        "SDK contracts"
+      ]
+    }
+  ]
+}

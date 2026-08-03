@@ -1,0 +1,36 @@
+
+server:
+  address: ${INFRANEXUM_SERVER_ADDRESS:127.0.0.1}
+  port: ${INFRANEXUM_SERVER_PORT:8080}
+  shutdown: graceful
+
+spring:
+  application:
+    name: infranexum-server
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+infranexum:
+  server:
+    instance-id: ${INFRANEXUM_SERVER_INSTANCE_ID:server-local-1}
+    mode: ${INFRANEXUM_SERVER_MODE:STANDALONE}
+    region: ${INFRANEXUM_SERVER_REGION:local}
+    site: ${INFRANEXUM_SERVER_SITE:local}
+    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0}
+    architecture-baseline: ${INFRANEXUM_ARCHITECTURE_BASELINE:2.0.0-draft.21}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true

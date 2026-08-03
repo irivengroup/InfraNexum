@@ -1,0 +1,17 @@
+{
+  "schema": "infranexum.component-manifest/v1",
+  "id": "components.core",
+  "kind": "component-group",
+  "owner": "team.core-platform",
+  "lifecycle": "active",
+  "languages": [
+    "java"
+  ],
+  "dependencies": [],
+  "source_baseline": [
+    "IAR-01 §4-5",
+    "ADR-0003",
+    "ADR-0004",
+    "PGM-01-E01"
+  ]
+}

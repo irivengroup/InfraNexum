@@ -1,0 +1,1 @@
+"""InfraNexum repository architecture validation."""

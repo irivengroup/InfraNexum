@@ -1,0 +1,9 @@
+
+{
+  "listen_address": "127.0.0.1:8091",
+  "shutdown_timeout": "10s",
+  "agent_id": "agent-local-1",
+  "region_id": "region-local",
+  "site_id": "site-local",
+  "assigned_subnets": []
+}

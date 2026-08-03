@@ -1,0 +1,16 @@
+{
+  "schema": "infranexum.source-baseline/v1",
+  "product": "InfraNexum — Infrastructure Control & Governance Platform",
+  "implementation_version": "2.0.0-alpha.0",
+  "architecture_baseline": "2.0.0-draft.21",
+  "roadmap_baseline": "1.0.0-draft.1",
+  "architecture_archive_sha256": "372cf19929f8ea3b7586c3af3e7c5004e590cf746ff2d6d59d4d0b88912aea64",
+  "implemented_scope": [
+    "PGM-01-E01 monorepo and eight structural spaces",
+    "PGM-01-E02 partial toolchain pinning for Java, Go, Python and Maven; TypeScript and C++ remain pending",
+    "PGM-01-E03 initial Architecture-as-Code and secret-leak blocking checks; complete quality, security and licence gates remain pending",
+    "PGM-02-E01 partial composition roots: Server and Agent bootstrap implemented; Web bootstrap remains pending"
+  ],
+  "roadmap_archive_sha256": "11db7d27bbc79f688cd1fda31a24aaf31b56a56db36b6487b64154c148ab54d3",
+  "engineering_governance_sha256": "f24357051a5401f598c3d77bbe5814d3759a176095537659243658ba3ff109c7"
+}

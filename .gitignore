@@ -1,0 +1,43 @@
+
+# Operating systems and editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Python
+__pycache__/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.venv/
+
+# Java/Maven
+**/target/
+.mvn/local-repository/
+
+# Go
+**/*.test
+**/coverage.out
+bin/
+
+# Node
+**/node_modules/
+**/dist/
+
+# Runtime and secrets
+*.log
+*.pid
+*.key
+*.pem
+*.p12
+*.pfx
+.env
+.env.*
+!*.example
+
+# Generated validation reports
+validation/reports/*.json
+validation/reports/*.txt
