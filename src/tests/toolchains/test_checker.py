@@ -29,6 +29,7 @@ class ToolchainCheckerTest(unittest.TestCase):
             ".mvn/wrapper/maven-wrapper.properties",
             "src/applications/web/package.json",
             "src/applications/web/pnpm-lock.yaml",
+            "src/applications/web/pnpm-workspace.yaml",
             ".github/workflows/foundation.yml",
         ):
             target = self.root / relative
@@ -133,6 +134,22 @@ class ToolchainCheckerTest(unittest.TestCase):
         lock_path.unlink()
         self.assertIn("CHECK-TOOLCHAIN-022", self.ids())
 
+    def test_web_workspace_settings_match_lockfile_and_npmrc_is_forbidden(self) -> None:
+        workspace_path = self.root / "src/applications/web/pnpm-workspace.yaml"
+        workspace_path.write_text("autoInstallPeers: true\n", encoding="utf-8")
+        self.assertIn("CHECK-TOOLCHAIN-032", self.ids())
+
+        workspace_path.write_text("[", encoding="utf-8")
+        self.assertIn("CHECK-TOOLCHAIN-031", self.ids())
+
+        workspace_path.unlink()
+        self.assertIn("CHECK-TOOLCHAIN-030", self.ids())
+
+        shutil.copy2(SOURCE / "src/applications/web/pnpm-workspace.yaml", workspace_path)
+        npmrc_path = self.root / "src/applications/web/.npmrc"
+        npmrc_path.write_text("auto-install-peers=false\n", encoding="utf-8")
+        self.assertIn("CHECK-TOOLCHAIN-033", self.ids())
+
     def test_ci_java_selector_and_action_pins_are_enforced(self) -> None:
         payload = self.lock()
         del payload["github_actions"]
@@ -153,6 +170,15 @@ class ToolchainCheckerTest(unittest.TestCase):
         workflow += "\n# actions/setup-node@legacy\n# corepack prepare pnpm@latest --activate\n"
         workflow_path.write_text(workflow, encoding="utf-8")
         self.assertTrue({"CHECK-TOOLCHAIN-027", "CHECK-TOOLCHAIN-028"} <= self.ids())
+
+    def test_ci_prepares_maven_wrapper_before_every_direct_execution(self) -> None:
+        workflow_path = self.root / ".github/workflows/foundation.yml"
+        workflow = workflow_path.read_text(encoding="utf-8")
+        workflow_path.write_text(
+            workflow.replace("run: chmod 0755 mvnw && test -x mvnw", "run: test -f mvnw", 1),
+            encoding="utf-8",
+        )
+        self.assertIn("CHECK-TOOLCHAIN-034", self.ids())
 
     def test_ci_workflow_is_required(self) -> None:
         (self.root / ".github/workflows/foundation.yml").unlink()

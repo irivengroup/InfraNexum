@@ -1,0 +1,7 @@
+# Project-level pnpm settings are committed here so frozen installs use the
+# same dependency-resolution policy that produced pnpm-lock.yaml.
+autoInstallPeers: false
+strictPeerDependencies: true
+engineStrict: true
+saveExact: true
+ignoreScripts: true

@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 _VERSION = re.compile(r"^[0-9]+(?:\.[0-9]+){1,2}(?:\+[0-9]+)?$")
 _REQUIRED = {
     "java", "maven", "spring-boot", "spring-modulith", "go", "node",
@@ -153,6 +155,42 @@ class ToolchainChecker:
         if lock_text is not None and ("lockfileVersion: '9.0'" not in lock_text or "importers:" not in lock_text):
             self._add("CHECK-TOOLCHAIN-023", lock_path, "Web pnpm lockfile format is invalid")
 
+        workspace_path = self.root / "src/applications/web/pnpm-workspace.yaml"
+        workspace_text = self._read_text(
+            workspace_path,
+            "CHECK-TOOLCHAIN-030",
+            "Web pnpm workspace configuration cannot be read",
+        )
+        if workspace_text is not None:
+            try:
+                workspace = yaml.safe_load(workspace_text)
+            except yaml.YAMLError as error:
+                self._add("CHECK-TOOLCHAIN-031", workspace_path, f"invalid pnpm workspace configuration: {error}")
+            else:
+                expected_settings = {
+                    "autoInstallPeers": False,
+                    "strictPeerDependencies": True,
+                    "engineStrict": True,
+                    "saveExact": True,
+                    "ignoreScripts": True,
+                }
+                if not isinstance(workspace, dict) or any(
+                    workspace.get(key) is not value for key, value in expected_settings.items()
+                ):
+                    self._add(
+                        "CHECK-TOOLCHAIN-032",
+                        workspace_path,
+                        "pnpm workspace settings must match the immutable lockfile and secure install policy",
+                    )
+
+        npmrc_path = self.root / "src/applications/web/.npmrc"
+        if npmrc_path.exists():
+            self._add(
+                "CHECK-TOOLCHAIN-033",
+                npmrc_path,
+                "Project pnpm settings must be stored in pnpm-workspace.yaml; committed .npmrc is forbidden",
+            )
+
     def _check_ci_workflow(self, payload: dict[str, Any], tools: dict[str, Any]) -> None:
         workflow_path = self.root / ".github/workflows/foundation.yml"
         workflow = self._read_text(
@@ -226,6 +264,26 @@ class ToolchainChecker:
                 "CHECK-TOOLCHAIN-029",
                 workflow_path,
                 "The architecture job must install the exact Java toolchain before dependency-free smokes",
+            )
+
+        prepare_wrapper = "run: chmod 0755 mvnw && test -x mvnw"
+        job_pattern = re.compile(
+            r"(?ms)^  (?P<name>[A-Za-z0-9_-]+):\n(?P<body>.*?)(?=^  [A-Za-z0-9_-]+:\n|\Z)"
+        )
+        unprepared_jobs = []
+        for match in job_pattern.finditer(workflow):
+            body = match.group("body")
+            first_call = body.find("run: ./mvnw")
+            if first_call < 0:
+                continue
+            preparation = body.find(prepare_wrapper)
+            if preparation < 0 or preparation > first_call:
+                unprepared_jobs.append(match.group("name"))
+        if unprepared_jobs:
+            self._add(
+                "CHECK-TOOLCHAIN-034",
+                workflow_path,
+                f"Maven Wrapper must be made executable before use in jobs: {sorted(unprepared_jobs)}",
             )
 
     @staticmethod

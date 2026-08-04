@@ -28,7 +28,7 @@ const valid = {
   schema: 'infranexum.web-runtime-config/v1',
   product: 'InfraNexum',
   component: 'web',
-  version: '2.0.0-alpha.0.8',
+  version: '2.0.0-alpha.0.9',
   architectureBaseline: '2.0.0-draft.21',
   environment: 'test',
   apiBaseUrl: '/api',

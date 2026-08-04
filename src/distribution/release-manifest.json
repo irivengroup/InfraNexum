@@ -1,16 +1,16 @@
 {
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
-  "positioning": "InfraNexum \u2014 Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.8",
-  "profile": "development-foundation-ci-toolchain-repair",
+  "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
+  "version": "2.0.0-alpha.0.9",
+  "profile": "development-foundation-ci-execution-repair",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "source and validation evidence; generated Agent binary, caches and temporary artifacts excluded",
   "artifacts": [
     {
       "id": "infranexum-server",
-      "status": "source-integrated-entitlements-dependency-capability-api-and-persistence-selection-java25-reactor-and-authoritative-activation-wiring-pending"
+      "status": "source-integrated-maven-wrapper-permission-ci-repair-java25-reactor-and-authoritative-activation-wiring-pending"
     },
     {
       "id": "infranexum-agent",
@@ -18,7 +18,7 @@
     },
     {
       "id": "infranexum-web",
-      "status": "runtime-source-node22.16.0-tests-passed-hosted-node24.18.1-pnpm11.17.0-bootstrap-corrected-rerun-pending"
+      "status": "runtime-source-node22.16.0-tests-passed-pnpm-workspace-lockfile-settings-aligned-hosted-node24.18.1-pnpm11.17.0-rerun-pending"
     },
     {
       "id": "core-domain-contract-pack-v1",
@@ -72,11 +72,11 @@
     "../../artifacts/validation/web-smoke.json"
   ],
   "validation_summary": {
-    "python_tests": 101,
+    "python_tests": 103,
     "architecture_tests": 28,
     "architecture_coverage_percent": 100,
     "architecture_violations": 0,
-    "toolchain_tests": 14,
+    "toolchain_tests": 16,
     "toolchain_coverage_percent": 99,
     "toolchain_violations": 0,
     "migration_tests": 20,
@@ -103,7 +103,7 @@
   },
   "source_layout": "all implementation sources, tests, validation code, migrations and build-support scripts are grouped below src/",
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.8-ci-toolchain-repair",
+    "prefix": "infranexum-2.0.0-alpha.0.9-ci-execution-repair",
     "checksum_manifest": "source-files.sha256",
     "recorded_files": 338,
     "archive_entries": 340,

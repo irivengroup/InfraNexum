@@ -1,8 +1,8 @@
-# InfraNexum 2.0.0-alpha.0.8 — CI Toolchain Repair
+# InfraNexum 2.0.0-alpha.0.9 — CI Execution Repair
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
-This repository is the eighth executable implementation increment derived from architecture baseline `2.0.0-draft.21` and the complete implementation roadmap.
+This repository is the ninth executable implementation increment derived from architecture baseline `2.0.0-draft.21` and the complete implementation roadmap.
 
 ## Source layout
 
@@ -129,3 +129,11 @@ Adds the JDBC activation repository, compensating offline import coordinator, an
 - makes the dependency-free eventing smoke compatible with the bootstrap JDK by avoiding `List.getFirst()` and `ExecutorService` try-with-resources;
 - adds blocking toolchain tests for Java selectors, action pins, Web bootstrap and architecture-job ordering;
 - removes the duplicate-module `runpy` warning from the entitlement test suite.
+
+## alpha.0.9 CI execution repair
+
+- prepares `mvnw` with mode `0755` before every direct GitHub Actions invocation and requires the executable bit in the Git index;
+- moves pnpm project settings to `src/applications/web/pnpm-workspace.yaml`;
+- aligns `autoInstallPeers: false` with `pnpm-lock.yaml`, preventing frozen-lockfile configuration mismatch;
+- forbids committed project `.npmrc` files and verifies the workspace settings through the blocking toolchain gate;
+- adds non-regression tests for both Maven permission and pnpm immutable-install failures.
