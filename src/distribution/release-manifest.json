@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.6",
-  "profile": "development-foundation-signed-activation-entitlements",
+  "version": "2.0.0-alpha.0.7",
+  "profile": "development-foundation-activation-operations",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "source and validation evidence; generated Agent binary, caches and temporary artifacts excluded",
@@ -30,7 +30,7 @@
     },
     {
       "id": "adapter-persistence-jdbc",
-      "status": "source-static-gate-and-dependency-free-jdbc-driver-simulation-validated-live-postgresql-oracle-execution-pending"
+      "status": "source-jdbc-event-store-activation-repository-and-independent-proof-file-store-compiled-live-postgresql-oracle-execution-pending"
     },
     {
       "id": "migration-catalogue-0001-0004",
@@ -46,7 +46,7 @@
     },
     {
       "id": "core-entitlements-v1",
-      "status": "source-static-gate-schema-digest-ed25519-lite-lifecycle-access-guards-trusted-time-and-java21-smoke-validated-java25-junit-jacoco-jdbc-repositories-and-external-time-anchor-pending"
+      "status": "source-offline-verification-import-coordinator-compensation-trusted-time-and-java21-smokes-validated-server-authoritative-wiring-java25-and-live-database-pending"
     }
   ],
   "validation_reports": [
@@ -102,10 +102,10 @@
   },
   "source_layout": "all implementation sources, tests, validation code, migrations and build-support scripts are grouped below src/",
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.6-activation-entitlements",
+    "prefix": "infranexum-2.0.0-alpha.0.7-activation-operations",
     "checksum_manifest": "source-files.sha256",
-    "recorded_files": 328,
-    "archive_entries": 329,
+    "recorded_files": 337,
+    "archive_entries": 338,
     "reproducible": true
   }
 }

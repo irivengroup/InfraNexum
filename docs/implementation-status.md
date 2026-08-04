@@ -1,4 +1,4 @@
-# InfraNexum 2.0.0-alpha.0.6 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.7 — état d’implémentation
 
 ## Organisation des sources
 

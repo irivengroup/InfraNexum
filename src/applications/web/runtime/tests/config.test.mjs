@@ -5,7 +5,7 @@ import test from 'node:test';
 
 import { WebRuntimeConfiguration } from '../config.mjs';
 
-const options = { version: '2.0.0-alpha.0.6', baseDirectory: os.tmpdir() };
+const options = { version: '2.0.0-alpha.0.7', baseDirectory: os.tmpdir() };
 
 test('configuration applies safe defaults and exposes only public values', () => {
   const configuration = WebRuntimeConfiguration.fromEnvironment({}, options);

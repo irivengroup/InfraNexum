@@ -1,4 +1,4 @@
-# InfraNexum 2.0.0-alpha.0.6 — Signed Activation & Lite Lifecycle Foundation
+# InfraNexum 2.0.0-alpha.0.7 — Signed Activation & Lite Lifecycle Foundation
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
@@ -117,3 +117,7 @@ GOTOOLCHAIN=go1.26.5 make agent-vet agent-test agent-build
 - `src/validation/entitlements/checker.py`: entitlement drift gate;
 - `src/distribution/migrations/0004-core-entitlements`: paired persistence contract;
 - `artifacts/validation/validation-status.json`: exact status of every applicable validation.
+
+## alpha.0.7 activation operations
+
+Adds the JDBC activation repository, compensating offline import coordinator, and an atomic independent integrity-proof file store. Live database and Java 25 certification remain pending.
