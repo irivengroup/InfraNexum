@@ -4,7 +4,8 @@
   "toolchains": {
     "java": {
       "distribution": "temurin",
-      "version": "25.0.4+7"
+      "version": "25.0.4+7",
+      "github_actions_version": "25.0.4+7.0.LTS"
     },
     "maven": {
       "version": "3.9.16"
@@ -39,11 +40,21 @@
     }
   },
   "sources": {
-    "java": "OpenJDK 25u / Eclipse Temurin 25.0.4+7",
+    "java": "OpenJDK 25u / Eclipse Temurin 25.0.4+7; setup-java selector 25.0.4+7.0.LTS",
     "spring-boot": "Spring Boot project release 4.1.0",
     "go": "Go release history 1.26.5",
     "node": "Node.js LTS release line 24.18.1",
-    "pnpm": "pnpm stable release 11.17.0",
+    "pnpm": "pnpm stable release 11.17.0; pnpm/setup v1 native bootstrap for pnpm 11+",
     "typescript": "TypeScript stable release 7.0.2"
+  },
+  "github_actions": {
+    "setup-java": {
+      "version": "5.7.0",
+      "sha": "b6effb05e454b25005698d916606bdc6ffcbf961"
+    },
+    "pnpm-setup": {
+      "version": "1",
+      "sha": "5d160c5bc68a09337ad0d5654e237e03253b5879"
+    }
   }
 }

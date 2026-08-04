@@ -1,9 +1,9 @@
 {
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
-  "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.7",
-  "profile": "development-foundation-activation-operations",
+  "positioning": "InfraNexum \u2014 Infrastructure Control & Governance Platform",
+  "version": "2.0.0-alpha.0.8",
+  "profile": "development-foundation-ci-toolchain-repair",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "source and validation evidence; generated Agent binary, caches and temporary artifacts excluded",
@@ -18,7 +18,7 @@
     },
     {
       "id": "infranexum-web",
-      "status": "runtime-source-node22.16.0-unit-coverage-process-smoke-validated-node24.18.1-pnpm11.17.0-pending"
+      "status": "runtime-source-node22.16.0-tests-passed-hosted-node24.18.1-pnpm11.17.0-bootstrap-corrected-rerun-pending"
     },
     {
       "id": "core-domain-contract-pack-v1",
@@ -26,7 +26,7 @@
     },
     {
       "id": "core-transactional-events-v1.1",
-      "status": "source-offline-java21-behavior-concurrency-smoke-validated-java25-junit-jacoco-and-kafka-pending"
+      "status": "source-offline-java21-behavior-concurrency-smoke-validated-bootstrap-jdk-regression-fixed-java25-junit-jacoco-and-kafka-pending"
     },
     {
       "id": "adapter-persistence-jdbc",
@@ -50,32 +50,33 @@
     }
   ],
   "validation_reports": [
-    "../../artifacts/validation/architecture.json",
-    "../../artifacts/validation/architecture-coverage.txt",
-    "../../artifacts/validation/toolchains.json",
-    "../../artifacts/validation/toolchain-coverage.txt",
-    "../../artifacts/validation/migrations.json",
-    "../../artifacts/validation/migration-coverage.txt",
-    "../../artifacts/validation/eventing.json",
-    "../../artifacts/validation/eventing-coverage.txt",
-    "../../artifacts/validation/persistence.json",
-    "../../artifacts/validation/persistence-coverage.txt",
     "../../artifacts/validation/agent-coverage.txt",
     "../../artifacts/validation/agent-smoke.json",
-    "../../artifacts/validation/web-coverage.txt",
-    "../../artifacts/validation/web-smoke.json",
-    "../../artifacts/validation/capabilities.json",
+    "../../artifacts/validation/architecture-coverage.txt",
+    "../../artifacts/validation/architecture.json",
     "../../artifacts/validation/capabilities-coverage.txt",
-    "../../artifacts/validation/entitlements.json",
+    "../../artifacts/validation/capabilities.json",
+    "../../artifacts/validation/ci-bootstrap-regression.json",
     "../../artifacts/validation/entitlements-coverage.txt",
-    "../../artifacts/validation/validation-status.json"
+    "../../artifacts/validation/entitlements.json",
+    "../../artifacts/validation/eventing-coverage.txt",
+    "../../artifacts/validation/eventing.json",
+    "../../artifacts/validation/migration-coverage.txt",
+    "../../artifacts/validation/migrations.json",
+    "../../artifacts/validation/persistence-coverage.txt",
+    "../../artifacts/validation/persistence.json",
+    "../../artifacts/validation/toolchain-coverage.txt",
+    "../../artifacts/validation/toolchains.json",
+    "../../artifacts/validation/validation-status.json",
+    "../../artifacts/validation/web-coverage.txt",
+    "../../artifacts/validation/web-smoke.json"
   ],
   "validation_summary": {
-    "python_tests": 98,
+    "python_tests": 101,
     "architecture_tests": 28,
     "architecture_coverage_percent": 100,
     "architecture_violations": 0,
-    "toolchain_tests": 11,
+    "toolchain_tests": 14,
     "toolchain_coverage_percent": 99,
     "toolchain_violations": 0,
     "migration_tests": 20,
@@ -102,10 +103,10 @@
   },
   "source_layout": "all implementation sources, tests, validation code, migrations and build-support scripts are grouped below src/",
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.7-activation-operations",
+    "prefix": "infranexum-2.0.0-alpha.0.8-ci-toolchain-repair",
     "checksum_manifest": "source-files.sha256",
-    "recorded_files": 337,
-    "archive_entries": 338,
+    "recorded_files": 338,
+    "archive_entries": 340,
     "reproducible": true
   }
 }

@@ -1,7 +1,7 @@
 {
   "schema": "infranexum.source-baseline/v1",
-  "product": "InfraNexum — Infrastructure Control & Governance Platform",
-  "implementation_version": "2.0.0-alpha.0.7",
+  "product": "InfraNexum \u2014 Infrastructure Control & Governance Platform",
+  "implementation_version": "2.0.0-alpha.0.8",
   "architecture_baseline": "2.0.0-draft.21",
   "roadmap_baseline": "1.0.0-draft.1",
   "architecture_archive_sha256": "372cf19929f8ea3b7586c3af3e7c5004e590cf746ff2d6d59d4d0b88912aea64",
@@ -14,7 +14,8 @@
     "PGM-02-E03 transactional-event core with canonical envelope, post-commit outbox, inbox deduplication, bounded retries and dead-letter state; Kafka transport and durable replay remain pending",
     "PGM-04-E01 JDBC unit-of-work and TransactionalEventStore strategies for PostgreSQL/Oracle, paired migrations 0001-0003 and PostgreSQL 17/18 live CI contracts; hosted database execution remains pending",
     "PGM-02-E04 centralized capability registry, entitlements, 119-quota policy engine, profile/tier separation and no-profile-branching gate",
-    "PGM-02-E05 offline signed activation foundation with installation identity, Lite J180/J210 lifecycle, Pro/Enterprise 30-day grace, Ed25519 verification, revocation, monotone sequence, access guards, HMAC trusted-time evidence and paired migration 0004; authoritative Server repositories and external monotonic anchor remain pending"
+    "PGM-02-E05 offline signed activation foundation with installation identity, Lite J180/J210 lifecycle, Pro/Enterprise 30-day grace, Ed25519 verification, revocation, monotone sequence, access guards, HMAC trusted-time evidence and paired migration 0004; authoritative Server repositories and external monotonic anchor remain pending",
+    "CI regression repair: resolvable exact Temurin selector, Java bootstrap before smokes, native pnpm 11 setup, immutable action pins and blocking workflow drift tests"
   ],
   "roadmap_archive_sha256": "11db7d27bbc79f688cd1fda31a24aaf31b56a56db36b6487b64154c148ab54d3",
   "engineering_governance_sha256": "f24357051a5401f598c3d77bbe5814d3759a176095537659243658ba3ff109c7"

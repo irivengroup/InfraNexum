@@ -29,6 +29,7 @@ class ToolchainCheckerTest(unittest.TestCase):
             ".mvn/wrapper/maven-wrapper.properties",
             "src/applications/web/package.json",
             "src/applications/web/pnpm-lock.yaml",
+            ".github/workflows/foundation.yml",
         ):
             target = self.root / relative
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -131,6 +132,31 @@ class ToolchainCheckerTest(unittest.TestCase):
         self.assertIn("CHECK-TOOLCHAIN-023", self.ids())
         lock_path.unlink()
         self.assertIn("CHECK-TOOLCHAIN-022", self.ids())
+
+    def test_ci_java_selector_and_action_pins_are_enforced(self) -> None:
+        payload = self.lock()
+        del payload["github_actions"]
+        payload["toolchains"]["java"].pop("github_actions_version", None)
+        self.write_lock(payload)
+        self.assertIn("CHECK-TOOLCHAIN-025", self.ids())
+
+        shutil.copy2(SOURCE / "toolchains.lock.json", self.root / "toolchains.lock.json")
+        workflow_path = self.root / ".github/workflows/foundation.yml"
+        workflow = workflow_path.read_text(encoding="utf-8")
+        workflow_path.write_text(workflow.replace("25.0.4+7.0.LTS", "25.0.4+7"), encoding="utf-8")
+        self.assertTrue({"CHECK-TOOLCHAIN-026", "CHECK-TOOLCHAIN-029"} <= self.ids())
+
+    def test_ci_web_bootstrap_is_exact_and_legacy_free(self) -> None:
+        workflow_path = self.root / ".github/workflows/foundation.yml"
+        workflow = workflow_path.read_text(encoding="utf-8")
+        workflow = workflow.replace("runtime: node@24.18.1", "runtime: node@24")
+        workflow += "\n# actions/setup-node@legacy\n# corepack prepare pnpm@latest --activate\n"
+        workflow_path.write_text(workflow, encoding="utf-8")
+        self.assertTrue({"CHECK-TOOLCHAIN-027", "CHECK-TOOLCHAIN-028"} <= self.ids())
+
+    def test_ci_workflow_is_required(self) -> None:
+        (self.root / ".github/workflows/foundation.yml").unlink()
+        self.assertIn("CHECK-TOOLCHAIN-024", self.ids())
 
     def test_external_paths_are_rendered_absolutely(self) -> None:
         checker = ToolchainChecker(self.root)

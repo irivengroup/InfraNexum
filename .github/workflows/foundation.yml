@@ -24,10 +24,14 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: '3.13'
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: temurin
+          java-version: '25.0.4+7.0.LTS'
       - name: Install pinned validation tooling
         run: python -m pip install --disable-pip-version-check --requirement requirements/ci.txt
       - name: Run architecture, toolchain, migration and contract gates
-        run: make architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check java-contract-smoke java-eventing-smoke java-jdbc-smoke java-capabilities-smoke java-entitlements-smoke
+        run: make architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check java-contract-smoke java-eventing-smoke java-jdbc-smoke java-capabilities-smoke java-entitlements-smoke java-activation-operations-smoke
 
   agent:
     runs-on: ubuntu-24.04
@@ -53,13 +57,17 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - uses: pnpm/setup@5d160c5bc68a09337ad0d5654e237e03253b5879 # v1
         with:
-          node-version: '24.18.1'
-          cache: pnpm
+          version: '11.17.0'
+          runtime: node@24.18.1
+          cache: true
           cache-dependency-path: src/applications/web/pnpm-lock.yaml
-      - name: Enable exact pnpm toolchain
-        run: corepack enable && corepack prepare pnpm@11.17.0 --activate
+          install: false
+      - name: Verify exact Web toolchains
+        run: |
+          test "$(node --version)" = "v24.18.1"
+          test "$(pnpm --version)" = "11.17.0"
       - name: Verify empty dependency graph and immutable lockfile
         working-directory: src/applications/web
         run: pnpm install --frozen-lockfile --offline
@@ -76,7 +84,7 @@ jobs:
       - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: temurin
-          java-version: '25.0.4+7'
+          java-version: '25.0.4+7.0.LTS'
           cache: maven
       - name: Verify Java modules and executable Server package
         run: ./mvnw --batch-mode --no-transfer-progress verify
@@ -110,7 +118,7 @@ jobs:
       - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: temurin
-          java-version: '25.0.4+7'
+          java-version: '25.0.4+7.0.LTS'
           cache: maven
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends postgresql-client

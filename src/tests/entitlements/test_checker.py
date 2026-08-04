@@ -199,7 +199,7 @@ class EntitlementCheckerTest(unittest.TestCase):
         with patch.object(sys, "argv", ["entitlements", "--root", str(SOURCE)]):
             with contextlib.redirect_stdout(io.StringIO()):
                 with self.assertRaises(SystemExit) as caught:
-                    runpy.run_module("validation.entitlements.cli", run_name="__main__")
+                    runpy.run_path(str(SOURCE / "src/validation/entitlements/cli.py"), run_name="__main__")
         self.assertEqual(0, caught.exception.code)
 
 

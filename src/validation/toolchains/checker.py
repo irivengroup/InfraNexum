@@ -55,6 +55,7 @@ class ToolchainChecker:
         self._check_maven(tools)
         self._check_go(tools)
         self._check_web(tools)
+        self._check_ci_workflow(payload, tools)
         return tuple(sorted(set(self.violations)))
 
     def _load_lock(self, path: Path) -> Any | None:
@@ -151,6 +152,81 @@ class ToolchainChecker:
         lock_text = self._read_text(lock_path, "CHECK-TOOLCHAIN-022", "Web pnpm lockfile cannot be read")
         if lock_text is not None and ("lockfileVersion: '9.0'" not in lock_text or "importers:" not in lock_text):
             self._add("CHECK-TOOLCHAIN-023", lock_path, "Web pnpm lockfile format is invalid")
+
+    def _check_ci_workflow(self, payload: dict[str, Any], tools: dict[str, Any]) -> None:
+        workflow_path = self.root / ".github/workflows/foundation.yml"
+        workflow = self._read_text(
+            workflow_path,
+            "CHECK-TOOLCHAIN-024",
+            "Foundation workflow cannot be read",
+        )
+        if workflow is None:
+            return
+
+        action_pins = payload.get("github_actions")
+        java_item = tools.get("java")
+        java_selector = java_item.get("github_actions_version") if isinstance(java_item, dict) else None
+        setup_java = action_pins.get("setup-java") if isinstance(action_pins, dict) else None
+        pnpm_setup = action_pins.get("pnpm-setup") if isinstance(action_pins, dict) else None
+        setup_java_sha = setup_java.get("sha") if isinstance(setup_java, dict) else None
+        pnpm_setup_sha = pnpm_setup.get("sha") if isinstance(pnpm_setup, dict) else None
+        if (
+            not isinstance(java_selector, str)
+            or not java_selector.endswith(".LTS")
+            or not isinstance(setup_java_sha, str)
+            or not re.fullmatch(r"[0-9a-f]{40}", setup_java_sha)
+            or not isinstance(pnpm_setup_sha, str)
+            or not re.fullmatch(r"[0-9a-f]{40}", pnpm_setup_sha)
+        ):
+            self._add(
+                "CHECK-TOOLCHAIN-025",
+                self.root / "toolchains.lock.json",
+                "GitHub Actions selectors and immutable action SHAs are incomplete",
+            )
+            return
+
+        java_action = f"actions/setup-java@{setup_java_sha}"
+        java_version = f"java-version: '{java_selector}'"
+        if workflow.count(java_action) < 3 or workflow.count(java_version) < 3:
+            self._add(
+                "CHECK-TOOLCHAIN-026",
+                workflow_path,
+                "All Java jobs must use the resolvable exact Temurin selector and pinned setup-java action",
+            )
+
+        pnpm_action = f"pnpm/setup@{pnpm_setup_sha}"
+        pnpm_version = self._version(tools, "pnpm")
+        node_version = self._version(tools, "node")
+        required_pnpm_tokens = (
+            pnpm_action,
+            f"version: '{pnpm_version}'",
+            f"runtime: node@{node_version}",
+            "cache: true",
+            "cache-dependency-path: src/applications/web/pnpm-lock.yaml",
+            "install: false",
+        )
+        if any(token not in workflow for token in required_pnpm_tokens):
+            self._add(
+                "CHECK-TOOLCHAIN-027",
+                workflow_path,
+                "Web CI must bootstrap exact Node and pnpm through pinned pnpm/setup",
+            )
+        if any(token in workflow for token in ("actions/setup-node@", "pnpm/action-setup@", "corepack prepare")):
+            self._add(
+                "CHECK-TOOLCHAIN-028",
+                workflow_path,
+                "Legacy Web toolchain bootstrap is forbidden because pnpm must exist before cache resolution",
+            )
+
+        architecture_start = workflow.find("  architecture:")
+        architecture_end = workflow.find("\n  agent:", architecture_start)
+        architecture_job = workflow[architecture_start:architecture_end] if architecture_start >= 0 and architecture_end > architecture_start else ""
+        if java_action not in architecture_job or java_version not in architecture_job:
+            self._add(
+                "CHECK-TOOLCHAIN-029",
+                workflow_path,
+                "The architecture job must install the exact Java toolchain before dependency-free smokes",
+            )
 
     @staticmethod
     def _version(tools: dict[str, Any], key: str) -> str:

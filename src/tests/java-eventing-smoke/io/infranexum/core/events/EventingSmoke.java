@@ -48,7 +48,7 @@ public final class EventingSmoke {
         require("committed".equals(outcome.value()), "transaction result lost");
         require(visible.get(), "post-commit hook ran before committed state was visible");
         require(outcome.postCommitFailures().size() == 1, "post-commit failure not captured");
-        require(store.outboxSnapshot().getFirst().status() == OutboxStatus.PENDING, "outbox state is not pending");
+        require(store.outboxSnapshot().get(0).status() == OutboxStatus.PENDING, "outbox state is not pending");
 
         AtomicBoolean rolledBackSignal = new AtomicBoolean();
         boolean failed = false;
@@ -76,7 +76,7 @@ public final class EventingSmoke {
         });
         List<OutboxRecord> firstClaim = store.claimBatch("worker-a", 1, NOW.plusSeconds(10), Duration.ofSeconds(5));
         require(firstClaim.size() == 1, "bounded claim returned wrong size");
-        require(firstClaim.getFirst().event().eventId().equals(event(1).eventId()), "claim ordering is not deterministic");
+        require(firstClaim.get(0).event().eventId().equals(event(1).eventId()), "claim ordering is not deterministic");
         List<OutboxRecord> recovered = store.claimBatch("worker-b", 3, NOW.plusSeconds(15), Duration.ofSeconds(5));
         require(recovered.size() == 3, "expired lease was not recovered");
         for (OutboxRecord record : recovered) {
@@ -154,7 +154,8 @@ public final class EventingSmoke {
 
     private static void provesConcurrentTransactionsAndClaims() throws Exception {
         InMemoryEventStore store = new InMemoryEventStore();
-        try (ExecutorService executor = Executors.newFixedThreadPool(8)) {
+        ExecutorService executor = Executors.newFixedThreadPool(8);
+        try {
             List<Callable<Void>> writes = java.util.stream.IntStream.range(0, 200)
                     .mapToObj(index -> (Callable<Void>) () -> {
                         store.execute(transaction -> {
@@ -175,6 +176,8 @@ public final class EventingSmoke {
                 for (OutboxRecord record : future.get()) claimedIds.add(record.event().eventId().toString());
             }
             require(claimedIds.size() == 200, "concurrent claims duplicated or lost events");
+        } finally {
+            executor.shutdownNow();
         }
     }
 

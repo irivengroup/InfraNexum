@@ -1,8 +1,8 @@
-# InfraNexum 2.0.0-alpha.0.7 — Signed Activation & Lite Lifecycle Foundation
+# InfraNexum 2.0.0-alpha.0.8 — CI Toolchain Repair
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
-This repository is the seventh executable implementation increment derived from architecture baseline `2.0.0-draft.21` and the complete implementation roadmap.
+This repository is the eighth executable implementation increment derived from architecture baseline `2.0.0-draft.21` and the complete implementation roadmap.
 
 ## Source layout
 
@@ -58,9 +58,8 @@ The offline entitlement core, lifecycle policies, access guards, schema, migrati
 
 The following remain pending:
 
-- JDBC repositories and atomic activation import;
-- authoritative Server integration and activation APIs;
-- real independent temporal storage and TPM/HSM or remote monotonic anchor;
+- authoritative Spring Server integration, activation APIs and readiness enforcement around the implemented JDBC repository and import coordinator;
+- TPM/HSM or remote monotonic anchor beyond the implemented fsync-backed independent file proof store;
 - coordinated-restore detection beyond two locally restored copies;
 - external Python/PHP activation generators;
 - live PostgreSQL/Oracle migration and concurrency execution;
@@ -92,7 +91,7 @@ make persistence-test persistence-check
 make capabilities-test capabilities-check
 make entitlements-test entitlements-check
 make java-contract-smoke java-eventing-smoke java-jdbc-smoke
-make java-capabilities-smoke java-entitlements-smoke
+make java-capabilities-smoke java-entitlements-smoke java-activation-operations-smoke
 GOTOOLCHAIN=local make agent-vet agent-test agent-build
 make web-test web-smoke
 ```
@@ -100,8 +99,8 @@ make web-test web-smoke
 Exact target validation:
 
 ```bash
-corepack enable
-corepack prepare pnpm@11.17.0 --activate
+test "$(node --version)" = "v24.18.1"
+test "$(pnpm --version)" = "11.17.0"
 cd src/applications/web && pnpm install --frozen-lockfile --offline && pnpm verify
 GOTOOLCHAIN=go1.26.5 make agent-vet agent-test agent-build
 ./mvnw --batch-mode --no-transfer-progress verify
@@ -121,3 +120,12 @@ GOTOOLCHAIN=go1.26.5 make agent-vet agent-test agent-build
 ## alpha.0.7 activation operations
 
 Adds the JDBC activation repository, compensating offline import coordinator, and an atomic independent integrity-proof file store. Live database and Java 25 certification remain pending.
+
+## alpha.0.8 CI toolchain repair
+
+- installs the exact Temurin selector `25.0.4+7.0.LTS` before every Java smoke or Maven job;
+- replaces the broken `setup-node`/late-Corepack sequence with pinned `pnpm/setup` for Node.js `24.18.1` and pnpm `11.17.0`;
+- keeps all GitHub Actions pinned to immutable commit SHAs;
+- makes the dependency-free eventing smoke compatible with the bootstrap JDK by avoiding `List.getFirst()` and `ExecutorService` try-with-resources;
+- adds blocking toolchain tests for Java selectors, action pins, Web bootstrap and architecture-job ordering;
+- removes the duplicate-module `runpy` warning from the entitlement test suite.
