@@ -2,51 +2,55 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.9",
-  "profile": "development-foundation-ci-execution-repair",
+  "version": "2.0.0-alpha.0.10",
+  "profile": "development-foundation-authoritative-server-entitlements-runtime",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
-  "delivery_contents": "source and validation evidence; generated Agent binary, caches and temporary artifacts excluded",
+  "delivery_contents": "source and validation evidence; generated binaries, caches, dependency directories and temporary artifacts excluded",
   "artifacts": [
     {
       "id": "infranexum-server",
-      "status": "source-integrated-maven-wrapper-permission-ci-repair-java25-reactor-and-authoritative-activation-wiring-pending"
+      "status": "source-authoritative-entitlement-runtime-integrated-static-warning-free-compile-and-seven-offline-smokes-passed-java25-maven-spring-junit-jacoco-and-executable-jar-pending"
     },
     {
       "id": "infranexum-agent",
-      "status": "source-local-go1.23.2-vet-race-coverage-static-build-runtime-smoke-validated-go1.26.5-pending"
+      "status": "source-local-go1.23.2-vet-race-98.4-percent-coverage-static-build-runtime-smoke-and-20-repeat-stress-validated-go1.26.5-pending"
     },
     {
       "id": "infranexum-web",
-      "status": "runtime-source-node22.16.0-tests-passed-pnpm-workspace-lockfile-settings-aligned-hosted-node24.18.1-pnpm11.17.0-rerun-pending"
+      "status": "runtime-source-node22.16.0-27-tests-and-process-smoke-passed-node24.18.1-pnpm11.17.0-frozen-install-pending"
     },
     {
       "id": "core-domain-contract-pack-v1",
-      "status": "source-offline-java21-behavior-smoke-validated-java25-reactor-pending"
+      "status": "source-offline-java21-smoke-validated-java25-reactor-pending"
     },
     {
       "id": "core-transactional-events-v1.1",
-      "status": "source-offline-java21-behavior-concurrency-smoke-validated-bootstrap-jdk-regression-fixed-java25-junit-jacoco-and-kafka-pending"
+      "status": "source-offline-java21-behavior-and-concurrency-smoke-validated-java25-junit-jacoco-and-kafka-pending"
     },
     {
       "id": "adapter-persistence-jdbc",
-      "status": "source-jdbc-event-store-activation-repository-and-independent-proof-file-store-compiled-live-postgresql-oracle-execution-pending"
+      "status": "source-event-and-activation-repositories-independent-proof-store-and-compensation-protocol-compiled-live-postgresql-oracle-execution-pending"
     },
     {
       "id": "migration-catalogue-0001-0004",
-      "status": "static-pairing-checksum-logical-model-contract-and-rollback-validated-live-database-execution-pending"
-    },
-    {
-      "id": "postgresql-17-18-live-ci",
-      "status": "workflow-configured-not-executed"
+      "status": "static-pairing-checksum-logical-model-verification-and-rollback-validated-live-database-execution-pending"
     },
     {
       "id": "core-capabilities-quotas-v1",
-      "status": "source-static-gate-and-dependency-free-java21-smoke-validated-entitlement-contract-integrated-java25-junit-jacoco-pending"
+      "status": "source-static-gate-offline-smoke-and-authoritative-entitlement-synchronization-integrated-java25-junit-jacoco-pending"
     },
     {
       "id": "core-entitlements-v1",
-      "status": "source-offline-verification-import-coordinator-compensation-trusted-time-and-java21-smokes-validated-server-authoritative-wiring-java25-and-live-database-pending"
+      "status": "source-offline-signature-lifecycle-trusted-time-runtime-authority-import-coordinator-and-server-boundary-integrated-live-database-and-external-monotonic-anchor-pending"
+    },
+    {
+      "id": "platform-entitlements-http-v1",
+      "status": "evaluation-status-openapi-problem-json-mutation-guard-readiness-and-pre-port-startup-guard-source-integrated-real-spring-runtime-tests-pending"
+    },
+    {
+      "id": "docker-compose-runtime",
+      "status": "not-delivered-until-java25-jar-migrations-installation-identity-and-secret-provisioning-are-executable"
     }
   ],
   "validation_reports": [
@@ -65,6 +69,8 @@
     "../../artifacts/validation/migrations.json",
     "../../artifacts/validation/persistence-coverage.txt",
     "../../artifacts/validation/persistence.json",
+    "../../artifacts/validation/repository-syntax.json",
+    "../../artifacts/validation/server-static-compile.json",
     "../../artifacts/validation/toolchain-coverage.txt",
     "../../artifacts/validation/toolchains.json",
     "../../artifacts/validation/validation-status.json",
@@ -72,7 +78,7 @@
     "../../artifacts/validation/web-smoke.json"
   ],
   "validation_summary": {
-    "python_tests": 103,
+    "python_tests": 104,
     "architecture_tests": 28,
     "architecture_coverage_percent": 100,
     "architecture_violations": 0,
@@ -88,25 +94,28 @@
     "persistence_tests": 10,
     "persistence_coverage_percent": 98,
     "persistence_violations": 0,
-    "agent_coverage_percent": 98.4,
-    "agent_runtime_stress_repetitions": 20,
-    "web_tests": 27,
-    "web_line_coverage_percent": 99.65,
-    "web_branch_coverage_percent": 98.28,
-    "web_function_coverage_percent": 100,
     "capability_tests": 10,
     "capability_coverage_percent": 99,
     "capability_violations": 0,
-    "entitlement_tests": 9,
+    "entitlement_tests": 10,
     "entitlement_coverage_percent": 100,
-    "entitlement_violations": 0
+    "entitlement_violations": 0,
+    "java_offline_smokes": 7,
+    "server_static_warning_free_compile": true,
+    "agent_coverage_percent": 98.4,
+    "agent_runtime_stress_repetitions": 20,
+    "agent_process_smoke": true,
+    "web_tests": 27,
+    "web_line_coverage_percent": 99.65,
+    "web_branch_coverage_percent": 98.28,
+    "web_function_coverage_percent": 100
   },
   "source_layout": "all implementation sources, tests, validation code, migrations and build-support scripts are grouped below src/",
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.9-ci-execution-repair",
+    "prefix": "infranexum-2.0.0-alpha.0.10-server-entitlements-runtime",
     "checksum_manifest": "source-files.sha256",
-    "recorded_files": 338,
-    "archive_entries": 340,
+    "recorded_files": 383,
+    "archive_entries": 385,
     "reproducible": true
   }
 }

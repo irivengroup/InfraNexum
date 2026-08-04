@@ -39,6 +39,21 @@ FILES = (
     "src/applications/server/MANIFEST.json",
     "src/components/core/entitlements/src/main/java/io/infranexum/core/entitlements/EntitlementGuard.java",
     "src/components/core/entitlements/src/main/java/io/infranexum/core/entitlements/EntitlementAccessException.java",
+    "src/components/core/entitlements/src/main/java/io/infranexum/core/entitlements/EntitlementRuntimeAuthority.java",
+    "src/components/core/entitlements/src/main/java/io/infranexum/core/entitlements/EntitlementRuntimeStatus.java",
+    "src/components/core/entitlements/src/main/java/io/infranexum/core/entitlements/EntitlementRuntimeRepository.java",
+    "src/components/adapters/persistence-jdbc/src/main/java/io/infranexum/adapters/persistence/jdbc/JdbcActivationOperationalRepository.java",
+    "src/components/adapters/persistence-jdbc/src/main/java/io/infranexum/adapters/persistence/jdbc/FileIntegrityProofStore.java",
+    "src/components/adapters/persistence-jdbc/src/main/java/io/infranexum/adapters/persistence/jdbc/JdbcRevocationRegistry.java",
+    "src/applications/server/src/main/java/io/infranexum/server/platform/entitlements/ActivationRuntimeConfiguration.java",
+    "src/applications/server/src/main/java/io/infranexum/server/platform/entitlements/ActivationRuntimeProperties.java",
+    "src/applications/server/src/main/java/io/infranexum/server/platform/entitlements/EntitlementWebServerStartupGuard.java",
+    "src/applications/server/src/main/java/io/infranexum/server/platform/entitlements/EntitlementMutationInterceptor.java",
+    "src/applications/server/src/main/java/io/infranexum/server/platform/entitlements/EvaluationStatusController.java",
+    "src/applications/server/src/main/java/io/infranexum/server/platform/entitlements/EntitlementExceptionHandler.java",
+    "src/applications/server/src/main/resources/application.yaml",
+    "src/applications/server/src/main/resources/contracts/activation-trust-store.schema.json",
+    "src/applications/server/src/main/resources/openapi/platform-entitlements.yaml",
 )
 
 
@@ -151,6 +166,28 @@ class EntitlementCheckerTest(unittest.TestCase):
         model.write_text("[]", encoding="utf-8")
         self.assertIn("CHECK-ENT-MIG-003", self.ids())
 
+    def test_authoritative_runtime_wiring_is_enforced(self) -> None:
+        mutations = (
+            (FILES[23], "initializeAndRequireStartup"),
+            (FILES[24], "Set<String> entitledCapabilities,"),
+            (FILES[26], "implements EntitlementRuntimeRepository"),
+            (FILES[27], "StandardCopyOption.ATOMIC_MOVE"),
+            (FILES[29], "authoritative entitlements require PostgreSQL or Oracle persistence"),
+            (FILES[31], "WebServerFactoryCustomizer<ConfigurableServletWebServerFactory>"),
+            (FILES[32], "authority.requireMutation()"),
+            (FILES[33], '@RequestMapping("/api/v1/platform/evaluation")'),
+        )
+        for relative, token in mutations:
+            self.mutate(relative, token)
+            self.assertIn("CHECK-ENT-RUNTIME-002", self.ids())
+            self.reset(relative)
+        self.mutate(FILES[35], "INFRANEXUM_ENTITLEMENTS_ENABLED:true")
+        self.assertIn("CHECK-ENT-RUNTIME-004", self.ids())
+        self.reset(FILES[35])
+        self.mutate(FILES[19], "spring-boot-starter-jdbc")
+        self.assertIn("CHECK-ENT-RUNTIME-006", self.ids())
+        self.reset(FILES[19])
+
     def test_reactor_server_ci_and_policy_wiring_are_enforced(self) -> None:
         mutations = (
             (FILES[0], "<module>src/components/core/entitlements</module>"),
@@ -159,7 +196,9 @@ class EntitlementCheckerTest(unittest.TestCase):
             (FILES[3], "components/core/entitlements"),
             (FILES[1], "entitlements-test"),
             (FILES[1], "java-entitlements-smoke"),
+            (FILES[1], "java-entitlement-runtime-smoke"),
             (FILES[2], "entitlements-test"),
+            (FILES[2], "java-entitlement-runtime-smoke"),
             (FILES[2], "0004-core-entitlements/postgresql.sql"),
         )
         for relative, token in mutations:

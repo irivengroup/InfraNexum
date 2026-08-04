@@ -20,6 +20,8 @@ class EntitlementChecker:
     JAVA = MODULE / "src/main/java/io/infranexum/core/entitlements"
     RESOURCES = MODULE / "src/main/resources/io/infranexum/core/entitlements"
     MIGRATION = Path("src/distribution/migrations/0004-core-entitlements")
+    SERVER = Path("src/applications/server/src/main/java/io/infranexum/server/platform/entitlements")
+    JDBC = Path("src/components/adapters/persistence-jdbc/src/main/java/io/infranexum/adapters/persistence/jdbc")
 
     def __init__(self, root: Path) -> None:
         self.root = root.resolve()
@@ -31,6 +33,7 @@ class EntitlementChecker:
         self._check_contract_pack()
         self._check_java_invariants()
         self._check_migration()
+        self._check_runtime_integration()
         self._check_wiring()
         self._check_key_material()
         return tuple(sorted(self.violations))
@@ -48,6 +51,20 @@ class EntitlementChecker:
             self.JAVA / "IntegrityProof.java",
             self.JAVA / "EntitlementGuard.java",
             self.JAVA / "EntitlementAccessException.java",
+            self.JAVA / "EntitlementRuntimeAuthority.java",
+            self.JAVA / "EntitlementRuntimeStatus.java",
+            self.JAVA / "EntitlementRuntimeRepository.java",
+            self.JDBC / "JdbcActivationOperationalRepository.java",
+            self.JDBC / "FileIntegrityProofStore.java",
+            self.JDBC / "JdbcRevocationRegistry.java",
+            self.SERVER / "ActivationRuntimeConfiguration.java",
+            self.SERVER / "ActivationRuntimeProperties.java",
+            self.SERVER / "EntitlementWebServerStartupGuard.java",
+            self.SERVER / "EntitlementMutationInterceptor.java",
+            self.SERVER / "EvaluationStatusController.java",
+            self.SERVER / "EntitlementExceptionHandler.java",
+            Path("src/applications/server/src/main/resources/contracts/activation-trust-store.schema.json"),
+            Path("src/applications/server/src/main/resources/openapi/platform-entitlements.yaml"),
             self.MIGRATION / "migration.yaml",
             self.MIGRATION / "postgresql.sql",
             self.MIGRATION / "oracle.sql",
@@ -165,6 +182,59 @@ class EntitlementChecker:
                 self._add("CHECK-ENT-MIG-007", self.root / self.MIGRATION / "logical-model.json",
                           f"logical model differs from expected objects: {names}")
 
+    def _check_runtime_integration(self) -> None:
+        checks = {
+            self.JAVA / "EntitlementRuntimeAuthority.java": (
+                "initializeAndRequireStartup", "currentStatus", "requireMutation",
+                "independent temporal evidence is missing", "acceptedManifestDocument"),
+            self.JAVA / "EntitlementRuntimeStatus.java": (
+                "Set<String> entitledCapabilities,", "Map<String, Long> quotaOverrides,",
+                "serviceStartupPermitted", "mutationPermitted"),
+            self.JDBC / "JdbcActivationOperationalRepository.java": (
+                "implements EntitlementRuntimeRepository", "initializeLite", "updateRuntimeState",
+                "acceptedManifestDocument"),
+            self.JDBC / "FileIntegrityProofStore.java": (
+                "StandardCopyOption.ATOMIC_MOVE", "channel.force(true)", "OWNER_READ", "OWNER_WRITE"),
+            self.SERVER / "ActivationRuntimeConfiguration.java": (
+                "authoritative entitlements require PostgreSQL or Oracle persistence",
+                "ActivationImportCoordinator", "EntitlementRuntimeAuthority", "JdbcRevocationRegistry"),
+            self.SERVER / "EntitlementWebServerStartupGuard.java": (
+                "WebServerFactoryCustomizer<ConfigurableServletWebServerFactory>",
+                "initializeAndRequireStartup", "applyEntitlementStatus"),
+            self.SERVER / "EntitlementMutationInterceptor.java": (
+                'Set.of("POST", "PUT", "PATCH", "DELETE")', "authority.requireMutation()"),
+            self.SERVER / "EvaluationStatusController.java": (
+                '@RequestMapping("/api/v1/platform/evaluation")', '@GetMapping("/status")',
+                "CacheControl.noStore()"),
+            self.SERVER / "EntitlementExceptionHandler.java": (
+                "MediaType.APPLICATION_PROBLEM_JSON",
+                "INFRANEXUM_ENTITLEMENT_RUNTIME_UNAVAILABLE",
+                "urn:infranexum:problem:entitlement-access-denied"),
+        }
+        for relative, tokens in checks.items():
+            path = self.root / relative
+            text = self._text(path, "CHECK-ENT-RUNTIME-001")
+            if text is None:
+                continue
+            for token in tokens:
+                if token not in text:
+                    self._add("CHECK-ENT-RUNTIME-002", path, f"missing runtime entitlement invariant: {token}")
+        application = self._text(
+            self.root / "src/applications/server/src/main/resources/application.yaml",
+            "CHECK-ENT-RUNTIME-003")
+        if application is not None:
+            for token in ("INFRANEXUM_ENTITLEMENTS_ENABLED:true", "INFRANEXUM_INTEGRITY_KEY_FILE",
+                          "INFRANEXUM_INTEGRITY_PROOF_DIRECTORY", "INFRANEXUM_PERSISTENCE_MODE:POSTGRESQL"):
+                if token not in application:
+                    self._add("CHECK-ENT-RUNTIME-004", self.root / "src/applications/server/src/main/resources/application.yaml",
+                              f"missing fail-closed runtime configuration: {token}")
+        server_pom = self._text(self.root / "src/applications/server/pom.xml", "CHECK-ENT-RUNTIME-005")
+        if server_pom is not None:
+            for token in ("spring-boot-starter-jdbc", "org.postgresql", "postgresql"):
+                if token not in server_pom:
+                    self._add("CHECK-ENT-RUNTIME-006", self.root / "src/applications/server/pom.xml",
+                              f"missing runtime persistence dependency: {token}")
+
     def _check_wiring(self) -> None:
         checks = (
             ("pom.xml", "<module>src/components/core/entitlements</module>"),
@@ -173,7 +243,9 @@ class EntitlementChecker:
             ("src/validation/architecture/policy.json", "components/core/entitlements"),
             ("Makefile", "entitlements-test"),
             ("Makefile", "java-entitlements-smoke"),
+            ("Makefile", "java-entitlement-runtime-smoke"),
             (".github/workflows/foundation.yml", "entitlements-test"),
+            (".github/workflows/foundation.yml", "java-entitlement-runtime-smoke"),
             (".github/workflows/foundation.yml", "0004-core-entitlements/postgresql.sql"),
         )
         for relative, token in checks:

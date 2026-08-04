@@ -38,6 +38,7 @@ class EventPersistenceConfigurationTest {
 
     @Test
     void createsExplicitMemoryStoreOnlyForLocalStandalone() {
+        assertInstanceOf(UnavailableDataSource.class, configuration.memoryDataSource());
         assertInstanceOf(InMemoryEventStore.class, configuration.memoryEventStore(server(
                 RuntimeMode.STANDALONE, "local", "local")));
         assertThrows(ConfigurationException.class, () -> configuration.memoryEventStore(server(
@@ -56,6 +57,6 @@ class EventPersistenceConfigurationTest {
 
     private static ServerRuntimeProperties server(RuntimeMode mode, String region, String site) {
         return new ServerRuntimeProperties(
-                "server-test", mode, region, site, "2.0.0-alpha.0.9", "2.0.0-draft.21");
+                "server-test", mode, region, site, "2.0.0-alpha.0.10", "2.0.0-draft.21");
     }
 }

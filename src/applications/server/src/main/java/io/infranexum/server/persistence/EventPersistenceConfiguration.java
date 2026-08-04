@@ -22,6 +22,16 @@ public class EventPersistenceConfiguration {
             name = "infranexum.persistence.mode",
             havingValue = "MEMORY",
             matchIfMissing = true)
+    DataSource memoryDataSource() {
+        return new UnavailableDataSource(
+                "JDBC access is unavailable because infranexum.persistence.mode=MEMORY");
+    }
+
+    @Bean
+    @ConditionalOnProperty(
+            name = "infranexum.persistence.mode",
+            havingValue = "MEMORY",
+            matchIfMissing = true)
     TransactionalEventStore memoryEventStore(ServerRuntimeProperties server) {
         if (server.mode() != RuntimeMode.STANDALONE
                 || !"local".equalsIgnoreCase(server.region())

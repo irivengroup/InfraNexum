@@ -11,7 +11,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
 
-@SpringBootTest
+@SpringBootTest(properties = {
+    "infranexum.entitlements.enabled=false",
+    "infranexum.persistence.mode=MEMORY"
+})
 @AutoConfigureMockMvc
 class PlatformCapabilityHttpTest {
     @Autowired private MockMvc mockMvc;

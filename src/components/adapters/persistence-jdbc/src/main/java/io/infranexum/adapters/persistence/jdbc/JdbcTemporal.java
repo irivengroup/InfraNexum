@@ -13,6 +13,10 @@ final class JdbcTemporal {
     private JdbcTemporal() {}
 
     static void bindInstant(PreparedStatement statement, int index, Instant value) throws SQLException {
+        if (value == null) {
+            statement.setNull(index, java.sql.Types.TIMESTAMP_WITH_TIMEZONE);
+            return;
+        }
         statement.setObject(index, OffsetDateTime.ofInstant(value, ZoneOffset.UTC));
     }
 

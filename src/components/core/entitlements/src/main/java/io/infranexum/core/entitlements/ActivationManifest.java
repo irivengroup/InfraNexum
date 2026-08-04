@@ -21,4 +21,11 @@ public record ActivationManifest(ActivationManifestPayload payload, String signa
     public byte[] signatureBytes() {
         return Base64.getDecoder().decode(signature);
     }
+
+    /** Canonical persisted document used for deterministic re-verification at every Server startup. */
+    public String canonicalDocument() {
+        java.util.Map<String, Object> value = new java.util.LinkedHashMap<>(payload.canonicalValue());
+        value.put("signature", signature);
+        return CanonicalJson.string(value);
+    }
 }

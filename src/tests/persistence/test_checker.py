@@ -29,6 +29,7 @@ FILES = (
     "src/applications/server/src/main/java/io/infranexum/server/persistence/EventPersistenceConfiguration.java",
     "src/applications/server/MANIFEST.json",
     "src/applications/server/pom.xml",
+    "src/applications/server/src/main/java/io/infranexum/server/persistence/UnavailableDataSource.java",
 )
 
 
@@ -139,8 +140,10 @@ class PersistenceCheckerTest(unittest.TestCase):
         self.mutate(FILES[11], "infranexum-adapter-persistence-jdbc")
         self.assertIn("CHECK-JDBC-SERVER-004", self.ids())
         shutil.copy2(SOURCE / FILES[11], self.root / FILES[11])
-        with (self.root / FILES[11]).open("a", encoding="utf-8") as stream:
-            stream.write("<artifactId>spring-boot-starter-jdbc</artifactId>")
+        self.mutate(FILES[9], "memoryDataSource()", "memoryDataSourceDisabled()")
+        self.assertIn("CHECK-JDBC-SERVER-005", self.ids())
+        shutil.copy2(SOURCE / FILES[9], self.root / FILES[9])
+        self.mutate(FILES[12], "throw unavailable()", "return null")
         self.assertIn("CHECK-JDBC-SERVER-005", self.ids())
 
     def test_reactor_and_policy_registration_are_enforced(self) -> None:

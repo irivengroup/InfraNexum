@@ -40,6 +40,10 @@ class PersistenceChecker:
         )
         server_manifest_path = self.root / "src/applications/server/MANIFEST.json"
         server_pom_path = self.root / "src/applications/server/pom.xml"
+        unavailable_data_source_path = self.root / (
+            "src/applications/server/src/main/java/io/infranexum/server/persistence/"
+            "UnavailableDataSource.java"
+        )
 
         store = self._read(store_path, "CHECK-JDBC-STORE-001")
         dialect = self._read(dialect_path, "CHECK-JDBC-DIALECT-001")
@@ -51,6 +55,7 @@ class PersistenceChecker:
         server_config = self._read(server_config_path, "CHECK-JDBC-SERVER-001")
         server_manifest = self._read(server_manifest_path, "CHECK-JDBC-SERVER-001")
         server_pom = self._read(server_pom_path, "CHECK-JDBC-SERVER-001")
+        unavailable_data_source = self._read(unavailable_data_source_path, "CHECK-JDBC-SERVER-001")
 
         self._check_store(store_path, store)
         self._check_dialect(dialect_path, dialect)
@@ -59,7 +64,9 @@ class PersistenceChecker:
         self._check_migration(oracle_path, oracle)
         self._check_rollback(rollback_pg, rollback_postgres)
         self._check_rollback(rollback_oracle, rollback_ora)
-        self._check_server_integration(server_config_path, server_config, server_manifest_path, server_manifest, server_pom_path, server_pom)
+        self._check_server_integration(
+            server_config_path, server_config, server_manifest_path, server_manifest,
+            server_pom_path, server_pom, unavailable_data_source_path, unavailable_data_source)
         self._check_reactor()
         self._check_policy()
         return tuple(sorted(set(self.violations)))
@@ -147,6 +154,8 @@ class PersistenceChecker:
         manifest: str | None,
         pom_path: Path,
         pom: str | None,
+        unavailable_path: Path,
+        unavailable: str | None,
     ) -> None:
         if config is not None:
             required = (
@@ -168,7 +177,19 @@ class PersistenceChecker:
                 if artifact not in pom:
                     self._add("CHECK-JDBC-SERVER-004", pom_path, f"Server reactor dependency missing {artifact}")
             if "spring-boot-starter-jdbc" in pom:
-                self._add("CHECK-JDBC-SERVER-005", pom_path, "implicit DataSource auto-configuration is forbidden")
+                required_guard_tokens = (
+                    "memoryDataSource()",
+                    "UnavailableDataSource",
+                    "JDBC access is unavailable because infranexum.persistence.mode=MEMORY",
+                )
+                if config is None or any(token not in config for token in required_guard_tokens):
+                    self._add(
+                        "CHECK-JDBC-SERVER-005", config_path,
+                        "JDBC starter requires an explicit fail-closed MEMORY DataSource")
+                if unavailable is None or "throw unavailable()" not in unavailable:
+                    self._add(
+                        "CHECK-JDBC-SERVER-005", unavailable_path,
+                        "MEMORY DataSource must fail every accidental JDBC connection")
 
     def _check_reactor(self) -> None:
         path = self.root / "pom.xml"

@@ -58,24 +58,32 @@ public record PlatformCapabilityProperties(
     }
 
     CapabilityEnvironment toEnvironment() {
+        return toEnvironment(profile, allocationTier, entitledCapabilities, activationState);
+    }
+
+    CapabilityEnvironment toEnvironment(
+            InstallationProfile effectiveProfile,
+            AllocationTier effectiveTier,
+            Set<String> effectiveEntitlements,
+            ActivationState effectiveActivationState) {
         Set<CapabilityCode> installed = installedCapabilities.stream()
                 .map(CapabilityCode::new)
                 .collect(Collectors.toUnmodifiableSet());
-        Set<CapabilityCode> entitled = entitledCapabilities.stream()
+        Set<CapabilityCode> entitled = Objects.requireNonNull(effectiveEntitlements, "effectiveEntitlements").stream()
                 .map(CapabilityCode::new)
                 .collect(Collectors.toUnmodifiableSet());
         Map<CapabilityCode, DependencyStatus> statuses = dependencies.entrySet().stream()
                 .collect(Collectors.toUnmodifiableMap(entry -> new CapabilityCode(entry.getKey()), Map.Entry::getValue));
         return new CapabilityEnvironment(
-                profile,
-                allocationTier,
+                Objects.requireNonNull(effectiveProfile, "effectiveProfile"),
+                Objects.requireNonNull(effectiveTier, "effectiveTier"),
                 topology,
                 roles,
                 traits,
                 installed,
                 statuses,
                 entitled,
-                activationState,
+                Objects.requireNonNull(effectiveActivationState, "effectiveActivationState"),
                 catalogVersion,
                 profileVersion);
     }

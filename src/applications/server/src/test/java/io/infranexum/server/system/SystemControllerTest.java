@@ -12,7 +12,10 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 
-@SpringBootTest
+@SpringBootTest(properties = {
+    "infranexum.entitlements.enabled=false",
+    "infranexum.persistence.mode=MEMORY"
+})
 @AutoConfigureMockMvc
 class SystemControllerTest {
     @Autowired private MockMvc mockMvc;
@@ -27,7 +30,7 @@ class SystemControllerTest {
         mockMvc.perform(get("/api/v1/system/build"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.product").value("InfraNexum"))
-                .andExpect(jsonPath("$.version").value("2.0.0-alpha.0.9"))
+                .andExpect(jsonPath("$.version").value("2.0.0-alpha.0.10"))
                 .andExpect(jsonPath("$.component").value("SERVER"))
                 .andExpect(jsonPath("$.mode").value("STANDALONE"));
     }

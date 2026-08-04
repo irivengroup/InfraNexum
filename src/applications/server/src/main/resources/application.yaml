@@ -7,6 +7,15 @@ server:
 spring:
   application:
     name: infranexum-server
+  datasource:
+    url: ${INFRANEXUM_DATABASE_URL:}
+    username: ${INFRANEXUM_DATABASE_USERNAME:}
+    password: ${INFRANEXUM_DATABASE_PASSWORD:}
+    hikari:
+      maximum-pool-size: ${INFRANEXUM_DATABASE_POOL_MAX:10}
+      minimum-idle: ${INFRANEXUM_DATABASE_POOL_MIN:1}
+      connection-timeout: ${INFRANEXUM_DATABASE_CONNECTION_TIMEOUT_MS:10000}
+      validation-timeout: ${INFRANEXUM_DATABASE_VALIDATION_TIMEOUT_MS:5000}
   lifecycle:
     timeout-per-shutdown-phase: 20s
 
@@ -25,14 +34,22 @@ infranexum:
     quota-overrides: {}
     dependencies: {}
   persistence:
-    mode: ${INFRANEXUM_PERSISTENCE_MODE:MEMORY}
+    mode: ${INFRANEXUM_PERSISTENCE_MODE:POSTGRESQL}
     isolation: ${INFRANEXUM_PERSISTENCE_ISOLATION:READ_COMMITTED}
+  entitlements:
+    enabled: ${INFRANEXUM_ENTITLEMENTS_ENABLED:true}
+    customer-id: ${INFRANEXUM_CUSTOMER_ID:local-evaluation}
+    trust-store-path: ${INFRANEXUM_ACTIVATION_TRUST_STORE:}
+    integrity-key-path: ${INFRANEXUM_INTEGRITY_KEY_FILE:/run/secrets/infranexum_integrity_key}
+    proof-directory: ${INFRANEXUM_INTEGRITY_PROOF_DIRECTORY:/var/lib/infranexum/integrity}
+    max-manifest-bytes: ${INFRANEXUM_ACTIVATION_MAX_BYTES:4194304}
+    refresh-interval: ${INFRANEXUM_ENTITLEMENT_REFRESH_INTERVAL:PT5M}
   server:
     instance-id: ${INFRANEXUM_SERVER_INSTANCE_ID:server-local-1}
     mode: ${INFRANEXUM_SERVER_MODE:STANDALONE}
     region: ${INFRANEXUM_SERVER_REGION:local}
     site: ${INFRANEXUM_SERVER_SITE:local}
-    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.9}
+    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.10}
     architecture-baseline: ${INFRANEXUM_ARCHITECTURE_BASELINE:2.0.0-draft.21}
 
 management:

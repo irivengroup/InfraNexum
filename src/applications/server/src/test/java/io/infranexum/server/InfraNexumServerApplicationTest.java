@@ -8,7 +8,9 @@ class InfraNexumServerApplicationTest {
         InfraNexumServerApplication.main(new String[] {
             "--spring.main.web-application-type=none",
             "--spring.main.banner-mode=off",
-            "--spring.main.register-shutdown-hook=false"
+            "--spring.main.register-shutdown-hook=false",
+            "--infranexum.entitlements.enabled=false",
+            "--infranexum.persistence.mode=MEMORY"
         });
     }
 }
