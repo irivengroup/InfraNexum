@@ -19,7 +19,7 @@ class ArchitectureCheckerTest(unittest.TestCase):
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name) / "repository"
-        shutil.copytree(SOURCE_ROOT, self.root, ignore=shutil.ignore_patterns(".coverage", "__pycache__", "coverage.out", "target", "bin"))
+        shutil.copytree(SOURCE_ROOT, self.root, ignore=shutil.ignore_patterns(".git", ".coverage", "__pycache__", "coverage.out", "target", "bin"))
 
     def tearDown(self) -> None:
         self.temp.cleanup()
@@ -157,6 +157,16 @@ class ArchitectureCheckerTest(unittest.TestCase):
         artifact.mkdir()
         ids = {v.check_id for v in self.run_check().violations}
         self.assertTrue({"CHECK-BRAND-001", "CHECK-REPO-CLEAN-001"} <= ids)
+
+    def test_git_metadata_is_excluded_from_repository_scans(self) -> None:
+        git_dir = self.root / ".git"
+        (git_dir / "__pycache__").mkdir(parents=True)
+        (git_dir / "legacy.py").write_text("open" + "infra", encoding="utf-8")
+
+        report = self.run_check()
+        git_violations = [item for item in report.violations if item.path.startswith(".git/")]
+
+        self.assertEqual([], git_violations)
 
     def test_secret_material_is_blocked_without_echoing_it(self) -> None:
         secret_path = self.root / "src/applications/agent/configs/compromised.json"

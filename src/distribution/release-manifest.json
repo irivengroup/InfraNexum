@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.16",
-  "profile": "development-foundation-repository-closure-repair",
+  "version": "2.0.0-alpha.0.18",
+  "profile": "development-foundation-core-workers-bounded-runtime",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "source and validation evidence; generated binaries, caches, dependency directories and temporary artifacts excluded",
@@ -14,7 +14,7 @@
     },
     {
       "id": "infranexum-agent",
-      "status": "source-local-go1.23.2-vet-race-98.4-percent-coverage-static-build-runtime-smoke-and-5-repeat-stress-passed-go1.26.5-pending"
+      "status": "source-local-go1.23.2-vet-race-98.4-percent-coverage-and-static-build-passed-alpha0.16-runtime-smoke-stress-evidence-inherited-go1.26.5-pending"
     },
     {
       "id": "infranexum-web",
@@ -22,7 +22,7 @@
     },
     {
       "id": "source-integrity-v1",
-      "status": "410-path-canonical-inventory-18-tests-100-percent-coverage-git-tracking-java-import-case-collision-filename-type-maven-reactor-make-preflight-and-missing-checkout-diagnostic-separation-enforced"
+      "status": "447-path-canonical-inventory-31-tests-100-percent-coverage-git-tracking-exact-staged-snapshot-git-blob-checksums-precommit-hook-java-import-case-collision-filename-type-maven-reactor-and-make-preflight-enforced"
     },
     {
       "id": "core-domain-contract-pack-v1",
@@ -31,6 +31,10 @@
     {
       "id": "core-transactional-events-v1.1",
       "status": "source-34-junit-tests-defined-hosted-alpha0.14-core-events-jacoco-gates-passed"
+    },
+    {
+      "id": "core-workers-v1",
+      "status": "bounded-in-memory-reference-runtime-idempotency-retry-safety-lease-fencing-heartbeat-checkpoint-cancellation-and-truthful-shutdown-implemented-local-smoke-and-stress-passed-durable-jdbc-and-java25-junit-jacoco-pending"
     },
     {
       "id": "core-capabilities-quotas-v1",
@@ -58,7 +62,7 @@
     },
     {
       "id": "ci-foundation",
-      "status": "dedicated-source-integrity-job-precedes-all-build-test-jobs-alpha0.15-failure-traced-to-17-uncommitted-canonical-sources-alpha0.16-hosted-rerun-pending"
+      "status": "source-integrity-preflight-blocks-all-build-jobs-and-java25-architecture-job-is-required-to-run-all-9-dependency-free-smokes-including-workers-hosted-alpha0.18-rerun-pending"
     },
     {
       "id": "docker-compose-runtime",
@@ -87,21 +91,24 @@
     "../../artifacts/validation/repository-syntax.json",
     "../../artifacts/validation/source-integrity-coverage.txt",
     "../../artifacts/validation/source-integrity-git.json",
+    "../../artifacts/validation/source-integrity-staged.json",
     "../../artifacts/validation/source-integrity.json",
     "../../artifacts/validation/toolchain-coverage.txt",
     "../../artifacts/validation/toolchains.json",
     "../../artifacts/validation/validation-status.json",
     "../../artifacts/validation/web-coverage.txt",
-    "../../artifacts/validation/web-smoke.json"
+    "../../artifacts/validation/web-smoke.json",
+    "../../artifacts/validation/workers-smoke.json",
+    "../../artifacts/validation/workers-stress.json"
   ],
   "validation_summary": {
-    "source_inventory_paths": 410,
-    "source_integrity_tests": 18,
+    "source_inventory_paths": 447,
+    "source_integrity_tests": 31,
     "source_integrity_coverage_percent": 100,
     "source_integrity_violations": 0,
-    "source_integrity_git_negative_scenarios": 3,
-    "python_tests": 134,
-    "architecture_tests": 28,
+    "source_integrity_git_negative_scenarios": 4,
+    "python_tests": 148,
+    "architecture_tests": 29,
     "architecture_coverage_percent": 100,
     "architecture_violations": 0,
     "toolchain_tests": 19,
@@ -125,7 +132,7 @@
     "audit_tests": 8,
     "audit_coverage_percent": 100,
     "audit_violations": 0,
-    "java_offline_smoke_targets": 8,
+    "java_offline_smoke_targets": 9,
     "audit_java_static_smoke_compile": true,
     "agent_coverage_percent": 98.4,
     "agent_runtime_stress_repetitions": 5,
@@ -138,12 +145,19 @@
     "capability_module_tests_defined": 37,
     "repository_syntax_counts": {
       "python": 40,
-      "json": 58,
+      "json": 62,
       "yaml": 16,
-      "xml": 8,
+      "xml": 9,
       "javascript": 13,
-      "go": 8
-    }
+      "go": 8,
+      "shell": 1,
+      "java": 258
+    },
+    "workers_module_tests_defined": 30,
+    "workers_local_behavioral_harness_tests": 30,
+    "workers_smoke_repetitions": 10,
+    "workers_stress_tasks": 2000,
+    "workers_stress_duplicate_executions": 0
   },
   "source_layout": "all implementation sources, tests, validation code, migrations and build-support scripts are grouped below src/",
   "source_integrity": {
@@ -152,13 +166,25 @@
     "java_project_import_resolution": true,
     "case_insensitive_collision_rejection": true,
     "maven_module_inventory": true,
-    "missing_checkout_git_deduplication": true
+    "missing_checkout_git_deduplication": true,
+    "staged_snapshot_required_in_ci": true,
+    "staged_snapshot_materialization": "git checkout-index",
+    "precommit_hook": ".githooks/pre-commit",
+    "precommit_install_target": "make source-integrity-hook-install",
+    "precommit_side_effect_free": true,
+    "git_blob_checksum_required_in_ci": true,
+    "git_blob_checksum_manifest": "source-files.sha256",
+    "git_blob_checksum_source": "Git index stage-zero blobs",
+    "checkout_eol_independent": true,
+    "checksum_update_target": "make source-checksum-update"
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.16-repository-closure-repair",
-    "checksum_manifest": "source-files.sha256",
-    "recorded_files": 438,
-    "archive_entries": 440,
-    "reproducible": true
+    "prefix": "infranexum-2.0.0-alpha.0.18-core-workers-foundation",
+    "archive_entries": 481,
+    "reproducible": true,
+    "source_checksum_manifest": "source-files.sha256",
+    "source_recorded_files": 448,
+    "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
+    "release_recorded_files": 479
   }
 }

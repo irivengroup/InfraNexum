@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 
-.PHONY: source-integrity-test source-integrity-check source-integrity-update architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-test verify-foundation verify clean-generated
+.PHONY: source-integrity-test source-integrity-check source-integrity-precommit source-integrity-hook-install source-integrity-update source-checksum-update architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-test verify-foundation verify clean-generated
 
 PYTHON ?= python3
 GO ?= go
@@ -36,10 +36,26 @@ source-integrity-test:
 
 source-integrity-check:
 	@mkdir -p $(REPORT_ROOT)
-	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.source_integrity.cli --root . --json-report $(REPORT_ROOT)/source-integrity.json $(if $(SOURCE_INTEGRITY_REQUIRE_GIT),--require-git-tracking,)
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.source_integrity.cli --root . --json-report $(REPORT_ROOT)/source-integrity.json $(if $(SOURCE_INTEGRITY_REQUIRE_GIT),--require-git-tracking,) $(if $(SOURCE_INTEGRITY_REQUIRE_STAGED),--require-staged-snapshot,) $(if $(SOURCE_INTEGRITY_REQUIRE_CHECKSUMS),--require-git-checksums,)
+
+source-integrity-precommit:
+	@coverage_file="$$(mktemp)"; report_file="$$(mktemp)"; \
+	trap 'rm -f "$$coverage_file" "$$report_file"' EXIT; \
+	COVERAGE_FILE="$$coverage_file" PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m coverage run --branch --source=validation.source_integrity -m unittest discover -s $(TEST_ROOT)/source_integrity -p 'test_*.py'; \
+	COVERAGE_FILE="$$coverage_file" PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m coverage report --fail-under=98 > "$$report_file"; \
+	cat "$$report_file"
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.source_integrity.cli --root . --require-git-tracking --require-staged-snapshot --require-git-checksums
+	git diff --cached --check
+
+source-integrity-hook-install:
+	git config core.hooksPath .githooks
+	test "$$(git config --get core.hooksPath)" = ".githooks"
 
 source-integrity-update:
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.source_integrity.cli --root . --update-inventory
+
+source-checksum-update:
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.source_integrity.cli --root . --update-git-checksums
 
 architecture-test: source-integrity-check
 	@$(call PY_COVERAGE,validation.architecture,$(TEST_ROOT)/architecture,$(REPORT_ROOT)/architecture-coverage.txt)
@@ -113,6 +129,16 @@ java-eventing-smoke:
 		$(COMPONENT_ROOT)/core/events/src/main/java/io/infranexum/core/events/*.java \
 		$(TEST_ROOT)/java-eventing-smoke/io/infranexum/core/events/EventingSmoke.java; \
 	$(JAVA) -ea -cp "$$build_dir" io.infranexum.core.events.EventingSmoke
+
+java-workers-smoke:
+	@build_dir="$$(mktemp -d)"; \
+	trap 'rm -rf "$$build_dir"' EXIT; \
+	$(JAVAC) -Xlint:all -Werror -d "$$build_dir" \
+		$(COMPONENT_ROOT)/core/contracts/src/main/java/io/infranexum/core/contracts/*.java \
+		$(COMPONENT_ROOT)/core/events/src/main/java/io/infranexum/core/events/*.java \
+		$(COMPONENT_ROOT)/core/workers/src/main/java/io/infranexum/core/workers/*.java \
+		$(TEST_ROOT)/java-workers-smoke/io/infranexum/core/workers/WorkersSmoke.java; \
+	$(JAVA) -ea -cp "$$build_dir" io.infranexum.core.workers.WorkersSmoke
 
 java-audit-smoke:
 	@build_dir="$$(mktemp -d)"; \
@@ -225,7 +251,7 @@ web-verify: web-test web-smoke
 java-test:
 	./mvnw --batch-mode --no-transfer-progress verify
 
-verify-foundation: source-integrity-test source-integrity-check architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke agent-vet agent-test agent-build web-verify
+verify-foundation: source-integrity-test source-integrity-check architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke agent-vet agent-test agent-build web-verify
 
 verify: verify-foundation java-test
 

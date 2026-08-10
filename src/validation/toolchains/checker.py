@@ -256,28 +256,48 @@ class ToolchainChecker:
                 "Legacy Web toolchain bootstrap is forbidden because pnpm must exist before cache resolution",
             )
 
-        source_integrity_command = "run: SOURCE_INTEGRITY_REQUIRE_GIT=1 make source-integrity-test source-integrity-check"
+        source_integrity_requirements = (
+            "SOURCE_INTEGRITY_REQUIRE_GIT=1",
+            "SOURCE_INTEGRITY_REQUIRE_STAGED=1",
+            "SOURCE_INTEGRITY_REQUIRE_CHECKSUMS=1",
+            "make source-integrity-test source-integrity-check",
+        )
         job_pattern = re.compile(
             r"(?ms)^  (?P<name>[A-Za-z0-9_-]+):\n(?P<body>.*?)(?=^  [A-Za-z0-9_-]+:\n|\Z)"
         )
         job_bodies = {match.group("name"): match.group("body") for match in job_pattern.finditer(workflow)}
         source_body = job_bodies.get("source-integrity", "")
         dependent_jobs = ("architecture", "agent", "web", "java", "postgresql-integration")
-        if source_integrity_command not in source_body or any(
+        if not all(token in source_body for token in source_integrity_requirements) or any(
             "needs: source-integrity" not in job_bodies.get(name, "") for name in dependent_jobs
         ):
             self._add(
                 "CHECK-TOOLCHAIN-037",
                 workflow_path,
-                "All build/test jobs must depend on the Git-backed source-integrity preflight",
+                "All build/test jobs must depend on the Git-backed staged and checksummed source-integrity preflight",
             )
 
         architecture_job = job_bodies.get("architecture", "")
-        if java_action not in architecture_job or java_version not in architecture_job:
+        required_java_smokes = (
+            "java-contract-smoke",
+            "java-eventing-smoke",
+            "java-workers-smoke",
+            "java-audit-smoke",
+            "java-jdbc-smoke",
+            "java-capabilities-smoke",
+            "java-entitlements-smoke",
+            "java-entitlement-runtime-smoke",
+            "java-activation-operations-smoke",
+        )
+        if (
+            java_action not in architecture_job
+            or java_version not in architecture_job
+            or any(target not in architecture_job for target in required_java_smokes)
+        ):
             self._add(
                 "CHECK-TOOLCHAIN-029",
                 workflow_path,
-                "The architecture job must install the exact Java toolchain before dependency-free smokes",
+                "The architecture job must install the exact Java toolchain and execute every dependency-free smoke",
             )
 
         prepare_wrapper = "run: chmod 0755 mvnw && test -x mvnw"

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from pathlib import Path
 from typing import Any
@@ -83,7 +84,7 @@ class ArchitectureChecker:
                 "configured source root is missing",
             )
         rendered_source_root = self._render_path(self.source_root)
-        for path in self.root.rglob("*"):
+        for path in self._repository_paths():
             if not path.is_file() or path.suffix not in self._CODE_EXTENSIONS:
                 continue
             if not path.is_relative_to(self.source_root):
@@ -378,7 +379,7 @@ class ArchitectureChecker:
             ".xml",
             ".properties",
         }
-        for path in self.root.rglob("*"):
+        for path in self._repository_paths():
             if not path.is_file() or path.suffix.lower() not in scan_extensions:
                 continue
             relative = path.relative_to(self.root).as_posix().lower()
@@ -415,7 +416,7 @@ class ArchitectureChecker:
         if not compiled_patterns:
             return
         forbidden_artifacts = set(self.policy.get("forbidden_artifact_names", []))
-        for path in self.root.rglob("*"):
+        for path in self._repository_paths():
             if not path.is_file():
                 continue
             if any(
@@ -443,13 +444,23 @@ class ArchitectureChecker:
 
     def _check_artifacts(self) -> None:
         forbidden = set(self.policy["forbidden_artifact_names"])
-        for path in self.root.rglob("*"):
+        for path in self._repository_paths():
             if path.name in forbidden:
                 self._add(
                     "CHECK-REPO-CLEAN-001",
                     path,
                     f"generated or forbidden artifact {path.name!r} must not be committed",
                 )
+
+    def _repository_paths(self):
+        """Yield repository entries while pruning Git metadata deterministically."""
+        for directory, dirnames, filenames in os.walk(self.root):
+            dirnames[:] = sorted(name for name in dirnames if name != ".git")
+            base = Path(directory)
+            for name in dirnames:
+                yield base / name
+            for name in sorted(filenames):
+                yield base / name
 
     def _add(self, check_id: str, path: Path, message: str) -> None:
         self.violations.append(

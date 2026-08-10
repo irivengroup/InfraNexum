@@ -1,4 +1,4 @@
-# InfraNexum 2.0.0-alpha.0.16 — Repository Closure Repair
+# InfraNexum 2.0.0-alpha.0.18 — Core Workers Foundation
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
@@ -35,7 +35,32 @@ The repository currently contains:
 - centralized capabilities, entitlements and 119-quota policy engine;
 - signed activation, Lite J180/J210 lifecycle and Pro/Enterprise grace lifecycle;
 - authoritative Server entitlement runtime and activation persistence;
-- **Core Audit append-only foundation** introduced in `alpha.0.12`.
+- **Core Audit append-only foundation** introduced in `alpha.0.12`;
+- **Core Workers bounded runtime foundation** introduced in `alpha.0.18`.
+
+## alpha.0.18 — Core Workers Foundation
+
+This increment starts **PGM-02-E07** with an executable `components/core/workers` module. It adds idempotent scheduling, bounded worker concurrency, retry-safety contracts, versioned claim leases, heartbeat renewal, atomic checkpoints, cooperative cancellation, deterministic lease-expiry recovery and bounded graceful/forced shutdown.
+
+The runtime is deliberately fail-closed: stale lease holders cannot mutate a reclaimed task; `AT_MOST_ONCE` work is never automatically retried after an uncertain lease expiry; and a handler that ignores interruption leaves the pool in `STOPPING` with `ShutdownReport.terminated=false` instead of producing a false termination signal.
+
+`make java-workers-smoke` compiles the dependency-free Core path with `javac -Xlint:all -Werror` and exercises the critical concurrency/recovery scenarios. It passed 10/10 repeated local executions; the 30 JUnit-source scenarios also passed a JUnit-compatible behavioral harness under OpenJDK 21. A 2,000-task correctness stress completed with 2,000 terminal successes and zero duplicate executions. JUnit/JaCoCo gates remain fixed at 98% line and branch coverage in the Maven module, and the toolchain validator requires this smoke in the Java-enabled Foundation architecture job.
+
+**PGM-02-E07 remains NON TERMINÉ**: production completion still requires the durable PostgreSQL/Oracle `TaskStore`, paired migration(s), live concurrency contracts and Server composition/lifecycle integration. See `docs/core-workers.md`.
+
+## alpha.0.17 — staged repository closure hardening
+
+The second hosted failure proved that archive completeness is not sufficient: ten canonical files were still absent from the pushed Git snapshot even though they existed in the `alpha.0.16` source archive. This increment closes that delivery gap without weakening any existing validation.
+
+The source-integrity gate now supports `--require-staged-snapshot`. When enabled it materializes the exact Git index with `git checkout-index` into an isolated directory and runs the full inventory, Java graph, Maven reactor and Makefile preflight against that candidate commit. A complete working tree can therefore no longer mask an incomplete staged snapshot.
+
+A repository-local pre-commit hook is provided in `.githooks/pre-commit`. Install it once in an existing clone with `make source-integrity-hook-install`. The hook executes `make source-integrity-precommit`, which runs the source-integrity tests, validates Git tracking, validates the exact staged snapshot, verifies the staged Git-blob checksum manifest and executes `git diff --cached --check`. CI performs the same fail-closed validations after checkout.
+The pre-commit target is side-effect free: coverage and diagnostic reports are written only to temporary files, so committing cannot silently mutate release evidence or invalidate archive checksums.
+The tracked `src/distribution/source-files.sha256` covers the Git-tracked source snapshot (excluding itself) by hashing the immutable **Git index blobs**, not working-tree bytes. This keeps the manifest deterministic across checkout filters such as LF/CRLF conversion. The release bundle separately carries `artifacts/validation/release-files.sha256`, which hashes the actual packaged bytes, including validation evidence. This separation keeps Git recovery patches and release verification independently coherent.
+
+Before every InfraNexum commit that changes tracked sources, stage the intended change, run `make source-checksum-update`, stage `src/distribution/source-files.sha256`, then run `make source-integrity-precommit`. The installed hook is defense in depth; CI remains fail-closed and authoritative.
+
+The `alpha.0.17` recovery patch is built against the exact incomplete `alpha.0.16` state observed in the supplied hosted log: the ten missing paths are recreated explicitly and staged by `git apply --index`, while the staged-snapshot hardening is applied in the same change. This removes reliance on archive overlay behavior for the immediate repair.
 
 ## alpha.0.16 — Repository closure repair
 
@@ -131,6 +156,10 @@ No public Audit API is exposed yet. IAM authorization and self-auditing of reads
 ```bash
 python3 -m pip install --requirement requirements/ci.txt
 make source-integrity-test source-integrity-check
+# One-time clone hardening: install the repository-local pre-commit gate.
+make source-integrity-hook-install
+# Validate the exact Git index that will become the next commit.
+make source-integrity-precommit
 # After intentionally adding/removing canonical files, refresh and review the inventory:
 make source-integrity-update
 make source-integrity-check

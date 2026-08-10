@@ -1,0 +1,18 @@
+{
+  "schema": "infranexum.component-manifest/v1",
+  "id": "components.core.workers",
+  "kind": "component",
+  "owner": "team.core-platform",
+  "lifecycle": "active",
+  "languages": [
+    "java"
+  ],
+  "dependencies": [
+    "components.core.contracts",
+    "components.core.events"
+  ],
+  "source_baseline": [
+    "PGM-02-E07",
+    "PGM-02-E03"
+  ]
+}

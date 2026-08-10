@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+set -eu
+
+# Validate the exact candidate commit before Git creates it. This prevents a
+# complete working tree from producing an incomplete repository snapshot.
+SOURCE_INTEGRITY_REQUIRE_GIT=1 SOURCE_INTEGRITY_REQUIRE_STAGED=1 \
+    make source-integrity-precommit

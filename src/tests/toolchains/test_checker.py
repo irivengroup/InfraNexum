@@ -163,6 +163,11 @@ class ToolchainCheckerTest(unittest.TestCase):
         workflow_path.write_text(workflow.replace("25.0.4+7.0.LTS", "25.0.4+7"), encoding="utf-8")
         self.assertTrue({"CHECK-TOOLCHAIN-026", "CHECK-TOOLCHAIN-029"} <= self.ids())
 
+        shutil.copy2(SOURCE / ".github/workflows/foundation.yml", workflow_path)
+        workflow = workflow_path.read_text(encoding="utf-8")
+        workflow_path.write_text(workflow.replace(" java-workers-smoke", ""), encoding="utf-8")
+        self.assertIn("CHECK-TOOLCHAIN-029", self.ids())
+
     def test_ci_web_bootstrap_is_exact_and_legacy_free(self) -> None:
         workflow_path = self.root / ".github/workflows/foundation.yml"
         workflow = workflow_path.read_text(encoding="utf-8")
@@ -184,9 +189,25 @@ class ToolchainCheckerTest(unittest.TestCase):
         workflow = workflow_path.read_text(encoding="utf-8")
         workflow_path.write_text(
             workflow.replace(
-                "run: SOURCE_INTEGRITY_REQUIRE_GIT=1 make source-integrity-test source-integrity-check",
-                "run: echo source-integrity-disabled",
+                "make source-integrity-test source-integrity-check",
+                "echo source-integrity-disabled",
             ),
+            encoding="utf-8",
+        )
+        self.assertIn("CHECK-TOOLCHAIN-037", self.ids())
+
+        shutil.copy2(SOURCE / ".github/workflows/foundation.yml", workflow_path)
+        workflow = workflow_path.read_text(encoding="utf-8")
+        workflow_path.write_text(
+            workflow.replace("SOURCE_INTEGRITY_REQUIRE_STAGED=1 ", ""),
+            encoding="utf-8",
+        )
+        self.assertIn("CHECK-TOOLCHAIN-037", self.ids())
+
+        shutil.copy2(SOURCE / ".github/workflows/foundation.yml", workflow_path)
+        workflow = workflow_path.read_text(encoding="utf-8")
+        workflow_path.write_text(
+            workflow.replace("SOURCE_INTEGRITY_REQUIRE_CHECKSUMS=1 ", ""),
             encoding="utf-8",
         )
         self.assertIn("CHECK-TOOLCHAIN-037", self.ids())

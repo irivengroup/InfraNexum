@@ -41,3 +41,5 @@ bin/
 # Generated validation reports
 artifacts/validation/*.json
 artifacts/validation/*.txt
+
+artifacts/validation/*.sha256

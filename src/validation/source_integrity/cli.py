@@ -7,7 +7,7 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 
-from .checker import INVENTORY_PATH, SCHEMA, SourceIntegrityChecker
+from .checker import CHECKSUM_PATH, INVENTORY_PATH, SCHEMA, SourceIntegrityChecker
 
 
 def main() -> int:
@@ -15,10 +15,18 @@ def main() -> int:
     parser.add_argument("--root", type=Path, default=Path("."))
     parser.add_argument("--json-report", type=Path)
     parser.add_argument("--require-git-tracking", action="store_true")
+    parser.add_argument("--require-staged-snapshot", action="store_true")
+    parser.add_argument("--require-git-checksums", action="store_true")
     parser.add_argument("--update-inventory", action="store_true")
+    parser.add_argument("--update-git-checksums", action="store_true")
     args = parser.parse_args()
 
-    checker = SourceIntegrityChecker(args.root, require_git_tracking=True if args.require_git_tracking else None)
+    checker = SourceIntegrityChecker(
+        args.root,
+        require_git_tracking=True if args.require_git_tracking else None,
+        require_staged_snapshot=args.require_staged_snapshot,
+        require_git_checksums=args.require_git_checksums,
+    )
     if args.update_inventory:
         target = args.root.resolve() / INVENTORY_PATH
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -27,6 +35,12 @@ def main() -> int:
             encoding="utf-8",
         )
         print(f"updated {target}")
+        return 0
+
+    if args.update_git_checksums:
+        count = checker.update_git_checksum_manifest()
+        target = args.root.resolve() / CHECKSUM_PATH
+        print(f"updated {target} with {count} Git blob checksum(s)")
         return 0
 
     violations = checker.run()

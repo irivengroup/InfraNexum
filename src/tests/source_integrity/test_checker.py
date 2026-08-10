@@ -12,7 +12,7 @@ import warnings
 from pathlib import Path
 from unittest.mock import patch
 
-from validation.source_integrity.checker import INVENTORY_PATH, SCHEMA, SourceIntegrityChecker
+from validation.source_integrity.checker import CHECKSUM_PATH, INVENTORY_PATH, SCHEMA, SourceIntegrityChecker
 from validation.source_integrity.cli import main as cli_main
 
 
@@ -217,6 +217,251 @@ class SourceIntegrityCheckerTest(unittest.TestCase):
         ):
             checker._check_git_tracking(tuple(self.canonical()))
         self.assertIn("CHECK-SOURCE-GIT-001", {item.check_id for item in checker.violations})
+
+    def test_staged_snapshot_accepts_complete_index(self) -> None:
+        subprocess.run(["git", "init", "-q", str(self.root)], check=True)
+        subprocess.run(["git", "-C", str(self.root), "add", "."], check=True)
+
+        violations = SourceIntegrityChecker(
+            self.root,
+            require_git_tracking=True,
+            require_staged_snapshot=True,
+        ).run()
+
+        self.assertEqual([], violations)
+
+    def test_staged_snapshot_rejects_commit_candidate_missing_inventory_source(self) -> None:
+        """The candidate commit fails even while the working tree still has the source."""
+        subprocess.run(["git", "init", "-q", str(self.root)], check=True)
+        subprocess.run(["git", "-C", str(self.root), "add", "."], check=True)
+        relative = "src/module/src/main/java/io/infranexum/b/B.java"
+        subprocess.run(
+            ["git", "-C", str(self.root), "rm", "--cached", "-q", relative],
+            check=True,
+        )
+
+        violations = SourceIntegrityChecker(
+            self.root,
+            require_git_tracking=False,
+            require_staged_snapshot=True,
+        ).run()
+        staged = [item for item in violations if item.check_id == "CHECK-SOURCE-STAGED-002"]
+
+        self.assertTrue(staged)
+        self.assertTrue(any(item.path == relative for item in staged))
+        self.assertTrue(any("CHECK-SOURCE-INVENTORY-002" in item.message for item in staged))
+
+    def test_git_checksum_manifest_accepts_exact_index_blobs(self) -> None:
+        subprocess.run(["git", "init", "-q", str(self.root)], check=True)
+        subprocess.run(["git", "-C", str(self.root), "add", "."], check=True)
+        checker = SourceIntegrityChecker(self.root, require_git_tracking=False)
+        recorded = checker.update_git_checksum_manifest()
+        subprocess.run(["git", "-C", str(self.root), "add", CHECKSUM_PATH.as_posix()], check=True)
+
+        violations = SourceIntegrityChecker(
+            self.root,
+            require_git_tracking=False,
+            require_git_checksums=True,
+        ).run()
+
+        self.assertGreater(recorded, 0)
+        self.assertEqual([], violations)
+        manifest = (self.root / CHECKSUM_PATH).read_text(encoding="utf-8").splitlines()
+        self.assertEqual(recorded, len(manifest))
+        self.assertNotIn(CHECKSUM_PATH.as_posix(), "\n".join(manifest))
+
+    def test_git_checksum_manifest_is_independent_from_checkout_eol_filters(self) -> None:
+        self.write(".gitattributes", "* text=auto eol=lf\n*.cmd text eol=crlf\n")
+        self.write("script.cmd", "@echo off\necho InfraNexum\n")
+        self.write_inventory()
+        subprocess.run(["git", "init", "-q", str(self.root)], check=True)
+        subprocess.run(["git", "-C", str(self.root), "add", "."], check=True)
+        checker = SourceIntegrityChecker(self.root, require_git_tracking=False)
+        checker.update_git_checksum_manifest()
+        subprocess.run(["git", "-C", str(self.root), "add", CHECKSUM_PATH.as_posix()], check=True)
+
+        # Simulate a Windows-style checkout transformation without staging it.
+        (self.root / "script.cmd").write_bytes(b"@echo off\r\necho InfraNexum\r\n")
+        violations = SourceIntegrityChecker(
+            self.root,
+            require_git_tracking=False,
+            require_git_checksums=True,
+        ).run()
+
+        self.assertNotIn("CHECK-SOURCE-GIT-005", {item.check_id for item in violations})
+        self.assertEqual([], violations)
+
+    def test_git_checksum_manifest_detects_staged_blob_tampering(self) -> None:
+        subprocess.run(["git", "init", "-q", str(self.root)], check=True)
+        subprocess.run(["git", "-C", str(self.root), "add", "."], check=True)
+        checker = SourceIntegrityChecker(self.root, require_git_tracking=False)
+        checker.update_git_checksum_manifest()
+        subprocess.run(["git", "-C", str(self.root), "add", CHECKSUM_PATH.as_posix()], check=True)
+
+        self.write("src/module/src/main/java/io/infranexum/a/A.java", A_JAVA + "// staged change\n")
+        subprocess.run(
+            ["git", "-C", str(self.root), "add", "src/module/src/main/java/io/infranexum/a/A.java"],
+            check=True,
+        )
+        violations = SourceIntegrityChecker(
+            self.root,
+            require_git_tracking=False,
+            require_git_checksums=True,
+        ).run()
+
+        mismatches = [item for item in violations if item.check_id == "CHECK-SOURCE-GIT-005"]
+        self.assertEqual(1, len(mismatches))
+        self.assertEqual("src/module/src/main/java/io/infranexum/a/A.java", mismatches[0].path)
+
+    def test_git_checksum_manifest_rejects_malformed_and_incomplete_manifests(self) -> None:
+        subprocess.run(["git", "init", "-q", str(self.root)], check=True)
+        subprocess.run(["git", "-C", str(self.root), "add", "."], check=True)
+        checker = SourceIntegrityChecker(self.root, require_git_tracking=False)
+        checker.update_git_checksum_manifest()
+        manifest_path = self.root / CHECKSUM_PATH
+        subprocess.run(["git", "-C", str(self.root), "add", CHECKSUM_PATH.as_posix()], check=True)
+
+        manifest_path.write_text("not-a-checksum\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(self.root), "add", CHECKSUM_PATH.as_posix()], check=True)
+        malformed = SourceIntegrityChecker(
+            self.root,
+            require_git_tracking=False,
+            require_git_checksums=True,
+        ).run()
+        self.assertIn("CHECK-SOURCE-GIT-003", {item.check_id for item in malformed})
+
+        checker.update_git_checksum_manifest()
+        lines = manifest_path.read_text(encoding="utf-8").splitlines(keepends=True)
+        manifest_path.write_text("".join(lines[:-1]), encoding="utf-8")
+        subprocess.run(["git", "-C", str(self.root), "add", CHECKSUM_PATH.as_posix()], check=True)
+        incomplete = SourceIntegrityChecker(
+            self.root,
+            require_git_tracking=False,
+            require_git_checksums=True,
+        ).run()
+        self.assertIn("CHECK-SOURCE-GIT-004", {item.check_id for item in incomplete})
+
+    def test_git_checksum_validation_requires_git_metadata_and_indexed_manifest(self) -> None:
+        violations = SourceIntegrityChecker(
+            self.root,
+            require_git_tracking=False,
+            require_git_checksums=True,
+        ).run()
+        self.assertIn("CHECK-SOURCE-GIT-003", {item.check_id for item in violations})
+        with self.assertRaises(RuntimeError):
+            SourceIntegrityChecker(self.root, require_git_tracking=False).update_git_checksum_manifest()
+
+        subprocess.run(["git", "init", "-q", str(self.root)], check=True)
+        subprocess.run(["git", "-C", str(self.root), "add", "."], check=True)
+        violations = SourceIntegrityChecker(
+            self.root,
+            require_git_tracking=False,
+            require_git_checksums=True,
+        ).run()
+        self.assertIn("CHECK-SOURCE-GIT-003", {item.check_id for item in violations})
+
+    def test_git_checksum_manifest_rejects_invalid_utf8_unsafe_path_and_blob_failure(self) -> None:
+        checker = SourceIntegrityChecker(
+            self.root,
+            require_git_tracking=False,
+            require_git_checksums=True,
+        )
+        index = {CHECKSUM_PATH.as_posix(): "manifest", "src/a.txt": "blob"}
+        with patch.object(checker, "_is_git_checkout", return_value=True), patch.object(
+            checker, "_git_index_entries", return_value=index
+        ), patch.object(checker, "_git_blob_by_oid", return_value=b"\xff"):
+            checker._check_git_checksums()
+        self.assertIn("checksum manifest must be UTF-8", checker.violations[-1].message)
+
+        checker.violations.clear()
+        unsafe_manifest = ("0" * 64 + "  ../escape\n").encode("utf-8")
+        with patch.object(checker, "_is_git_checkout", return_value=True), patch.object(
+            checker, "_git_index_entries", return_value=index
+        ), patch.object(checker, "_git_blob_by_oid", return_value=unsafe_manifest):
+            checker._check_git_checksums()
+        self.assertIn("unsafe or duplicate checksum path", checker.violations[-1].message)
+
+        checker.violations.clear()
+        valid_manifest = ("0" * 64 + "  src/a.txt\n").encode("utf-8")
+        calls = iter((valid_manifest, OSError("blob unavailable")))
+
+        def blob_result(_oid: str) -> bytes:
+            result = next(calls)
+            if isinstance(result, OSError):
+                raise result
+            return result
+
+        with patch.object(checker, "_is_git_checkout", return_value=True), patch.object(
+            checker, "_git_index_entries", return_value=index
+        ), patch.object(checker, "_git_blob_by_oid", side_effect=blob_result):
+            checker._check_git_checksums()
+        self.assertIn("cannot read Git index blob", checker.violations[-1].message)
+
+    def test_git_checksum_update_rejects_unsafe_index_path(self) -> None:
+        checker = SourceIntegrityChecker(self.root, require_git_tracking=False)
+        with patch.object(checker, "_is_git_checkout", return_value=True), patch.object(
+            checker, "_git_index_entries", return_value={"../escape": "a" * 40}
+        ):
+            with self.assertRaisesRegex(ValueError, "unsafe Git path"):
+                checker.update_git_checksum_manifest()
+
+    def test_git_index_parser_rejects_unmerged_and_malformed_entries(self) -> None:
+        checker = SourceIntegrityChecker(self.root, require_git_tracking=False)
+        unmerged = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout=b"100644 " + b"a" * 40 + b" 2\tsrc/a.txt\0", stderr=b""
+        )
+        with patch("validation.source_integrity.checker.subprocess.run", return_value=unmerged):
+            with self.assertRaisesRegex(RuntimeError, "unmerged Git index entry"):
+                checker._git_index_entries()
+
+        malformed = subprocess.CompletedProcess(args=[], returncode=0, stdout=b"broken\0", stderr=b"")
+        with patch("validation.source_integrity.checker.subprocess.run", return_value=malformed):
+            with self.assertRaisesRegex(RuntimeError, "cannot parse Git index entry"):
+                checker._git_index_entries()
+
+        duplicate_stdout = (
+            b"100644 " + b"a" * 40 + b" 0\tsrc/a.txt\0"
+            + b"100644 " + b"b" * 40 + b" 0\tsrc/a.txt\0"
+        )
+        duplicate = subprocess.CompletedProcess(args=[], returncode=0, stdout=duplicate_stdout, stderr=b"")
+        with patch("validation.source_integrity.checker.subprocess.run", return_value=duplicate):
+            with self.assertRaisesRegex(RuntimeError, "duplicate Git index entry"):
+                checker._git_index_entries()
+
+    def test_cli_can_regenerate_git_checksum_manifest(self) -> None:
+        subprocess.run(["git", "init", "-q", str(self.root)], check=True)
+        subprocess.run(["git", "-C", str(self.root), "add", "."], check=True)
+        stdout = io.StringIO()
+        with patch.object(
+            sys,
+            "argv",
+            ["source-integrity", "--root", str(self.root), "--update-git-checksums"],
+        ), contextlib.redirect_stdout(stdout):
+            self.assertEqual(0, cli_main())
+        self.assertIn("Git blob checksum(s)", stdout.getvalue())
+        self.assertTrue((self.root / CHECKSUM_PATH).is_file())
+
+    def test_staged_snapshot_requires_repository_metadata(self) -> None:
+        violations = SourceIntegrityChecker(
+            self.root,
+            require_git_tracking=False,
+            require_staged_snapshot=True,
+        ).run()
+
+        self.assertIn("CHECK-SOURCE-STAGED-001", {item.check_id for item in violations})
+
+    def test_staged_snapshot_reports_materialization_failure(self) -> None:
+        checker = SourceIntegrityChecker(
+            self.root,
+            require_git_tracking=False,
+            require_staged_snapshot=True,
+        )
+        with patch.object(checker, "_is_git_checkout", return_value=True), patch(
+            "validation.source_integrity.checker.subprocess.run", side_effect=OSError("index unavailable")
+        ):
+            checker._check_staged_snapshot()
+
+        self.assertIn("CHECK-SOURCE-STAGED-001", {item.check_id for item in checker.violations})
 
     def test_external_path_and_cli_paths_are_covered(self) -> None:
         checker = SourceIntegrityChecker(self.root, require_git_tracking=False)

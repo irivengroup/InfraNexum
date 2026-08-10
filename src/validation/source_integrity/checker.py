@@ -7,6 +7,7 @@ files, which would otherwise surface later as compiler or fixture failures.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import subprocess
@@ -16,6 +17,7 @@ from xml.etree import ElementTree
 
 
 INVENTORY_PATH = Path("src/distribution/source-inventory.json")
+CHECKSUM_PATH = Path("src/distribution/source-files.sha256")
 SCHEMA = "infranexum.source-inventory/v1"
 
 _ROOT_FILES = {
@@ -36,7 +38,7 @@ _ROOT_FILES = {
     "pyproject.toml",
     "toolchains.lock.json",
 }
-_SCAN_PREFIXES = (".github", ".mvn", "docs", "requirements", "src")
+_SCAN_PREFIXES = (".github", ".githooks", ".mvn", "docs", "requirements", "src")
 _EXCLUDED_RELATIVE = {
     INVENTORY_PATH.as_posix(),
     "src/distribution/source-files.sha256",
@@ -69,9 +71,18 @@ class SourceIntegrityViolation:
 class SourceIntegrityChecker:
     """Validate inventory, Java source graph, Maven modules and Git tracking."""
 
-    def __init__(self, root: Path, *, require_git_tracking: bool | None = None) -> None:
+    def __init__(
+        self,
+        root: Path,
+        *,
+        require_git_tracking: bool | None = None,
+        require_staged_snapshot: bool = False,
+        require_git_checksums: bool = False,
+    ) -> None:
         self.root = root.resolve()
         self.require_git_tracking = require_git_tracking
+        self.require_staged_snapshot = require_staged_snapshot
+        self.require_git_checksums = require_git_checksums
         self.violations: list[SourceIntegrityViolation] = []
 
     def run(self) -> list[SourceIntegrityViolation]:
@@ -100,6 +111,8 @@ class SourceIntegrityChecker:
         self._check_maven_modules()
         self._check_makefile_preflight()
         self._check_git_tracking(inventory)
+        self._check_git_checksums()
+        self._check_staged_snapshot()
         return self._sorted()
 
     def _load_inventory(self) -> tuple[str, ...] | None:
@@ -240,6 +253,214 @@ class SourceIntegrityChecker:
             candidate = self.root / path
             if path not in tracked and candidate.is_file():
                 self._add("CHECK-SOURCE-GIT-002", Path(path), "inventory file exists but is not tracked by Git")
+
+
+    def _check_git_checksums(self) -> None:
+        """Verify SHA-256 digests against Git index blobs, not checkout bytes.
+
+        Git attributes may transform line endings on checkout. Hashing index blobs
+        keeps the source manifest stable across Windows and Linux while the
+        separate release manifest verifies the packaged filesystem bytes.
+        """
+        if not self.require_git_checksums:
+            return
+        if not self._is_git_checkout():
+            self._add(
+                "CHECK-SOURCE-GIT-003",
+                CHECKSUM_PATH,
+                "Git source checksum validation requires repository metadata",
+            )
+            return
+        try:
+            index = self._git_index_entries()
+            manifest_oid = index.get(CHECKSUM_PATH.as_posix())
+            if manifest_oid is None:
+                raise RuntimeError("checksum manifest is not present in the Git index")
+            manifest_bytes = self._git_blob_by_oid(manifest_oid)
+        except (OSError, RuntimeError, UnicodeError, subprocess.CalledProcessError) as error:
+            self._add(
+                "CHECK-SOURCE-GIT-003",
+                CHECKSUM_PATH,
+                f"cannot inspect Git source checksum manifest: {error}",
+            )
+            return
+
+        try:
+            text = manifest_bytes.decode("utf-8")
+        except UnicodeDecodeError as error:
+            self._add(
+                "CHECK-SOURCE-GIT-003",
+                CHECKSUM_PATH,
+                f"checksum manifest must be UTF-8: {error}",
+            )
+            return
+
+        entries: list[tuple[str, str]] = []
+        seen: set[str] = set()
+        for line_number, line in enumerate(text.splitlines(), start=1):
+            match = re.fullmatch(r"([0-9a-f]{64})  (.+)", line)
+            if match is None:
+                self._add(
+                    "CHECK-SOURCE-GIT-003",
+                    CHECKSUM_PATH,
+                    f"invalid checksum manifest line {line_number}",
+                )
+                return
+            digest, path = match.groups()
+            if not self._safe_relative(path) or "\n" in path or "\r" in path or path in seen:
+                self._add(
+                    "CHECK-SOURCE-GIT-003",
+                    CHECKSUM_PATH,
+                    f"unsafe or duplicate checksum path on line {line_number}",
+                )
+                return
+            seen.add(path)
+            entries.append((path, digest))
+
+        paths = [path for path, _ in entries]
+        expected = sorted(path for path in index if path != CHECKSUM_PATH.as_posix())
+        if paths != sorted(paths) or paths != expected:
+            self._add(
+                "CHECK-SOURCE-GIT-004",
+                CHECKSUM_PATH,
+                "checksum manifest paths must exactly match the sorted Git index excluding the manifest itself",
+            )
+            return
+
+        for path, expected_digest in entries:
+            try:
+                actual_digest = hashlib.sha256(self._git_blob_by_oid(index[path])).hexdigest()
+            except (KeyError, OSError, subprocess.CalledProcessError) as error:
+                self._add(
+                    "CHECK-SOURCE-GIT-003",
+                    Path(path),
+                    f"cannot read Git index blob for checksum validation: {error}",
+                )
+                continue
+            if actual_digest != expected_digest:
+                self._add(
+                    "CHECK-SOURCE-GIT-005",
+                    Path(path),
+                    "Git index blob SHA-256 does not match source checksum manifest",
+                )
+
+    def update_git_checksum_manifest(self) -> int:
+        """Rewrite the source checksum manifest from the exact Git index blobs."""
+        if not self._is_git_checkout():
+            raise RuntimeError("Git repository metadata is required to update source checksums")
+        index = self._git_index_entries()
+        paths = sorted(path for path in index if path != CHECKSUM_PATH.as_posix())
+        lines: list[str] = []
+        for path in paths:
+            if "\n" in path or "\r" in path or not self._safe_relative(path):
+                raise ValueError(f"unsafe Git path cannot be represented in checksum manifest: {path!r}")
+            digest = hashlib.sha256(self._git_blob_by_oid(index[path])).hexdigest()
+            lines.append(f"{digest}  {path}\n")
+        target = self.root / CHECKSUM_PATH
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text("".join(lines), encoding="utf-8")
+        return len(paths)
+
+    def _git_index_entries(self) -> dict[str, str]:
+        """Return stage-zero index paths mapped to immutable Git object IDs.
+
+        Reading object IDs from ``git ls-files --stage`` avoids path-based Git
+        revision parsing and makes checksum verification independent from
+        checkout filters such as ``eol=crlf``. Unmerged index stages are rejected
+        because they cannot represent a deterministic commit candidate.
+        """
+        completed = subprocess.run(
+            ["git", "-C", str(self.root), "ls-files", "--stage", "-z"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        entries: dict[str, str] = {}
+        for raw_entry in completed.stdout.split(b"\0"):
+            if not raw_entry:
+                continue
+            try:
+                metadata, raw_path = raw_entry.split(b"\t", 1)
+                _mode, raw_oid, raw_stage = metadata.split(b" ", 2)
+                path = raw_path.decode("utf-8")
+                oid = raw_oid.decode("ascii")
+                stage = raw_stage.decode("ascii")
+            except (UnicodeError, ValueError) as error:
+                raise RuntimeError(f"cannot parse Git index entry: {error}") from error
+            if stage != "0":
+                raise RuntimeError(f"unmerged Git index entry is not allowed: {path} (stage {stage})")
+            if path in entries:
+                raise RuntimeError(f"duplicate Git index entry is not allowed: {path}")
+            entries[path] = oid
+        return entries
+
+    def _git_blob_by_oid(self, oid: str) -> bytes:
+        """Read an indexed blob by object ID without checkout transformations."""
+        completed = subprocess.run(
+            ["git", "-C", str(self.root), "cat-file", "blob", oid],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        return completed.stdout
+
+    def _check_staged_snapshot(self) -> None:
+        """Validate the exact Git index snapshot that would be committed.
+
+        Working-tree validation alone cannot prove that every canonical source is
+        staged. This check materializes the index into an isolated directory and
+        runs the full source-integrity graph against that candidate commit.
+        """
+        if not self.require_staged_snapshot:
+            return
+        if not self._is_git_checkout():
+            self._add(
+                "CHECK-SOURCE-STAGED-001",
+                Path("."),
+                "staged snapshot validation was required but repository metadata is unavailable",
+            )
+            return
+
+        import tempfile
+
+        try:
+            with tempfile.TemporaryDirectory(prefix="infranexum-staged-") as temporary:
+                staged_root = Path(temporary) / "snapshot"
+                staged_root.mkdir()
+                prefix = str(staged_root) + "/"
+                subprocess.run(
+                    [
+                        "git",
+                        "-C",
+                        str(self.root),
+                        "checkout-index",
+                        "--all",
+                        "--force",
+                        f"--prefix={prefix}",
+                    ],
+                    check=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+                nested = SourceIntegrityChecker(
+                    staged_root,
+                    require_git_tracking=False,
+                    require_staged_snapshot=False,
+                ).run()
+        except (OSError, subprocess.CalledProcessError) as error:
+            self._add(
+                "CHECK-SOURCE-STAGED-001",
+                Path("."),
+                f"cannot materialize Git index snapshot: {error}",
+            )
+            return
+
+        for violation in nested:
+            self._add(
+                "CHECK-SOURCE-STAGED-002",
+                Path(violation.path),
+                f"staged snapshot violates {violation.check_id}: {violation.message}",
+            )
 
     def _is_git_checkout(self) -> bool:
         try:

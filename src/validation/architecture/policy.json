@@ -30,6 +30,7 @@
     "components/core/capabilities",
     "components/core/entitlements",
     "components/core/events",
+    "components/core/workers",
     "components/domains",
     "deployment",
     "distribution",
