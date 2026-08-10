@@ -184,6 +184,27 @@ class SourceIntegrityCheckerTest(unittest.TestCase):
         subprocess.run(["git", "-C", str(self.root), "rm", "--cached", "-q", str(tracked.relative_to(self.root))], check=True)
         self.assertIn("CHECK-SOURCE-GIT-002", self.ids(require_git_tracking=True))
 
+    def test_git_tracking_does_not_duplicate_missing_checkout_violation(self) -> None:
+        """A missing checkout entry is reported once by the inventory check.
+
+        This reproduces the hosted checkout failure where inventory entries were
+        both absent from disk and absent from the Git index. CHECK-SOURCE-GIT-002
+        is reserved for files that actually exist locally but were not staged.
+        """
+        subprocess.run(["git", "init", "-q", str(self.root)], check=True)
+        subprocess.run(["git", "-C", str(self.root), "add", "."], check=True)
+        tracked = self.root / "src/module/src/main/java/io/infranexum/b/B.java"
+        subprocess.run(
+            ["git", "-C", str(self.root), "rm", "--cached", "-q", str(tracked.relative_to(self.root))],
+            check=True,
+        )
+        tracked.unlink()
+
+        ids = self.ids(require_git_tracking=True)
+
+        self.assertIn("CHECK-SOURCE-INVENTORY-002", ids)
+        self.assertNotIn("CHECK-SOURCE-GIT-002", ids)
+
     def test_git_required_without_repository_and_git_command_error_are_reported(self) -> None:
         self.assertIn("CHECK-SOURCE-GIT-001", self.ids(require_git_tracking=True))
         checker = SourceIntegrityChecker(self.root, require_git_tracking=False)

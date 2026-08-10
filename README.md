@@ -1,4 +1,4 @@
-# InfraNexum 2.0.0-alpha.0.15 — Source Integrity & Checkout Hardening
+# InfraNexum 2.0.0-alpha.0.16 — Repository Closure Repair
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
@@ -36,6 +36,19 @@ The repository currently contains:
 - signed activation, Lite J180/J210 lifecycle and Pro/Enterprise grace lifecycle;
 - authoritative Server entitlement runtime and activation persistence;
 - **Core Audit append-only foundation** introduced in `alpha.0.12`.
+
+## alpha.0.16 — Repository closure repair
+
+The hosted `source-integrity` gate exposed a delivery-state defect rather than a Java implementation defect: 17 canonical files were present in the `alpha.0.15` source archive and in `source-inventory.json`, but absent from the Git commit executed by GitHub Actions. Those sources remain part of this delivery and are intentionally trackable; no `.gitignore` rule excludes them.
+
+This increment keeps Git tracking mandatory and tightens the diagnostic contract:
+
+- a canonical file that exists locally but is absent from the Git index still produces `CHECK-SOURCE-GIT-002`;
+- an inventory entry that is absent from both the checkout and the Git index is reported by `CHECK-SOURCE-INVENTORY-002` only, avoiding duplicate noise;
+- a dedicated regression reproduces the missing-and-untracked checkout state;
+- the hosted CI remains authoritative: the gate can only pass after every canonical source is actually committed.
+
+Before pushing this increment from an existing repository, stage modifications to tracked files plus the 17 restored sources, then run `SOURCE_INTEGRITY_REQUIRE_GIT=1 make source-integrity-test source-integrity-check`.
 
 ## alpha.0.15 — Source integrity / checkout hardening
 

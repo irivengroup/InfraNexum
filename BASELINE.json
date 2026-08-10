@@ -1,7 +1,7 @@
 {
   "schema": "infranexum.source-baseline/v1",
   "product": "InfraNexum — Infrastructure Control & Governance Platform",
-  "implementation_version": "2.0.0-alpha.0.15",
+  "implementation_version": "2.0.0-alpha.0.16",
   "architecture_baseline": "2.0.0-draft.21",
   "roadmap_baseline": "1.0.0-draft.1",
   "architecture_archive_sha256": "372cf19929f8ea3b7586c3af3e7c5004e590cf746ff2d6d59d4d0b88912aea64",
@@ -20,7 +20,8 @@
     "PGM-02-E06 Core Audit foundation: scoped immutable entries, per-scope SHA-256 chain, deterministic Ed25519-signed export, JDBC append-only journal, regulatory tombstone model and paired migration 0005; IAM authorization, encrypted export and operational purge remain pending",
     "CI regression repair alpha.0.13: exhaustive Core Events branch tests added without reducing the 98% JaCoCo gate; targeted Maven reactor jobs use an explicit overridable project property for upstream modules without matching tests",
     "CI regression repair alpha.0.14: exhaustive Core Capabilities JUnit coverage without JaCoCo exclusions, overflow-safe quota thresholds, restored JDBC transactional event store source and persistence preflight before fixture tests",
-    "CI/source-integrity hardening alpha.0.15: canonical source inventory, Git tracking preflight, internal Java import resolution, Maven module presence, case-collision and filename/type checks; all build jobs depend on the preflight"
+    "CI/source-integrity hardening alpha.0.15: canonical source inventory, Git tracking preflight, internal Java import resolution, Maven module presence, case-collision and filename/type checks; all build jobs depend on the preflight",
+    "CI/repository closure repair alpha.0.16: hosted checkout failure traced to 17 inventory sources absent from the pushed Git commit; delivery retains those sources, Git preflight remains blocking, and missing-checkout diagnostics no longer duplicate the untracked-file violation."
   ],
   "roadmap_archive_sha256": "11db7d27bbc79f688cd1fda31a24aaf31b56a56db36b6487b64154c148ab54d3",
   "engineering_governance_sha256": "f24357051a5401f598c3d77bbe5814d3759a176095537659243658ba3ff109c7"

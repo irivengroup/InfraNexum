@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.15",
-  "profile": "development-foundation-source-integrity-hardening",
+  "version": "2.0.0-alpha.0.16",
+  "profile": "development-foundation-repository-closure-repair",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "source and validation evidence; generated binaries, caches, dependency directories and temporary artifacts excluded",
@@ -22,7 +22,7 @@
     },
     {
       "id": "source-integrity-v1",
-      "status": "410-path-canonical-inventory-17-tests-100-percent-coverage-git-tracking-java-import-case-collision-filename-type-maven-reactor-and-make-preflight-enforced"
+      "status": "410-path-canonical-inventory-18-tests-100-percent-coverage-git-tracking-java-import-case-collision-filename-type-maven-reactor-make-preflight-and-missing-checkout-diagnostic-separation-enforced"
     },
     {
       "id": "core-domain-contract-pack-v1",
@@ -58,7 +58,7 @@
     },
     {
       "id": "ci-foundation",
-      "status": "dedicated-source-integrity-job-precedes-all-build-test-jobs-and-rejects-untracked-canonical-files-hosted-alpha0.15-rerun-pending"
+      "status": "dedicated-source-integrity-job-precedes-all-build-test-jobs-alpha0.15-failure-traced-to-17-uncommitted-canonical-sources-alpha0.16-hosted-rerun-pending"
     },
     {
       "id": "docker-compose-runtime",
@@ -96,11 +96,11 @@
   ],
   "validation_summary": {
     "source_inventory_paths": 410,
-    "source_integrity_tests": 17,
+    "source_integrity_tests": 18,
     "source_integrity_coverage_percent": 100,
     "source_integrity_violations": 0,
     "source_integrity_git_negative_scenarios": 3,
-    "python_tests": 133,
+    "python_tests": 134,
     "architecture_tests": 28,
     "architecture_coverage_percent": 100,
     "architecture_violations": 0,
@@ -151,10 +151,11 @@
     "git_tracking_required_in_ci": true,
     "java_project_import_resolution": true,
     "case_insensitive_collision_rejection": true,
-    "maven_module_inventory": true
+    "maven_module_inventory": true,
+    "missing_checkout_git_deduplication": true
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.15-source-integrity-hardening",
+    "prefix": "infranexum-2.0.0-alpha.0.16-repository-closure-repair",
     "checksum_manifest": "source-files.sha256",
     "recorded_files": 438,
     "archive_entries": 440,

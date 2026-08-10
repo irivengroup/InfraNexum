@@ -237,7 +237,8 @@ class SourceIntegrityChecker:
             return
         tracked = {item.decode("utf-8") for item in completed.stdout.split(b"\0") if item}
         for path in inventory:
-            if path not in tracked:
+            candidate = self.root / path
+            if path not in tracked and candidate.is_file():
                 self._add("CHECK-SOURCE-GIT-002", Path(path), "inventory file exists but is not tracked by Git")
 
     def _is_git_checkout(self) -> bool:
