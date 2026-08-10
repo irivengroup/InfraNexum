@@ -1,9 +1,9 @@
 {
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
-  "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.12",
-  "profile": "development-foundation-core-audit",
+  "positioning": "InfraNexum \u2014 Infrastructure Control & Governance Platform",
+  "version": "2.0.0-alpha.0.13",
+  "profile": "development-foundation-eventing-reactor-repair",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "source and validation evidence; generated binaries, caches, dependency directories and temporary artifacts excluded",
@@ -26,7 +26,7 @@
     },
     {
       "id": "core-transactional-events-v1.1",
-      "status": "source-offline-behavior-and-concurrency-smoke-validated-java25-junit-jacoco-and-kafka-pending"
+      "status": "source-34-junit-scenarios-expanded-for-98-percent-line-and-branch-gate-local-compatibility-harness-passed-java25-maven-jacoco-rerun-pending"
     },
     {
       "id": "core-audit-v1",
@@ -58,7 +58,7 @@
     },
     {
       "id": "ci-foundation",
-      "status": "local-gates-and-smokes-passed-hosted-java25-postgresql17-18-go1.26.5-node24-pnpm11-rerun-pending"
+      "status": "targeted-reactor-surefire-property-indirection-and-event-coverage-regressions-repaired-local-gates-passed-hosted-java25-postgresql-rerun-pending"
     }
   ],
   "validation_reports": [
@@ -88,11 +88,11 @@
     "../../artifacts/validation/web-smoke.json"
   ],
   "validation_summary": {
-    "python_tests": 113,
+    "python_tests": 114,
     "architecture_tests": 28,
     "architecture_coverage_percent": 100,
     "architecture_violations": 0,
-    "toolchain_tests": 17,
+    "toolchain_tests": 18,
     "toolchain_coverage_percent": 99,
     "toolchain_violations": 0,
     "migration_tests": 20,
@@ -116,19 +116,21 @@
     "java_offline_smoke_targets": 8,
     "audit_java_static_test_compile": true,
     "agent_coverage_percent": 98.4,
-    "agent_runtime_stress_repetitions": 20,
-    "agent_process_smoke": true,
+    "agent_runtime_stress_repetitions": 0,
+    "agent_process_smoke": false,
     "web_tests": 27,
     "web_line_coverage_percent": 99.65,
     "web_branch_coverage_percent": 98.28,
-    "web_function_coverage_percent": 100
+    "web_function_coverage_percent": 100,
+    "event_module_tests_defined": 34,
+    "event_module_local_compatibility_harness_tests": 34
   },
   "source_layout": "all implementation sources, tests, validation code, migrations and build-support scripts are grouped below src/",
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.12-core-audit",
+    "prefix": "infranexum-2.0.0-alpha.0.13-eventing-reactor-repair",
     "checksum_manifest": "source-files.sha256",
-    "recorded_files": 422,
-    "archive_entries": 424,
+    "recorded_files": 424,
+    "archive_entries": 426,
     "reproducible": true
   }
 }

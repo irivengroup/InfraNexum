@@ -292,7 +292,7 @@ class ToolchainChecker:
             if "PostgreSqlJdbcTransactionalEventStoreTest" in line
         ]
         required_targeted_flags = (
-            "-DfailIfNoTests=false",
+            "-Dinfranexum.surefire.failIfNoTests=false",
             "-Dsurefire.failIfNoSpecifiedTests=false",
         )
         if len(targeted_lines) != 1 or any(
@@ -303,6 +303,26 @@ class ToolchainChecker:
                 workflow_path,
                 "Targeted reactor tests must tolerate upstream modules without matching tests",
             )
+
+        root_pom_path = self.root / "pom.xml"
+        root_pom = self._read_text(
+            root_pom_path,
+            "CHECK-TOOLCHAIN-036",
+            "Unable to read root Maven POM",
+        )
+        if root_pom is not None:
+            expected_property = (
+                "<infranexum.surefire.failIfNoTests>true</infranexum.surefire.failIfNoTests>"
+            )
+            expected_binding = (
+                "<failIfNoTests>${infranexum.surefire.failIfNoTests}</failIfNoTests>"
+            )
+            if expected_property not in root_pom or expected_binding not in root_pom:
+                self._add(
+                    "CHECK-TOOLCHAIN-036",
+                    root_pom_path,
+                    "Surefire failIfNoTests must be controlled by the overridable InfraNexum Maven property",
+                )
 
     @staticmethod
     def _version(tools: dict[str, Any], key: str) -> str:

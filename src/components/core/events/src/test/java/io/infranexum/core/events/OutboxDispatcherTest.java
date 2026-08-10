@@ -2,6 +2,7 @@ package io.infranexum.core.events;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -25,10 +26,24 @@ class OutboxDispatcherTest {
         assertEquals(2, store.outboxSnapshot().stream()
                 .filter(record -> record.status() == OutboxStatus.PUBLISHED).count());
         assertEquals(new DispatchReport(1, 1, 0, 0), dispatcher.dispatchOnce());
+        assertEquals(new DispatchReport(0, 0, 0, 0), dispatcher.dispatchOnce());
     }
 
     @Test
-    void retriesAndDeadLettersTransportFailures() {
+    void retriesTransportFailuresBeforeDeadLetterThreshold() {
+        InMemoryEventStore store = storeWithEvents(1);
+        AtomicInteger calls = new AtomicInteger();
+        OutboxDispatcher dispatcher = dispatcher(store, event -> {
+            calls.incrementAndGet();
+            throw new IllegalStateException("broker offline");
+        }, 10, 2);
+        assertEquals(new DispatchReport(1, 0, 1, 0), dispatcher.dispatchOnce());
+        assertEquals(1, calls.get());
+        assertEquals(OutboxStatus.PENDING, store.outboxSnapshot().getFirst().status());
+    }
+
+    @Test
+    void deadLettersTransportFailureAtMaximumAttempts() {
         InMemoryEventStore store = storeWithEvents(1);
         AtomicInteger calls = new AtomicInteger();
         OutboxDispatcher dispatcher = dispatcher(store, event -> {
@@ -41,17 +56,47 @@ class OutboxDispatcherTest {
     }
 
     @Test
-    void validatesDispatcherConfigurationAndReportReconciliation() {
+    void validatesEveryDispatcherDependencyAndConfigurationBoundary() {
         InMemoryEventStore store = new InMemoryEventStore();
         RetryPolicy retry = new ExponentialBackoffPolicy(
                 3, Duration.ofSeconds(1), Duration.ofMinutes(1), 0.0, () -> 0.0);
+        EventTransport transport = event -> {};
+        assertThrows(NullPointerException.class,
+                () -> new OutboxDispatcher(null, transport, retry, CLOCK, "worker", 1, Duration.ofSeconds(1)));
+        assertThrows(NullPointerException.class,
+                () -> new OutboxDispatcher(store, null, retry, CLOCK, "worker", 1, Duration.ofSeconds(1)));
+        assertThrows(NullPointerException.class,
+                () -> new OutboxDispatcher(store, transport, null, CLOCK, "worker", 1, Duration.ofSeconds(1)));
+        assertThrows(NullPointerException.class,
+                () -> new OutboxDispatcher(store, transport, retry, null, "worker", 1, Duration.ofSeconds(1)));
+        assertThrows(NullPointerException.class,
+                () -> new OutboxDispatcher(store, transport, retry, CLOCK, null, 1, Duration.ofSeconds(1)));
         assertThrows(IllegalArgumentException.class,
-                () -> new OutboxDispatcher(store, event -> {}, retry, CLOCK, " ", 1, Duration.ofSeconds(1)));
+                () -> new OutboxDispatcher(store, transport, retry, CLOCK, " ", 1, Duration.ofSeconds(1)));
         assertThrows(IllegalArgumentException.class,
-                () -> new OutboxDispatcher(store, event -> {}, retry, CLOCK, "worker", 0, Duration.ofSeconds(1)));
+                () -> new OutboxDispatcher(store, transport, retry, CLOCK, "worker", 0, Duration.ofSeconds(1)));
         assertThrows(IllegalArgumentException.class,
-                () -> new OutboxDispatcher(store, event -> {}, retry, CLOCK, "worker", 1, Duration.ZERO));
+                () -> new OutboxDispatcher(store, transport, retry, CLOCK, "worker", 1001, Duration.ofSeconds(1)));
+        assertThrows(NullPointerException.class,
+                () -> new OutboxDispatcher(store, transport, retry, CLOCK, "worker", 1, null));
+        assertThrows(IllegalArgumentException.class,
+                () -> new OutboxDispatcher(store, transport, retry, CLOCK, "worker", 1, Duration.ZERO));
+        assertThrows(IllegalArgumentException.class,
+                () -> new OutboxDispatcher(store, transport, retry, CLOCK, "worker", 1, Duration.ofSeconds(-1)));
+
+        OutboxDispatcher normalized = new OutboxDispatcher(
+                store, transport, retry, CLOCK, " worker ", 1, Duration.ofSeconds(1));
+        assertEquals(new DispatchReport(0, 0, 0, 0), normalized.dispatchOnce());
+    }
+
+    @Test
+    void validatesAllDispatchReportInvariants() {
+        assertThrows(IllegalArgumentException.class, () -> new DispatchReport(-1, 0, 0, 0));
+        assertThrows(IllegalArgumentException.class, () -> new DispatchReport(0, -1, 0, 0));
+        assertThrows(IllegalArgumentException.class, () -> new DispatchReport(0, 0, -1, 0));
+        assertThrows(IllegalArgumentException.class, () -> new DispatchReport(0, 0, 0, -1));
         assertThrows(IllegalArgumentException.class, () -> new DispatchReport(1, 1, 1, 0));
+        assertTrue(new DispatchReport(3, 1, 1, 1).claimed() == 3);
     }
 
     private static InMemoryEventStore storeWithEvents(int count) {

@@ -1,4 +1,4 @@
-# InfraNexum 2.0.0-alpha.0.12 — Core Audit Foundation
+# InfraNexum 2.0.0-alpha.0.13 — Eventing Coverage & Maven Reactor Repair
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
@@ -37,7 +37,7 @@ The repository currently contains:
 - authoritative Server entitlement runtime and activation persistence;
 - **Core Audit append-only foundation** introduced in `alpha.0.12`.
 
-## alpha.0.12 — Core Audit
+## alpha.0.12 — Core Audit (baseline conservée)
 
 `src/components/core/audit` now provides:
 
@@ -64,6 +64,16 @@ audit_purge_tombstone
 Database triggers reject `UPDATE` and `DELETE` on persisted audit entries and tombstones. Rollback refuses to destroy audit storage if evidence exists.
 
 See `docs/core-audit.md`.
+
+
+## alpha.0.13 — CI regression repair
+
+This increment fixes two Java 25 runner regressions without weakening any quality gate:
+
+- Core Events keeps the JaCoCo thresholds at **98% lines and 98% branches** and expands its JUnit suite from 17 to **34 scenarios** covering value-object validation, retry/backoff boundaries, transaction rollback, interruption preservation, lease ownership/recovery, Inbox state transitions, dispatcher retry/dead-letter paths and temporal overflow.
+- targeted PostgreSQL reactor tests preserve strict `failIfNoTests=true` for normal builds while using the overridable `infranexum.surefire.failIfNoTests` project property for upstream modules that do not contain the selected JDBC tests.
+
+The exact Java 25/JUnit/JaCoCo and PostgreSQL runner executions remain required before these regressions can be declared closed.
 
 ## Current public platform API
 
@@ -107,7 +117,7 @@ GOTOOLCHAIN=go1.26.5 make agent-vet agent-test agent-build
 ./mvnw --batch-mode --no-transfer-progress \
   -pl src/components/adapters/persistence-jdbc -am \
   -Dtest=PostgreSqlJdbcTransactionalEventStoreTest,PostgreSqlJdbcAuditJournalTest \
-  -DfailIfNoTests=false \
+  -Dinfranexum.surefire.failIfNoTests=false \
   -Dsurefire.failIfNoSpecifiedTests=false test
 ```
 

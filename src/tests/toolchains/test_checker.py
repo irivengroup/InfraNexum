@@ -184,7 +184,7 @@ class ToolchainCheckerTest(unittest.TestCase):
         workflow_path = self.root / ".github/workflows/foundation.yml"
         workflow = workflow_path.read_text(encoding="utf-8")
         workflow_path.write_text(
-            workflow.replace(" -DfailIfNoTests=false", ""),
+            workflow.replace(" -Dinfranexum.surefire.failIfNoTests=false", ""),
             encoding="utf-8",
         )
         self.assertIn("CHECK-TOOLCHAIN-035", self.ids())
@@ -196,6 +196,29 @@ class ToolchainCheckerTest(unittest.TestCase):
             encoding="utf-8",
         )
         self.assertIn("CHECK-TOOLCHAIN-035", self.ids())
+
+    def test_surefire_strict_default_is_overridable_for_targeted_reactor_jobs(self) -> None:
+        pom_path = self.root / "pom.xml"
+        pom = pom_path.read_text(encoding="utf-8")
+        pom_path.write_text(
+            pom.replace(
+                "<failIfNoTests>${infranexum.surefire.failIfNoTests}</failIfNoTests>",
+                "<failIfNoTests>true</failIfNoTests>",
+            ),
+            encoding="utf-8",
+        )
+        self.assertIn("CHECK-TOOLCHAIN-036", self.ids())
+
+        shutil.copy2(SOURCE / "pom.xml", pom_path)
+        pom = pom_path.read_text(encoding="utf-8")
+        pom_path.write_text(
+            pom.replace(
+                "<infranexum.surefire.failIfNoTests>true</infranexum.surefire.failIfNoTests>",
+                "",
+            ),
+            encoding="utf-8",
+        )
+        self.assertIn("CHECK-TOOLCHAIN-036", self.ids())
 
     def test_ci_workflow_is_required(self) -> None:
         (self.root / ".github/workflows/foundation.yml").unlink()

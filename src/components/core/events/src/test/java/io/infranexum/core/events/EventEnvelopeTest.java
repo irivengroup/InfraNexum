@@ -32,6 +32,7 @@ class EventEnvelopeTest {
         assertThrows(IllegalArgumentException.class, () -> envelope(" "));
         assertThrows(IllegalArgumentException.class, () -> envelope("true"));
         assertThrows(IllegalArgumentException.class, () -> envelope("{"));
+        assertThrows(IllegalArgumentException.class, () -> envelope("["));
         assertThrows(IllegalArgumentException.class, () -> envelope(
                 "{\"value\":\"" + "x".repeat(EventEnvelope.MAX_PAYLOAD_BYTES) + "\"}"));
     }
