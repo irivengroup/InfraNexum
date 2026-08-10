@@ -196,11 +196,15 @@ class PersistenceChecker:
     def _check_gate_order(self) -> None:
         path = self.root / "Makefile"
         text = self._read(path, "CHECK-JDBC-GATE-001")
-        if text is not None and "persistence-test: persistence-check" not in text:
+        if text is None:
+            return
+        match = re.search(r"(?m)^persistence-test:(?P<deps>[^\n]*)$", text)
+        dependencies = match.group("deps").split() if match is not None else []
+        if "persistence-check" not in dependencies or "source-integrity-check" not in dependencies:
             self._add(
                 "CHECK-JDBC-GATE-002",
                 path,
-                "persistence-check must run before persistence tests so an incomplete checkout fails deterministically",
+                "persistence-test must depend on source-integrity-check and persistence-check before fixture execution",
             )
 
     def _check_reactor(self) -> None:

@@ -160,7 +160,18 @@ class PersistenceCheckerTest(unittest.TestCase):
         self.assertIn("CHECK-JDBC-POLICY-001", self.ids())
 
     def test_persistence_check_preflights_the_checkout_before_mutation_tests(self) -> None:
-        self.mutate("Makefile", "persistence-test: persistence-check", "persistence-test:")
+        self.mutate(
+            "Makefile",
+            "persistence-test: source-integrity-check persistence-check",
+            "persistence-test: source-integrity-check",
+        )
+        self.assertIn("CHECK-JDBC-GATE-002", self.ids())
+        shutil.copy2(SOURCE / "Makefile", self.root / "Makefile")
+        self.mutate(
+            "Makefile",
+            "persistence-test: source-integrity-check persistence-check",
+            "persistence-test: persistence-check",
+        )
         self.assertIn("CHECK-JDBC-GATE-002", self.ids())
         (self.root / "Makefile").unlink()
         self.assertIn("CHECK-JDBC-GATE-001", self.ids())

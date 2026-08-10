@@ -171,6 +171,26 @@ class ToolchainCheckerTest(unittest.TestCase):
         workflow_path.write_text(workflow, encoding="utf-8")
         self.assertTrue({"CHECK-TOOLCHAIN-027", "CHECK-TOOLCHAIN-028"} <= self.ids())
 
+    def test_ci_requires_source_integrity_preflight_for_all_jobs(self) -> None:
+        workflow_path = self.root / ".github/workflows/foundation.yml"
+        workflow = workflow_path.read_text(encoding="utf-8")
+        workflow_path.write_text(
+            workflow.replace("needs: source-integrity", "# source integrity dependency removed", 1),
+            encoding="utf-8",
+        )
+        self.assertIn("CHECK-TOOLCHAIN-037", self.ids())
+
+        shutil.copy2(SOURCE / ".github/workflows/foundation.yml", workflow_path)
+        workflow = workflow_path.read_text(encoding="utf-8")
+        workflow_path.write_text(
+            workflow.replace(
+                "run: SOURCE_INTEGRITY_REQUIRE_GIT=1 make source-integrity-test source-integrity-check",
+                "run: echo source-integrity-disabled",
+            ),
+            encoding="utf-8",
+        )
+        self.assertIn("CHECK-TOOLCHAIN-037", self.ids())
+
     def test_ci_prepares_maven_wrapper_before_every_direct_execution(self) -> None:
         workflow_path = self.root / ".github/workflows/foundation.yml"
         workflow = workflow_path.read_text(encoding="utf-8")

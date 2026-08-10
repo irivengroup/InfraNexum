@@ -2,31 +2,43 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.14",
-  "profile": "development-foundation-capabilities-persistence-repair",
+  "version": "2.0.0-alpha.0.15",
+  "profile": "development-foundation-source-integrity-hardening",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "source and validation evidence; generated binaries, caches, dependency directories and temporary artifacts excluded",
   "artifacts": [
     {
       "id": "infranexum-server",
-      "status": "source-authoritative-entitlement-runtime-integrated-static-warning-free-compile-and-offline-smokes-passed-java25-maven-spring-junit-jacoco-and-executable-jar-pending"
+      "status": "source-authoritative-entitlement-runtime-integrated-offline-smokes-passed-java25-maven-spring-junit-jacoco-and-executable-jar-pending"
     },
     {
       "id": "infranexum-agent",
-      "status": "source-local-go1.23.2-vet-race-98.4-percent-coverage-static-build-runtime-smoke-and-5-repeat-stress-validated-go1.26.5-pending"
+      "status": "source-local-go1.23.2-vet-race-98.4-percent-coverage-static-build-runtime-smoke-and-5-repeat-stress-passed-go1.26.5-pending"
     },
     {
       "id": "infranexum-web",
-      "status": "runtime-source-node22.16.0-27-tests-and-process-smoke-passed-node24.18.1-pnpm11.17.0-frozen-install-pending"
+      "status": "runtime-source-27-tests-99.65-line-98.28-branch-100-function-coverage-and-process-smoke-passed-target-node24.18.1-pnpm11.17.0-pending"
+    },
+    {
+      "id": "source-integrity-v1",
+      "status": "410-path-canonical-inventory-17-tests-100-percent-coverage-git-tracking-java-import-case-collision-filename-type-maven-reactor-and-make-preflight-enforced"
     },
     {
       "id": "core-domain-contract-pack-v1",
-      "status": "source-offline-smoke-validated-java25-reactor-pending"
+      "status": "source-offline-smoke-passed-java25-reactor-pending"
     },
     {
       "id": "core-transactional-events-v1.1",
-      "status": "source-34-junit-scenarios-and-java25-hosted-jacoco-gates-confirmed-by-user-provided-alpha0.13-run"
+      "status": "source-34-junit-tests-defined-hosted-alpha0.14-core-events-jacoco-gates-passed"
+    },
+    {
+      "id": "core-capabilities-quotas-v1",
+      "status": "37-junit-tests-defined-overflow-safe-quota-thresholds-source-tracking-enforced-java25-jacoco-rerun-pending"
+    },
+    {
+      "id": "core-entitlements-v1",
+      "status": "source-offline-signature-lifecycle-trusted-time-runtime-authority-import-coordinator-and-server-boundary-integrated-live-database-and-external-monotonic-anchor-pending"
     },
     {
       "id": "core-audit-v1",
@@ -34,31 +46,23 @@
     },
     {
       "id": "adapter-persistence-jdbc",
-      "status": "transactional-event-store-source-restored-persistence-preflight-and-local-jdbc-smokes-passed-live-postgresql-oracle-pending"
+      "status": "transactional-event-store-dialect-and-audit-sources-in-canonical-inventory-local-jdbc-smokes-passed-live-postgresql-oracle-pending"
     },
     {
       "id": "migration-catalogue-0001-0005",
-      "status": "static-pairing-checksum-logical-model-verification-immutability-trigger-and-rollback-validated-live-database-execution-pending"
-    },
-    {
-      "id": "core-capabilities-quotas-v1",
-      "status": "37-junit-scenarios-local-harness-passed-overflow-safe-quota-thresholds-no-jacoco-exclusions-java25-jacoco-rerun-pending"
-    },
-    {
-      "id": "core-entitlements-v1",
-      "status": "source-offline-signature-lifecycle-trusted-time-runtime-authority-import-coordinator-and-server-boundary-integrated-live-database-and-external-monotonic-anchor-pending"
+      "status": "static-pairing-checksum-logical-model-verification-immutability-trigger-and-rollback-gates-passed-live-database-execution-pending"
     },
     {
       "id": "platform-entitlements-http-v1",
       "status": "evaluation-status-problem-json-mutation-guard-readiness-and-pre-port-startup-guard-source-integrated-real-spring-runtime-tests-pending"
     },
     {
-      "id": "docker-compose-runtime",
-      "status": "not-delivered-until-java25-jar-fresh-install-migrations-installation-identity-and-secret-provisioning-are-executable"
+      "id": "ci-foundation",
+      "status": "dedicated-source-integrity-job-precedes-all-build-test-jobs-and-rejects-untracked-canonical-files-hosted-alpha0.15-rerun-pending"
     },
     {
-      "id": "ci-foundation",
-      "status": "capabilities-coverage-and-persistence-checkout-regressions-repaired-hosted-alpha0.14-rerun-pending"
+      "id": "docker-compose-runtime",
+      "status": "not-delivered-until-java25-jar-fresh-install-migrations-installation-identity-and-secret-provisioning-are-executable"
     }
   ],
   "validation_reports": [
@@ -81,6 +85,9 @@
     "../../artifacts/validation/persistence-coverage.txt",
     "../../artifacts/validation/persistence.json",
     "../../artifacts/validation/repository-syntax.json",
+    "../../artifacts/validation/source-integrity-coverage.txt",
+    "../../artifacts/validation/source-integrity-git.json",
+    "../../artifacts/validation/source-integrity.json",
     "../../artifacts/validation/toolchain-coverage.txt",
     "../../artifacts/validation/toolchains.json",
     "../../artifacts/validation/validation-status.json",
@@ -88,11 +95,16 @@
     "../../artifacts/validation/web-smoke.json"
   ],
   "validation_summary": {
-    "python_tests": 115,
+    "source_inventory_paths": 410,
+    "source_integrity_tests": 17,
+    "source_integrity_coverage_percent": 100,
+    "source_integrity_violations": 0,
+    "source_integrity_git_negative_scenarios": 3,
+    "python_tests": 133,
     "architecture_tests": 28,
-    "architecture_coverage_percent": "NOT_RECOMPUTED_LOCAL_TIMEOUT",
+    "architecture_coverage_percent": 100,
     "architecture_violations": 0,
-    "toolchain_tests": 18,
+    "toolchain_tests": 19,
     "toolchain_coverage_percent": 99,
     "toolchain_violations": 0,
     "migration_tests": 20,
@@ -114,7 +126,7 @@
     "audit_coverage_percent": 100,
     "audit_violations": 0,
     "java_offline_smoke_targets": 8,
-    "audit_java_static_test_compile": false,
+    "audit_java_static_smoke_compile": true,
     "agent_coverage_percent": 98.4,
     "agent_runtime_stress_repetitions": 5,
     "agent_process_smoke": true,
@@ -123,16 +135,29 @@
     "web_branch_coverage_percent": 98.28,
     "web_function_coverage_percent": 100,
     "event_module_tests_defined": 34,
-    "event_module_local_compatibility_harness_tests": 34,
     "capability_module_tests_defined": 37,
-    "capability_module_local_compatibility_harness_tests": 37
+    "repository_syntax_counts": {
+      "python": 40,
+      "json": 58,
+      "yaml": 16,
+      "xml": 8,
+      "javascript": 13,
+      "go": 8
+    }
   },
   "source_layout": "all implementation sources, tests, validation code, migrations and build-support scripts are grouped below src/",
+  "source_integrity": {
+    "inventory": "source-inventory.json",
+    "git_tracking_required_in_ci": true,
+    "java_project_import_resolution": true,
+    "case_insensitive_collision_rejection": true,
+    "maven_module_inventory": true
+  },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.14-capabilities-persistence-repair",
+    "prefix": "infranexum-2.0.0-alpha.0.15-source-integrity-hardening",
     "checksum_manifest": "source-files.sha256",
-    "recorded_files": 430,
-    "archive_entries": 432,
+    "recorded_files": 438,
+    "archive_entries": 440,
     "reproducible": true
   }
 }

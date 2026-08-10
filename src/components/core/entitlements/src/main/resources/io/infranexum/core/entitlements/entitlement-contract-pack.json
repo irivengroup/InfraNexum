@@ -1,0 +1,27 @@
+{
+  "schema": "infranexum.entitlement-contract-pack/v1",
+  "id": "core.entitlements.v1",
+  "owner": "team.core-platform",
+  "status": "active",
+  "version": "1.0.0",
+  "activation_manifest_schema": "infranexum.activation-manifest/v2",
+  "signature_algorithm": "Ed25519",
+  "canonicalization": "UTF-8 lexicographic JSON without whitespace or floating-point values",
+  "lite_full_days": 180,
+  "lite_conversion_days": 30,
+  "paid_grace_days": 30,
+  "profiles_with_manifests": [
+    "pro",
+    "enterprise"
+  ],
+  "lite_manifest_forbidden": true,
+  "source_baseline": [
+    "PGM-02-E05",
+    "CDC-10",
+    "CDC-12",
+    "CDC-14"
+  ],
+  "files": {
+    "activation-manifest.schema.json": "daccd0695d79eb4123c10a23db1fe610d31d1ae320169174a61b4d02c203ceab"
+  }
+}

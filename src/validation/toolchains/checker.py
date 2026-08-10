@@ -256,9 +256,23 @@ class ToolchainChecker:
                 "Legacy Web toolchain bootstrap is forbidden because pnpm must exist before cache resolution",
             )
 
-        architecture_start = workflow.find("  architecture:")
-        architecture_end = workflow.find("\n  agent:", architecture_start)
-        architecture_job = workflow[architecture_start:architecture_end] if architecture_start >= 0 and architecture_end > architecture_start else ""
+        source_integrity_command = "run: SOURCE_INTEGRITY_REQUIRE_GIT=1 make source-integrity-test source-integrity-check"
+        job_pattern = re.compile(
+            r"(?ms)^  (?P<name>[A-Za-z0-9_-]+):\n(?P<body>.*?)(?=^  [A-Za-z0-9_-]+:\n|\Z)"
+        )
+        job_bodies = {match.group("name"): match.group("body") for match in job_pattern.finditer(workflow)}
+        source_body = job_bodies.get("source-integrity", "")
+        dependent_jobs = ("architecture", "agent", "web", "java", "postgresql-integration")
+        if source_integrity_command not in source_body or any(
+            "needs: source-integrity" not in job_bodies.get(name, "") for name in dependent_jobs
+        ):
+            self._add(
+                "CHECK-TOOLCHAIN-037",
+                workflow_path,
+                "All build/test jobs must depend on the Git-backed source-integrity preflight",
+            )
+
+        architecture_job = job_bodies.get("architecture", "")
         if java_action not in architecture_job or java_version not in architecture_job:
             self._add(
                 "CHECK-TOOLCHAIN-029",
@@ -267,9 +281,6 @@ class ToolchainChecker:
             )
 
         prepare_wrapper = "run: chmod 0755 mvnw && test -x mvnw"
-        job_pattern = re.compile(
-            r"(?ms)^  (?P<name>[A-Za-z0-9_-]+):\n(?P<body>.*?)(?=^  [A-Za-z0-9_-]+:\n|\Z)"
-        )
         unprepared_jobs = []
         for match in job_pattern.finditer(workflow):
             body = match.group("body")

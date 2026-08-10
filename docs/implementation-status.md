@@ -1,8 +1,13 @@
-# InfraNexum 2.0.0-alpha.0.14 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.15 — état d’implémentation
+
+## alpha.0.15 — intégrité du checkout
+
+La passe transversale ajoute un inventaire canonique des fichiers, une vérification du tracking Git, la résolution des imports Java internes, la détection des collisions de casse et des modules Maven incomplets. Tous les jobs Foundation dépendent désormais de ce préflight afin qu’un fichier source présent dans une archive locale mais absent du commit échoue avant Maven/Python avec un diagnostic déterministe.
+
 
 ## Objet de l’incrément
 
-Cet incrément corrige les trois défauts observés sur le runner `alpha.0.13` : couverture JaCoCo insuffisante de Core Capabilities, crash des tests Persistence lorsqu’un fichier de production manque au checkout, et compilation JDBC impossible lorsque `JdbcTransactionalEventStore` n’est pas présent.
+`alpha.0.15` généralise la correction des checkouts incomplets observés sur les runners `alpha.0.13` et `alpha.0.14`. Le dernier log montre que l’archive locale contenait des sources qui n’étaient pas présentes dans le commit exécuté par GitHub (`CapabilityUnavailableException.java`, `JdbcDatabaseDialect.java`, `JdbcTransactionalEventStore.java`). Le projet dispose maintenant d’un inventaire canonique et d’un preflight Git bloquant avant tout build/test langage.
 
 ## Core Capabilities / JaCoCo
 
@@ -41,23 +46,24 @@ Le smoke JDBC compile de nouveau `JdbcTransactionalEventStore` et `JdbcAuditJour
 
 ## Non-régression locale
 
-- Architecture-as-Code : 28 tests fonctionnels, CLI 0 violation ; la campagne sous `coverage.py` dépasse la fenêtre d’exécution locale et reste à relancer ;
-- toolchains : 18 tests, 99 %, 0 violation ;
+- source integrity : **17 tests**, 100 %, 0 violation ; simulation Git explicite d’un fichier présent mais non tracké → `CHECK-SOURCE-GIT-002` ;
+- Architecture-as-Code : 28 tests, 100 %, CLI 0 violation ;
+- toolchains : **19 tests**, 99 %, 0 violation ;
 - migrations : 20 tests, 99 %, 0 violation ;
 - eventing : 10 tests, 100 %, 0 violation ;
 - persistence : **11 tests**, 98 %, 0 violation ;
 - capabilities : 10 tests Python, 99 %, 0 violation ;
 - entitlements : 10 tests, 100 %, 0 violation ;
 - audit : 8 tests, 100 %, 0 violation ;
-- total des tests Python fonctionnels : **115** ;
+- total des tests Python fonctionnels de gates : **133** (17 source-integrity + 28 architecture + 19 toolchains + 20 migrations + 10 eventing + 11 persistence + 10 capabilities + 10 entitlements + 8 audit) ;
 - **37/37** scénarios JUnit Capabilities exécutés dans le harnais local ;
 - 8 smokes Java autonomes réussis ;
 - Agent : race detector et couverture **98,4 %**, smoke processus et 5/5 répétitions de stress runtime ;
 - Web : **27/27**, 99,65 % lignes, 98,28 % branches, 100 % fonctions.
 
-## Preuve fournie par le runner `alpha.0.13`
+## Preuves fournies par les runners
 
-Les logs fournis confirment sous Java 25 que Core Contracts et Core Events sont désormais `SUCCESS`, et que les deux gates JaCoCo de Core Events sont satisfaits. Ils montrent ensuite l’échec Capabilities à 90 % lignes / 78 % branches, puis l’absence de `JdbcTransactionalEventStore` dans le checkout du job Persistence. Ces deux causes constituent le périmètre de `alpha.0.14`.
+Le runner `alpha.0.13` a confirmé Core Contracts et Core Events sous Java 25, y compris les gates JaCoCo Events à 98 %. Le runner `alpha.0.14` a ensuite révélé une classe Capabilities et deux classes Persistence absentes du checkout GitHub alors qu’elles existent dans l’archive de livraison. `alpha.0.15` transforme donc cette classe de défaut en invariant de dépôt : inventaire canonique, tracking Git obligatoire, imports Java internes résolus, collisions de casse interdites et modules Maven vérifiés avant le reactor.
 
 ## Limites
 

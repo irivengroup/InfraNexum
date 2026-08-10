@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 
-.PHONY: architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-test verify-foundation verify clean-generated
+.PHONY: source-integrity-test source-integrity-check source-integrity-update architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-test verify-foundation verify clean-generated
 
 PYTHON ?= python3
 GO ?= go
@@ -31,56 +31,66 @@ define PY_COVERAGE
 	cat $(3)
 endef
 
-architecture-test:
+source-integrity-test:
+	@$(call PY_COVERAGE,validation.source_integrity,$(TEST_ROOT)/source_integrity,$(REPORT_ROOT)/source-integrity-coverage.txt)
+
+source-integrity-check:
+	@mkdir -p $(REPORT_ROOT)
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.source_integrity.cli --root . --json-report $(REPORT_ROOT)/source-integrity.json $(if $(SOURCE_INTEGRITY_REQUIRE_GIT),--require-git-tracking,)
+
+source-integrity-update:
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.source_integrity.cli --root . --update-inventory
+
+architecture-test: source-integrity-check
 	@$(call PY_COVERAGE,validation.architecture,$(TEST_ROOT)/architecture,$(REPORT_ROOT)/architecture-coverage.txt)
 
 architecture-check:
 	@mkdir -p $(REPORT_ROOT)
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.architecture.cli --root . --policy $(VALIDATION_ROOT)/architecture/policy.json --json-report $(REPORT_ROOT)/architecture.json
 
-toolchain-test:
+toolchain-test: source-integrity-check
 	@$(call PY_COVERAGE,validation.toolchains,$(TEST_ROOT)/toolchains,$(REPORT_ROOT)/toolchain-coverage.txt)
 
 toolchain-check:
 	@mkdir -p $(REPORT_ROOT)
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.toolchains.cli --root . --json-report $(REPORT_ROOT)/toolchains.json
 
-migration-test:
+migration-test: source-integrity-check
 	@$(call PY_COVERAGE,validation.migrations,$(TEST_ROOT)/migrations,$(REPORT_ROOT)/migration-coverage.txt)
 
 migration-check:
 	@mkdir -p $(REPORT_ROOT)
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.migrations.cli --root $(MIGRATION_ROOT) --json-report $(REPORT_ROOT)/migrations.json
 
-eventing-test:
+eventing-test: source-integrity-check
 	@$(call PY_COVERAGE,validation.eventing,$(TEST_ROOT)/eventing,$(REPORT_ROOT)/eventing-coverage.txt)
 
 eventing-check:
 	@mkdir -p $(REPORT_ROOT)
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.eventing.cli --root . --json-report $(REPORT_ROOT)/eventing.json
 
-persistence-test: persistence-check
+persistence-test: source-integrity-check persistence-check
 	@$(call PY_COVERAGE,validation.persistence,$(TEST_ROOT)/persistence,$(REPORT_ROOT)/persistence-coverage.txt)
 
 persistence-check:
 	@mkdir -p $(REPORT_ROOT)
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.persistence.cli --root . --json-report $(REPORT_ROOT)/persistence.json
 
-capabilities-test:
+capabilities-test: source-integrity-check
 	@$(call PY_COVERAGE,validation.capabilities,$(TEST_ROOT)/capabilities,$(REPORT_ROOT)/capabilities-coverage.txt)
 
 capabilities-check:
 	@mkdir -p $(REPORT_ROOT)
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.capabilities.cli --root . --json-report $(REPORT_ROOT)/capabilities.json
 
-entitlements-test:
+entitlements-test: source-integrity-check
 	@$(call PY_COVERAGE,validation.entitlements,$(TEST_ROOT)/entitlements,$(REPORT_ROOT)/entitlements-coverage.txt)
 
 entitlements-check:
 	@mkdir -p $(REPORT_ROOT)
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.entitlements.cli --root . --json-report $(REPORT_ROOT)/entitlements.json
 
-audit-test:
+audit-test: source-integrity-check
 	@$(call PY_COVERAGE,validation.audit,$(TEST_ROOT)/audit,$(REPORT_ROOT)/audit-coverage.txt)
 
 audit-check:
@@ -215,7 +225,7 @@ web-verify: web-test web-smoke
 java-test:
 	./mvnw --batch-mode --no-transfer-progress verify
 
-verify-foundation: architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke agent-vet agent-test agent-build web-verify
+verify-foundation: source-integrity-test source-integrity-check architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke agent-vet agent-test agent-build web-verify
 
 verify: verify-foundation java-test
 

@@ -1,4 +1,4 @@
-# InfraNexum 2.0.0-alpha.0.14 — Capabilities Coverage & Persistence Checkout Repair
+# InfraNexum 2.0.0-alpha.0.15 — Source Integrity & Checkout Hardening
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
@@ -36,6 +36,20 @@ The repository currently contains:
 - signed activation, Lite J180/J210 lifecycle and Pro/Enterprise grace lifecycle;
 - authoritative Server entitlement runtime and activation persistence;
 - **Core Audit append-only foundation** introduced in `alpha.0.12`.
+
+## alpha.0.15 — Source integrity / checkout hardening
+
+This increment generalizes the checkout regression fixes instead of maintaining per-file exceptions:
+
+- `src/distribution/source-inventory.json` is the canonical path inventory for source, tests, configuration, CI and documentation;
+- `validation.source_integrity` rejects missing or undeclared canonical files before language builds start;
+- when Git metadata is available, every inventory entry must be present in `git ls-files`; a file that exists locally but was not committed is rejected with `CHECK-SOURCE-GIT-002`;
+- project-local Java imports must resolve to a main-source definition, top-level filenames must match their declared type, and duplicate FQCNs are rejected;
+- case-insensitive path collisions are rejected to preserve Windows/Linux checkout equivalence;
+- every Maven reactor module must have its declared `pom.xml`;
+- all Foundation build/test jobs depend on the dedicated `source-integrity` GitHub Actions job.
+
+The gate explicitly inventories `CapabilityUnavailableException.java`, `JdbcDatabaseDialect.java` and `JdbcTransactionalEventStore.java`, the three files observed missing from the hosted checkout while present in the release archive.
 
 ## alpha.0.12 — Core Audit (baseline conservée)
 
@@ -103,6 +117,10 @@ No public Audit API is exposed yet. IAM authorization and self-auditing of reads
 
 ```bash
 python3 -m pip install --requirement requirements/ci.txt
+make source-integrity-test source-integrity-check
+# After intentionally adding/removing canonical files, refresh and review the inventory:
+make source-integrity-update
+make source-integrity-check
 make architecture-test architecture-check
 make toolchain-test toolchain-check
 make migration-test migration-check
@@ -160,6 +178,7 @@ The authoritative catalogue is `toolchains.lock.json`. Principal targets include
 ## Sources of truth
 
 - `BASELINE.json` — documentary baselines and digests;
+- `src/distribution/source-inventory.json` — canonical checkout/source inventory enforced before every build job;
 - `toolchains.lock.json` — build toolchain catalogue;
 - `src/components/core/audit/` — Core Audit contract;
 - `src/components/adapters/persistence-jdbc/JdbcAuditJournal.java` — JDBC audit adapter;

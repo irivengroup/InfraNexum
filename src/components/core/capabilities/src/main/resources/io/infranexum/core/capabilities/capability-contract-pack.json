@@ -1,0 +1,47 @@
+{
+  "schema": "infranexum.capability-contract-pack/v1",
+  "id": "core.capabilities.v1",
+  "owner": "team.core-platform",
+  "status": "active",
+  "version": "1.0.0",
+  "catalog_version": "2.0.0-draft.20",
+  "installation_profiles": [
+    "lite",
+    "pro",
+    "enterprise"
+  ],
+  "allocation_tiers": {
+    "lite": [
+      "standard"
+    ],
+    "pro": [
+      "standard",
+      "advanced"
+    ],
+    "enterprise": [
+      "standard",
+      "ultimate"
+    ]
+  },
+  "capability_count": 21,
+  "quota_count": 119,
+  "quota_thresholds_percent": [
+    80,
+    90,
+    100
+  ],
+  "functional_surface_rule": "allocation-tiers-do-not-change-capabilities",
+  "domain_rule": "business-code-consumes-decisions-and-never-branches-on-profile-name",
+  "source_baseline": [
+    "ADR-0007",
+    "CDC-03",
+    "CDC-13",
+    "CDC-16",
+    "PGM-02-E04"
+  ],
+  "files": {
+    "capability-catalog.csv": "088c6af76540cba9593c708865e32d9e6d3744f98fb723ba2310131ea019c058",
+    "quota-catalog.csv": "03ccb6d225410a06d5fad918549a4455ebca79a154f7f3e6be8e0e9f117413ea",
+    "quota-policy.json": "7e945ff83fb747e7545f477fef994c552d54fc5ab7f341ce0e8714b433db9125"
+  }
+}
