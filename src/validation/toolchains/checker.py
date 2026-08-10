@@ -286,6 +286,24 @@ class ToolchainChecker:
                 f"Maven Wrapper must be made executable before use in jobs: {sorted(unprepared_jobs)}",
             )
 
+        targeted_lines = [
+            line.strip()
+            for line in workflow.splitlines()
+            if "PostgreSqlJdbcTransactionalEventStoreTest" in line
+        ]
+        required_targeted_flags = (
+            "-DfailIfNoTests=false",
+            "-Dsurefire.failIfNoSpecifiedTests=false",
+        )
+        if len(targeted_lines) != 1 or any(
+            flag not in targeted_lines[0] for flag in required_targeted_flags
+        ):
+            self._add(
+                "CHECK-TOOLCHAIN-035",
+                workflow_path,
+                "Targeted reactor tests must tolerate upstream modules without matching tests",
+            )
+
     @staticmethod
     def _version(tools: dict[str, Any], key: str) -> str:
         item = tools.get(key)

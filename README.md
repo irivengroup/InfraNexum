@@ -1,8 +1,8 @@
-# InfraNexum 2.0.0-alpha.0.10 — Authoritative Server Entitlements Runtime
+# InfraNexum 2.0.0-alpha.0.11 — Maven Reactor Regression Repair
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
-This repository is the tenth executable implementation increment derived from architecture baseline `2.0.0-draft.21` and the complete implementation roadmap.
+This repository is the eleventh executable implementation increment derived from architecture baseline `2.0.0-draft.21` and the complete implementation roadmap.
 
 ## Source layout
 
@@ -24,6 +24,15 @@ All implementation sources are grouped below `src/`; generated validation eviden
 - compensating activation import coordinator and JDBC activation repository;
 - paired PostgreSQL/Oracle migrations `0001` through `0004`;
 - authoritative Server entitlement runtime described below.
+
+## alpha.0.11 Maven reactor regression repair
+
+This increment fixes two Java 25 CI regressions observed on the hosted runner:
+
+- the UUIDv7 known-vector test now expects the timestamp actually encoded by the UUID prefix `018f22b27c00`, namely `2024-04-28T03:14:33.600Z`;
+- the targeted PostgreSQL reactor command sets both `-DfailIfNoTests=false` and `-Dsurefire.failIfNoSpecifiedTests=false`, allowing upstream modules without the selected test class while retaining strict test requirements during the full reactor build.
+
+The toolchain gate now blocks removal of either targeted-test flag. The dependency-free contract smoke also checks the same UUIDv7 known vector, so the regression is observable without Maven dependencies.
 
 ## alpha.0.10 authoritative Server runtime
 
@@ -76,7 +85,7 @@ The product is **NON TERMINÉ**.
 
 The following remain pending:
 
-- Maven reactor, Spring context, Spring Modulith, JUnit and JaCoCo execution under Java 25;
+- corrected Maven reactor, Spring context, Spring Modulith, JUnit and JaCoCo execution under Java 25;
 - live PostgreSQL 17/18 and Oracle 19c/26ai execution of migrations and activation repositories;
 - installer-generated installation identity and first-start provisioning;
 - IAM-protected and append-only audited activation import endpoint;
@@ -129,6 +138,11 @@ test "$(pnpm --version)" = "11.17.0"
 cd src/applications/web && pnpm install --frozen-lockfile --offline && pnpm run verify
 GOTOOLCHAIN=go1.26.5 make agent-vet agent-test agent-build
 ./mvnw --batch-mode --no-transfer-progress verify
+./mvnw --batch-mode --no-transfer-progress \
+  -pl src/components/adapters/persistence-jdbc -am \
+  -Dtest=PostgreSqlJdbcTransactionalEventStoreTest \
+  -DfailIfNoTests=false \
+  -Dsurefire.failIfNoSpecifiedTests=false test
 ```
 
 ## Sources of truth

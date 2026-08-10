@@ -180,6 +180,23 @@ class ToolchainCheckerTest(unittest.TestCase):
         )
         self.assertIn("CHECK-TOOLCHAIN-034", self.ids())
 
+    def test_ci_targeted_reactor_test_tolerates_upstream_modules_without_matches(self) -> None:
+        workflow_path = self.root / ".github/workflows/foundation.yml"
+        workflow = workflow_path.read_text(encoding="utf-8")
+        workflow_path.write_text(
+            workflow.replace(" -DfailIfNoTests=false", ""),
+            encoding="utf-8",
+        )
+        self.assertIn("CHECK-TOOLCHAIN-035", self.ids())
+
+        shutil.copy2(SOURCE / ".github/workflows/foundation.yml", workflow_path)
+        workflow = workflow_path.read_text(encoding="utf-8")
+        workflow_path.write_text(
+            workflow.replace(" -Dsurefire.failIfNoSpecifiedTests=false", ""),
+            encoding="utf-8",
+        )
+        self.assertIn("CHECK-TOOLCHAIN-035", self.ids())
+
     def test_ci_workflow_is_required(self) -> None:
         (self.root / ".github/workflows/foundation.yml").unlink()
         self.assertIn("CHECK-TOOLCHAIN-024", self.ids())

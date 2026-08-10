@@ -1,8 +1,23 @@
-# InfraNexum 2.0.0-alpha.0.10 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.11 — état d’implémentation
 
 ## Objet de l’incrément
 
-Cet incrément ferme le raccordement applicatif autoritatif de l’activation au Server. Il ne modifie pas le format du manifeste signé, le cycle Lite, la grâce Pro/Enterprise, les migrations existantes ni les contrats des événements transactionnels.
+Cet incrément corrige deux régressions révélées par le reactor Maven sous Java 25, sans modifier les contrats métier, les migrations, l’API publique ni le runtime autoritatif d’activation livré dans `alpha.0.10`.
+
+### Correctif UUIDv7
+
+Le test `DomainIdentifierTest.parsesOrdersAndExposesUuidV7Timestamp` utilisait une valeur attendue qui ne correspondait pas aux 48 bits de timestamp du UUID `018f22b2-7c00-7000-8000-000000000001`. La valeur attendue est désormais dérivée de l’instant explicite `2024-04-28T03:14:33.600Z`. Le smoke autonome des contrats couvre le même vecteur connu.
+
+### Correctif Surefire multi-modules
+
+Le test PostgreSQL ciblé est présent uniquement dans le module JDBC, alors que `-am` construit également les modules amont. La commande CI conserve la sélection stricte du test JDBC tout en autorisant l’absence de test correspondant dans les modules amont grâce aux deux propriétés distinctes :
+
+```text
+-DfailIfNoTests=false
+-Dsurefire.failIfNoSpecifiedTests=false
+```
+
+Le gate toolchains vérifie désormais la présence simultanée de ces deux propriétés. Le build complet `verify` conserve la politique parent `<failIfNoTests>true</failIfNoTests>`.
 
 ## Implémentation intégrée
 

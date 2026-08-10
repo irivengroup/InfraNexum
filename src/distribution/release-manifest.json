@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.10",
-  "profile": "development-foundation-authoritative-server-entitlements-runtime",
+  "version": "2.0.0-alpha.0.11",
+  "profile": "development-foundation-maven-reactor-regression-repair",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "source and validation evidence; generated binaries, caches, dependency directories and temporary artifacts excluded",
@@ -51,6 +51,10 @@
     {
       "id": "docker-compose-runtime",
       "status": "not-delivered-until-java25-jar-migrations-installation-identity-and-secret-provisioning-are-executable"
+    },
+    {
+      "id": "ci-maven-reactor-regression-repair",
+      "status": "uuidv7-known-vector-and-targeted-surefire-upstream-empty-test-handling-fixed-local-gates-passed-hosted-java25-rerun-pending"
     }
   ],
   "validation_reports": [
@@ -78,11 +82,11 @@
     "../../artifacts/validation/web-smoke.json"
   ],
   "validation_summary": {
-    "python_tests": 104,
+    "python_tests": 105,
     "architecture_tests": 28,
     "architecture_coverage_percent": 100,
     "architecture_violations": 0,
-    "toolchain_tests": 16,
+    "toolchain_tests": 17,
     "toolchain_coverage_percent": 99,
     "toolchain_violations": 0,
     "migration_tests": 20,
@@ -112,7 +116,7 @@
   },
   "source_layout": "all implementation sources, tests, validation code, migrations and build-support scripts are grouped below src/",
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.10-server-entitlements-runtime",
+    "prefix": "infranexum-2.0.0-alpha.0.11-maven-reactor-regression-repair",
     "checksum_manifest": "source-files.sha256",
     "recorded_files": 383,
     "archive_entries": 385,

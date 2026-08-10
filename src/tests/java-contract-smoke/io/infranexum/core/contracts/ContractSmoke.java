@@ -24,6 +24,9 @@ public final class ContractSmoke {
         require(first.value().variant() == 2, "wrong UUID variant");
         require(first.compareTo(second) < 0, "UUIDv7 sequence is not monotonic");
         require(first.unixEpochMillis() == 1_700_000_000_000L, "timestamp extraction failed");
+        DomainIdentifier known = DomainIdentifier.parse("018f22b2-7c00-7000-8000-000000000001");
+        require(known.unixEpochMillis() == Instant.parse("2024-04-28T03:14:33.600Z").toEpochMilli(),
+                "known UUIDv7 timestamp extraction regressed");
 
         DomainFailure failure = new DomainFailure(new DomainErrorCode("invalid_scope"), "Invalid scope", Map.of());
         require(failure.code().value().equals("INVALID_SCOPE"), "error code normalization failed");
