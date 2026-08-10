@@ -1,0 +1,17 @@
+schema: infranexum.migration-verification/v1
+checks:
+- id: audit-entry-exists
+  postgresql: "SELECT COUNT(*) = 1 FROM information_schema.tables WHERE table_schema = 'infranexum_core' AND table_name = 'audit_entry'"
+  oracle: "SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM user_tables WHERE table_name = 'INFRANEXUM_CORE_AUDIT_ENTRY'"
+- id: audit-chain-head-exists
+  postgresql: "SELECT COUNT(*) = 1 FROM information_schema.tables WHERE table_schema = 'infranexum_core' AND table_name = 'audit_chain_head'"
+  oracle: "SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM user_tables WHERE table_name = 'INFRANEXUM_CORE_AUDIT_CHAIN_HEAD'"
+- id: audit-tombstone-exists
+  postgresql: "SELECT COUNT(*) = 1 FROM information_schema.tables WHERE table_schema = 'infranexum_core' AND table_name = 'audit_purge_tombstone'"
+  oracle: "SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM user_tables WHERE table_name = 'INFRANEXUM_CORE_AUDIT_PURGE_TOMBSTONE'"
+- id: audit-entry-immutable-trigger
+  postgresql: "SELECT COUNT(*) = 1 FROM pg_trigger WHERE tgname = 'trg_inx_audit_entry_immutable' AND NOT tgisinternal"
+  oracle: "SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM user_triggers WHERE trigger_name = 'TRG_INX_AUDIT_ENTRY_IMMUTABLE' AND status = 'ENABLED'"
+- id: audit-tombstone-immutable-trigger
+  postgresql: "SELECT COUNT(*) = 1 FROM pg_trigger WHERE tgname = 'trg_inx_audit_tombstone_immutable' AND NOT tgisinternal"
+  oracle: "SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM user_triggers WHERE trigger_name = 'TRG_INX_AUDIT_TOMB_IMMUTABLE' AND status = 'ENABLED'"

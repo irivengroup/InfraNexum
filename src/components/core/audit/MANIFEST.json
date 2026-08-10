@@ -1,0 +1,10 @@
+{
+  "schema": "infranexum.component-manifest/v1",
+  "id": "components.core.audit",
+  "kind": "component",
+  "owner": "team.core-platform",
+  "lifecycle": "active",
+  "languages": ["java"],
+  "dependencies": ["components.core.contracts"],
+  "source_baseline": ["PGM-02-E06", "PGM-04-E01", "ADR-0024", "IAR-09 §8", "CDC-IAM-AUDIT"]
+}

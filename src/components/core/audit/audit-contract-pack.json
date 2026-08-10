@@ -1,0 +1,31 @@
+{
+  "schema": "infranexum.audit-contract-pack/v1",
+  "version": "1.0.0",
+  "append_only": true,
+  "chain_digest": "SHA-256",
+  "export_signature": "Ed25519",
+  "export_payload": "UTF-8 JSON Lines",
+  "export_manifest": "canonical properties with SHA-256 payload digest",
+  "entry_fields": [
+    "auditId",
+    "scope",
+    "actorId",
+    "actorType",
+    "action",
+    "targetType",
+    "targetId",
+    "authorizationDecision",
+    "timestamp",
+    "correlationId",
+    "result",
+    "origin",
+    "reason",
+    "clientIp",
+    "userAgent",
+    "metadata",
+    "sensitivity"
+  ],
+  "metadata_policy": "reject secret-bearing keys; maximum aggregate UTF-8 size 4096 bytes",
+  "purge": "regulatory workflow only; double control and immutable tombstone",
+  "source_baseline": ["PGM-02-E06", "ADR-0024", "IAR-09 §8", "CDC-IAM-AUDIT"]
+}

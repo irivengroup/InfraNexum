@@ -9,11 +9,14 @@
   ],
   "dependencies": [
     "components.core.contracts",
-    "components.core.events"
+    "components.core.events",
+    "components.core.audit"
   ],
   "source_baseline": [
     "PGM-04-E01",
     "PGM-02-E03",
-    "ADR-0062"
+    "ADR-0062",
+    "PGM-02-E06",
+    "ADR-0024"
   ]
 }

@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 
-.PHONY: architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check java-contract-smoke java-eventing-smoke java-jdbc-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-test verify-foundation verify clean-generated
+.PHONY: architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-test verify-foundation verify clean-generated
 
 PYTHON ?= python3
 GO ?= go
@@ -80,6 +80,13 @@ entitlements-check:
 	@mkdir -p $(REPORT_ROOT)
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.entitlements.cli --root . --json-report $(REPORT_ROOT)/entitlements.json
 
+audit-test:
+	@$(call PY_COVERAGE,validation.audit,$(TEST_ROOT)/audit,$(REPORT_ROOT)/audit-coverage.txt)
+
+audit-check:
+	@mkdir -p $(REPORT_ROOT)
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.audit.cli --root . --json-report $(REPORT_ROOT)/audit.json
+
 java-contract-smoke:
 	@build_dir="$$(mktemp -d)"; \
 	trap 'rm -rf "$$build_dir"' EXIT; \
@@ -97,6 +104,15 @@ java-eventing-smoke:
 		$(TEST_ROOT)/java-eventing-smoke/io/infranexum/core/events/EventingSmoke.java; \
 	$(JAVA) -ea -cp "$$build_dir" io.infranexum.core.events.EventingSmoke
 
+java-audit-smoke:
+	@build_dir="$$(mktemp -d)"; \
+	trap 'rm -rf "$$build_dir"' EXIT; \
+	$(JAVAC) -Xlint:all -Werror -d "$$build_dir" \
+		$(COMPONENT_ROOT)/core/contracts/src/main/java/io/infranexum/core/contracts/*.java \
+		$(COMPONENT_ROOT)/core/audit/src/main/java/io/infranexum/core/audit/*.java \
+		$(TEST_ROOT)/java-audit-smoke/io/infranexum/core/audit/AuditSmoke.java; \
+	$(JAVA) -ea -cp "$$build_dir" io.infranexum.core.audit.AuditSmoke
+
 java-jdbc-smoke:
 	@build_dir="$$(mktemp -d)"; \
 	trap 'rm -rf "$$build_dir"' EXIT; \
@@ -105,9 +121,12 @@ java-jdbc-smoke:
 		$(COMPONENT_ROOT)/core/events/src/main/java/io/infranexum/core/events/*.java \
 		$(COMPONENT_ROOT)/core/capabilities/src/main/java/io/infranexum/core/capabilities/*.java \
 		$(COMPONENT_ROOT)/core/entitlements/src/main/java/io/infranexum/core/entitlements/*.java \
+		$(COMPONENT_ROOT)/core/audit/src/main/java/io/infranexum/core/audit/*.java \
 		$(COMPONENT_ROOT)/adapters/persistence-jdbc/src/main/java/io/infranexum/adapters/persistence/jdbc/*.java \
-		$(COMPONENT_ROOT)/adapters/persistence-jdbc/src/test/java/io/infranexum/adapters/persistence/jdbc/JdbcAdapterSmoke.java; \
-	$(JAVA) -ea -cp "$$build_dir" io.infranexum.adapters.persistence.jdbc.JdbcAdapterSmoke
+		$(COMPONENT_ROOT)/adapters/persistence-jdbc/src/test/java/io/infranexum/adapters/persistence/jdbc/JdbcAdapterSmoke.java \
+		$(COMPONENT_ROOT)/adapters/persistence-jdbc/src/test/java/io/infranexum/adapters/persistence/jdbc/JdbcAuditJournalSmoke.java; \
+	$(JAVA) -ea -cp "$$build_dir" io.infranexum.adapters.persistence.jdbc.JdbcAdapterSmoke; \
+	$(JAVA) -ea -cp "$$build_dir" io.infranexum.adapters.persistence.jdbc.JdbcAuditJournalSmoke
 
 java-capabilities-smoke:
 	@build_dir="$$(mktemp -d)"; \
@@ -139,6 +158,7 @@ java-entitlement-runtime-smoke:
 		$(COMPONENT_ROOT)/core/events/src/main/java/io/infranexum/core/events/*.java \
 		$(COMPONENT_ROOT)/core/capabilities/src/main/java/io/infranexum/core/capabilities/*.java \
 		$(COMPONENT_ROOT)/core/entitlements/src/main/java/io/infranexum/core/entitlements/*.java \
+		$(COMPONENT_ROOT)/core/audit/src/main/java/io/infranexum/core/audit/*.java \
 		$(COMPONENT_ROOT)/adapters/persistence-jdbc/src/main/java/io/infranexum/adapters/persistence/jdbc/*.java \
 		$(TEST_ROOT)/java-entitlement-runtime-smoke/io/infranexum/core/entitlements/EntitlementRuntimeSmoke.java; \
 	$(JAVA) -ea -cp "$$build_dir" io.infranexum.core.entitlements.EntitlementRuntimeSmoke \
@@ -195,7 +215,7 @@ web-verify: web-test web-smoke
 java-test:
 	./mvnw --batch-mode --no-transfer-progress verify
 
-verify-foundation: architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check java-contract-smoke java-eventing-smoke java-jdbc-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke agent-vet agent-test agent-build web-verify
+verify-foundation: architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke agent-vet agent-test agent-build web-verify
 
 verify: verify-foundation java-test
 

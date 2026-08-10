@@ -1,0 +1,72 @@
+{
+  "schema": "infranexum.logical-schema/v1",
+  "objects": [
+    {
+      "kind": "table",
+      "logical_name": "core.audit_chain_head",
+      "columns": [
+        {"name":"scope_type","type":"string","length":32,"nullable":false},
+        {"name":"scope_id","type":"string","length":160,"nullable":false},
+        {"name":"last_sequence","type":"long","nullable":false},
+        {"name":"head_hash","type":"string","length":64,"nullable":false},
+        {"name":"updated_at","type":"timestamp-with-time-zone","nullable":false}
+      ],
+      "primary_key":["scope_type","scope_id"],"unique_constraints":[],"foreign_keys":[]
+    },
+    {
+      "kind": "table",
+      "logical_name": "core.audit_entry",
+      "columns": [
+        {"name":"scope_type","type":"string","length":32,"nullable":false},
+        {"name":"scope_id","type":"string","length":160,"nullable":false},
+        {"name":"sequence_no","type":"long","nullable":false},
+        {"name":"audit_id","type":"uuid","nullable":false},
+        {"name":"actor_id","type":"string","length":160,"nullable":false},
+        {"name":"actor_type","type":"string","length":160,"nullable":false},
+        {"name":"action_name","type":"string","length":160,"nullable":false},
+        {"name":"target_type","type":"string","length":160,"nullable":false},
+        {"name":"target_id","type":"string","length":160,"nullable":false},
+        {"name":"authorization_decision","type":"string","length":32,"nullable":false},
+        {"name":"occurred_at","type":"timestamp-with-time-zone","nullable":false},
+        {"name":"correlation_id","type":"uuid","nullable":true},
+        {"name":"result_name","type":"string","length":32,"nullable":false},
+        {"name":"origin_name","type":"string","length":512,"nullable":false},
+        {"name":"reason_text","type":"string","length":1024,"nullable":true},
+        {"name":"client_ip","type":"string","length":64,"nullable":true},
+        {"name":"user_agent","type":"string","length":512,"nullable":true},
+        {"name":"metadata_json","type":"json","nullable":false},
+        {"name":"sensitivity","type":"string","length":32,"nullable":false},
+        {"name":"previous_hash","type":"string","length":64,"nullable":false},
+        {"name":"entry_hash","type":"string","length":64,"nullable":false},
+        {"name":"immutable_flag","type":"boolean-marker","nullable":false},
+        {"name":"created_at","type":"timestamp-with-time-zone","nullable":false}
+      ],
+      "primary_key":["scope_type","scope_id","sequence_no"],
+      "unique_constraints":[["audit_id"]],"foreign_keys":[],
+      "indexes":[
+        {"name":"time","columns":["scope_type","scope_id","occurred_at","sequence_no"]},
+        {"name":"actor","columns":["scope_type","scope_id","actor_id","occurred_at"]},
+        {"name":"action","columns":["scope_type","scope_id","action_name","occurred_at"]},
+        {"name":"target","columns":["scope_type","scope_id","target_type","target_id","occurred_at"]},
+        {"name":"correlation","columns":["correlation_id"]}
+      ]
+    },
+    {
+      "kind":"table",
+      "logical_name":"core.audit_purge_tombstone",
+      "columns":[
+        {"name":"tombstone_id","type":"uuid","nullable":false},
+        {"name":"scope_type","type":"string","length":32,"nullable":false},
+        {"name":"scope_id","type":"string","length":160,"nullable":false},
+        {"name":"policy_id","type":"string","length":160,"nullable":false},
+        {"name":"approved_by_first","type":"uuid","nullable":false},
+        {"name":"approved_by_second","type":"uuid","nullable":false},
+        {"name":"purged_at","type":"timestamp-with-time-zone","nullable":false},
+        {"name":"proof_sha256","type":"string","length":64,"nullable":false},
+        {"name":"reason_text","type":"string","length":1024,"nullable":false},
+        {"name":"created_at","type":"timestamp-with-time-zone","nullable":false}
+      ],
+      "primary_key":["tombstone_id"],"unique_constraints":[],"foreign_keys":[]
+    }
+  ]
+}

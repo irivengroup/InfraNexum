@@ -49,7 +49,7 @@ infranexum:
     mode: ${INFRANEXUM_SERVER_MODE:STANDALONE}
     region: ${INFRANEXUM_SERVER_REGION:local}
     site: ${INFRANEXUM_SERVER_SITE:local}
-    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.11}
+    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.12}
     architecture-baseline: ${INFRANEXUM_ARCHITECTURE_BASELINE:2.0.0-draft.21}
 
 management:

@@ -2,15 +2,15 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.11",
-  "profile": "development-foundation-maven-reactor-regression-repair",
+  "version": "2.0.0-alpha.0.12",
+  "profile": "development-foundation-core-audit",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "source and validation evidence; generated binaries, caches, dependency directories and temporary artifacts excluded",
   "artifacts": [
     {
       "id": "infranexum-server",
-      "status": "source-authoritative-entitlement-runtime-integrated-static-warning-free-compile-and-seven-offline-smokes-passed-java25-maven-spring-junit-jacoco-and-executable-jar-pending"
+      "status": "source-authoritative-entitlement-runtime-integrated-static-warning-free-compile-and-offline-smokes-passed-java25-maven-spring-junit-jacoco-and-executable-jar-pending"
     },
     {
       "id": "infranexum-agent",
@@ -22,19 +22,23 @@
     },
     {
       "id": "core-domain-contract-pack-v1",
-      "status": "source-offline-java21-smoke-validated-java25-reactor-pending"
+      "status": "source-offline-smoke-validated-java25-reactor-pending"
     },
     {
       "id": "core-transactional-events-v1.1",
-      "status": "source-offline-java21-behavior-and-concurrency-smoke-validated-java25-junit-jacoco-and-kafka-pending"
+      "status": "source-offline-behavior-and-concurrency-smoke-validated-java25-junit-jacoco-and-kafka-pending"
+    },
+    {
+      "id": "core-audit-v1",
+      "status": "append-only-chain-signed-deterministic-export-purge-tombstone-contract-in-memory-and-jdbc-adapters-implemented-encrypted-delivery-iam-purge-workflow-live-db-and-performance-pending"
     },
     {
       "id": "adapter-persistence-jdbc",
-      "status": "source-event-and-activation-repositories-independent-proof-store-and-compensation-protocol-compiled-live-postgresql-oracle-execution-pending"
+      "status": "event-activation-and-audit-repositories-compiled-with-local-smokes-live-postgresql-oracle-execution-pending"
     },
     {
-      "id": "migration-catalogue-0001-0004",
-      "status": "static-pairing-checksum-logical-model-verification-and-rollback-validated-live-database-execution-pending"
+      "id": "migration-catalogue-0001-0005",
+      "status": "static-pairing-checksum-logical-model-verification-immutability-trigger-and-rollback-validated-live-database-execution-pending"
     },
     {
       "id": "core-capabilities-quotas-v1",
@@ -46,25 +50,28 @@
     },
     {
       "id": "platform-entitlements-http-v1",
-      "status": "evaluation-status-openapi-problem-json-mutation-guard-readiness-and-pre-port-startup-guard-source-integrated-real-spring-runtime-tests-pending"
+      "status": "evaluation-status-problem-json-mutation-guard-readiness-and-pre-port-startup-guard-source-integrated-real-spring-runtime-tests-pending"
     },
     {
       "id": "docker-compose-runtime",
-      "status": "not-delivered-until-java25-jar-migrations-installation-identity-and-secret-provisioning-are-executable"
+      "status": "not-delivered-until-java25-jar-fresh-install-migrations-installation-identity-and-secret-provisioning-are-executable"
     },
     {
-      "id": "ci-maven-reactor-regression-repair",
-      "status": "uuidv7-known-vector-and-targeted-surefire-upstream-empty-test-handling-fixed-local-gates-passed-hosted-java25-rerun-pending"
+      "id": "ci-foundation",
+      "status": "local-gates-and-smokes-passed-hosted-java25-postgresql17-18-go1.26.5-node24-pnpm11-rerun-pending"
     }
   ],
   "validation_reports": [
     "../../artifacts/validation/agent-coverage.txt",
     "../../artifacts/validation/agent-smoke.json",
+    "../../artifacts/validation/agent-stress.json",
     "../../artifacts/validation/architecture-coverage.txt",
     "../../artifacts/validation/architecture.json",
+    "../../artifacts/validation/audit-coverage.txt",
+    "../../artifacts/validation/audit-java-static-compile.json",
+    "../../artifacts/validation/audit.json",
     "../../artifacts/validation/capabilities-coverage.txt",
     "../../artifacts/validation/capabilities.json",
-    "../../artifacts/validation/ci-bootstrap-regression.json",
     "../../artifacts/validation/entitlements-coverage.txt",
     "../../artifacts/validation/entitlements.json",
     "../../artifacts/validation/eventing-coverage.txt",
@@ -74,7 +81,6 @@
     "../../artifacts/validation/persistence-coverage.txt",
     "../../artifacts/validation/persistence.json",
     "../../artifacts/validation/repository-syntax.json",
-    "../../artifacts/validation/server-static-compile.json",
     "../../artifacts/validation/toolchain-coverage.txt",
     "../../artifacts/validation/toolchains.json",
     "../../artifacts/validation/validation-status.json",
@@ -82,7 +88,7 @@
     "../../artifacts/validation/web-smoke.json"
   ],
   "validation_summary": {
-    "python_tests": 105,
+    "python_tests": 113,
     "architecture_tests": 28,
     "architecture_coverage_percent": 100,
     "architecture_violations": 0,
@@ -104,8 +110,11 @@
     "entitlement_tests": 10,
     "entitlement_coverage_percent": 100,
     "entitlement_violations": 0,
-    "java_offline_smokes": 7,
-    "server_static_warning_free_compile": true,
+    "audit_tests": 8,
+    "audit_coverage_percent": 100,
+    "audit_violations": 0,
+    "java_offline_smoke_targets": 8,
+    "audit_java_static_test_compile": true,
     "agent_coverage_percent": 98.4,
     "agent_runtime_stress_repetitions": 20,
     "agent_process_smoke": true,
@@ -116,10 +125,10 @@
   },
   "source_layout": "all implementation sources, tests, validation code, migrations and build-support scripts are grouped below src/",
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.11-maven-reactor-regression-repair",
+    "prefix": "infranexum-2.0.0-alpha.0.12-core-audit",
     "checksum_manifest": "source-files.sha256",
-    "recorded_files": 383,
-    "archive_entries": 385,
+    "recorded_files": 422,
+    "archive_entries": 424,
     "reproducible": true
   }
 }

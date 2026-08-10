@@ -1,5 +1,5 @@
 schema: infranexum.migration-catalogue/v1
-version: 1.3.0
+version: 1.4.0
 entries:
 - id: '0001'
   path: 0001-core-schema-history/migration.yaml
@@ -9,3 +9,5 @@ entries:
   path: 0003-core-inbox-reservation/migration.yaml
 - id: '0004'
   path: 0004-core-entitlements/migration.yaml
+- id: '0005'
+  path: 0005-core-audit/migration.yaml

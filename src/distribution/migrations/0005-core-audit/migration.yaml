@@ -1,0 +1,27 @@
+schema: infranexum.migration/v1
+id: '0005'
+name: core-audit
+owner_context: core
+dependencies:
+- '0004'
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 45
+preconditions:
+- core-schema-history-exists
+- database-user-can-create-table-index-function-and-trigger
+postconditions:
+- audit-entry-storage-is-append-only
+- audit-chain-head-is-serialized-per-scope
+- regulatory-purge-tombstones-are-append-only
+recovery: rerun-idempotently-before-enabling-audit-producers
+rollback: supported-only-before-any-audit-entry-or-purge-tombstone-exists
+checksums:
+  postgresql.sql: 9d2e0d0cf03bf961a47de383d05efa47135ddaf8381afbc875a7367b193b54b1
+  oracle.sql: fdd23a1eac95bef5539a3336e1e4984e3e6cd2a5ef415284a9c3cc167b479b7b
+  rollback/postgresql.sql: ee03e4d7355279fc961dd5be439721fd85523e49021bc5c078932095cf1f8d13
+  rollback/oracle.sql: 057b8223013d00386d1662d7ca4421ba69b877a0c220ddf5ce6f6febc82f63d3
+  logical-model.json: e371d6197caecdbec590b40d860ba1daabbd653b4bd2111408b02f2c2e6b3ad1
+  verify.sql.yaml: 82acb262d1e1fc9632442677d9ab0baeca2c131fb8d2d32ee3886a82aa689a90
