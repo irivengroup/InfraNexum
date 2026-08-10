@@ -59,7 +59,7 @@ eventing-check:
 	@mkdir -p $(REPORT_ROOT)
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.eventing.cli --root . --json-report $(REPORT_ROOT)/eventing.json
 
-persistence-test:
+persistence-test: persistence-check
 	@$(call PY_COVERAGE,validation.persistence,$(TEST_ROOT)/persistence,$(REPORT_ROOT)/persistence-coverage.txt)
 
 persistence-check:

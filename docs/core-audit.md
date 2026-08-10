@@ -2,7 +2,7 @@
 
 ## Périmètre
 
-L’incrément `2.0.0-alpha.0.13` matérialise le socle de `PGM-02-E06` dans `src/components/core/audit` et son adaptateur JDBC. Il ne publie pas encore l’API IAM d’audit : IAM doit devenir producteur des événements complets et autoriser les recherches/exports dans un incrément ultérieur.
+L’incrément `2.0.0-alpha.0.14` matérialise le socle de `PGM-02-E06` dans `src/components/core/audit` et son adaptateur JDBC. Il ne publie pas encore l’API IAM d’audit : IAM doit devenir producteur des événements complets et autoriser les recherches/exports dans un incrément ultérieur.
 
 ## Invariants
 

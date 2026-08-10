@@ -1,9 +1,9 @@
 {
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
-  "positioning": "InfraNexum \u2014 Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.13",
-  "profile": "development-foundation-eventing-reactor-repair",
+  "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
+  "version": "2.0.0-alpha.0.14",
+  "profile": "development-foundation-capabilities-persistence-repair",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "source and validation evidence; generated binaries, caches, dependency directories and temporary artifacts excluded",
@@ -14,7 +14,7 @@
     },
     {
       "id": "infranexum-agent",
-      "status": "source-local-go1.23.2-vet-race-98.4-percent-coverage-static-build-runtime-smoke-and-20-repeat-stress-validated-go1.26.5-pending"
+      "status": "source-local-go1.23.2-vet-race-98.4-percent-coverage-static-build-runtime-smoke-and-5-repeat-stress-validated-go1.26.5-pending"
     },
     {
       "id": "infranexum-web",
@@ -26,7 +26,7 @@
     },
     {
       "id": "core-transactional-events-v1.1",
-      "status": "source-34-junit-scenarios-expanded-for-98-percent-line-and-branch-gate-local-compatibility-harness-passed-java25-maven-jacoco-rerun-pending"
+      "status": "source-34-junit-scenarios-and-java25-hosted-jacoco-gates-confirmed-by-user-provided-alpha0.13-run"
     },
     {
       "id": "core-audit-v1",
@@ -34,7 +34,7 @@
     },
     {
       "id": "adapter-persistence-jdbc",
-      "status": "event-activation-and-audit-repositories-compiled-with-local-smokes-live-postgresql-oracle-execution-pending"
+      "status": "transactional-event-store-source-restored-persistence-preflight-and-local-jdbc-smokes-passed-live-postgresql-oracle-pending"
     },
     {
       "id": "migration-catalogue-0001-0005",
@@ -42,7 +42,7 @@
     },
     {
       "id": "core-capabilities-quotas-v1",
-      "status": "source-static-gate-offline-smoke-and-authoritative-entitlement-synchronization-integrated-java25-junit-jacoco-pending"
+      "status": "37-junit-scenarios-local-harness-passed-overflow-safe-quota-thresholds-no-jacoco-exclusions-java25-jacoco-rerun-pending"
     },
     {
       "id": "core-entitlements-v1",
@@ -58,7 +58,7 @@
     },
     {
       "id": "ci-foundation",
-      "status": "targeted-reactor-surefire-property-indirection-and-event-coverage-regressions-repaired-local-gates-passed-hosted-java25-postgresql-rerun-pending"
+      "status": "capabilities-coverage-and-persistence-checkout-regressions-repaired-hosted-alpha0.14-rerun-pending"
     }
   ],
   "validation_reports": [
@@ -88,9 +88,9 @@
     "../../artifacts/validation/web-smoke.json"
   ],
   "validation_summary": {
-    "python_tests": 114,
+    "python_tests": 115,
     "architecture_tests": 28,
-    "architecture_coverage_percent": 100,
+    "architecture_coverage_percent": "NOT_RECOMPUTED_LOCAL_TIMEOUT",
     "architecture_violations": 0,
     "toolchain_tests": 18,
     "toolchain_coverage_percent": 99,
@@ -101,7 +101,7 @@
     "eventing_tests": 10,
     "eventing_coverage_percent": 100,
     "eventing_violations": 0,
-    "persistence_tests": 10,
+    "persistence_tests": 11,
     "persistence_coverage_percent": 98,
     "persistence_violations": 0,
     "capability_tests": 10,
@@ -114,23 +114,25 @@
     "audit_coverage_percent": 100,
     "audit_violations": 0,
     "java_offline_smoke_targets": 8,
-    "audit_java_static_test_compile": true,
+    "audit_java_static_test_compile": false,
     "agent_coverage_percent": 98.4,
-    "agent_runtime_stress_repetitions": 0,
-    "agent_process_smoke": false,
+    "agent_runtime_stress_repetitions": 5,
+    "agent_process_smoke": true,
     "web_tests": 27,
     "web_line_coverage_percent": 99.65,
     "web_branch_coverage_percent": 98.28,
     "web_function_coverage_percent": 100,
     "event_module_tests_defined": 34,
-    "event_module_local_compatibility_harness_tests": 34
+    "event_module_local_compatibility_harness_tests": 34,
+    "capability_module_tests_defined": 37,
+    "capability_module_local_compatibility_harness_tests": 37
   },
   "source_layout": "all implementation sources, tests, validation code, migrations and build-support scripts are grouped below src/",
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.13-eventing-reactor-repair",
+    "prefix": "infranexum-2.0.0-alpha.0.14-capabilities-persistence-repair",
     "checksum_manifest": "source-files.sha256",
-    "recorded_files": 424,
-    "archive_entries": 426,
+    "recorded_files": 430,
+    "archive_entries": 432,
     "reproducible": true
   }
 }

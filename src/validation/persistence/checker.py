@@ -69,6 +69,7 @@ class PersistenceChecker:
             server_pom_path, server_pom, unavailable_data_source_path, unavailable_data_source)
         self._check_reactor()
         self._check_policy()
+        self._check_gate_order()
         return tuple(sorted(set(self.violations)))
 
     def _check_store(self, path: Path, text: str | None) -> None:
@@ -190,6 +191,17 @@ class PersistenceChecker:
                     self._add(
                         "CHECK-JDBC-SERVER-005", unavailable_path,
                         "MEMORY DataSource must fail every accidental JDBC connection")
+
+
+    def _check_gate_order(self) -> None:
+        path = self.root / "Makefile"
+        text = self._read(path, "CHECK-JDBC-GATE-001")
+        if text is not None and "persistence-test: persistence-check" not in text:
+            self._add(
+                "CHECK-JDBC-GATE-002",
+                path,
+                "persistence-check must run before persistence tests so an incomplete checkout fails deterministically",
+            )
 
     def _check_reactor(self) -> None:
         path = self.root / "pom.xml"

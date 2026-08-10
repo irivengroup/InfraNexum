@@ -48,6 +48,7 @@ class CapabilityChecker:
             self.JAVA_ROOT / "CapabilityRegistry.java",
             self.JAVA_ROOT / "CapabilityEnvironment.java",
             self.JAVA_ROOT / "QuotaCatalog.java",
+            self.JAVA_ROOT / "QuotaDefinition.java",
             self.JAVA_ROOT / "QuotaPolicy.java",
             "src/applications/server/src/main/java/io/infranexum/server/platform/PlatformCapabilityController.java",
             "src/applications/server/src/main/java/io/infranexum/server/platform/PlatformCapabilityConfiguration.java",
@@ -199,8 +200,10 @@ class CapabilityChecker:
     def _check_java_contracts(self) -> None:
         registry_path = self.root / self.JAVA_ROOT / "CapabilityRegistry.java"
         quota_path = self.root / self.JAVA_ROOT / "QuotaCatalog.java"
+        definition_path = self.root / self.JAVA_ROOT / "QuotaDefinition.java"
         registry = self._read_text(registry_path, "CHECK-CAP-JAVA-001")
         quota = self._read_text(quota_path, "CHECK-CAP-JAVA-002")
+        definition = self._read_text(definition_path, "CHECK-CAP-JAVA-002")
         if registry is not None:
             required = (
                 "PROFILE_CAPABILITY_NOT_INSTALLED",
@@ -219,13 +222,18 @@ class CapabilityChecker:
                 self._add("CHECK-CAP-JAVA-004", registry_path, "allocation tier changes capability hash/surface")
         if quota is not None:
             for token in (
-                "Math.multiplyExact(value, 2L) >= definition.enterpriseStandard()",
                 "architectural quota cannot be overridden",
                 "Lite quotas are fixed",
                 "quota catalogue version mismatch",
             ):
                 if token not in quota:
                     self._add("CHECK-CAP-JAVA-005", quota_path, f"missing quota invariant: {token}")
+        if definition is not None and "Math.multiplyExact(proAdvancedCeiling, 2L) >= enterpriseStandard" not in definition:
+            self._add(
+                "CHECK-CAP-JAVA-005",
+                definition_path,
+                "quota definition must certify the strict Pro Advanced / Enterprise Standard ratio",
+            )
 
     def _check_reactor_and_server(self) -> None:
         pom_path = self.root / "pom.xml"

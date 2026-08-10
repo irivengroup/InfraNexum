@@ -1,4 +1,4 @@
-# InfraNexum 2.0.0-alpha.0.13 — Eventing Coverage & Maven Reactor Repair
+# InfraNexum 2.0.0-alpha.0.14 — Capabilities Coverage & Persistence Checkout Repair
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
@@ -74,6 +74,19 @@ This increment fixes two Java 25 runner regressions without weakening any qualit
 - targeted PostgreSQL reactor tests preserve strict `failIfNoTests=true` for normal builds while using the overridable `infranexum.surefire.failIfNoTests` project property for upstream modules that do not contain the selected JDBC tests.
 
 The exact Java 25/JUnit/JaCoCo and PostgreSQL runner executions remain required before these regressions can be declared closed.
+
+## alpha.0.14 — Capabilities/Persistence CI repair
+
+The Java 25 runner evidence for `alpha.0.13` confirms that Core Contracts and Core Events now pass, including the unchanged 98% JaCoCo gates. The next failures were in Core Capabilities and an incomplete JDBC checkout. This increment therefore:
+
+- expands Core Capabilities from 17 to **37 JUnit scenarios**, covering defensive constructors, profile/tier/topology matrices, catalogue parsing, every quota allocation tier, guards, threshold boundaries and malformed inputs;
+- keeps JaCoCo at **98% lines and 98% branches** with no exclusions;
+- removes a redundant Pro Advanced ratio branch from `QuotaCatalog` because `QuotaDefinition` already certifies the invariant and every override is bounded by that certified ceiling;
+- fixes `QuotaPolicy` utilization arithmetic so quotas near `Long.MAX_VALUE` cannot overflow while computing 80%/90% thresholds;
+- restores `JdbcTransactionalEventStore.java` as an explicit release source and makes `persistence-test` depend on `persistence-check`, so an incomplete checkout is rejected before fixture setup;
+- adds a regression proving that a missing JDBC store produces `CHECK-JDBC-STORE-001` instead of ten `FileNotFoundError` failures.
+
+The exact Java 25 JaCoCo result for Core Capabilities and the PostgreSQL 17/18 targeted reactor remain required on the hosted runner.
 
 ## Current public platform API
 

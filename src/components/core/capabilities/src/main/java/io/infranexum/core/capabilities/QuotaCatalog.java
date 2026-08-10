@@ -141,10 +141,8 @@ public final class QuotaCatalog {
         }
         long value = requested == null ? definition.proStandard() : requested;
         requireRange(definition.key(), value, definition.proStandard(), definition.proAdvancedCeiling());
-        if (Math.multiplyExact(value, 2L) >= definition.enterpriseStandard()) {
-            throw new IllegalArgumentException(
-                    "Pro Advanced quota must remain strictly below 50% of Enterprise Standard: " + definition.key());
-        }
+        // QuotaDefinition already certifies the Pro Advanced ceiling as strictly below
+        // 50% of Enterprise Standard; requireRange keeps every override inside that ceiling.
         return value;
     }
 

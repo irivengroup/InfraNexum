@@ -30,7 +30,7 @@ class SystemControllerTest {
         mockMvc.perform(get("/api/v1/system/build"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.product").value("InfraNexum"))
-                .andExpect(jsonPath("$.version").value("2.0.0-alpha.0.13"))
+                .andExpect(jsonPath("$.version").value("2.0.0-alpha.0.14"))
                 .andExpect(jsonPath("$.component").value("SERVER"))
                 .andExpect(jsonPath("$.mode").value("STANDALONE"));
     }

@@ -18,6 +18,7 @@ from validation.persistence.cli import main as cli_main
 SOURCE = Path(__file__).resolve().parents[3]
 FILES = (
     "pom.xml",
+    "Makefile",
     "src/validation/architecture/policy.json",
     "src/components/core/events/src/main/java/io/infranexum/core/events/EventTransaction.java",
     "src/components/adapters/persistence-jdbc/src/main/java/io/infranexum/adapters/persistence/jdbc/JdbcTransactionalEventStore.java",
@@ -60,12 +61,12 @@ class PersistenceCheckerTest(unittest.TestCase):
 
     def test_missing_files_are_reported(self) -> None:
         for relative, expected in (
-            (FILES[2], "CHECK-JDBC-UOW-001"),
-            (FILES[3], "CHECK-JDBC-STORE-001"),
-            (FILES[4], "CHECK-JDBC-DIALECT-001"),
-            (FILES[5], "CHECK-JDBC-MIGRATION-001"),
-            (FILES[7], "CHECK-JDBC-ROLLBACK-001"),
-            (FILES[9], "CHECK-JDBC-SERVER-001"),
+            (FILES[3], "CHECK-JDBC-UOW-001"),
+            (FILES[4], "CHECK-JDBC-STORE-001"),
+            (FILES[5], "CHECK-JDBC-DIALECT-001"),
+            (FILES[6], "CHECK-JDBC-MIGRATION-001"),
+            (FILES[8], "CHECK-JDBC-ROLLBACK-001"),
+            (FILES[10], "CHECK-JDBC-SERVER-001"),
         ):
             path = self.root / relative
             saved = path.read_bytes()
@@ -74,7 +75,7 @@ class PersistenceCheckerTest(unittest.TestCase):
             path.write_bytes(saved)
 
     def test_store_transaction_and_vendor_boundaries_are_enforced(self) -> None:
-        relative = FILES[3]
+        relative = FILES[4]
         self.mutate(relative, "ThreadLocal<Connection>")
         self.assertIn("CHECK-JDBC-STORE-002", self.ids())
         shutil.copy2(SOURCE / relative, self.root / relative)
@@ -86,7 +87,7 @@ class PersistenceCheckerTest(unittest.TestCase):
         self.assertIn("CHECK-JDBC-STORE-004", self.ids())
 
     def test_post_commit_order_is_enforced(self) -> None:
-        relative = FILES[3]
+        relative = FILES[4]
         path = self.root / relative
         text = path.read_text(encoding="utf-8")
         text = text.replace("runPostCommitActions(actions)", "runSignals(actions)")
@@ -94,7 +95,7 @@ class PersistenceCheckerTest(unittest.TestCase):
         self.assertIn("CHECK-JDBC-STORE-003", self.ids())
 
     def test_dialect_claim_deduplication_and_binding_invariants_are_enforced(self) -> None:
-        relative = FILES[4]
+        relative = FILES[5]
         for token in (
             "ORACLE",
             "FOR UPDATE SKIP LOCKED",
@@ -111,7 +112,7 @@ class PersistenceCheckerTest(unittest.TestCase):
         self.assertIn("CHECK-JDBC-DIALECT-003", self.ids())
 
     def test_unit_of_work_inbox_contract_is_enforced(self) -> None:
-        relative = FILES[2]
+        relative = FILES[3]
         self.mutate(relative, "InboxDecision beginInbox(InboxReservation reservation)", "InboxDecision beginInbox(InboxKey key)")
         self.assertIn("CHECK-JDBC-UOW-002", self.ids())
         shutil.copy2(SOURCE / relative, self.root / relative)
@@ -119,44 +120,50 @@ class PersistenceCheckerTest(unittest.TestCase):
         self.assertIn("CHECK-JDBC-UOW-003", self.ids())
 
     def test_migration_and_rollback_state_guards_are_enforced(self) -> None:
-        relative = FILES[5]
+        relative = FILES[6]
         self.mutate(relative, "PROCESSING", "ACTIVE")
         self.assertIn("CHECK-JDBC-MIGRATION-002", self.ids())
         shutil.copy2(SOURCE / relative, self.root / relative)
         self.mutate(relative, "completed_at IS NULL", "completed_at IS NOT NULL")
         self.assertIn("CHECK-JDBC-MIGRATION-003", self.ids())
-        relative = FILES[7]
+        relative = FILES[8]
         self.mutate(relative, "cannot roll back migration 0003", "rollback allowed")
         self.assertIn("CHECK-JDBC-ROLLBACK-002", self.ids())
 
     def test_server_composition_root_is_enforced(self) -> None:
-        relative = FILES[9]
+        relative = FILES[10]
         self.mutate(relative, 'havingValue = "ORACLE"')
         self.assertIn("CHECK-JDBC-SERVER-002", self.ids())
         shutil.copy2(SOURCE / relative, self.root / relative)
-        self.mutate(FILES[10], "components.adapters.persistence-jdbc")
+        self.mutate(FILES[11], "components.adapters.persistence-jdbc")
         self.assertIn("CHECK-JDBC-SERVER-003", self.ids())
-        shutil.copy2(SOURCE / FILES[10], self.root / FILES[10])
-        self.mutate(FILES[11], "infranexum-adapter-persistence-jdbc")
-        self.assertIn("CHECK-JDBC-SERVER-004", self.ids())
         shutil.copy2(SOURCE / FILES[11], self.root / FILES[11])
-        self.mutate(FILES[9], "memoryDataSource()", "memoryDataSourceDisabled()")
+        self.mutate(FILES[12], "infranexum-adapter-persistence-jdbc")
+        self.assertIn("CHECK-JDBC-SERVER-004", self.ids())
+        shutil.copy2(SOURCE / FILES[12], self.root / FILES[12])
+        self.mutate(FILES[10], "memoryDataSource()", "memoryDataSourceDisabled()")
         self.assertIn("CHECK-JDBC-SERVER-005", self.ids())
-        shutil.copy2(SOURCE / FILES[9], self.root / FILES[9])
-        self.mutate(FILES[12], "throw unavailable()", "return null")
+        shutil.copy2(SOURCE / FILES[10], self.root / FILES[10])
+        self.mutate(FILES[13], "throw unavailable()", "return null")
         self.assertIn("CHECK-JDBC-SERVER-005", self.ids())
 
     def test_reactor_and_policy_registration_are_enforced(self) -> None:
         self.mutate("pom.xml", "    <module>src/components/adapters/persistence-jdbc</module>\n")
         self.assertIn("CHECK-JDBC-REACTOR-002", self.ids())
         shutil.copy2(SOURCE / "pom.xml", self.root / "pom.xml")
-        policy = self.root / FILES[1]
+        policy = self.root / FILES[2]
         payload = json.loads(policy.read_text(encoding="utf-8"))
         payload["required_manifest_paths"].remove("components/adapters/persistence-jdbc")
         policy.write_text(json.dumps(payload), encoding="utf-8")
         self.assertIn("CHECK-JDBC-POLICY-002", self.ids())
         policy.write_text("{", encoding="utf-8")
         self.assertIn("CHECK-JDBC-POLICY-001", self.ids())
+
+    def test_persistence_check_preflights_the_checkout_before_mutation_tests(self) -> None:
+        self.mutate("Makefile", "persistence-test: persistence-check", "persistence-test:")
+        self.assertIn("CHECK-JDBC-GATE-002", self.ids())
+        (self.root / "Makefile").unlink()
+        self.assertIn("CHECK-JDBC-GATE-001", self.ids())
 
     def test_external_path_and_cli_are_covered(self) -> None:
         checker = PersistenceChecker(self.root)
@@ -170,7 +177,7 @@ class PersistenceCheckerTest(unittest.TestCase):
                 self.assertEqual(0, cli_main())
         self.assertEqual(0, json.loads(report.read_text(encoding="utf-8"))["violation_count"])
 
-        (self.root / FILES[3]).unlink()
+        (self.root / FILES[4]).unlink()
         with patch.object(sys, "argv", ["persistence", "--root", str(self.root)]):
             with contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(1, cli_main())

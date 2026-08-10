@@ -36,11 +36,14 @@ public final class QuotaPolicy {
         if (consumption == limit) {
             return QuotaUsageLevel.EXHAUSTED;
         }
-        long percentage = Math.floorDiv(Math.multiplyExact(consumption, 100L), limit);
-        if (percentage >= 90) {
+        // Compare against ceil(90%/80%) without multiplying consumption, so valid
+        // long-range quotas cannot overflow while computing utilization thresholds.
+        long warningThreshold = limit - Math.floorDiv(limit, 10L);
+        if (consumption >= warningThreshold) {
             return QuotaUsageLevel.WARNING;
         }
-        if (percentage >= 80) {
+        long informationThreshold = limit - Math.floorDiv(limit, 5L);
+        if (consumption >= informationThreshold) {
             return QuotaUsageLevel.INFORMATION;
         }
         return QuotaUsageLevel.NORMAL;

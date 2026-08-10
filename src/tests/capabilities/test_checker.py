@@ -34,6 +34,7 @@ FILES = (
     "src/applications/server/src/main/java/io/infranexum/server/platform/PlatformCapabilityConfiguration.java",
     "src/applications/server/pom.xml",
     "src/applications/server/MANIFEST.json",
+    "src/components/core/capabilities/src/main/java/io/infranexum/core/capabilities/QuotaDefinition.java",
 )
 
 
@@ -80,7 +81,7 @@ class CapabilityCheckerTest(unittest.TestCase):
         self.assertEqual(set(), self.ids())
 
     def test_missing_required_files_are_reported(self) -> None:
-        for relative in (FILES[2], FILES[4], FILES[5], FILES[6], FILES[7], FILES[8], FILES[10], FILES[12]):
+        for relative in (FILES[2], FILES[4], FILES[5], FILES[6], FILES[7], FILES[8], FILES[10], FILES[12], FILES[16]):
             path = self.root / relative
             saved = path.read_bytes()
             path.unlink()
@@ -227,6 +228,9 @@ class CapabilityCheckerTest(unittest.TestCase):
             stream.write("\n// environment.allocationTier()\n")
         self.assertIn("CHECK-CAP-JAVA-004", self.ids())
         self.mutate(FILES[10], "architectural quota cannot be overridden")
+        self.assertIn("CHECK-CAP-JAVA-005", self.ids())
+        self.reset(FILES[10])
+        self.mutate(FILES[16], "Math.multiplyExact(proAdvancedCeiling, 2L) >= enterpriseStandard")
         self.assertIn("CHECK-CAP-JAVA-005", self.ids())
 
     def test_reactor_server_manifest_and_policy_wiring_are_enforced(self) -> None:
