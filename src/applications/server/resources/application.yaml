@@ -34,6 +34,9 @@ infranexum:
   persistence:
     mode: ${INFRANEXUM_PERSISTENCE_MODE:POSTGRESQL}
     isolation: ${INFRANEXUM_PERSISTENCE_ISOLATION:READ_COMMITTED}
+  scheduling:
+    pool-size: ${INFRANEXUM_SCHEDULING_POOL_SIZE:2}
+    shutdown-timeout: ${INFRANEXUM_SCHEDULING_SHUTDOWN_TIMEOUT:PT10S}
   workers:
     enabled: ${INFRANEXUM_WORKERS_ENABLED:true}
     concurrency: ${INFRANEXUM_WORKERS_CONCURRENCY:2}
@@ -58,7 +61,7 @@ infranexum:
     mode: ${INFRANEXUM_SERVER_MODE:STANDALONE}
     region: ${INFRANEXUM_SERVER_REGION:local}
     site: ${INFRANEXUM_SERVER_SITE:local}
-    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.32}
+    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.36}
     architecture-baseline: ${INFRANEXUM_ARCHITECTURE_BASELINE:2.0.0-draft.21}
 
 management:

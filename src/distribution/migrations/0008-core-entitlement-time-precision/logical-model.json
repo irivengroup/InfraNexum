@@ -1,0 +1,33 @@
+{
+  "schema": "infranexum.logical-schema/v1",
+  "objects": [
+    {
+      "kind": "table-constraint",
+      "logical_name": "core.installation_identity.created_at.whole_second",
+      "table": "core.installation_identity",
+      "columns": ["created_at"],
+      "invariant": "installation creation timestamp is UTC at whole-second precision"
+    },
+    {
+      "kind": "table-constraint",
+      "logical_name": "core.entitlement_state.temporal.whole_second",
+      "table": "core.entitlement_state",
+      "columns": ["evaluation_started_at", "last_reliable_at", "valid_until", "grace_until", "updated_at"],
+      "invariant": "runtime entitlement timestamps are stored at whole-second precision"
+    },
+    {
+      "kind": "table-constraint",
+      "logical_name": "core.entitlement_integrity_proof.temporal.whole_second",
+      "table": "core.entitlement_integrity_proof",
+      "columns": ["evaluation_started_at", "last_reliable_at", "updated_at"],
+      "invariant": "integrity proof timestamps are stored at whole-second precision"
+    },
+    {
+      "kind": "table-constraint",
+      "logical_name": "core.activation_manifest.temporal.whole_second",
+      "table": "core.activation_manifest",
+      "columns": ["valid_from", "valid_until", "issued_at", "accepted_at"],
+      "invariant": "activation temporal values are stored at whole-second precision"
+    }
+  ]
+}

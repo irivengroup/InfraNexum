@@ -50,7 +50,7 @@ public final class JdbcActivationOperationalRepository implements EntitlementRun
                     dialect.readIdentifier(result, "installation_id"),
                     result.getString("fingerprint_version"),
                     result.getString("fingerprint"),
-                    JdbcTemporal.readRequired(result, "created_at"));
+                    JdbcTemporal.readWholeSecondRequired(result, "created_at"));
             if (result.next()) {
                 throw new SQLException("multiple installation identities");
             }
@@ -113,14 +113,14 @@ public final class JdbcActivationOperationalRepository implements EntitlementRun
                 return Optional.of(new EntitlementStateRecord(
                         InstallationProfile.valueOf(result.getString("profile")),
                         AllocationTier.valueOf(result.getString("allocation_tier")),
-                        JdbcTemporal.readNullable(result, "evaluation_started_at"),
-                        JdbcTemporal.readRequired(result, "last_reliable_at"),
+                        JdbcTemporal.readWholeSecondNullable(result, "evaluation_started_at"),
+                        JdbcTemporal.readWholeSecondRequired(result, "last_reliable_at"),
                         result.getLong("time_generation"),
                         new AcceptedSequence(sequence, nullableIdentifier(result, "accepted_activation_id")),
                         EntitlementRuntimePhase.valueOf(result.getString("activation_state")),
-                        JdbcTemporal.readNullable(result, "valid_until"),
-                        JdbcTemporal.readNullable(result, "grace_until"),
-                        JdbcTemporal.readRequired(result, "updated_at")));
+                        JdbcTemporal.readWholeSecondNullable(result, "valid_until"),
+                        JdbcTemporal.readWholeSecondNullable(result, "grace_until"),
+                        JdbcTemporal.readWholeSecondRequired(result, "updated_at")));
             }
         } catch (SQLException | IllegalArgumentException error) {
             throw new JdbcPersistenceException("load entitlement runtime state", error);
@@ -365,8 +365,8 @@ public final class JdbcActivationOperationalRepository implements EntitlementRun
         return new IntegrityProof(
                 dialect.readIdentifier(result, "installation_id"),
                 result.getString("fingerprint"),
-                JdbcTemporal.readRequired(result, "evaluation_started_at"),
-                JdbcTemporal.readRequired(result, "last_reliable_at"),
+                JdbcTemporal.readWholeSecondRequired(result, "evaluation_started_at"),
+                JdbcTemporal.readWholeSecondRequired(result, "last_reliable_at"),
                 result.getLong("generation"),
                 result.getString("mac_base64"));
     }

@@ -1,4 +1,23 @@
-# InfraNexum 2.0.0-alpha.0.32 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.36 — état d’implémentation
+
+
+## 2.0.0-alpha.0.36 — explicit managed Spring scheduling runtime
+
+**Statut : correction implémentée ; certification Docker/JDK25 cible requise.**
+
+Le premier démarrage complet d’`alpha.0.35` a confirmé le Server opérationnel jusqu’au `DispatcherServlet`, tout en révélant que `@EnableScheduling` utilisait encore le fallback local de Spring (`No TaskScheduler/ScheduledExecutorService bean found for scheduled processing`). Ce fallback mono-thread fonctionne, mais il n’est ni dimensionné ni explicitement gouverné par InfraNexum. Le Server fournit désormais un véritable `ThreadPoolTaskScheduler` nommé `taskScheduler`, borné et configurable via `infranexum.scheduling.*`, avec horloge plateforme UTC, politique remove-on-cancel et arrêt borné. Le scheduler métier Workers est renommé `workerTaskScheduler` afin que le nom Spring canonique `taskScheduler` appartienne exclusivement au scheduler d’infrastructure. Des tests Spring et Architecture empêchent le retour du fallback implicite ou la réappropriation du nom par un autre bean.
+
+## 2.0.0-alpha.0.35 — canonical platform Clock for framework auto-configuration
+
+**Statut : correction implémentée ; certification Docker/JDK25 cible requise.**
+
+Le démarrage Docker `alpha.0.34` a confirmé que les injections applicatives Entitlements étaient correctement qualifiées, puis a exposé un second niveau de collision : `Spring Modulith MomentsAutoConfiguration` résout un `Clock` unique par type et échoue lorsque seuls `entitlementClock` et `workerClock` sont présents. Le Server fournit désormais un `platformClock` UTC unique marqué `@Primary`. Les bounded contexts conservent leurs horloges explicitement qualifiées ; aucune horloge métier n’est rendue primaire. Une non-régression Spring charge l’auto-configuration Moments en présence des trois beans et vérifie que la résolution par type sélectionne exclusivement `platformClock`. Le gate Architecture interdit également qu’un autre Clock de contexte devienne `@Primary`.
+
+## 2.0.0-alpha.0.34 — Entitlements whole-second temporal repair
+
+**Statut : implémenté localement ; certification Docker/JDK25 cible encore requise.**
+
+Le bootstrap PostgreSQL Compose persiste maintenant `core_installation_identity.created_at` à la seconde entière avec `date_trunc('second', CURRENT_TIMESTAMP)`. La migration appariée `0008-core-entitlement-time-precision` normalise uniquement ce timestamp d’installation non signé lorsqu’il provient d’alpha.0.32 ; elle refuse toute réécriture silencieuse d’un état Entitlements, proof HMAC ou manifeste d’activation contenant des fractions de seconde. PostgreSQL et Oracle reçoivent ensuite des contraintes de précision seconde entière sur les colonnes temporelles participant aux invariants Entitlements. Le mapping JDBC valide ces timestamps dès la frontière persistence et produit une erreur contextualisée sur la colonne fautive.
 
 ## 2.0.0-alpha.0.32 — UUIDv7 installation identity repair
 

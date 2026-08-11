@@ -1,7 +1,7 @@
 {
   "schema": "infranexum.source-baseline/v1",
   "product": "InfraNexum — Infrastructure Control & Governance Platform",
-  "implementation_version": "2.0.0-alpha.0.32",
+  "implementation_version": "2.0.0-alpha.0.36",
   "architecture_baseline": "2.0.0-draft.21",
   "roadmap_baseline": "1.0.0-draft.1",
   "architecture_archive_sha256": "372cf19929f8ea3b7586c3af3e7c5004e590cf746ff2d6d59d4d0b88912aea64",
@@ -37,7 +37,10 @@
     "Deployment-boundary and Workers composition alpha.0.29: Docker/Compose deployment assets are removed from canonical product source, CI and release metadata and guarded against reintroduction; a separate ignored developer workspace is supported, while Server now owns explicit MEMORY/PostgreSQL/Oracle TaskStore selection, immutable handler registry, scheduler, bounded retry policy and Spring-managed TaskWorkerPool lifecycle.",
     "Developer Docker relocation alpha.0.30: Docker Desktop/Compose tooling is tracked at repository-root docker/ rather than below src/ or in a detached companion bundle; Server and PostgreSQL tooling Dockerfiles, fail-closed backup/restore/rollback scripts, Windows/WSL launchers and Make compose commands are included while production deployment remains standalone bare-metal/VM.",
     "Docker PostgreSQL portability repair alpha.0.31: psql migration/rollback control files use byte-exact printf rendering instead of implementation-defined echo backslash handling, root compose.yaml includes the canonical docker/ model for direct repository-root commands, and service-scoped log helpers prevent generated container names from being confused with Compose service names.",
-    "UUIDv7 installation identity repair alpha.0.32: PostgreSQL developer bootstrap no longer uses kernel UUIDv4 identifiers; migration 0007 safely repairs only unconsumed invalid installation identities, enforces the UUIDv7 invariant in PostgreSQL and Oracle, and JDBC reports persisted identifier corruption with column context."
+    "UUIDv7 installation identity repair alpha.0.32: PostgreSQL developer bootstrap no longer uses kernel UUIDv4 identifiers; migration 0007 safely repairs only unconsumed invalid installation identities, enforces the UUIDv7 invariant in PostgreSQL and Oracle, and JDBC reports persisted identifier corruption with column context.",
+    "Entitlements temporal precision repair alpha.0.33: PostgreSQL developer bootstrap stores installation created_at at UTC whole-second precision; migration 0008 safely normalizes only unsigned installation metadata, fails closed for fractional signed/HMAC-protected entitlement data, enforces temporal precision in PostgreSQL/Oracle, and JDBC rejects malformed persisted timestamps with column context.",
+    "Spring Clock ownership repair alpha.0.34: Entitlements and Workers keep separate UTC Clock beans, every entitlement Clock injection point is explicitly qualified, and a Spring context regression proves the entitlement exception handler resolves the correct clock when both bounded contexts are enabled.",
+    "Spring framework Clock arbitration repair alpha.0.35: a canonical UTC platformClock is the sole @Primary Clock for type-only framework integrations such as Spring Modulith Moments, while Entitlements and Workers retain explicit bounded-context qualifiers; architecture and Spring-context regressions prevent ambiguous or accidental primary Clock ownership."
   ],
   "roadmap_archive_sha256": "11db7d27bbc79f688cd1fda31a24aaf31b56a56db36b6487b64154c148ab54d3",
   "engineering_governance_sha256": "f24357051a5401f598c3d77bbe5814d3759a176095537659243658ba3ff109c7"

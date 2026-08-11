@@ -27,6 +27,7 @@ import java.time.Clock;
 import java.util.Optional;
 import javax.crypto.SecretKey;
 import javax.sql.DataSource;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -44,7 +45,7 @@ import tools.jackson.databind.ObjectMapper;
         havingValue = "true",
         matchIfMissing = true)
 public class ActivationRuntimeConfiguration {
-    @Bean
+    @Bean("entitlementClock")
     Clock entitlementClock() {
         return Clock.systemUTC();
     }
@@ -153,7 +154,7 @@ public class ActivationRuntimeConfiguration {
             LiteEvaluationPolicy liteEvaluationPolicy,
             EntitlementGuard entitlementGuard,
             SecretKey entitlementIntegrityKey,
-            Clock entitlementClock) {
+            @Qualifier("entitlementClock") Clock entitlementClock) {
         return new EntitlementRuntimeAuthority(
                 repository,
                 independentIntegrityProofStore,
@@ -175,7 +176,7 @@ public class ActivationRuntimeConfiguration {
             ActivationContextFactory activationContextFactory,
             TrustedTimeGuard trustedTimeGuard,
             SecretKey entitlementIntegrityKey,
-            Clock entitlementClock) {
+            @Qualifier("entitlementClock") Clock entitlementClock) {
         return new ActivationImportCoordinator(
                 repository,
                 independentIntegrityProofStore,

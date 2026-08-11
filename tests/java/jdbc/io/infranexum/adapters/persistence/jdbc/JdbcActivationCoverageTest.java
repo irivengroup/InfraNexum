@@ -124,6 +124,23 @@ class JdbcActivationCoverageTest {
     }
 
     @Test
+    void installationIdentityRejectsFractionalCreatedAtAtJdbcBoundary() {
+        InstallationIdentity identity = identity(12);
+        Map<String, Object> row = Map.of(
+                "installation_id", identity.installationId().value(),
+                "fingerprint_version", identity.fingerprintVersion(),
+                "fingerprint", identity.fingerprint(),
+                "created_at", OffsetDateTime.ofInstant(NOW.plusNanos(123_000_000), ZoneOffset.UTC));
+        JdbcActivationOperationalRepository repository = new JdbcActivationOperationalRepository(
+                new RoutingQueryDataSource(Map.of("SELECT installation_id,fingerprint_version", List.of(row))),
+                JdbcDatabaseDialect.POSTGRESQL);
+
+        JdbcPersistenceException failure = assertThrows(JdbcPersistenceException.class, repository::installationIdentity);
+        assertInstanceOf(SQLException.class, failure.getCause());
+        assertTrue(failure.getCause().getMessage().contains("created_at"));
+    }
+
+    @Test
     void acceptedSequenceMapsNullAndUuidActivationIdentifiers() {
         InstallationIdentity identity = identity(15);
         JdbcActivationOperationalRepository none = new JdbcActivationOperationalRepository(

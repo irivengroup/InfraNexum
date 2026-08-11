@@ -48,7 +48,7 @@ class WorkerRuntimeConfigurationTest {
         var registry = configuration.taskHandlerRegistry(beans.getBeanProvider(TaskHandler.class));
         Clock clock = configuration.workerClock();
         var identifiers = configuration.workerIdentifiers(clock);
-        TaskScheduler scheduler = configuration.taskScheduler(
+        TaskScheduler scheduler = configuration.workerTaskScheduler(
                 new InMemoryTaskStore(), registry, identifiers, clock);
 
         assertEquals(1, registry.size());
@@ -86,7 +86,7 @@ class WorkerRuntimeConfigurationTest {
                 RuntimeMode.STANDALONE,
                 "local",
                 "local",
-                "2.0.0-alpha.0.32",
+                "2.0.0-alpha.0.36",
                 "2.0.0-draft.21");
     }
 

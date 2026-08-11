@@ -51,6 +51,7 @@ public final class JdbcAdapterSmoke {
         provesPostgreSqlUnitOfWorkAndOutbox();
         provesOracleClaimsAndInboxDeduplication();
         provesConfigurationAndOwnershipGuards();
+        provesEntitlementTemporalPrecisionGuard();
         System.out.println("java-jdbc-smoke: PASS");
     }
 
@@ -223,6 +224,28 @@ public final class JdbcAdapterSmoke {
                 event.eventId(), "owner", NOW, null, new RuntimeException("x")));
         expect(NullPointerException.class, () -> store.markFailed(
                 event.eventId(), "owner", NOW, retryPolicy, null));
+    }
+
+    static void provesEntitlementTemporalPrecisionGuard() {
+        ResultSet fractional = (ResultSet) Proxy.newProxyInstance(
+                JdbcAdapterSmoke.class.getClassLoader(),
+                new Class<?>[] {ResultSet.class},
+                (proxy, method, args) -> {
+                    if (method.getName().equals("getObject")) {
+                        return OffsetDateTime.ofInstant(NOW.plusNanos(123_000_000), ZoneOffset.UTC);
+                    }
+                    if (method.getName().equals("close")) {
+                        return null;
+                    }
+                    if (method.getReturnType() == boolean.class) {
+                        return false;
+                    }
+                    if (method.getReturnType() == int.class) {
+                        return 0;
+                    }
+                    return null;
+                });
+        expect(SQLException.class, () -> JdbcTemporal.readWholeSecondRequired(fractional, "created_at"));
     }
 
     private static EventEnvelope event(int sequence) {

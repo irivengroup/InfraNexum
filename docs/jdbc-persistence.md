@@ -55,6 +55,8 @@ La migration appariée `0006-core-workers` crée `worker_task` et `worker_task_p
 
 La migration `0007-core-installation-uuidv7` impose également le contrat `DomainIdentifier` sur l’identité d’installation persistée. PostgreSQL peut réparer automatiquement l’UUIDv4 introduit par le bootstrap Docker alpha.0.31 uniquement avant toute consommation par Entitlements ; Oracle refuse toute identité legacy invalide et exige une réparation explicite. Après migration, la base refuse les identifiants d’installation non UUIDv7.
 
+La migration `0008-core-entitlement-time-precision` aligne ensuite la persistance sur les invariants temporels de Core Entitlements. PostgreSQL peut tronquer uniquement `core_installation_identity.created_at` à la seconde entière, car cette métadonnée n’est ni signée ni couverte par le proof HMAC. Toute donnée Entitlements consommée contenant des fractions de seconde provoque un échec fail-closed ; Oracle applique cette politique à toutes les valeurs legacy. Les lectures JDBC vérifient également la précision seconde entière avant de reconstruire les objets du domaine.
+
 ## Configuration Server
 
 ```yaml

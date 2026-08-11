@@ -91,7 +91,7 @@ public class WorkerRuntimeConfiguration {
     }
 
     @Bean
-    TaskScheduler taskScheduler(
+    TaskScheduler workerTaskScheduler(
             TaskStore store,
             TaskHandlerRegistry registry,
             @Qualifier("workerIdentifiers") UuidV7Generator identifiers,

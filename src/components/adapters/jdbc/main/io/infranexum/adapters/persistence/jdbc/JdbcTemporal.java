@@ -28,6 +28,20 @@ final class JdbcTemporal {
         return value;
     }
 
+    static Instant readWholeSecondRequired(ResultSet resultSet, String column) throws SQLException {
+        Instant value = readRequired(resultSet, column);
+        requireWholeSecond(value, column);
+        return value;
+    }
+
+    static Instant readWholeSecondNullable(ResultSet resultSet, String column) throws SQLException {
+        Instant value = readNullable(resultSet, column);
+        if (value != null) {
+            requireWholeSecond(value, column);
+        }
+        return value;
+    }
+
     static Instant readNullable(ResultSet resultSet, String column) throws SQLException {
         Object value = resultSet.getObject(column);
         if (value == null) {
@@ -43,5 +57,11 @@ final class JdbcTemporal {
             return timestamp.toInstant();
         }
         throw new SQLException("unsupported timestamp representation for " + column);
+    }
+
+    private static void requireWholeSecond(Instant value, String column) throws SQLException {
+        if (value.getNano() != 0) {
+            throw new SQLException("timestamp must be UTC at whole-second precision: " + column);
+        }
     }
 }

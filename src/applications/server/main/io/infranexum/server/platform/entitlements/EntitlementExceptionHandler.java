@@ -7,6 +7,7 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Objects;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -24,7 +25,7 @@ public final class EntitlementExceptionHandler {
     private static final String CORRELATION_HEADER = "X-Correlation-ID";
     private final Clock clock;
 
-    public EntitlementExceptionHandler(Clock clock) {
+    public EntitlementExceptionHandler(@Qualifier("entitlementClock") Clock clock) {
         this.clock = Objects.requireNonNull(clock, "clock");
     }
 

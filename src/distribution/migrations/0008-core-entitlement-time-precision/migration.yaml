@@ -1,0 +1,27 @@
+schema: infranexum.migration/v1
+id: '0008'
+name: core-entitlement-time-precision
+owner_context: core
+dependencies:
+- '0004'
+- '0007'
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 10
+preconditions:
+- core-entitlement-tables-exist
+- consumed-entitlement-temporal-data-already-has-whole-second-precision
+postconditions:
+- installation-created-at-is-whole-second
+- entitlement-runtime-temporal-columns-reject-fractional-seconds
+recovery: restore-from-pre-migration-backup-if-consumed-temporal-data-is-invalid
+rollback: drops-only-whole-second-check-constraints-and-preserves-normalized-installation-created-at
+checksums:
+  postgresql.sql: 88b98b199eed706122901956a1df348ead4252330c5e0106cbd1bc11e5eff7a6
+  oracle.sql: 200dead940f36802361c0f901069466a53856f624a93f1c68d2df55eaa291895
+  rollback/postgresql.sql: 83dc0e145eb628f2b246d56f0a6abeca831c6b60b6fb51b3199aeac4f69e71a1
+  rollback/oracle.sql: 29d360c3f86045badc9b1994575c798a5cfa0e84f6f6cd5369ee22275ec39a5e
+  logical-model.json: d15c26b1f9e902f19ea16be5c4bd930885b09b28735753a876a3ad4c7c124e99
+  verify.sql.yaml: 15ffb708c5eabfd356e413f6151e8ad2df981b68d5f511c5471e4b842edfa0ff

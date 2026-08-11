@@ -56,6 +56,7 @@ Compose log commands use **service names** (`migrate`, `postgres`, `server`), no
 docker compose logs migrate
 
 Migration `0007-core-installation-uuidv7` repairs the alpha.0.31 UUIDv4 installation identity only while it has no entitlement/activation dependents, then enforces UUIDv7 at the database boundary.
+Migration `0008-core-entitlement-time-precision` then repairs the alpha.0.32 fractional `created_at` metadata and enforces whole-second Entitlements timestamps. The bootstrap itself uses `date_trunc('second', CURRENT_TIMESTAMP)` so new developer databases are correct before Server startup.
 .\docker\dev-compose.ps1 down
 ```
 

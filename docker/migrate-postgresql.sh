@@ -145,7 +145,7 @@ FROM core_installation_identity \gset
     INSERT INTO core_installation_identity (
       installation_id, fingerprint_version, fingerprint, created_at
     ) VALUES (
-      :'installation_id'::uuid, 'v1', :'fingerprint', CURRENT_TIMESTAMP
+      :'installation_id'::uuid, 'v1', :'fingerprint', date_trunc('second', CURRENT_TIMESTAMP)
     );
   \else
     \echo installation identity already present

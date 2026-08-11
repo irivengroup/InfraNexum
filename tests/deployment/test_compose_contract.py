@@ -75,6 +75,17 @@ class ComposeContractTest(unittest.TestCase):
             path = DOCKER / name
             self.assertTrue(path.stat().st_mode & 0o111, name)
 
+    def test_server_forwards_bounded_scheduling_overrides(self) -> None:
+        environment = self.services["server"]["environment"]
+        self.assertEqual(
+            "${INFRANEXUM_SCHEDULING_POOL_SIZE:-2}",
+            environment["INFRANEXUM_SCHEDULING_POOL_SIZE"],
+        )
+        self.assertEqual(
+            "${INFRANEXUM_SCHEDULING_SHUTDOWN_TIMEOUT:-PT10S}",
+            environment["INFRANEXUM_SCHEDULING_SHUTDOWN_TIMEOUT"],
+        )
+
     def test_server_is_published_on_loopback_only_by_default(self) -> None:
         self.assertEqual(
             ["127.0.0.1:${INFRANEXUM_SERVER_PUBLISHED_PORT:-8080}:8080"],
@@ -182,6 +193,12 @@ class ComposeContractTest(unittest.TestCase):
         self.assertIn("'-7'", migrate)
         self.assertIn("'89ab89ab89ab89ab'", migrate)
         self.assertIn("????????-????-7???-[89ab]???-????????????", migrate)
+
+    def test_identity_bootstrap_uses_whole_second_database_timestamp(self) -> None:
+        """Keep installer metadata aligned with InstallationIdentity temporal precision."""
+        migrate = (DOCKER / "migrate-postgresql.sh").read_text(encoding="utf-8")
+        self.assertIn("date_trunc('second', CURRENT_TIMESTAMP)", migrate)
+        self.assertNotIn("'v1', :'fingerprint', CURRENT_TIMESTAMP", migrate)
 
     def test_uuidv7_repair_migration_precedes_identity_bootstrap(self) -> None:
         """Existing alpha.0.31 UUIDv4 identities must be repaired before Entitlements starts."""

@@ -1,0 +1,14 @@
+schema: infranexum.migration-verification/v1
+checks:
+- id: installation-created-at-is-whole-second
+  postgresql: "SELECT COUNT(*) = 0 FROM core_installation_identity WHERE created_at <> date_trunc('second', created_at)"
+  oracle: "SELECT CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END FROM core_installation_identity WHERE EXTRACT(SECOND FROM created_at) <> TRUNC(EXTRACT(SECOND FROM created_at))"
+- id: entitlement-state-times-are-whole-second
+  postgresql: "SELECT COUNT(*) = 0 FROM core_entitlement_state WHERE (evaluation_started_at IS NOT NULL AND evaluation_started_at <> date_trunc('second', evaluation_started_at)) OR last_reliable_at <> date_trunc('second', last_reliable_at) OR (valid_until IS NOT NULL AND valid_until <> date_trunc('second', valid_until)) OR (grace_until IS NOT NULL AND grace_until <> date_trunc('second', grace_until)) OR updated_at <> date_trunc('second', updated_at)"
+  oracle: "SELECT CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END FROM core_entitlement_state WHERE (evaluation_started_at IS NOT NULL AND EXTRACT(SECOND FROM evaluation_started_at) <> TRUNC(EXTRACT(SECOND FROM evaluation_started_at))) OR EXTRACT(SECOND FROM last_reliable_at) <> TRUNC(EXTRACT(SECOND FROM last_reliable_at)) OR (valid_until IS NOT NULL AND EXTRACT(SECOND FROM valid_until) <> TRUNC(EXTRACT(SECOND FROM valid_until))) OR (grace_until IS NOT NULL AND EXTRACT(SECOND FROM grace_until) <> TRUNC(EXTRACT(SECOND FROM grace_until))) OR EXTRACT(SECOND FROM updated_at) <> TRUNC(EXTRACT(SECOND FROM updated_at))"
+- id: integrity-proof-times-are-whole-second
+  postgresql: "SELECT COUNT(*) = 0 FROM core_entitlement_integrity_proof WHERE evaluation_started_at <> date_trunc('second', evaluation_started_at) OR last_reliable_at <> date_trunc('second', last_reliable_at) OR updated_at <> date_trunc('second', updated_at)"
+  oracle: "SELECT CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END FROM core_entitlement_integrity_proof WHERE EXTRACT(SECOND FROM evaluation_started_at) <> TRUNC(EXTRACT(SECOND FROM evaluation_started_at)) OR EXTRACT(SECOND FROM last_reliable_at) <> TRUNC(EXTRACT(SECOND FROM last_reliable_at)) OR EXTRACT(SECOND FROM updated_at) <> TRUNC(EXTRACT(SECOND FROM updated_at))"
+- id: activation-times-are-whole-second
+  postgresql: "SELECT COUNT(*) = 0 FROM core_activation_manifest WHERE valid_from <> date_trunc('second', valid_from) OR valid_until <> date_trunc('second', valid_until) OR issued_at <> date_trunc('second', issued_at) OR accepted_at <> date_trunc('second', accepted_at)"
+  oracle: "SELECT CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END FROM core_activation_manifest WHERE EXTRACT(SECOND FROM valid_from) <> TRUNC(EXTRACT(SECOND FROM valid_from)) OR EXTRACT(SECOND FROM valid_until) <> TRUNC(EXTRACT(SECOND FROM valid_until)) OR EXTRACT(SECOND FROM issued_at) <> TRUNC(EXTRACT(SECOND FROM issued_at)) OR EXTRACT(SECOND FROM accepted_at) <> TRUNC(EXTRACT(SECOND FROM accepted_at))"
