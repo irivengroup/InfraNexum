@@ -216,11 +216,31 @@ class SourceIntegrityChecker:
                     f"product space {space!r} must live below src/",
                 )
 
+        if (self.root / ".dockerignore").exists():
+            self._add(
+                "CHECK-SOURCE-LAYOUT-007",
+                Path(".dockerignore"),
+                "Docker build metadata is developer-only and must not be part of the product source snapshot",
+            )
+
         for path in product_root.rglob("*"):
             if not path.is_file():
                 continue
             relative = path.relative_to(product_root)
             name = path.name
+            deployment_parts = tuple(part.casefold() for part in relative.parts)
+            container_asset_name = (
+                name.casefold() == "dockerfile"
+                or name.casefold().endswith(".dockerfile")
+                or name.casefold()
+                in {"compose.yml", "compose.yaml", "docker-compose.yml", "docker-compose.yaml"}
+            )
+            if deployment_parts[:2] == ("deployment", "docker") or container_asset_name:
+                self._add(
+                    "CHECK-SOURCE-LAYOUT-007",
+                    path.relative_to(self.root),
+                    "container deployment assets are developer-only and forbidden from the product source tree",
+                )
             if (
                 "test" in relative.parts
                 or "tests" in relative.parts

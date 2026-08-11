@@ -111,6 +111,21 @@ class SourceIntegrityCheckerTest(unittest.TestCase):
         self.write_inventory()
         self.assertIn("CHECK-SOURCE-LAYOUT-002", self.ids())
 
+    def test_product_layout_rejects_container_deployment_assets(self) -> None:
+        self.write("src/deployment/docker/compose.yaml", "services: {}\n")
+        self.write_inventory()
+        self.assertIn("CHECK-SOURCE-LAYOUT-007", self.ids())
+
+        (self.root / "src/deployment/docker/compose.yaml").unlink()
+        self.write("src/applications/server/server.Dockerfile", "FROM scratch\n")
+        self.write_inventory()
+        self.assertIn("CHECK-SOURCE-LAYOUT-007", self.ids())
+
+        (self.root / "src/applications/server/server.Dockerfile").unlink()
+        self.write(".dockerignore", "target\n")
+        self.write_inventory()
+        self.assertIn("CHECK-SOURCE-LAYOUT-007", self.ids())
+
     def test_product_layout_reports_missing_source_root(self) -> None:
         shutil.rmtree(self.root / "src")
         checker = SourceIntegrityChecker(self.root, require_git_tracking=False)

@@ -10,6 +10,7 @@ class InfraNexumServerApplicationTest {
             "--spring.main.banner-mode=off",
             "--spring.main.register-shutdown-hook=false",
             "--infranexum.entitlements.enabled=false",
+            "--infranexum.workers.enabled=false",
             "--infranexum.persistence.mode=MEMORY"
         });
     }

@@ -1,10 +1,10 @@
-# InfraNexum 2.0.0-alpha.0.28 — JDBC Coverage, Server Bootstrap & Compose Runtime
+# InfraNexum 2.0.0-alpha.0.29 — Standalone Boundary & Server Workers Runtime
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
-`alpha.0.28` closes the failures exposed after the PostgreSQL live contracts became mandatory. JDBC now exercises the activation/revocation read, corruption, rollback and transaction-failure branches that remained outside the 41 successful `alpha.0.27` tests. Server bootstrap no longer encodes optional maps as empty YAML scalars, configuration-property ownership remains inside the entitlements module, and the Pro/Advanced quota fixture follows the current quota catalogue.
+`alpha.0.29` corrects the deployment boundary introduced in `alpha.0.28`: Docker/Compose is strictly developer-only and is no longer part of the canonical product source, release inventory, Make targets or product CI. InfraNexum remains targeted at standalone bare-metal and VM deployments; the future installer/deployment assets must implement that contract directly.
 
-This increment also promotes the first directly executable Docker Compose topology: Java 25 Server + PostgreSQL 17, generated runtime secrets, checksum-validated migrations, fresh-install identity bootstrap, health checks, durable volumes, an internal backend network, smoke tests, backup/restore, explicit schema rollback and confirmed destructive reset. Web and Agent remain outside this first topology until their independent deployment contracts are promoted.
+This increment also completes the missing Server composition for PGM-02-E07: MEMORY, PostgreSQL and Oracle task stores are selected explicitly, bounded retry and worker-pool configuration is validated at startup, task handlers are frozen into an immutable registry, the scheduler is injectable, and Spring owns TaskWorkerPool start/close lifecycle with bounded shutdown.
 
 This repository is an executable implementation increment derived from architecture baseline `2.0.0-draft.21` and the complete implementation roadmap.
 
@@ -67,7 +67,7 @@ Paired migration `0006-core-workers` creates `worker_task` and `worker_task_para
 
 The PostgreSQL 17/18 CI job now applies migration `0006` and includes `PostgreSqlJdbcTaskStoreTest`, including a four-worker concurrent claim contract. A dependency-free `java-jdbc-workers-smoke` exercises submission replay/conflict, claim reconstruction, checkpointing, retries, cancellation, stale-lease fencing and at-most-once expiry recovery with `javac -Xlint:all -Werror`.
 
-**PGM-02-E07 remains NON TERMINÉ** until the Server composition root owns the worker-pool lifecycle/readiness/metrics and the Oracle live contract is executed on 19c/26ai.
+**PGM-02-E07 remains NON TERMINÉ** only for target-environment proof and operational readiness/metrics hardening; Server lifecycle composition is now implemented. Oracle live execution on 19c/26ai remains required.
 
 ## alpha.0.18 — Core Workers Foundation
 

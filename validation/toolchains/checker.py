@@ -302,7 +302,6 @@ class ToolchainChecker:
             "java",
             "java-module-coverage",
             "postgresql-integration",
-            "docker-compose",
         )
         if not all(token in source_body for token in source_integrity_requirements) or any(
             "needs: source-integrity" not in job_bodies.get(name, "") for name in dependent_jobs
@@ -429,47 +428,20 @@ class ToolchainChecker:
                 "Java coverage jobs must run the live PostgreSQL JDBC contracts, including entitlement persistence, so JaCoCo does not depend on skipped integration tests",
             )
 
-        compose_job = job_bodies.get("docker-compose", "")
-        required_compose_tokens = (
-            "runs-on: ubuntu-24.04",
-            "make compose-contract-test",
-            "make compose-config",
+        forbidden_container_wiring = (
+            "docker-compose:",
             "make compose-up",
             "make compose-smoke",
-            "if: failure()",
-            "make compose-logs",
-            "if: always()",
-            "make compose-down",
-        )
-        compose_path = self.root / "src/deployment/docker/compose.yaml"
-        compose_text = self._read_text(
-            compose_path,
-            "CHECK-TOOLCHAIN-043",
-            "Docker Compose topology cannot be read",
+            "compose-up:",
+            "compose-build:",
+            "src/deployment/docker",
         )
         makefile_text = makefile or ""
-        required_make_targets = (
-            "compose-contract-test:",
-            "compose-config:",
-            "compose-up:",
-            "compose-smoke:",
-            "compose-backup:",
-            "compose-restore:",
-            "compose-rollback:",
-            "compose-reset:",
-        )
-        if (
-            any(token not in compose_job for token in required_compose_tokens)
-            or any(token not in makefile_text for token in required_make_targets)
-            or compose_text is None
-            or "service_healthy" not in compose_text
-            or "service_completed_successfully" not in compose_text
-            or "internal: true" not in compose_text
-        ):
+        if any(token in workflow or token in makefile_text for token in forbidden_container_wiring):
             self._add(
                 "CHECK-TOOLCHAIN-043",
                 workflow_path,
-                "Executable Docker Compose must remain an Ubuntu-gated topology with health/one-shot dependencies, smoke, diagnostics, controlled lifecycle and private backend network",
+                "Docker/Compose is developer-only and must not be wired into product CI, Make targets or src/deployment",
             )
 
         targeted_lines = [

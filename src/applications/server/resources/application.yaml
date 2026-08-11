@@ -34,6 +34,17 @@ infranexum:
   persistence:
     mode: ${INFRANEXUM_PERSISTENCE_MODE:POSTGRESQL}
     isolation: ${INFRANEXUM_PERSISTENCE_ISOLATION:READ_COMMITTED}
+  workers:
+    enabled: ${INFRANEXUM_WORKERS_ENABLED:true}
+    concurrency: ${INFRANEXUM_WORKERS_CONCURRENCY:2}
+    poll-interval: ${INFRANEXUM_WORKERS_POLL_INTERVAL:PT0.5S}
+    lease-duration: ${INFRANEXUM_WORKERS_LEASE_DURATION:PT30S}
+    heartbeat-interval: ${INFRANEXUM_WORKERS_HEARTBEAT_INTERVAL:PT10S}
+    shutdown-timeout: ${INFRANEXUM_WORKERS_SHUTDOWN_TIMEOUT:PT15S}
+    maximum-attempts: ${INFRANEXUM_WORKERS_MAXIMUM_ATTEMPTS:5}
+    initial-retry-delay: ${INFRANEXUM_WORKERS_INITIAL_RETRY_DELAY:PT1S}
+    maximum-retry-delay: ${INFRANEXUM_WORKERS_MAXIMUM_RETRY_DELAY:PT1M}
+    jitter-ratio: ${INFRANEXUM_WORKERS_JITTER_RATIO:0.2}
   entitlements:
     enabled: ${INFRANEXUM_ENTITLEMENTS_ENABLED:true}
     customer-id: ${INFRANEXUM_CUSTOMER_ID:local-evaluation}
@@ -47,7 +58,7 @@ infranexum:
     mode: ${INFRANEXUM_SERVER_MODE:STANDALONE}
     region: ${INFRANEXUM_SERVER_REGION:local}
     site: ${INFRANEXUM_SERVER_SITE:local}
-    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.28}
+    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.29}
     architecture-baseline: ${INFRANEXUM_ARCHITECTURE_BASELINE:2.0.0-draft.21}
 
 management:

@@ -4,7 +4,7 @@
 
 `src/components/core/workers` is the first executable foundation for roadmap epic **PGM-02-E07**. It defines the domain/application contracts for one-shot background tasks and a bounded in-process worker runtime. The module deliberately does not introduce a message broker: durable scheduling is expressed through the `TaskStore` port so PostgreSQL/Oracle adapters can provide the same semantics without coupling the core to a persistence technology.
 
-The in-memory reference runtime and the durable JDBC adapter are implemented. **PGM-02-E07 remains NON TERMINÉ** until the Server composition root owns the worker-pool lifecycle/readiness/metrics and target database execution, including Oracle, is proven.
+The in-memory reference runtime, durable JDBC adapter and Server composition root are implemented. **PGM-02-E07 remains NON TERMINÉ** for target-environment proof, operational readiness/metrics hardening and live Oracle execution.
 
 ## Invariants
 
@@ -86,6 +86,14 @@ Migration `0006-core-workers` stores task parameters in a child table instead of
 All execution mutations are fenced by `(task_id, lease_owner, lease_version)`. A zero-row mutation performs a diagnostic state read so an unknown task remains distinguishable from a stale lease. Checkpoints are rejected after cancellation has been requested. Expired `AT_MOST_ONCE` tasks become terminal `FAILED` with an explicit unknown-outcome diagnostic and are never automatically reclaimed.
 
 The JDBC recovery pass is capped at 1,000 expired leases per claim transaction; task claims themselves remain capped at 1,000. This prevents an unbounded maintenance transaction from monopolizing the scheduler under a large backlog.
+
+## Server composition — alpha.0.29
+
+`src/applications/server` now owns the Workers runtime lifecycle. `WorkerRuntimeConfiguration` selects exactly one `TaskStore` from the validated persistence mode (`MEMORY`, `POSTGRESQL` or `ORACLE`), freezes discovered `TaskHandler` beans into an immutable registry, provides the UUIDv7 scheduler identity and UTC clock, and constructs `TaskWorkerPool` as a Spring-managed bean. The bean lifecycle invokes `start()` after construction and `close()` during shutdown, preserving the bounded shutdown contract from Core Workers.
+
+`WorkerRuntimeProperties` exposes only bounded settings and delegates invariant validation to the Core value objects. Invalid concurrency, lease/heartbeat timing, retry limits or jitter fail application-context construction rather than silently degrading execution. The runtime can be disabled explicitly with `INFRANEXUM_WORKERS_ENABLED=false`; persistence-mode selection has no fallback between database dialects.
+
+The Server composition has dedicated JUnit tests for configuration invariants, explicit persistence selection, handler discovery, scheduler construction and start/close lifecycle. Official Server JaCoCo proof still requires the project JDK 25 toolchain; Oracle remains a live target-database obligation.
 
 ## Verification
 

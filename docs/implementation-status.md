@@ -1,3 +1,10 @@
+# InfraNexum 2.0.0-alpha.0.29 — état d’implémentation
+
+## 2.0.0-alpha.0.29 — standalone deployment boundary and Server Workers runtime
+
+Docker/Compose is removed from the canonical InfraNexum product source and product CI. It remains available only as a separate local developer companion extracted into the Git-ignored `.infranexum-dev/` workspace. The product deployment target is standalone bare metal or VM; no container runtime is a production prerequisite. Source Integrity and Toolchains gates reject reintroduction of product Compose wiring.
+
+PGM-02-E07 advances with Server-owned Workers composition: explicit MEMORY/PostgreSQL/Oracle `TaskStore` beans, immutable `TaskHandlerRegistry`, UUIDv7 scheduler identity, bounded retry policy, validated timings/concurrency and Spring-managed `TaskWorkerPool` start/close lifecycle. Target JDK 25/JaCoCo and Oracle live proofs remain required.
 
 ### 2.0.0-alpha.0.28 — JDBC coverage, Server bootstrap and Compose runtime
 
@@ -5,9 +12,7 @@ Le run JDK 25/PostgreSQL `alpha.0.27` confirme 41/41 tests JDBC sans skip mais l
 
 Le même run a révélé trois défauts Server : `application.yaml` matérialisait les maps optionnelles `dependencies`/`quota-overrides` en scalaires vides sous Spring Boot 4 ; le root application enregistrait directement `ActivationRuntimeProperties` appartenant au module interne `platform.entitlements`, ce que Spring Modulith refuse ; et une fixture Pro Advanced utilisait encore `iam.users.max=250` alors que le catalogue impose désormais au moins 500. Les maps vides sont maintenant laissées absentes et normalisées par `PlatformCapabilityProperties`, les propriétés d’activation sont enregistrées par `ActivationRuntimeConfiguration`, et la fixture quota est réalignée.
 
-Docker Compose devient applicable à ce stade pour la topologie Server + PostgreSQL. `src/deployment/docker/compose.yaml` fournit `secret-init`, PostgreSQL 17, un migrateur one-shot checksumé avec verrou advisory et bootstrap idempotent de l’identité d’installation, le Server Java 25 non-root avec readiness, ainsi qu’un service maintenance de rollback. Les volumes `postgres-data`, `runtime-secrets` et `integrity-proof`, le réseau backend interne, les targets `compose-up/down/smoke/backup/restore/rollback/reset` et leurs confirmations destructives sont fournis. Le contrat Compose est validé statiquement localement ; l’exécution Docker réelle reste à certifier par le job Ubuntu hébergé, Docker n’étant pas disponible dans l’environnement local.
-
-# InfraNexum 2.0.0-alpha.0.28 — état d’implémentation
+Docker Compose avait été introduit à ce stade pour la topologie Server + PostgreSQL ; ce choix est **supersédé par alpha.0.29**, qui le retire du périmètre produit après clarification de la cible standalone bare metal/VM. `src/deployment/docker/compose.yaml` fournit `secret-init`, PostgreSQL 17, un migrateur one-shot checksumé avec verrou advisory et bootstrap idempotent de l’identité d’installation, le Server Java 25 non-root avec readiness, ainsi qu’un service maintenance de rollback. Les volumes `postgres-data`, `runtime-secrets` et `integrity-proof`, le réseau backend interne, les targets `compose-up/down/smoke/backup/restore/rollback/reset` et leurs confirmations destructives sont fournis. Le contrat Compose est validé statiquement localement ; l’exécution Docker réelle reste à certifier par le job Ubuntu hébergé, Docker n’étant pas disponible dans l’environnement local.
 
 ## alpha.0.23 — deterministic Workers shutdown & Unix archive compatibility
 

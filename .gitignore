@@ -28,6 +28,7 @@ bin/
 **/dist/
 
 # Runtime and secrets
+.infranexum-dev/
 *.log
 *.pid
 *.key

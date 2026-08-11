@@ -255,31 +255,3 @@ jobs:
           INFRANEXUM_POSTGRESQL_TEST_USERNAME: infranexum
           INFRANEXUM_POSTGRESQL_TEST_PASSWORD: infranexum-ci
         run: ./mvnw --batch-mode --no-transfer-progress -pl src/components/adapters/jdbc -am -Dtest=PostgreSqlJdbcTransactionalEventStoreTest,PostgreSqlJdbcAuditJournalTest,PostgreSqlJdbcTaskStoreTest,PostgreSqlJdbcEntitlementPersistenceTest -Dinfranexum.surefire.failIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false test
-
-  docker-compose:
-    needs: source-integrity
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
-        with:
-          python-version: '3.13'
-      - name: Install pinned validation tooling
-        run: python -m pip install --disable-pip-version-check --requirement requirements/ci.txt
-      - name: Validate Compose contract and resolved model
-        run: |
-          make compose-contract-test
-          make compose-config
-      - name: Build and start PostgreSQL + migrations + Server
-        run: make compose-up
-      - name: Smoke executable Compose topology
-        run: make compose-smoke
-      - name: Capture Compose diagnostics
-        if: failure()
-        run: make compose-logs || true
-      - name: Stop Compose topology
-        if: always()
-        run: make compose-down || true

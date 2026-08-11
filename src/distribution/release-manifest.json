@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.28",
-  "profile": "jdbc-coverage-server-bootstrap-compose-runtime",
+  "version": "2.0.0-alpha.0.29",
+  "profile": "standalone-deployment-boundary-server-workers-runtime",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -14,7 +14,7 @@
     },
     {
       "id": "infranexum-server",
-      "status": "source-server-bootstrap-optional-map-binding-corrected-entitlement-properties-conditionally-owned-executable-spring-boot-jar-compose-runtime-defined-hosted-jdk25-server-verify-pending"
+      "status": "source-server-bootstrap-worker-runtime-composition-memory-postgresql-oracle-explicit-spring-managed-bounded-shutdown-hosted-jdk25-server-verify-pending"
     },
     {
       "id": "infranexum-agent",
@@ -42,20 +42,20 @@
     },
     {
       "id": "ci-foundation",
-      "status": "unix-only-source-integrity-reactor-and-independent-module-verification-postgresql17-live-jacoco-detailed-gap-reporting-compose-contract-build-start-smoke-and-cleanup-defined"
+      "status": "unix-only-source-integrity-reactor-and-independent-module-verification-postgresql17-live-jacoco-detailed-gap-reporting-no-product-compose-deployment-wiring"
     },
     {
-      "id": "docker-compose-runtime",
-      "status": "delivered-server-postgresql17-secret-init-checksummed-migrations-identity-bootstrap-readiness-durable-volumes-private-network-backup-restore-controlled-rollback-reset-static-contracts-passed-runtime-execution-pending"
+      "id": "deployment-boundary",
+      "status": "standalone-baremetal-vm-is-product-target-docker-compose-is-developer-only-external-to-canonical-source-and-release"
     }
   ],
   "validation_reports": [],
   "validation_summary": {
-    "source_inventory_paths": 484,
-    "source_integrity_tests": 44,
+    "source_inventory_paths": 479,
+    "source_integrity_tests": 45,
     "source_integrity_coverage_percent": 100,
     "source_integrity_violations": 0,
-    "python_tests": 200,
+    "python_tests": 189,
     "architecture_tests": 33,
     "architecture_violations": 0,
     "toolchain_tests": 25,
@@ -90,14 +90,14 @@
     "web_branch_coverage_percent": 98.28,
     "web_function_coverage_percent": 100,
     "repository_syntax_counts": {
-      "python": 48,
+      "python": 47,
       "json": 44,
-      "yaml": 19,
+      "yaml": 18,
       "xml": 9,
       "javascript": 13,
       "go": 8,
-      "shell": 4,
-      "java": 273
+      "shell": 0,
+      "java": 277
     },
     "archive_compatibility_tests": 12,
     "archive_compatibility_coverage_percent": 100,
@@ -111,30 +111,29 @@
     "architecture_coverage_percent": 100,
     "jdbc_module_tests_defined": 51,
     "jdbc_postgresql_live_tests_defined": 18,
-    "server_module_tests_defined": 42,
+    "server_module_tests_defined": 47,
     "server_capability_configuration_contract_local": "EXECUTED_JAVA21_STRICT_HARNESS",
-    "agent_target_toolchain_status": "NON_EXECUTED_NETWORK_UNAVAILABLE",
+    "agent_target_toolchain_status": "NON_EXECUTED_LOCAL_GO_1_23_2_TARGET_GO_1_26_5",
     "jdbc_deterministic_harness_tests_executed": 33,
     "jdbc_explicit_source_branch_gaps_diagnostic": 0,
-    "compose_contract_tests": 12,
-    "compose_contract_status": "EXECUTED",
-    "compose_runtime_status": "NON_EXECUTED_DOCKER_UNAVAILABLE"
+    "server_workers_runtime_tests_defined": 5,
+    "server_workers_runtime_strict_harness": "EXECUTED_JAVA21_STUBBED_SPRING_DIAGNOSTIC"
   },
   "source_layout": "All production solution spaces are contained below src/; Java, Go and Web tests are repository-level under tests/; canonical relative paths are limited to 120 characters and path components to 80 characters.",
   "source_integrity": {
     "canonical_inventory": "source-inventory.json",
     "git_blob_checksums": "source-files.sha256",
-    "tracked_files": 487,
-    "source_recorded_files": 486,
+    "tracked_files": 481,
+    "source_recorded_files": 480,
     "staged_snapshot_required": true,
     "pre_commit_hook": ".githooks/pre-commit"
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.28",
-    "archive_entries": 487,
+    "prefix": "infranexum-2.0.0-alpha.0.29",
+    "archive_entries": 481,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
-    "source_recorded_files": 486
+    "source_recorded_files": 480
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.28-validation-evidence.zip"
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.29-validation-evidence.zip"
 }
