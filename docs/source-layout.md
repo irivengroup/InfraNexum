@@ -113,6 +113,20 @@ validation evidence. Source Integrity therefore also validates that:
 These checks prevent a future directory move from silently redirecting evidence to
 an unintended path below `src/`.
 
+## Published ZIP compatibility
+
+GitHub Actions remains Unix/Linux-only. Windows compatibility is a property of the
+published source ZIP, not of the hosted build environment. The blocking
+`archive-compatibility` gate therefore runs on Ubuntu and validates the exact
+`git archive` payload before publication. It rejects unsafe or non-canonical member
+paths, Windows-reserved names/characters, case-insensitive collisions, symbolic
+links, multiple archive roots, project paths over 120 characters, archive members
+over 160 characters, and any mismatch between archive files and `git ls-files`.
+
+This keeps Windows extraction safety deterministic without introducing a second CI
+platform whose shell, line-ending or native-process semantics could diverge from the
+production build pipeline.
+
 ## Compatibility impact
 
 - Maven reactor modules are addressed from `src/applications/...` and

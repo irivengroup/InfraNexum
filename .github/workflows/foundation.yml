@@ -29,10 +29,10 @@ jobs:
       - name: Verify canonical source inventory and Git tracking
         run: SOURCE_INTEGRITY_REQUIRE_GIT=1 SOURCE_INTEGRITY_REQUIRE_STAGED=1 SOURCE_INTEGRITY_REQUIRE_CHECKSUMS=1 make source-integrity-test source-integrity-check
 
-  windows-path-safety:
+  archive-compatibility:
     needs: source-integrity
-    runs-on: windows-latest
-    timeout-minutes: 20
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -40,48 +40,10 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: '3.13'
-      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
-        with:
-          distribution: temurin
-          java-version: '25.0.4+7.0.LTS'
-          cache: maven
       - name: Install pinned validation tooling
         run: python -m pip install --disable-pip-version-check --requirement requirements/ci.txt
-      - name: Verify path budget and exact checkout on Windows
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $env:PYTHONDONTWRITEBYTECODE = '1'
-          $env:PYTHONPATH = '.'
-          $coverageFile = Join-Path $env:RUNNER_TEMP 'source-integrity.coverage'
-          $env:COVERAGE_FILE = $coverageFile
-          python -m coverage run --branch --source=validation.source_integrity -m unittest discover -s tests/source_integrity -p 'test_*.py'
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          python -m coverage report --fail-under=98
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          python -m validation.source_integrity.cli --root . --require-git-tracking --require-staged-snapshot --require-git-checksums
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Exercise source ZIP extraction below legacy MAX_PATH
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $version = (Get-Content VERSION -Raw).Trim()
-          $prefix = "infranexum-$version"
-          $archive = Join-Path $env:RUNNER_TEMP 'infranexum-source.zip'
-          git archive --format=zip --prefix="$prefix/" HEAD -o $archive
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          $stress = Join-Path $env:RUNNER_TEMP ('p' * 80)
-          New-Item -ItemType Directory -Force -Path $stress | Out-Null
-          Expand-Archive -LiteralPath $archive -DestinationPath $stress -Force
-          $checkout = Join-Path $stress $prefix
-          if (-not (Test-Path (Join-Path $checkout 'pom.xml'))) { throw 'Extracted source root is incomplete.' }
-          Push-Location $checkout
-          try {
-            .\mvnw.cmd --batch-mode --no-transfer-progress -DskipTests compile
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          } finally {
-            Pop-Location
-          }
+      - name: Validate published ZIP portability for Windows extraction
+        run: make archive-compatibility-test archive-compatibility-check
 
   architecture:
     needs: source-integrity

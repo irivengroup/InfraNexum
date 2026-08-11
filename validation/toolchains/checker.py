@@ -107,6 +107,33 @@ class ToolchainChecker:
                     "Maven distribution and SHA-512 pin must match the toolchain lock",
                 )
 
+        bootstrap_path = self.root / "tools/bootstrap-maven.ps1"
+        bootstrap = self._read_text(
+            bootstrap_path,
+            "CHECK-TOOLCHAIN-039",
+            "PowerShell Maven bootstrap cannot be read",
+        )
+        if bootstrap is not None:
+            required_tokens = (
+                "System.Diagnostics.ProcessStartInfo",
+                "RedirectStandardError = $true",
+                "RedirectStandardOutput = $true",
+                "$JavaProcess.ExitCode",
+                "$JavaProcess.Dispose()",
+            )
+            fragile_tokens = (
+                "& java -version 2>&1",
+                "(& java -version",
+            )
+            if any(token not in bootstrap for token in required_tokens) or any(
+                token in bootstrap for token in fragile_tokens
+            ):
+                self._add(
+                    "CHECK-TOOLCHAIN-039",
+                    bootstrap_path,
+                    "PowerShell Java detection must not convert java -version stderr into NativeCommandError",
+                )
+
     def _check_go(self, tools: dict[str, Any]) -> None:
         path = self.root / "src/applications/agent/go.mod"
         text = self._read_text(path, "CHECK-TOOLCHAIN-013", "Go module cannot be read")
@@ -268,7 +295,7 @@ class ToolchainChecker:
         job_bodies = {match.group("name"): match.group("body") for match in job_pattern.finditer(workflow)}
         source_body = job_bodies.get("source-integrity", "")
         dependent_jobs = (
-            "windows-path-safety",
+            "archive-compatibility",
             "architecture",
             "agent",
             "web",
@@ -284,19 +311,16 @@ class ToolchainChecker:
                 "All build/test jobs must depend on the Git-backed staged and checksummed source-integrity preflight",
             )
 
-        windows_job = job_bodies.get("windows-path-safety", "")
-        required_windows_path_tokens = (
-            "runs-on: windows-latest",
-            "Expand-Archive",
-            "('p' * 80)",
-            ".\\mvnw.cmd --batch-mode --no-transfer-progress -DskipTests compile",
-            "--require-git-tracking --require-staged-snapshot --require-git-checksums",
+        archive_job = job_bodies.get("archive-compatibility", "")
+        required_archive_tokens = (
+            "runs-on: ubuntu-24.04",
+            "make archive-compatibility-test archive-compatibility-check",
         )
-        if any(token not in windows_job for token in required_windows_path_tokens):
+        if any(token not in archive_job for token in required_archive_tokens) or "windows-latest" in workflow:
             self._add(
                 "CHECK-TOOLCHAIN-038",
                 workflow_path,
-                "Windows CI must exercise exact source integrity, stressed ZIP extraction and Maven compilation",
+                "Archive compatibility must run on Unix CI and Windows runners are forbidden for foundation gates",
             )
 
         architecture_job = job_bodies.get("architecture", "")

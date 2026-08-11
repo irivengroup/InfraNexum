@@ -112,17 +112,28 @@ public final class TaskWorkerPool implements AutoCloseable {
         stopRequested.set(true);
         workerExecutor.shutdown();
         boolean forcePreviouslyRequested = previous != null && previous.forced();
-        boolean terminatedWithoutNewForce = await(workerExecutor, configuration.shutdownTimeout());
-        boolean forced = forcePreviouslyRequested || !terminatedWithoutNewForce;
+        // Capture and clear a pre-existing interruption before any blocking cleanup.
+        // Otherwise ExecutorService implementations may either return termination or
+        // throw immediately, making the shutdown report depend on scheduler timing.
+        boolean interrupted = Thread.interrupted();
+        AwaitResult gracefulAwait = interrupted
+                ? new AwaitResult(workerExecutor.isTerminated(), false)
+                : await(workerExecutor, configuration.shutdownTimeout());
+        interrupted |= gracefulAwait.interrupted();
+        boolean terminatedWithoutNewForce = gracefulAwait.terminated();
+        boolean forced = forcePreviouslyRequested || !terminatedWithoutNewForce || interrupted;
         boolean graceful = terminatedWithoutNewForce && !forced;
         boolean workersTerminated = terminatedWithoutNewForce;
-        if (!terminatedWithoutNewForce) {
+        if (!terminatedWithoutNewForce || interrupted) {
             workerExecutor.shutdownNow();
-            workersTerminated = await(workerExecutor, configuration.shutdownTimeout());
+            AwaitResult forcedAwait = await(workerExecutor, configuration.shutdownTimeout());
+            interrupted |= forcedAwait.interrupted();
+            workersTerminated = forcedAwait.terminated();
         }
         heartbeatExecutor.shutdownNow();
-        boolean heartbeatTerminated = await(heartbeatExecutor, configuration.shutdownTimeout());
-        boolean terminated = workersTerminated && heartbeatTerminated;
+        AwaitResult heartbeatAwait = await(heartbeatExecutor, configuration.shutdownTimeout());
+        interrupted |= heartbeatAwait.interrupted();
+        boolean terminated = workersTerminated && heartbeatAwait.terminated();
         state.set(terminated ? WorkerPoolState.TERMINATED : WorkerPoolState.STOPPING);
         ShutdownReport report = new ShutdownReport(
                 graceful,
@@ -131,6 +142,9 @@ public final class TaskWorkerPool implements AutoCloseable {
                 configuration.concurrency(),
                 nonNegativeDuration(started, clock.instant()));
         shutdownReport.set(report);
+        if (interrupted) {
+            Thread.currentThread().interrupt();
+        }
         return report;
     }
 
@@ -170,14 +184,18 @@ public final class TaskWorkerPool implements AutoCloseable {
         }
     }
 
-    private static boolean await(ExecutorService executor, Duration timeout) {
+    private static AwaitResult await(ExecutorService executor, Duration timeout) {
         try {
-            return executor.awaitTermination(timeout.toNanos(), TimeUnit.NANOSECONDS);
+            return new AwaitResult(
+                    executor.awaitTermination(timeout.toNanos(), TimeUnit.NANOSECONDS), false);
         } catch (InterruptedException interrupted) {
-            Thread.currentThread().interrupt();
-            return false;
+            // Preserve cleanup determinism: the caller restores interruption only after
+            // every executor has received its bounded shutdown opportunity.
+            return new AwaitResult(executor.isTerminated(), true);
         }
     }
+
+    private record AwaitResult(boolean terminated, boolean interrupted) {}
 
     private static ThreadFactory namedFactory(String prefix) {
         AtomicInteger sequence = new AtomicInteger();

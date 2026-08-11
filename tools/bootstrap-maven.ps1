@@ -1,11 +1,34 @@
-
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
 $Properties = Join-Path $Root ".mvn\wrapper\maven-wrapper.properties"
 $Cache = if ($env:MAVEN_WRAPPER_CACHE) { $env:MAVEN_WRAPPER_CACHE } else { Join-Path $HOME ".m2\wrapper\dists" }
 
-$JavaVersion = (& java -version 2>&1 | Select-Object -First 1)
-if ($JavaVersion -notmatch 'version "25(?:\.|\")') {
+# java -version writes its normal version banner to stderr. Invoke it through
+# System.Diagnostics.Process so PowerShell never promotes that expected stderr
+# output to NativeCommandError when $ErrorActionPreference is Stop.
+$JavaStartInfo = [System.Diagnostics.ProcessStartInfo]::new()
+$JavaStartInfo.FileName = "java"
+$JavaStartInfo.Arguments = "-version"
+$JavaStartInfo.UseShellExecute = $false
+$JavaStartInfo.RedirectStandardOutput = $true
+$JavaStartInfo.RedirectStandardError = $true
+$JavaProcess = [System.Diagnostics.Process]::new()
+$JavaProcess.StartInfo = $JavaStartInfo
+try {
+    if (-not $JavaProcess.Start()) {
+        throw "Unable to start java for toolchain validation."
+    }
+    $JavaStdout = $JavaProcess.StandardOutput.ReadToEnd()
+    $JavaStderr = $JavaProcess.StandardError.ReadToEnd()
+    $JavaProcess.WaitForExit()
+    if ($JavaProcess.ExitCode -ne 0) {
+        throw "java -version failed with exit code $($JavaProcess.ExitCode)."
+    }
+} finally {
+    $JavaProcess.Dispose()
+}
+$JavaVersion = (($JavaStderr + "`n" + $JavaStdout) -split "`r?`n" | Where-Object { $_ -match '\S' } | Select-Object -First 1)
+if (-not $JavaVersion -or $JavaVersion -notmatch 'version "25(?:\.|\")') {
     throw "InfraNexum requires JDK 25. Detected: $JavaVersion"
 }
 
@@ -31,6 +54,9 @@ if (-not (Test-Path $Maven)) {
     }
     if (Test-Path $Destination) { Remove-Item -Recurse -Force $Destination }
     tar -xzf $Archive -C $Cache
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to extract Maven distribution."
+    }
 }
 
 & $Maven @args

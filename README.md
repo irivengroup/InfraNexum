@@ -1,4 +1,4 @@
-# InfraNexum 2.0.0-alpha.0.22 — Repository Layout Hardening
+# InfraNexum 2.0.0-alpha.0.23 — Repository Layout Hardening
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
@@ -36,7 +36,7 @@ The longest canonical repository-relative path remains below the 120-character f
 
 This historical increment fixed the Windows extraction/path-depth defect as an architecture invariant rather than relying on `LongPathsEnabled`, extractor-specific behavior or a local Git configuration. At `alpha.0.20`, product modules were temporarily lifted to the repository root and Java physical source roots were shortened. `alpha.0.21` keeps the shallow roots while restoring the explicit `src/` production boundary. Logical component identity, Java package names, Maven artifacts, APIs and database contracts remain unchanged.
 
-The Source Integrity gate now blocks any canonical path over 120 characters or path component over 80 characters. Architecture-as-Code allows code only inside governed top-level spaces even though the repository root is the configured source root. The GitHub workflow also includes a Windows path-safety job so checkout, the path gate and the Maven reactor are exercised on a GitHub-hosted Windows runner.
+The Source Integrity gate blocks any canonical path over 120 characters or path component over 80 characters. Architecture-as-Code allows code only inside governed top-level spaces even though the repository root is the configured source root. GitHub Actions remains Unix/Linux-only; a dedicated Ubuntu archive-compatibility gate validates the published ZIP against Windows extraction constraints, including member-length budgets, reserved names, case-insensitive collisions, symlinks and exact Git/archive parity.
 
 ## Implemented foundation
 

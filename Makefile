@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 
-.PHONY: source-integrity-test source-integrity-check source-integrity-precommit source-integrity-hook-install source-integrity-update source-checksum-update architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-test verify-foundation verify clean-generated
+.PHONY: archive-compatibility-test archive-compatibility-check source-integrity-test source-integrity-check source-integrity-precommit source-integrity-hook-install source-integrity-update source-checksum-update architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-test verify-foundation verify clean-generated
 
 PYTHON ?= python3
 GO ?= go
@@ -31,6 +31,18 @@ define PY_COVERAGE
 	COVERAGE_FILE="$$coverage_file" PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(REPOSITORY_ROOT) $(PYTHON) -m coverage report --fail-under=98 > $(3); \
 	cat $(3)
 endef
+
+
+archive-compatibility-test:
+	@$(call PY_COVERAGE,validation.archive_compatibility,$(TEST_ROOT)/archive_compatibility,$(REPORT_ROOT)/archive-compatibility-coverage.txt)
+
+archive-compatibility-check:
+	@mkdir -p $(REPORT_ROOT); \
+	archive="$$(mktemp --suffix=.zip)"; \
+	trap 'rm -f "$$archive"' EXIT; \
+	version="$$(cat VERSION)"; \
+	git archive --format=zip --prefix="infranexum-$$version/" HEAD -o "$$archive"; \
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(REPOSITORY_ROOT) $(PYTHON) -m validation.archive_compatibility.cli --archive "$$archive" --repository-root . --json-report $(REPORT_ROOT)/archive-compatibility.json
 
 source-integrity-test:
 	@$(call PY_COVERAGE,validation.source_integrity,$(TEST_ROOT)/source_integrity,$(REPORT_ROOT)/source-integrity-coverage.txt)
@@ -272,7 +284,7 @@ web-verify: web-test web-smoke
 java-test:
 	./mvnw --batch-mode --no-transfer-progress verify
 
-verify-foundation: source-integrity-test source-integrity-check architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke agent-vet agent-test agent-build web-verify
+verify-foundation: source-integrity-test source-integrity-check archive-compatibility-test archive-compatibility-check architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke agent-vet agent-test agent-build web-verify
 
 verify: verify-foundation java-test
 

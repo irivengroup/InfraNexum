@@ -1,4 +1,14 @@
-# InfraNexum 2.0.0-alpha.0.22 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.23 — état d’implémentation
+
+## alpha.0.23 — deterministic Workers shutdown & Unix archive compatibility
+
+**Statut : corrections implémentées ; confirmation Maven/JDK 25 hébergée encore requise.**
+
+Cette passe corrige les deux défauts de `alpha.0.22` sans abaisser aucun seuil. `TaskWorkerPool.shutdown()` ne réarme plus l’interruption entre ses différentes attentes d’arrêt : il mémorise l’interruption, poursuit les opportunités de nettoyage bornées de tous les executors, calcule l’état réel de terminaison, puis restaure le flag du thread appelant. Le test de régression n’attend plus un résultat dépendant du scheduler/JDK ; il vérifie désormais le contrat réel : arrêt forcé lorsque l’appelant est interrompu, terminaison effective des workers idle et restauration de l’interruption. Le scénario de non-terminaison reste couvert séparément par un handler volontairement non coopératif.
+
+Le workflow Foundation reste exclusivement Unix/Linux. Le job Windows introduit auparavant est supprimé. La compatibilité d’extraction Windows de l’archive publiée est vérifiée sous Ubuntu par un nouveau gate `archive-compatibility` qui contrôle l’intégrité ZIP, la parité exacte avec l’index Git, une racine unique et courte, les budgets de chemins, les caractères et noms réservés Windows, les collisions insensibles à la casse et l’absence de liens symboliques. La protection ne dépend donc pas d’un runner Windows.
+
+`tools/bootstrap-maven.ps1` est néanmoins corrigé pour les usages locaux éventuels sous Windows : `java -version` est lancé via `System.Diagnostics.Process` avec stdout/stderr séparés, code de sortie contrôlé et ressources libérées. La sortie normale de version sur stderr ne peut plus être promue en `NativeCommandError` lorsque `$ErrorActionPreference = 'Stop'`. Un gate Toolchains interdit explicitement la réintroduction du pattern fragile.
 
 ## alpha.0.22 — CI Workers Coverage & Cross-platform Path Repair
 

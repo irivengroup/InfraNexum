@@ -31,6 +31,7 @@ class ToolchainCheckerTest(unittest.TestCase):
             "src/applications/web/pnpm-lock.yaml",
             "src/applications/web/pnpm-workspace.yaml",
             ".github/workflows/foundation.yml",
+            "tools/bootstrap-maven.ps1",
         ):
             target = self.root / relative
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -93,6 +94,23 @@ class ToolchainCheckerTest(unittest.TestCase):
         self.assertIn("CHECK-TOOLCHAIN-012", self.ids())
         path.unlink()
         self.assertIn("CHECK-TOOLCHAIN-011", self.ids())
+
+
+    def test_powershell_maven_bootstrap_handles_java_version_stderr_safely(self) -> None:
+        path = self.root / "tools/bootstrap-maven.ps1"
+        text = path.read_text(encoding="utf-8")
+        path.write_text(
+            text.replace(
+                "$JavaStartInfo.RedirectStandardError = $true",
+                "$JavaStartInfo.RedirectStandardError = $false",
+            ),
+            encoding="utf-8",
+        )
+        self.assertIn("CHECK-TOOLCHAIN-039", self.ids())
+
+        shutil.copy2(SOURCE / "tools/bootstrap-maven.ps1", path)
+        path.write_text("$JavaVersion = (& java -version 2>&1 | Select-Object -First 1)\n", encoding="utf-8")
+        self.assertIn("CHECK-TOOLCHAIN-039", self.ids())
 
     def test_go_module_must_exist_and_match(self) -> None:
         path = self.root / "src/applications/agent/go.mod"
@@ -212,10 +230,24 @@ class ToolchainCheckerTest(unittest.TestCase):
         )
         self.assertIn("CHECK-TOOLCHAIN-037", self.ids())
 
-    def test_ci_windows_path_safety_job_is_enforced(self) -> None:
+    def test_ci_archive_compatibility_runs_on_unix_only(self) -> None:
         workflow_path = self.root / ".github/workflows/foundation.yml"
         workflow = workflow_path.read_text(encoding="utf-8")
-        workflow_path.write_text(workflow.replace("Expand-Archive", "Write-Output"), encoding="utf-8")
+        workflow_path.write_text(
+            workflow.replace(
+                "make archive-compatibility-test archive-compatibility-check",
+                "echo archive-check-disabled",
+            ),
+            encoding="utf-8",
+        )
+        self.assertIn("CHECK-TOOLCHAIN-038", self.ids())
+
+        shutil.copy2(SOURCE / ".github/workflows/foundation.yml", workflow_path)
+        workflow = workflow_path.read_text(encoding="utf-8")
+        workflow_path.write_text(
+            workflow.replace("runs-on: ubuntu-24.04", "runs-on: windows-latest", 1),
+            encoding="utf-8",
+        )
         self.assertIn("CHECK-TOOLCHAIN-038", self.ids())
 
     def test_ci_prepares_maven_wrapper_before_every_direct_execution(self) -> None:

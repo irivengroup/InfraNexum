@@ -2,15 +2,15 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.22",
-  "profile": "development-foundation-ci-workers-coverage-path-portability-repair",
+  "version": "2.0.0-alpha.0.23",
+  "profile": "development-foundation-ci-deterministic-workers-unix-archive-compatibility-repair",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "source and validation evidence; generated binaries, caches, dependency directories and temporary artifacts excluded",
   "artifacts": [
     {
       "id": "repository-layout-v3",
-      "status": "product-runtime-under-src-tests-validation-tools-and-docs-external-120-char-path-budget-short-archive-prefix-windows-extraction-ci-defined"
+      "status": "product-runtime-under-src-tests-validation-tools-and-docs-external-120-char-path-budget-short-archive-prefix-windows-extraction-portability-gated-on-unix-ci"
     },
     {
       "id": "infranexum-server",
@@ -30,7 +30,7 @@
     },
     {
       "id": "core-workers-v1",
-      "status": "bounded-runtime-idempotency-retry-safety-lease-fencing-heartbeat-checkpoint-cancellation-truthful-shutdown-serialized-runonce-and-lifecycle-race-hardening-implemented-jdk25-jacoco-proof-pending"
+      "status": "bounded-runtime-idempotency-retry-safety-lease-fencing-heartbeat-checkpoint-cancellation-deterministic-interruption-aware-truthful-shutdown-serialized-runonce-and-lifecycle-race-hardening-implemented-jdk25-jacoco-proof-pending"
     },
     {
       "id": "adapter-persistence-jdbc-workers-v1",
@@ -42,7 +42,7 @@
     },
     {
       "id": "ci-foundation",
-      "status": "source-integrity-preflight-blocking-windows-path-extraction-and-maven-compile-job-defined-postgresql17-18-worker-live-contract-defined-target-hosted-execution-pending"
+      "status": "source-integrity-preflight-blocking-unix-only-foundation-jobs-os-independent-windows-archive-portability-gate-postgresql17-18-worker-live-contract-defined-target-hosted-execution-pending"
     },
     {
       "id": "docker-compose-runtime",
@@ -50,6 +50,8 @@
     }
   ],
   "validation_reports": [
+    "../../artifacts/validation/archive-compatibility.json",
+    "../../artifacts/validation/archive-compatibility-coverage.txt",
     "../../artifacts/validation/agent-coverage.txt",
     "../../artifacts/validation/architecture-coverage.txt",
     "../../artifacts/validation/architecture.json",
@@ -77,15 +79,15 @@
     "../../artifacts/validation/web-smoke.json"
   ],
   "validation_summary": {
-    "source_inventory_paths": 460,
+    "source_inventory_paths": 464,
     "source_integrity_tests": 44,
     "source_integrity_coverage_percent": 100,
     "source_integrity_violations": 0,
-    "python_tests": 168,
+    "python_tests": 183,
     "architecture_tests": 33,
     "architecture_coverage_percent": 100,
     "architecture_violations": 0,
-    "toolchain_tests": 20,
+    "toolchain_tests": 21,
     "toolchain_coverage_percent": 99,
     "toolchain_violations": 0,
     "migration_tests": 24,
@@ -107,7 +109,7 @@
     "audit_coverage_percent": 100,
     "audit_violations": 0,
     "java_offline_smoke_targets": 10,
-    "workers_module_tests_defined": 47,
+    "workers_module_tests_defined": 48,
     "jdbc_workers_scripted_contract_groups": 10,
     "jdbc_workers_junit_tests_defined": 10,
     "jdbc_workers_postgresql_live_tests_defined": 5,
@@ -117,32 +119,37 @@
     "web_branch_coverage_percent": 98.28,
     "web_function_coverage_percent": 100,
     "repository_syntax_counts": {
-      "python": 42,
-      "json": 43,
+      "python": 46,
+      "json": 44,
       "yaml": 18,
       "xml": 9,
       "javascript": 13,
       "go": 8,
       "shell": 1,
-      "java": 262
-    }
+      "java": 263
+    },
+    "archive_compatibility_tests": 12,
+    "archive_compatibility_coverage_percent": 100,
+    "archive_compatibility_violations": 0,
+    "archive_compatibility_max_project_path": 114,
+    "archive_compatibility_max_member_path": 142
   },
   "source_layout": "All production solution spaces are contained below src/; Java, Go and Web tests are repository-level under tests/; canonical relative paths are limited to 120 characters and path components to 80 characters.",
   "source_integrity": {
     "canonical_inventory": "source-inventory.json",
     "git_blob_checksums": "source-files.sha256",
-    "tracked_files": 462,
-    "source_recorded_files": 461,
+    "tracked_files": 466,
+    "source_recorded_files": 465,
     "staged_snapshot_required": true,
     "pre_commit_hook": ".githooks/pre-commit"
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.22",
-    "archive_entries": 488,
+    "prefix": "infranexum-2.0.0-alpha.0.23",
+    "archive_entries": 494,
     "reproducible": true,
     "source_checksum_manifest": "source-files.sha256",
-    "source_recorded_files": 461,
+    "source_recorded_files": 465,
     "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
-    "release_recorded_files": 487
+    "release_recorded_files": 493
   }
 }

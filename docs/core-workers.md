@@ -64,6 +64,8 @@ Shutdown has two phases:
 
 A non-cooperative handler cannot be forcibly killed safely by Java. The runtime therefore never reports false termination: `ShutdownReport.terminated=false` and pool state remains `STOPPING` while any worker thread is still alive. A subsequent `shutdown()` can observe eventual termination. `TERMINATED` means the worker and heartbeat executors have actually stopped.
 
+If the thread calling `shutdown()` is already interrupted, or becomes interrupted while waiting, the pool records that signal without allowing it to short-circuit the remaining bounded cleanup waits. Forced cleanup still runs, the report reflects the actual executor state, and the caller interruption flag is restored immediately before `shutdown()` returns. This keeps shutdown semantics deterministic across JDK implementations while preserving Java interruption semantics.
+
 ## Configuration constraints
 
 `WorkerPoolConfiguration` validates at construction time:

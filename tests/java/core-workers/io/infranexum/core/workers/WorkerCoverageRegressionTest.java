@@ -8,6 +8,7 @@ import static io.infranexum.core.workers.WorkerTestFixtures.id;
 import static io.infranexum.core.workers.WorkerTestFixtures.submission;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -428,7 +429,8 @@ final class WorkerCoverageRegressionTest {
         TaskWorkerPool forcedIdle = new TaskWorkerPool(
                 new InMemoryTaskStore(), new TaskHandlerRegistry(List.of(handler)), RETRY, Clock.systemUTC(), "idle", slowPoll);
         forcedIdle.start();
-        Thread.sleep(40);
+        assertTrue(awaitThreadState(
+                "infranexum-worker-idle-", Thread.State.TIMED_WAITING, Duration.ofSeconds(5)));
         ShutdownReport forced = forcedIdle.shutdown();
         assertTrue(forced.forced());
         assertTrue(forced.terminated());
@@ -446,11 +448,51 @@ final class WorkerCoverageRegressionTest {
             Thread.currentThread().interrupt();
             ShutdownReport report = interrupted.shutdown();
             assertTrue(report.forced());
-            assertFalse(report.terminated());
+            assertTrue(report.terminated());
+            assertTrue(Thread.currentThread().isInterrupted());
         } finally {
             Thread.interrupted();
             interrupted.shutdown();
         }
+    }
+
+
+    @Test
+    void workerPoolRestoresInterruptionRaisedDuringGracefulAwait() throws Exception {
+        CountDownLatch entered = new CountDownLatch(1);
+        TaskHandler blocking = handler(TYPE, RetrySafety.RETRY_SAFE, context -> {
+            entered.countDown();
+            new CountDownLatch(1).await();
+        });
+        InMemoryTaskStore store = new InMemoryTaskStore();
+        store.submit(id(1), submission("interrupt-during-await"), RetrySafety.RETRY_SAFE, Instant.now());
+        TaskWorkerPool pool = new TaskWorkerPool(
+                store,
+                new TaskHandlerRegistry(List.of(blocking)),
+                RETRY,
+                Clock.systemUTC(),
+                "interrupt-await",
+                new WorkerPoolConfiguration(
+                        1, Duration.ofMillis(1), Duration.ofSeconds(2), Duration.ofMillis(100), Duration.ofSeconds(2)));
+        pool.start();
+        assertTrue(entered.await(5, TimeUnit.SECONDS));
+
+        AtomicReference<ShutdownReport> report = new AtomicReference<>();
+        AtomicBoolean restored = new AtomicBoolean();
+        Thread caller = new Thread(() -> {
+            report.set(pool.shutdown());
+            restored.set(Thread.currentThread().isInterrupted());
+        }, "shutdown-await-caller");
+        caller.start();
+        assertTrue(awaitThreadState("shutdown-await-caller", Thread.State.TIMED_WAITING, Duration.ofSeconds(5)));
+        caller.interrupt();
+        caller.join(5_000);
+
+        assertFalse(caller.isAlive());
+        assertNotNull(report.get());
+        assertTrue(report.get().forced());
+        assertTrue(report.get().terminated());
+        assertTrue(restored.get());
     }
 
     @Test
@@ -738,6 +780,20 @@ final class WorkerCoverageRegressionTest {
     @FunctionalInterface
     private interface HandlerBody {
         void execute(TaskExecutionContext context) throws Exception;
+    }
+
+    private static boolean awaitThreadState(
+            String namePrefix, Thread.State expected, Duration timeout) throws InterruptedException {
+        long deadline = System.nanoTime() + timeout.toNanos();
+        while (System.nanoTime() < deadline) {
+            for (Thread thread : Thread.getAllStackTraces().keySet()) {
+                if (thread.getName().startsWith(namePrefix) && thread.getState() == expected) {
+                    return true;
+                }
+            }
+            TimeUnit.MILLISECONDS.sleep(1);
+        }
+        return false;
     }
 
     /** Controllable persistence probe used to reproduce adapter races deterministically. */
