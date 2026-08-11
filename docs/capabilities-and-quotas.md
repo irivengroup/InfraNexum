@@ -100,7 +100,7 @@ Les réponses utilisent `Cache-Control: no-store`. Ces routes sont diagnostiques
 
 ## Invariants automatisés
 
-Le gate `src/validation/capabilities` vérifie notamment :
+Le gate `validation/capabilities` vérifie notamment :
 
 - les hashes du contract pack ;
 - le nombre et les classes des quotas ;

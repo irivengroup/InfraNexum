@@ -1,0 +1,28 @@
+-- Rollback is idempotent but intentionally fail-closed once any durable task exists.
+DECLARE
+    table_count NUMBER;
+    task_count NUMBER;
+BEGIN
+    SELECT COUNT(*) INTO table_count
+      FROM USER_TABLES
+     WHERE TABLE_NAME = 'INFRANEXUM_CORE_WORKER_TASK';
+    IF table_count = 1 THEN
+        EXECUTE IMMEDIATE 'SELECT COUNT(*) FROM INFRANEXUM_CORE_WORKER_TASK' INTO task_count;
+        IF task_count > 0 THEN
+            RAISE_APPLICATION_ERROR(-20006, 'cannot roll back migration 0006 after durable worker tasks have been created');
+        END IF;
+    END IF;
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE INFRANEXUM_CORE_WORKER_TASK_PARAMETER CASCADE CONSTRAINTS PURGE';
+EXCEPTION WHEN OTHERS THEN IF SQLCODE != -942 THEN RAISE; END IF;
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE INFRANEXUM_CORE_WORKER_TASK CASCADE CONSTRAINTS PURGE';
+EXCEPTION WHEN OTHERS THEN IF SQLCODE != -942 THEN RAISE; END IF;
+END;
+/

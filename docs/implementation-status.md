@@ -1,4 +1,26 @@
-# InfraNexum 2.0.0-alpha.0.18 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.20 — état d’implémentation
+
+## alpha.0.20 — Repository Layout Hardening
+
+La structure physique du dépôt est aplatie afin d’éliminer le risque de dépassement de longueur de chemin observé lors de l’extraction Windows. Les espaces `applications`, `components`, `distribution`, `deployment`, `engines`, `installer`, `provisioning`, `sdk`, `tests`, `validation` et `tools` sont désormais directement à la racine du dépôt.
+
+Les modules Java conservent leurs packages et coordonnées Maven, mais utilisent des racines physiques courtes `main/`, `test/` et `resources/`. L’adaptateur JDBC est physiquement situé dans `components/adapters/jdbc`; son identifiant logique `components.adapters.persistence-jdbc`, son package `io.infranexum.adapters.persistence.jdbc` et l’artifact Maven `infranexum-adapter-persistence-jdbc` restent inchangés.
+
+Le gate Source Integrity impose maintenant **120 caractères maximum par chemin relatif** et **80 caractères maximum par composant de chemin**. Le chemin canonique le plus long de cet incrément mesure **116 caractères**. Le préfixe de l’archive source est limité à `infranexum-<version>` et contrôlé par le même gate.
+
+Le workflow Foundation ajoute un job Windows qui exécute Source Integrity sur le checkout, crée un `git archive` avec le préfixe court, l’extrait sous un préfixe temporaire artificiellement allongé puis compile le reactor Maven depuis cette extraction. Cette preuve hébergée reste requise avant certification complète.
+
+## alpha.0.19 — Durable Workers Persistence / PGM-02-E07
+
+**Statut de l’incrément : implémenté localement, certification cible partielle. Statut de l’epic PGM-02-E07 : NON TERMINÉ.**
+
+`JdbcTaskStore` implémente le port durable du Core Workers pour PostgreSQL et Oracle avec transactions courtes, claim `FOR UPDATE SKIP LOCKED`, fencing `(task_id, lease_owner, lease_version)`, checkpoint atomique, annulation, retry sûr et récupération bornée des leases expirés par compare-and-set optimiste. Une course concurrente qui modifie déjà le lease est bénigne ; toute mise à jour de récupération touchant plusieurs lignes échoue immédiatement. Le retry automatique reste interdit pour `AT_MOST_ONCE`.
+
+La migration appariée `0006-core-workers` ajoute les tables `worker_task` et `worker_task_parameter`, l’unicité `(task_type, idempotency_key)`, les contraintes de statut/lease/checkpoint et les indexes de claim/récupération. PostgreSQL utilise des champs texte bornés à 4096 caractères ; Oracle utilise des `CLOB` et des triggers pour les invariants dépendant du contenu LOB. Le rollback refuse toute suppression si une tâche durable existe.
+
+La CI PostgreSQL 17/18 applique désormais `0006` et exécute `PostgreSqlJdbcTaskStoreTest`, dont un scénario de quatre workers réclamant 40 tâches sans double claim. Ce test live reste à confirmer par le runner hébergé. Oracle 19c/26ai reste également NON EXÉCUTÉ localement.
+
+La fermeture de PGM-02-E07 exige encore la composition du `TaskStore`, du `TaskScheduler` et du `TaskWorkerPool` dans le Server, les propriétés validées, readiness/métriques et shutdown coordonné, puis la preuve Java 25/Spring et Oracle live.
 
 ## alpha.0.18 — Core Workers Foundation / PGM-02-E07
 
@@ -21,7 +43,7 @@ La correction devient préventive : `source-integrity` peut maintenant reconstru
 
 Un hook versionné `.githooks/pre-commit` appelle `make source-integrity-precommit`. Ce target exécute les tests, impose le tracking Git, valide le snapshot staged, vérifie le manifeste SHA-256 des blobs staged et exécute `git diff --cached --check`. L’installation locale est explicite et idempotente avec `make source-integrity-hook-install`; la CI active également la validation staged après `actions/checkout`. Aucun contrôle existant n’est assoupli.
 Le target pré-commit n’écrit aucun rapport persistant : ses fichiers de couverture et diagnostics sont temporaires puis supprimés. Le commit ne peut donc pas modifier silencieusement les preuves de validation ou invalider le manifeste SHA-256 de livraison.
-Le contrôle d’intégrité est séparé en deux niveaux : `src/distribution/source-files.sha256` couvre le snapshot Git tracké à partir des **blobs immuables de l’index Git**, ce qui neutralise les conversions LF/CRLF de `.gitattributes`; `artifacts/validation/release-files.sha256` couvre les octets réellement présents dans le payload de l’archive, preuves de validation comprises. Un patch Git reste ainsi cohérent entre Windows et Linux sans dépendre de fichiers volontairement ignorés par Git.
+Le contrôle d’intégrité est séparé en deux niveaux : `distribution/source-files.sha256` couvre le snapshot Git tracké à partir des **blobs immuables de l’index Git**, ce qui neutralise les conversions LF/CRLF de `.gitattributes`; `artifacts/validation/release-files.sha256` couvre les octets réellement présents dans le payload de l’archive, preuves de validation comprises. Un patch Git reste ainsi cohérent entre Windows et Linux sans dépendre de fichiers volontairement ignorés par Git.
 
 Preuves locales `alpha.0.17` : **31/31 tests source-integrity, 100 % lignes/branches, inventaire 411 chemins, 0 violation sur le snapshot staged complet et son manifeste Git-blob SHA-256**. La reproduction exacte des 10 omissions du runner échoue avant commit avec **26 violations** lorsque le manifeste staged reste inchangé : 10 `CHECK-SOURCE-GIT-002`, 1 `CHECK-SOURCE-GIT-004` et 15 `CHECK-SOURCE-STAGED-002`, dont 10 absences d’inventaire et 5 imports Java non résolus. Même après régénération volontaire du manifeste sur l’index incomplet, le candidat reste refusé avec **25 violations** (10 tracking + 15 snapshot staged), ce qui prouve l’indépendance des barrières. Architecture-as-Code passe **29/29** avec **100 % lignes/branches** ; le gate toolchain passe **19/19** avec **99 %**. Les autres gates Python restent ≥98 %, les 8 smokes Java autonomes passent sous OpenJDK 21, le Web passe 27/27 et l’Agent passe localement sous Go 1.23.2 avec race detector et 98,4 % de couverture. Les toolchains cibles Java 25, Go 1.26.5 et Node 24.18.1/pnpm 11.17.0 restent à confirmer par la CI hébergée.
 
@@ -35,7 +57,7 @@ La preuve locale de fermeture du dépôt a été exécutée dans un snapshot Git
 
 ## Sources concernées par le checkout incomplet
 
-Les 17 chemins signalés par le runner sont conservés dans la livraison et dans `src/distribution/source-inventory.json` :
+Les 17 chemins signalés par le runner sont conservés dans la livraison et dans `distribution/source-inventory.json` :
 
 - 5 tests Server Entitlements (`ActivationAdministrationServiceTest`, `ActivationRuntimeConfigurationTest`, `EntitlementMutationInterceptorTest`, `EntitlementWebMvcConfigurationTest`, `EntitlementWebServerStartupGuardTest`) ;
 - 6 sources JDBC (`FileIntegrityProofStore`, `JdbcActivationOperationalRepository`, `JdbcConnectionAccess`, `JdbcPersistenceException`, `JdbcRevocationRegistry`, `JdbcTransactionalEventStore`) ;
@@ -81,7 +103,7 @@ Les 37 scénarios ont été compilés avec `javac -Xlint:all -Werror` et exécut
 Le fichier canonique suivant est présent dans la livraison :
 
 ```text
-src/components/adapters/persistence-jdbc/src/main/java/io/infranexum/adapters/persistence/jdbc/JdbcTransactionalEventStore.java
+components/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/JdbcTransactionalEventStore.java
 ```
 
 `persistence-test` dépend désormais de `persistence-check`. Si cette source ou un autre contrat obligatoire disparaît du checkout, le gate statique échoue avant la création des fixtures de test. Le scénario a été vérifié explicitement : suppression temporaire du fichier → `CHECK-JDBC-STORE-001`, sans `FileNotFoundError`.

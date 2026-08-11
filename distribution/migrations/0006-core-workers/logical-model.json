@@ -1,0 +1,50 @@
+{
+  "schema": "infranexum.logical-schema/v1",
+  "objects": [
+    {
+      "kind": "table",
+      "logical_name": "core.worker_task",
+      "columns": [
+        {"name":"task_id","type":"uuid","nullable":false},
+        {"name":"task_type","type":"string","length":160,"nullable":false},
+        {"name":"idempotency_key","type":"string","length":256,"nullable":false},
+        {"name":"retry_safety","type":"string","length":32,"nullable":false},
+        {"name":"status","type":"string","length":16,"nullable":false},
+        {"name":"attempts","type":"integer","nullable":false},
+        {"name":"requested_not_before","type":"timestamp-with-time-zone","nullable":false},
+        {"name":"available_at","type":"timestamp-with-time-zone","nullable":false},
+        {"name":"lease_owner","type":"string","length":160,"nullable":true},
+        {"name":"lease_version","type":"long","nullable":false},
+        {"name":"lease_until","type":"timestamp-with-time-zone","nullable":true},
+        {"name":"checkpoint_sequence","type":"long","nullable":true},
+        {"name":"checkpoint_token","type":"string","length":4096,"nullable":true},
+        {"name":"checkpoint_at","type":"timestamp-with-time-zone","nullable":true},
+        {"name":"cancellation_requested","type":"boolean-marker","nullable":false},
+        {"name":"last_failure","type":"string","length":1024,"nullable":true},
+        {"name":"created_at","type":"timestamp-with-time-zone","nullable":false},
+        {"name":"updated_at","type":"timestamp-with-time-zone","nullable":false}
+      ],
+      "primary_key":["task_id"],
+      "unique_constraints":[["task_type","idempotency_key"]],
+      "foreign_keys":[],
+      "indexes":[
+        {"name":"due","columns":["status","available_at","created_at","task_id"]},
+        {"name":"lease","columns":["status","lease_until","created_at","task_id"]}
+      ]
+    },
+    {
+      "kind": "table",
+      "logical_name": "core.worker_task_parameter",
+      "columns": [
+        {"name":"task_id","type":"uuid","nullable":false},
+        {"name":"parameter_key","type":"string","length":64,"nullable":false},
+        {"name":"parameter_value","type":"string","length":4096,"nullable":false}
+      ],
+      "primary_key":["task_id","parameter_key"],
+      "unique_constraints":[],
+      "foreign_keys":[
+        {"columns":["task_id"],"references":"core.worker_task","referenced_columns":["task_id"],"on_delete":"cascade"}
+      ]
+    }
+  ]
+}

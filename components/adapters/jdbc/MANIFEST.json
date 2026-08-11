@@ -1,0 +1,24 @@
+{
+  "schema": "infranexum.component-manifest/v1",
+  "id": "components.adapters.persistence-jdbc",
+  "kind": "adapter",
+  "owner": "team.data-platform",
+  "lifecycle": "active",
+  "languages": [
+    "java"
+  ],
+  "dependencies": [
+    "components.core.contracts",
+    "components.core.events",
+    "components.core.workers",
+    "components.core.audit"
+  ],
+  "source_baseline": [
+    "PGM-04-E01",
+    "PGM-02-E03",
+    "ADR-0062",
+    "PGM-02-E06",
+    "ADR-0024",
+    "PGM-02-E07"
+  ]
+}

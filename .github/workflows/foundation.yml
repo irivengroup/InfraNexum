@@ -29,6 +29,60 @@ jobs:
       - name: Verify canonical source inventory and Git tracking
         run: SOURCE_INTEGRITY_REQUIRE_GIT=1 SOURCE_INTEGRITY_REQUIRE_STAGED=1 SOURCE_INTEGRITY_REQUIRE_CHECKSUMS=1 make source-integrity-test source-integrity-check
 
+  windows-path-safety:
+    needs: source-integrity
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: temurin
+          java-version: '25.0.4+7.0.LTS'
+          cache: maven
+      - name: Install pinned validation tooling
+        run: python -m pip install --disable-pip-version-check --requirement requirements/ci.txt
+      - name: Verify path budget and exact checkout on Windows
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PYTHONDONTWRITEBYTECODE = '1'
+          $env:PYTHONPATH = '.'
+          $coverageFile = Join-Path $env:RUNNER_TEMP 'source-integrity.coverage'
+          $env:COVERAGE_FILE = $coverageFile
+          python -m coverage run --branch --source=validation.source_integrity -m unittest discover -s tests/source_integrity -p 'test_*.py'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m coverage report --fail-under=98
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m validation.source_integrity.cli --root . --require-git-tracking --require-staged-snapshot --require-git-checksums
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Exercise source ZIP extraction below legacy MAX_PATH
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = (Get-Content VERSION -Raw).Trim()
+          $prefix = "infranexum-$version"
+          $archive = Join-Path $env:RUNNER_TEMP 'infranexum-source.zip'
+          git archive --format=zip --prefix="$prefix/" HEAD -o $archive
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $stress = Join-Path $env:RUNNER_TEMP ('p' * 80)
+          New-Item -ItemType Directory -Force -Path $stress | Out-Null
+          Expand-Archive -LiteralPath $archive -DestinationPath $stress -Force
+          $checkout = Join-Path $stress $prefix
+          if (-not (Test-Path (Join-Path $checkout 'pom.xml'))) { throw 'Extracted source root is incomplete.' }
+          Push-Location $checkout
+          try {
+            .\mvnw.cmd --batch-mode --no-transfer-progress -DskipTests compile
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          } finally {
+            Pop-Location
+          }
+
   architecture:
     needs: source-integrity
     runs-on: ubuntu-24.04
@@ -47,7 +101,7 @@ jobs:
       - name: Install pinned validation tooling
         run: python -m pip install --disable-pip-version-check --requirement requirements/ci.txt
       - name: Run architecture, toolchain, migration and contract gates
-        run: make architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke
+        run: make architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke java-jdbc-workers-smoke
 
   agent:
     needs: source-integrity
@@ -60,7 +114,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: '1.26.5'
-          cache-dependency-path: src/applications/agent/go.mod
+          cache-dependency-path: applications/agent/go.mod
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: '3.13'
@@ -80,14 +134,14 @@ jobs:
           version: '11.17.0'
           runtime: node@24.18.1
           cache: true
-          cache-dependency-path: src/applications/web/pnpm-lock.yaml
+          cache-dependency-path: applications/web/pnpm-lock.yaml
           install: false
       - name: Verify exact Web toolchains
         run: |
           test "$(node --version)" = "v24.18.1"
           test "$(pnpm --version)" = "11.17.0"
       - name: Verify empty dependency graph and immutable lockfile
-        working-directory: src/applications/web
+        working-directory: applications/web
         run: pnpm install --frozen-lockfile --offline
       - name: Test and smoke Web runtime
         run: make web-verify
@@ -150,14 +204,15 @@ jobs:
         env:
           PGPASSWORD: infranexum-ci
         run: |
-          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file src/distribution/migrations/0001-core-schema-history/postgresql.sql
-          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file src/distribution/migrations/0002-core-transactional-events/postgresql.sql
-          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file src/distribution/migrations/0003-core-inbox-reservation/postgresql.sql
-          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file src/distribution/migrations/0004-core-entitlements/postgresql.sql
-          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file src/distribution/migrations/0005-core-audit/postgresql.sql
+          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file distribution/migrations/0001-core-schema-history/postgresql.sql
+          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file distribution/migrations/0002-core-transactional-events/postgresql.sql
+          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file distribution/migrations/0003-core-inbox-reservation/postgresql.sql
+          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file distribution/migrations/0004-core-entitlements/postgresql.sql
+          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file distribution/migrations/0005-core-audit/postgresql.sql
+          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file distribution/migrations/0006-core-workers/postgresql.sql
       - name: Run live JDBC transaction and concurrency contracts
         env:
           INFRANEXUM_POSTGRESQL_TEST_URL: jdbc:postgresql://127.0.0.1:5432/infranexum
           INFRANEXUM_POSTGRESQL_TEST_USERNAME: infranexum
           INFRANEXUM_POSTGRESQL_TEST_PASSWORD: infranexum-ci
-        run: ./mvnw --batch-mode --no-transfer-progress -pl src/components/adapters/persistence-jdbc -am -Dtest=PostgreSqlJdbcTransactionalEventStoreTest,PostgreSqlJdbcAuditJournalTest -Dinfranexum.surefire.failIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false test
+        run: ./mvnw --batch-mode --no-transfer-progress -pl components/adapters/jdbc -am -Dtest=PostgreSqlJdbcTransactionalEventStoreTest,PostgreSqlJdbcAuditJournalTest,PostgreSqlJdbcTaskStoreTest -Dinfranexum.surefire.failIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false test

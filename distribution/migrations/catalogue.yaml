@@ -1,0 +1,15 @@
+schema: infranexum.migration-catalogue/v1
+version: 1.5.0
+entries:
+- id: '0001'
+  path: 0001-core-schema-history/migration.yaml
+- id: '0002'
+  path: 0002-core-transactional-events/migration.yaml
+- id: '0003'
+  path: 0003-core-inbox-reservation/migration.yaml
+- id: '0004'
+  path: 0004-core-entitlements/migration.yaml
+- id: '0005'
+  path: 0005-core-audit/migration.yaml
+- id: '0006'
+  path: 0006-core-workers/migration.yaml

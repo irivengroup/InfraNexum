@@ -1,0 +1,27 @@
+schema: infranexum.migration/v1
+id: '0006'
+name: core-workers
+owner_context: core
+dependencies:
+- '0005'
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 45
+preconditions:
+- core-schema-history-exists
+- database-user-can-create-table-index-and-constraints
+postconditions:
+- durable-worker-task-storage-exists
+- task-idempotency-scope-is-unique
+- task-claim-and-lease-indexes-exist
+recovery: rerun-idempotently-before-enabling-durable-workers
+rollback: supported-only-before-any-durable-worker-task-exists
+checksums:
+  postgresql.sql: a2bd37ec7a005e125a97692cb65f48ccbcc35ff399a9521f9bb9e8e8dd3c867f
+  oracle.sql: ff5387860a9ebe20202237b95a1b8af9ac86503ef64ecac9bd13604db91a0a57
+  rollback/postgresql.sql: 9b64812d351ba0c1d3a5297ef9b3353572290338ab364a6384690a4643402397
+  rollback/oracle.sql: 16719ec205129e150e073b04b9ae286507ffbe86b86576dccfc55579c530b461
+  logical-model.json: b0f7e18384943cd3c6e44b9d12c2006b6dd8386ff0e8dd37fc28a593ac5221e9
+  verify.sql.yaml: 859497c4dc3fe01fed375b3648a25da62238359b5e10a145d0bee4fc991dc24f

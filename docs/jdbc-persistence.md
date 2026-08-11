@@ -2,7 +2,7 @@
 
 ## Objectif
 
-L’adaptateur `components.adapters.persistence-jdbc` garantit que les écritures métier, les réservations inbox et les événements outbox utilisent la même transaction JDBC. Il implémente le port `TransactionalEventStore` sans introduire de dépendance de driver dans le code de production.
+L’adaptateur `components.adapters.persistence-jdbc` garantit que les écritures métier, les réservations inbox et les événements outbox utilisent la même transaction JDBC. Il implémente aussi le `TaskStore` durable des workers. Les deux adapters restent pilotés par le `DataSource` du déploiement sans intégrer de secret de connexion au dépôt.
 
 ## Frontière transactionnelle
 
@@ -35,6 +35,24 @@ Une livraison crée une réservation `PROCESSING` avant l’appel du handler. Le
 
 Une clé déjà `COMPLETED` retourne `DUPLICATE`. Une clé concurrente encore `PROCESSING` est refusée afin de ne pas exécuter simultanément deux handlers pour le même couple `(consumerName, eventId)`.
 
+
+## Persistance durable des workers
+
+`JdbcTaskStore` applique les invariants du Core Workers sur PostgreSQL et Oracle :
+
+- soumission idempotente protégée par une contrainte unique `(task_type, idempotency_key)` ;
+- paramètres stockés relationnellement pour conserver une comparaison sémantique exacte ;
+- claim ordonné avec `FOR UPDATE SKIP LOCKED` ;
+- incrément atomique de `attempts` et `lease_version` ;
+- fencing de toutes les mutations par `task_id + lease_owner + lease_version` ;
+- checkpoint atomique avec renouvellement du lease ;
+- récupération bornée de 1 000 leases expirés par transaction ;
+- retry uniquement pour `RETRY_SAFE` et sous le plafond de `RetryPolicy` ;
+- `AT_MOST_ONCE` expiré => `FAILED`, résultat externe inconnu, sans retry automatique ;
+- annulation immédiate pour `PENDING` et coopérative pour `RUNNING`.
+
+La migration appariée `0006-core-workers` crée `worker_task` et `worker_task_parameter`, ainsi que les indexes de due-task et lease expiry. PostgreSQL conserve les tokens/valeurs dans des colonnes bornées à 4096 caractères ; Oracle utilise des `CLOB` et des triggers dédiés aux invariants qui dépendent du contenu LOB. Le rollback est fail-closed dès qu’une tâche durable existe.
+
 ## Configuration Server
 
 ```yaml
@@ -53,11 +71,11 @@ En mode PostgreSQL ou Oracle, le déploiement doit fournir un bean `DataSource` 
 ## Validation
 
 ```bash
-make persistence-test persistence-check java-jdbc-smoke
+make persistence-test persistence-check java-jdbc-smoke java-jdbc-workers-smoke
 ./mvnw --batch-mode --no-transfer-progress verify
 ```
 
-La CI PostgreSQL applique les migrations `0001`, `0002`, `0003`, puis vérifie l’atomicité métier/outbox, le rollback, l’inbox, la déduplication, les claims concurrents, les retries et l’ownership des leases sur PostgreSQL 17 et 18.
+La CI PostgreSQL applique les migrations `0001` à `0006`, puis vérifie l’atomicité métier/outbox, le rollback, l’inbox, la déduplication, les claims concurrents, les retries, l’ownership des leases et les transitions du `JdbcTaskStore` sur PostgreSQL 17 et 18.
 
 ## Limites opérationnelles
 

@@ -2,7 +2,7 @@
 
 ## Périmètre
 
-Le socle `PGM-02-E06`, introduit en `2.0.0-alpha.0.12` et conservé dans `2.0.0-alpha.0.16`, réside dans `src/components/core/audit` et son adaptateur JDBC. Il ne publie pas encore l’API IAM d’audit : IAM doit devenir producteur des événements complets et autoriser les recherches/exports dans un incrément ultérieur.
+Le socle `PGM-02-E06`, introduit en `2.0.0-alpha.0.12` et conservé dans `2.0.0-alpha.0.16`, réside dans `components/core/audit` et son adaptateur JDBC. Il ne publie pas encore l’API IAM d’audit : IAM doit devenir producteur des événements complets et autoriser les recherches/exports dans un incrément ultérieur.
 
 ## Invariants
 

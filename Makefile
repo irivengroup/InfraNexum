@@ -1,27 +1,27 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 
-.PHONY: source-integrity-test source-integrity-check source-integrity-precommit source-integrity-hook-install source-integrity-update source-checksum-update architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-test verify-foundation verify clean-generated
+.PHONY: source-integrity-test source-integrity-check source-integrity-precommit source-integrity-hook-install source-integrity-update source-checksum-update architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-test verify-foundation verify clean-generated
 
 PYTHON ?= python3
 GO ?= go
 JAVAC ?= javac
 JAVA ?= java
 
-SOURCE_ROOT := src
-APPLICATION_ROOT := $(SOURCE_ROOT)/applications
-COMPONENT_ROOT := $(SOURCE_ROOT)/components
-TEST_ROOT := $(SOURCE_ROOT)/tests
-VALIDATION_ROOT := $(SOURCE_ROOT)/validation
-TOOLS_ROOT := $(SOURCE_ROOT)/tools
-MIGRATION_ROOT := $(SOURCE_ROOT)/distribution/migrations
+SOURCE_ROOT := .
+APPLICATION_ROOT := applications
+COMPONENT_ROOT := components
+TEST_ROOT := tests
+VALIDATION_ROOT := validation
+TOOLS_ROOT := tools
+MIGRATION_ROOT := distribution/migrations
 REPORT_ROOT := artifacts/validation
 REPORT_ROOT_ABS := $(abspath $(REPORT_ROOT))
 AGENT_ROOT := $(APPLICATION_ROOT)/agent
 WEB_ROOT := $(APPLICATION_ROOT)/web
 
-# Python validation packages live below src/. PYTHONPATH keeps their import
-# names stable while enforcing the repository-wide single source root.
+# Python validation packages live at repository root beside the OpenInfra-style
+# product spaces. PYTHONPATH=. keeps package imports deterministic on every runner.
 define PY_COVERAGE
 	mkdir -p $(REPORT_ROOT); \
 	coverage_file="$$(mktemp)"; \
@@ -117,7 +117,7 @@ java-contract-smoke:
 	@build_dir="$$(mktemp -d)"; \
 	trap 'rm -rf "$$build_dir"' EXIT; \
 	$(JAVAC) -Xlint:all -Werror -d "$$build_dir" \
-		$(COMPONENT_ROOT)/core/contracts/src/main/java/io/infranexum/core/contracts/*.java \
+		$(COMPONENT_ROOT)/core/contracts/main/io/infranexum/core/contracts/*.java \
 		$(TEST_ROOT)/java-contract-smoke/io/infranexum/core/contracts/ContractSmoke.java; \
 	$(JAVA) -ea -cp "$$build_dir" io.infranexum.core.contracts.ContractSmoke
 
@@ -125,8 +125,8 @@ java-eventing-smoke:
 	@build_dir="$$(mktemp -d)"; \
 	trap 'rm -rf "$$build_dir"' EXIT; \
 	$(JAVAC) -Xlint:all -Werror -d "$$build_dir" \
-		$(COMPONENT_ROOT)/core/contracts/src/main/java/io/infranexum/core/contracts/*.java \
-		$(COMPONENT_ROOT)/core/events/src/main/java/io/infranexum/core/events/*.java \
+		$(COMPONENT_ROOT)/core/contracts/main/io/infranexum/core/contracts/*.java \
+		$(COMPONENT_ROOT)/core/events/main/io/infranexum/core/events/*.java \
 		$(TEST_ROOT)/java-eventing-smoke/io/infranexum/core/events/EventingSmoke.java; \
 	$(JAVA) -ea -cp "$$build_dir" io.infranexum.core.events.EventingSmoke
 
@@ -134,9 +134,9 @@ java-workers-smoke:
 	@build_dir="$$(mktemp -d)"; \
 	trap 'rm -rf "$$build_dir"' EXIT; \
 	$(JAVAC) -Xlint:all -Werror -d "$$build_dir" \
-		$(COMPONENT_ROOT)/core/contracts/src/main/java/io/infranexum/core/contracts/*.java \
-		$(COMPONENT_ROOT)/core/events/src/main/java/io/infranexum/core/events/*.java \
-		$(COMPONENT_ROOT)/core/workers/src/main/java/io/infranexum/core/workers/*.java \
+		$(COMPONENT_ROOT)/core/contracts/main/io/infranexum/core/contracts/*.java \
+		$(COMPONENT_ROOT)/core/events/main/io/infranexum/core/events/*.java \
+		$(COMPONENT_ROOT)/core/workers/main/io/infranexum/core/workers/*.java \
 		$(TEST_ROOT)/java-workers-smoke/io/infranexum/core/workers/WorkersSmoke.java; \
 	$(JAVA) -ea -cp "$$build_dir" io.infranexum.core.workers.WorkersSmoke
 
@@ -144,8 +144,8 @@ java-audit-smoke:
 	@build_dir="$$(mktemp -d)"; \
 	trap 'rm -rf "$$build_dir"' EXIT; \
 	$(JAVAC) -Xlint:all -Werror -d "$$build_dir" \
-		$(COMPONENT_ROOT)/core/contracts/src/main/java/io/infranexum/core/contracts/*.java \
-		$(COMPONENT_ROOT)/core/audit/src/main/java/io/infranexum/core/audit/*.java \
+		$(COMPONENT_ROOT)/core/contracts/main/io/infranexum/core/contracts/*.java \
+		$(COMPONENT_ROOT)/core/audit/main/io/infranexum/core/audit/*.java \
 		$(TEST_ROOT)/java-audit-smoke/io/infranexum/core/audit/AuditSmoke.java; \
 	$(JAVA) -ea -cp "$$build_dir" io.infranexum.core.audit.AuditSmoke
 
@@ -153,63 +153,79 @@ java-jdbc-smoke:
 	@build_dir="$$(mktemp -d)"; \
 	trap 'rm -rf "$$build_dir"' EXIT; \
 	$(JAVAC) -Xlint:all -Werror -d "$$build_dir" \
-		$(COMPONENT_ROOT)/core/contracts/src/main/java/io/infranexum/core/contracts/*.java \
-		$(COMPONENT_ROOT)/core/events/src/main/java/io/infranexum/core/events/*.java \
-		$(COMPONENT_ROOT)/core/capabilities/src/main/java/io/infranexum/core/capabilities/*.java \
-		$(COMPONENT_ROOT)/core/entitlements/src/main/java/io/infranexum/core/entitlements/*.java \
-		$(COMPONENT_ROOT)/core/audit/src/main/java/io/infranexum/core/audit/*.java \
-		$(COMPONENT_ROOT)/adapters/persistence-jdbc/src/main/java/io/infranexum/adapters/persistence/jdbc/*.java \
-		$(COMPONENT_ROOT)/adapters/persistence-jdbc/src/test/java/io/infranexum/adapters/persistence/jdbc/JdbcAdapterSmoke.java \
-		$(COMPONENT_ROOT)/adapters/persistence-jdbc/src/test/java/io/infranexum/adapters/persistence/jdbc/JdbcAuditJournalSmoke.java; \
+		$(COMPONENT_ROOT)/core/contracts/main/io/infranexum/core/contracts/*.java \
+		$(COMPONENT_ROOT)/core/events/main/io/infranexum/core/events/*.java \
+		$(COMPONENT_ROOT)/core/workers/main/io/infranexum/core/workers/*.java \
+		$(COMPONENT_ROOT)/core/capabilities/main/io/infranexum/core/capabilities/*.java \
+		$(COMPONENT_ROOT)/core/entitlements/main/io/infranexum/core/entitlements/*.java \
+		$(COMPONENT_ROOT)/core/audit/main/io/infranexum/core/audit/*.java \
+		$(COMPONENT_ROOT)/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/*.java \
+		$(COMPONENT_ROOT)/adapters/jdbc/test/io/infranexum/adapters/persistence/jdbc/JdbcAdapterSmoke.java \
+		$(COMPONENT_ROOT)/adapters/jdbc/test/io/infranexum/adapters/persistence/jdbc/JdbcAuditJournalSmoke.java; \
 	$(JAVA) -ea -cp "$$build_dir" io.infranexum.adapters.persistence.jdbc.JdbcAdapterSmoke; \
 	$(JAVA) -ea -cp "$$build_dir" io.infranexum.adapters.persistence.jdbc.JdbcAuditJournalSmoke
+
+java-jdbc-workers-smoke:
+	@build_dir="$$(mktemp -d)"; \
+	trap 'rm -rf "$$build_dir"' EXIT; \
+	$(JAVAC) -Xlint:all -Werror -d "$$build_dir" \
+		$(COMPONENT_ROOT)/core/contracts/main/io/infranexum/core/contracts/*.java \
+		$(COMPONENT_ROOT)/core/events/main/io/infranexum/core/events/*.java \
+		$(COMPONENT_ROOT)/core/workers/main/io/infranexum/core/workers/*.java \
+		$(COMPONENT_ROOT)/core/capabilities/main/io/infranexum/core/capabilities/*.java \
+		$(COMPONENT_ROOT)/core/entitlements/main/io/infranexum/core/entitlements/*.java \
+		$(COMPONENT_ROOT)/core/audit/main/io/infranexum/core/audit/*.java \
+		$(COMPONENT_ROOT)/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/*.java \
+		$(COMPONENT_ROOT)/adapters/jdbc/test/io/infranexum/adapters/persistence/jdbc/JdbcTaskStoreSmoke.java; \
+	$(JAVA) -ea -cp "$$build_dir" io.infranexum.adapters.persistence.jdbc.JdbcTaskStoreSmoke
 
 java-capabilities-smoke:
 	@build_dir="$$(mktemp -d)"; \
 	trap 'rm -rf "$$build_dir"' EXIT; \
 	$(JAVAC) -Xlint:all -Werror -d "$$build_dir" \
-		$(COMPONENT_ROOT)/core/capabilities/src/main/java/io/infranexum/core/capabilities/*.java \
+		$(COMPONENT_ROOT)/core/capabilities/main/io/infranexum/core/capabilities/*.java \
 		$(TEST_ROOT)/java-capabilities-smoke/io/infranexum/core/capabilities/CapabilitiesSmoke.java; \
 	$(JAVA) -ea -cp "$$build_dir" io.infranexum.core.capabilities.CapabilitiesSmoke \
-		$(COMPONENT_ROOT)/core/capabilities/src/main/resources/io/infranexum/core/capabilities/capability-catalog.csv \
-		$(COMPONENT_ROOT)/core/capabilities/src/main/resources/io/infranexum/core/capabilities/quota-catalog.csv
+		$(COMPONENT_ROOT)/core/capabilities/resources/io/infranexum/core/capabilities/capability-catalog.csv \
+		$(COMPONENT_ROOT)/core/capabilities/resources/io/infranexum/core/capabilities/quota-catalog.csv
 
 java-entitlements-smoke:
 	@build_dir="$$(mktemp -d)"; \
 	trap 'rm -rf "$$build_dir"' EXIT; \
 	$(JAVAC) -Xlint:all -Werror -d "$$build_dir" \
-		$(COMPONENT_ROOT)/core/contracts/src/main/java/io/infranexum/core/contracts/*.java \
-		$(COMPONENT_ROOT)/core/capabilities/src/main/java/io/infranexum/core/capabilities/*.java \
-		$(COMPONENT_ROOT)/core/entitlements/src/main/java/io/infranexum/core/entitlements/*.java \
+		$(COMPONENT_ROOT)/core/contracts/main/io/infranexum/core/contracts/*.java \
+		$(COMPONENT_ROOT)/core/capabilities/main/io/infranexum/core/capabilities/*.java \
+		$(COMPONENT_ROOT)/core/entitlements/main/io/infranexum/core/entitlements/*.java \
 		$(TEST_ROOT)/java-entitlements-smoke/io/infranexum/core/entitlements/EntitlementsSmoke.java; \
 	$(JAVA) -ea -cp "$$build_dir" io.infranexum.core.entitlements.EntitlementsSmoke \
-		$(COMPONENT_ROOT)/core/capabilities/src/main/resources/io/infranexum/core/capabilities/capability-catalog.csv \
-		$(COMPONENT_ROOT)/core/capabilities/src/main/resources/io/infranexum/core/capabilities/quota-catalog.csv
+		$(COMPONENT_ROOT)/core/capabilities/resources/io/infranexum/core/capabilities/capability-catalog.csv \
+		$(COMPONENT_ROOT)/core/capabilities/resources/io/infranexum/core/capabilities/quota-catalog.csv
 
 java-entitlement-runtime-smoke:
 	@build_dir="$$(mktemp -d)"; \
 	trap 'rm -rf "$$build_dir"' EXIT; \
 	$(JAVAC) -Xlint:all -Werror -d "$$build_dir" \
-		$(COMPONENT_ROOT)/core/contracts/src/main/java/io/infranexum/core/contracts/*.java \
-		$(COMPONENT_ROOT)/core/events/src/main/java/io/infranexum/core/events/*.java \
-		$(COMPONENT_ROOT)/core/capabilities/src/main/java/io/infranexum/core/capabilities/*.java \
-		$(COMPONENT_ROOT)/core/entitlements/src/main/java/io/infranexum/core/entitlements/*.java \
-		$(COMPONENT_ROOT)/core/audit/src/main/java/io/infranexum/core/audit/*.java \
-		$(COMPONENT_ROOT)/adapters/persistence-jdbc/src/main/java/io/infranexum/adapters/persistence/jdbc/*.java \
+		$(COMPONENT_ROOT)/core/contracts/main/io/infranexum/core/contracts/*.java \
+		$(COMPONENT_ROOT)/core/events/main/io/infranexum/core/events/*.java \
+		$(COMPONENT_ROOT)/core/workers/main/io/infranexum/core/workers/*.java \
+		$(COMPONENT_ROOT)/core/capabilities/main/io/infranexum/core/capabilities/*.java \
+		$(COMPONENT_ROOT)/core/entitlements/main/io/infranexum/core/entitlements/*.java \
+		$(COMPONENT_ROOT)/core/audit/main/io/infranexum/core/audit/*.java \
+		$(COMPONENT_ROOT)/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/*.java \
 		$(TEST_ROOT)/java-entitlement-runtime-smoke/io/infranexum/core/entitlements/EntitlementRuntimeSmoke.java; \
 	$(JAVA) -ea -cp "$$build_dir" io.infranexum.core.entitlements.EntitlementRuntimeSmoke \
-		$(COMPONENT_ROOT)/core/capabilities/src/main/resources/io/infranexum/core/capabilities/capability-catalog.csv \
-		$(COMPONENT_ROOT)/core/capabilities/src/main/resources/io/infranexum/core/capabilities/quota-catalog.csv
+		$(COMPONENT_ROOT)/core/capabilities/resources/io/infranexum/core/capabilities/capability-catalog.csv \
+		$(COMPONENT_ROOT)/core/capabilities/resources/io/infranexum/core/capabilities/quota-catalog.csv
 
 java-activation-operations-smoke:
 	@build_dir="$$(mktemp -d)"; \
 	trap 'rm -rf "$$build_dir"' EXIT; \
 	$(JAVAC) -Xlint:all -Werror -d "$$build_dir" \
-		$(COMPONENT_ROOT)/core/contracts/src/main/java/io/infranexum/core/contracts/*.java \
-		$(COMPONENT_ROOT)/core/capabilities/src/main/java/io/infranexum/core/capabilities/*.java \
-		$(COMPONENT_ROOT)/core/entitlements/src/main/java/io/infranexum/core/entitlements/*.java \
-		$(COMPONENT_ROOT)/adapters/persistence-jdbc/src/main/java/io/infranexum/adapters/persistence/jdbc/JdbcPersistenceException.java \
-		$(COMPONENT_ROOT)/adapters/persistence-jdbc/src/main/java/io/infranexum/adapters/persistence/jdbc/FileIntegrityProofStore.java \
+		$(COMPONENT_ROOT)/core/contracts/main/io/infranexum/core/contracts/*.java \
+		$(COMPONENT_ROOT)/core/capabilities/main/io/infranexum/core/capabilities/*.java \
+		$(COMPONENT_ROOT)/core/entitlements/main/io/infranexum/core/entitlements/*.java \
+		$(COMPONENT_ROOT)/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/JdbcPersistenceException.java \
+		$(COMPONENT_ROOT)/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/FileIntegrityProofStore.java \
 		$(TEST_ROOT)/java-activation-operations-smoke/io/infranexum/core/entitlements/ActivationOperationsSmoke.java; \
 	$(JAVA) -ea -cp "$$build_dir" io.infranexum.core.entitlements.ActivationOperationsSmoke
 
@@ -251,7 +267,7 @@ web-verify: web-test web-smoke
 java-test:
 	./mvnw --batch-mode --no-transfer-progress verify
 
-verify-foundation: source-integrity-test source-integrity-check architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke agent-vet agent-test agent-build web-verify
+verify-foundation: source-integrity-test source-integrity-check architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke agent-vet agent-test agent-build web-verify
 
 verify: verify-foundation java-test
 

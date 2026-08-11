@@ -1,47 +1,65 @@
-# InfraNexum source-root layout
+# InfraNexum repository layout
 
 ## Decision
 
-All implementation source directories and files are grouped below the repository-level `src/` directory.
-
-The canonical product spaces remain unchanged and are now rooted as follows:
+InfraNexum uses the same shallow top-level organization established for the legacy 2.0 architecture. Product spaces are direct children of the repository root; there is no enclosing `src/` directory.
 
 ```text
-src/applications
-src/components
-src/engines
-src/provisioning
-src/installer
-src/deployment
-src/distribution
-src/sdk
+applications/    # deployable Server, Web and Agent processes
+components/      # Core, domain and adapter components
+engines/         # native DNS/DHCP engines when implemented
+provisioning/    # PXE, TFTP, imaging and provisioning
+installer/       # transactional installer
+deployment/     # roles, traits and topologies
+distribution/   # migrations and release/source manifests
+sdk/            # public SDKs and contracts
+tests/          # cross-component and offline smoke tests
+validation/     # Architecture-as-Code and blocking contract gates
+tools/          # build and validation support
 ```
 
-Tests, executable validation gates and build-support scripts are also source material and therefore reside below `src/tests`, `src/validation` and `src/tools`.
-
-Generated evidence and binaries are deliberately kept outside the source tree:
+Generated evidence and binaries remain outside canonical source spaces:
 
 ```text
-artifacts/validation
-bin
+artifacts/validation/
+bin/
 ```
+
+## Java module layout
+
+Java packages and Maven artifact identifiers are unchanged, but the physical Maven source roots are intentionally shortened:
+
+```text
+applications/server/main/io/infranexum/...
+applications/server/test/io/infranexum/...
+components/core/<module>/main/io/infranexum/...
+components/core/<module>/test/io/infranexum/...
+components/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/...
+components/adapters/jdbc/test/io/infranexum/adapters/persistence/jdbc/...
+```
+
+The parent `pom.xml` defines `main`, `test` and `resources` as inherited Maven source roots. The physical adapter directory is shortened to `components/adapters/jdbc`, while the logical component ID `components.adapters.persistence-jdbc`, Java package `io.infranexum.adapters.persistence.jdbc` and Maven artifact `infranexum-adapter-persistence-jdbc` remain stable.
+
+## Path-length safety contract
+
+`validation.source_integrity` enforces two repository-wide invariants:
+
+- repository-relative canonical paths: **120 characters maximum**;
+- individual path components: **80 characters maximum**.
+
+The release archive also uses the short root prefix `infranexum-<version>` instead of a descriptive suffix. With the current longest canonical path at 116 characters, this leaves substantial room for Windows checkout and extraction prefixes while staying below legacy `MAX_PATH` environments.
+
+The gate is fail-closed: a future source, test, fixture or build-support file that exceeds either limit blocks the commit candidate and CI before language-specific builds begin.
 
 ## Compatibility impact
 
-- Maven modules are addressed through `src/...` paths from the root reactor.
-- Go and Web commands execute from `src/applications/agent` and `src/applications/web`.
-- Python validation packages retain their `validation.*` import names through `PYTHONPATH=src`.
-- Database migrations are addressed from `src/distribution/migrations`.
-- CI cache keys and working directories use the new canonical paths.
-- Component identifiers such as `applications.server` and `components.core.events` are unchanged; only physical repository paths changed.
+- Maven modules are addressed directly from `applications/...` and `components/...`.
+- Go and Web commands execute from `applications/agent` and `applications/web`.
+- Python validation packages retain their `validation.*` import names through `PYTHONPATH=.`.
+- Database migrations are addressed from `distribution/migrations`.
+- CI cache keys and working directories use the shallow paths.
+- Runtime APIs, Java packages, event contracts, database schemas and component logical identifiers are unchanged.
 
 ## Enforcement
 
-Architecture-as-Code validates the configured `source_root` and blocks:
-
-- a missing or escaping source root;
-- any implementation source file outside `src/`;
-- missing structural spaces below `src/`;
-- source files violating component language boundaries.
-
-This is a repository-layout change only. Public runtime APIs, event contracts, database logical models and package namespaces are unchanged.
+Architecture-as-Code treats the repository root as the canonical source root but only permits code inside explicitly governed spaces. Source Integrity additionally validates inventory completeness, Git tracking, exact staged snapshots, Git-blob checksums, Java import closure, Maven reactor closure, case-insensitive collisions and the path-length budget.

@@ -1,0 +1,29 @@
+schema: infranexum.migration-verification/v1
+checks:
+- id: worker-task-table-exists
+  postgresql: "SELECT COUNT(*) = 1 FROM information_schema.tables WHERE table_schema = 'infranexum_core' AND table_name = 'worker_task'"
+  oracle: "SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM user_tables WHERE table_name = 'INFRANEXUM_CORE_WORKER_TASK'"
+- id: worker-task-parameter-table-exists
+  postgresql: "SELECT COUNT(*) = 1 FROM information_schema.tables WHERE table_schema = 'infranexum_core' AND table_name = 'worker_task_parameter'"
+  oracle: "SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM user_tables WHERE table_name = 'INFRANEXUM_CORE_WORKER_TASK_PARAMETER'"
+- id: worker-task-idempotency-unique-exists
+  postgresql: "SELECT COUNT(*) >= 1 FROM pg_indexes WHERE schemaname = 'infranexum_core' AND tablename = 'worker_task' AND indexdef LIKE '%task_type, idempotency_key%'"
+  oracle: "SELECT CASE WHEN COUNT(*) >= 1 THEN 1 ELSE 0 END FROM user_constraints WHERE table_name = 'INFRANEXUM_CORE_WORKER_TASK' AND constraint_type = 'U'"
+- id: worker-task-due-index-exists
+  postgresql: "SELECT COUNT(*) = 1 FROM pg_indexes WHERE schemaname = 'infranexum_core' AND indexname = 'ix_inx_worker_task_due'"
+  oracle: "SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM user_indexes WHERE index_name = 'IX_INX_WORKER_TASK_DUE'"
+- id: worker-task-lease-index-exists
+  postgresql: "SELECT COUNT(*) = 1 FROM pg_indexes WHERE schemaname = 'infranexum_core' AND indexname = 'ix_inx_worker_task_lease'"
+  oracle: "SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM user_indexes WHERE index_name = 'IX_INX_WORKER_TASK_LEASE'"
+- id: worker-task-checkpoint-token-portable-storage
+  postgresql: "SELECT COUNT(*) = 1 FROM information_schema.columns WHERE table_schema = 'infranexum_core' AND table_name = 'worker_task' AND column_name = 'checkpoint_token' AND character_maximum_length = 4096"
+  oracle: "SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM user_tab_columns WHERE table_name = 'INFRANEXUM_CORE_WORKER_TASK' AND column_name = 'CHECKPOINT_TOKEN' AND data_type = 'CLOB'"
+- id: worker-task-parameter-value-portable-storage
+  postgresql: "SELECT COUNT(*) = 1 FROM information_schema.columns WHERE table_schema = 'infranexum_core' AND table_name = 'worker_task_parameter' AND column_name = 'parameter_value' AND character_maximum_length = 4096"
+  oracle: "SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM user_tab_columns WHERE table_name = 'INFRANEXUM_CORE_WORKER_TASK_PARAMETER' AND column_name = 'PARAMETER_VALUE' AND data_type = 'CLOB'"
+- id: worker-task-parameter-cascade-exists
+  postgresql: "SELECT COUNT(*) = 1 FROM information_schema.referential_constraints WHERE constraint_schema = 'infranexum_core' AND constraint_name = 'fk_inx_worker_param_task' AND delete_rule = 'CASCADE'"
+  oracle: "SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM user_constraints WHERE constraint_name = 'FK_INX_WORKER_PARAM_TASK' AND table_name = 'INFRANEXUM_CORE_WORKER_TASK_PARAMETER' AND constraint_type = 'R' AND delete_rule = 'CASCADE'"
+- id: worker-task-oracle-lob-invariant-triggers-exist
+  postgresql: "SELECT TRUE"
+  oracle: "SELECT CASE WHEN COUNT(*) = 2 THEN 1 ELSE 0 END FROM user_triggers WHERE trigger_name IN ('INX_CORE_WORKER_CHECKPOINT_TRG', 'INX_CORE_WORKER_PARAMETER_TRG') AND status = 'ENABLED'"

@@ -4,7 +4,7 @@
 
 `components/core/workers` is the first executable foundation for roadmap epic **PGM-02-E07**. It defines the domain/application contracts for one-shot background tasks and a bounded in-process worker runtime. The module deliberately does not introduce a message broker: durable scheduling is expressed through the `TaskStore` port so PostgreSQL/Oracle adapters can provide the same semantics without coupling the core to a persistence technology.
 
-This increment is complete for the in-memory reference runtime, but **PGM-02-E07 remains NON TERMINÉ** until a durable JDBC `TaskStore` is implemented for PostgreSQL and Oracle and the Server composition root owns the worker-pool lifecycle.
+The in-memory reference runtime and the durable JDBC adapter are implemented. **PGM-02-E07 remains NON TERMINÉ** until the Server composition root owns the worker-pool lifecycle/readiness/metrics and target database execution, including Oracle, is proven.
 
 ## Invariants
 
@@ -75,23 +75,18 @@ A non-cooperative handler cannot be forcibly killed safely by Java. The runtime 
 
 Invalid configuration fails explicitly; there is no silent degraded mode.
 
-## Persistence contract for the next increment
+## Durable persistence — alpha.0.19
 
-A production `TaskStore` must provide atomic, transactionally durable implementations of:
+`components/adapters/jdbc` (`JdbcTaskStore`) implements the same `TaskStore` contract for PostgreSQL and Oracle. Each mutation owns a short transaction. Expired leases are reconciled first through a bounded optimistic compare-and-set keyed by `task_id`, `lease_version`, expiration and cancellation state; a concurrent zero-row update is benign, while any multi-row update fails closed. Due rows are then claimed with `FOR UPDATE SKIP LOCKED`, transitioned to `RUNNING`, assigned a new owner, and advanced through the monotonically increasing `leaseVersion`. The adapter reconstructs the immutable `TaskRecord` including parameters after the claim transaction.
 
-- idempotent submission;
-- ordered due-task claim with concurrency-safe row locking;
-- lease renewal and lease-version fencing;
-- checkpoint + lease renewal;
-- terminal transitions;
-- retry/backoff transition;
-- cancellation request;
-- lookup and deterministic lease-expiry recovery.
+Migration `0006-core-workers` stores task parameters in a child table instead of opaque database-specific JSON. This keeps the logical schema equivalent across PostgreSQL and Oracle and preserves exact semantic comparison for idempotent replay. PostgreSQL uses bounded character columns for the 4096-character token/value contract. Oracle uses `CLOB` for those two fields and dedicated triggers for LOB-dependent length/tuple invariants. Relational constraints still enforce retry/status values, lease state, checkpoint sequence/time coherence and cancellation markers.
 
-The PostgreSQL and Oracle implementations must expose equivalent behavior, paired migrations and concurrency tests. Database-specific locking syntax belongs in the persistence adapter, not this core module.
+All execution mutations are fenced by `(task_id, lease_owner, lease_version)`. A zero-row mutation performs a diagnostic state read so an unknown task remains distinguishable from a stale lease. Checkpoints are rejected after cancellation has been requested. Expired `AT_MOST_ONCE` tasks become terminal `FAILED` with an explicit unknown-outcome diagnostic and are never automatically reclaimed.
+
+The JDBC recovery pass is capped at 1,000 expired leases per claim transaction; task claims themselves remain capped at 1,000. This prevents an unbounded maintenance transaction from monopolizing the scheduler under a large backlog.
 
 ## Verification
 
-The module contains JUnit contract tests with JaCoCo gates fixed at **98% line and 98% branch coverage**. A dependency-free `java-workers-smoke` additionally compiles all required Core sources with `javac -Xlint:all -Werror` and executes representative idempotency, checkpoint, retry, at-most-once, cancellation, lease-fencing, heartbeat, bounded-concurrency and forced-shutdown scenarios.
+The module contains JUnit contract tests with JaCoCo gates fixed at **98% line and 98% branch coverage**. Dependency-free `java-workers-smoke` and `java-jdbc-workers-smoke` additionally compiles all required Core sources with `javac -Xlint:all -Werror` and executes representative idempotency, checkpoint, retry, at-most-once, cancellation, lease-fencing, heartbeat, bounded-concurrency and forced-shutdown scenarios.
 
 The Foundation CI architecture job is required by the toolchain validator to execute this smoke under the exact project Java toolchain.
