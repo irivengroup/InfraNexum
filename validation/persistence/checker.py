@@ -44,6 +44,8 @@ class PersistenceChecker:
             "src/applications/server/main/io/infranexum/server/persistence/"
             "UnavailableDataSource.java"
         )
+        activation_repository_path = store_path.with_name("JdbcActivationOperationalRepository.java")
+        audit_journal_path = store_path.with_name("JdbcAuditJournal.java")
 
         store = self._read(store_path, "CHECK-JDBC-STORE-001")
         dialect = self._read(dialect_path, "CHECK-JDBC-DIALECT-001")
@@ -56,6 +58,8 @@ class PersistenceChecker:
         server_manifest = self._read(server_manifest_path, "CHECK-JDBC-SERVER-001")
         server_pom = self._read(server_pom_path, "CHECK-JDBC-SERVER-001")
         unavailable_data_source = self._read(unavailable_data_source_path, "CHECK-JDBC-SERVER-001")
+        activation_repository = self._read(activation_repository_path, "CHECK-JDBC-JSON-001")
+        audit_journal = self._read(audit_journal_path, "CHECK-JDBC-JSON-001")
 
         self._check_store(store_path, store)
         self._check_dialect(dialect_path, dialect)
@@ -67,6 +71,10 @@ class PersistenceChecker:
         self._check_server_integration(
             server_config_path, server_config, server_manifest_path, server_manifest,
             server_pom_path, server_pom, unavailable_data_source_path, unavailable_data_source)
+        self._check_json_binding_contract(
+            dialect_path, dialect, store_path, store,
+            activation_repository_path, activation_repository,
+            audit_journal_path, audit_journal)
         self._check_reactor()
         self._check_policy()
         self._check_gate_order()
@@ -192,6 +200,41 @@ class PersistenceChecker:
                         "CHECK-JDBC-SERVER-005", unavailable_path,
                         "MEMORY DataSource must fail every accidental JDBC connection")
 
+
+    def _check_json_binding_contract(
+        self,
+        dialect_path: Path,
+        dialect: str | None,
+        store_path: Path,
+        store: str | None,
+        activation_path: Path,
+        activation: str | None,
+        audit_path: Path,
+        audit: str | None,
+    ) -> None:
+        """Require all structured JSON writes to use the database dialect contract."""
+        if dialect is not None:
+            required = (
+                'String jsonParameter()',
+                '"CAST(? AS JSONB)"',
+                'void bindJson(PreparedStatement statement, int index, String json)',
+                'statement.setCharacterStream(index, new java.io.StringReader(value), value.length())',
+            )
+            for token in required:
+                if token not in dialect:
+                    self._add("CHECK-JDBC-JSON-002", dialect_path, f"missing JSON dialect invariant: {token}")
+        if store is not None and 'dialect.bindJson(statement, 8, event.payload())' not in store:
+            self._add("CHECK-JDBC-JSON-003", store_path, "outbox JSON payload must use dialect.bindJson")
+        if activation is not None:
+            if 'String jsonParameter = dialect.jsonParameter()' not in activation:
+                self._add("CHECK-JDBC-JSON-004", activation_path, "activation manifest SQL must use dialect.jsonParameter")
+            if activation.count('dialect.bindJson(statement, index++') < 2:
+                self._add("CHECK-JDBC-JSON-004", activation_path, "capabilities and quotas JSON must use dialect.bindJson")
+        if audit is not None:
+            if 'String placeholder = dialect.jsonParameter()' not in audit:
+                self._add("CHECK-JDBC-JSON-005", audit_path, "audit metadata SQL must use dialect.jsonParameter")
+            if 'dialect.bindJson(statement, index++, metadata)' not in audit:
+                self._add("CHECK-JDBC-JSON-005", audit_path, "audit metadata must use dialect.bindJson")
 
     def _check_gate_order(self) -> None:
         path = self.root / "Makefile"

@@ -36,8 +36,8 @@ public enum JdbcDatabaseDialect {
                         event_id, event_type, schema_version, occurred_at, event_source,
                         correlation_id, causation_id, payload_json, status, attempts, available_at,
                         lease_owner, lease_until, published_at, last_failure, created_at, updated_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, CAST(? AS JSONB), 'PENDING', 0, ?, NULL, NULL, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                    """;
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, %s, 'PENDING', 0, ?, NULL, NULL, NULL, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    """.formatted(jsonParameter());
         }
 
         @Override
@@ -100,8 +100,8 @@ public enum JdbcDatabaseDialect {
                         EVENT_ID, EVENT_TYPE, SCHEMA_VERSION, OCCURRED_AT, EVENT_SOURCE,
                         CORRELATION_ID, CAUSATION_ID, PAYLOAD_JSON, STATUS, ATTEMPTS, AVAILABLE_AT,
                         LEASE_OWNER, LEASE_UNTIL, PUBLISHED_AT, LAST_FAILURE, CREATED_AT, UPDATED_AT
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', 0, ?, NULL, NULL, NULL, NULL, SYSTIMESTAMP, SYSTIMESTAMP)
-                    """;
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, %s, 'PENDING', 0, ?, NULL, NULL, NULL, NULL, SYSTIMESTAMP, SYSTIMESTAMP)
+                    """.formatted(jsonParameter());
         }
 
         @Override
@@ -131,6 +131,26 @@ public enum JdbcDatabaseDialect {
     abstract boolean tryReserveInbox(Connection connection, InboxReservation reservation) throws SQLException;
 
     abstract String insertOutboxSql();
+
+    /** Returns the SQL placeholder required to bind a JSON document for this database. */
+    String jsonParameter() {
+        return this == POSTGRESQL ? "CAST(? AS JSONB)" : "?";
+    }
+
+    /**
+     * Binds JSON without relying on driver-specific implicit casts. PostgreSQL receives a text value
+     * through an explicit JSONB cast in SQL; Oracle receives a character stream suitable for CLOB
+     * JSON columns, avoiding VARCHAR size limits for larger manifests and event payloads.
+     */
+    void bindJson(PreparedStatement statement, int index, String json) throws SQLException {
+        Objects.requireNonNull(statement, "statement");
+        String value = Objects.requireNonNull(json, "json");
+        if (this == POSTGRESQL) {
+            statement.setString(index, value);
+        } else {
+            statement.setCharacterStream(index, new java.io.StringReader(value), value.length());
+        }
+    }
 
     String claimReturningSql() {
         throw new UnsupportedOperationException("dialect does not support UPDATE RETURNING claims");

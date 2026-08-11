@@ -234,7 +234,7 @@ public final class JdbcAuditJournalSmoke {
             @Override
             public Object invoke(Object proxy, java.lang.reflect.Method method, Object[] args) throws Throwable {
                 return switch (method.getName()) {
-                    case "setString", "setLong", "setObject" -> { parameters.put((int) args[0], args[1]); yield null; }
+                    case "setString", "setLong", "setObject", "setCharacterStream" -> { parameters.put((int) args[0], args[1]); yield null; }
                     case "setNull" -> { parameters.put((int) args[0], null); yield null; }
                     case "setMaxRows" -> { maxRows = (int) args[0]; yield null; }
                     case "setFetchSize", "close" -> null;
@@ -285,7 +285,7 @@ public final class JdbcAuditJournalSmoke {
                 row.decision = (String) p.get(10); row.occurredAt = instant(p.get(11));
                 row.correlationId = p.get(12) == null ? null : identifier(p.get(12)); row.result = (String) p.get(13);
                 row.origin = (String) p.get(14); row.reason = (String) p.get(15); row.clientIp = (String) p.get(16);
-                row.userAgent = (String) p.get(17); row.metadata = (String) p.get(18); row.sensitivity = (String) p.get(19);
+                row.userAgent = (String) p.get(17); row.metadata = text(p.get(18)); row.sensitivity = (String) p.get(19);
                 row.previousHash = (String) p.get(20); row.entryHash = (String) p.get(21); row.originalEntryHash = row.entryHash;
                 row.immutableFlag = "Y"; rows.add(row); return 1;
             }
@@ -403,6 +403,22 @@ public final class JdbcAuditJournalSmoke {
     private static Object jdbcIdentifier(JdbcDatabaseDialect dialect, String value) {
         return dialect == JdbcDatabaseDialect.POSTGRESQL ? UUID.fromString(value) : value;
     }
+    private static String text(Object value) {
+        if (value instanceof String text) return text;
+        if (value instanceof java.io.Reader reader) {
+            try {
+                StringBuilder result = new StringBuilder();
+                char[] buffer = new char[256];
+                int read;
+                while ((read = reader.read(buffer)) != -1) result.append(buffer, 0, read);
+                return result.toString();
+            } catch (java.io.IOException failure) {
+                throw new IllegalArgumentException("cannot read simulated JDBC character stream", failure);
+            }
+        }
+        throw new IllegalArgumentException("unsupported simulated text: " + value);
+    }
+
     private static Instant instant(Object value) {
         if (value instanceof OffsetDateTime offset) return offset.toInstant();
         if (value instanceof Instant direct) return direct;

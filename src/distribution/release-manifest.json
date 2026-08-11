@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.26",
-  "profile": "ci-java-reactor-jdbc-coverage-and-server-contract-closure",
+  "version": "2.0.0-alpha.0.27",
+  "profile": "jdbc-json-type-binding-hardening",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -34,7 +34,7 @@
     },
     {
       "id": "adapter-persistence-jdbc-workers-v1",
-      "status": "postgresql-oracle-jdbc-persistence-workers-entitlements-revocations-deterministic-infrastructure-contracts-and-live-postgresql17-18-ci-contracts-defined-hosted-java25-jacoco-proof-pending"
+      "status": "postgresql-oracle-jdbc-persistence-workers-entitlements-revocations-dialect-owned-json-binding-deterministic-infrastructure-contracts-and-live-postgresql17-18-ci-contracts-defined-alpha0.27-postgresql-jsonb-proof-pending"
     },
     {
       "id": "migration-catalogue-0001-0006",
@@ -42,7 +42,7 @@
     },
     {
       "id": "ci-foundation",
-      "status": "unix-only-source-integrity-full-reactor-fail-at-end-independent-per-module-clean-verify-postgresql17-live-jacoco-schema-bootstrap-postgresql17-18-integration-and-archive-portability-gated-hosted-execution-pending"
+      "status": "unix-only-source-integrity-full-reactor-fail-at-end-independent-per-module-clean-verify-postgresql17-live-jacoco-schema-bootstrap-postgresql17-18-integration-archive-portability-and-jdbc-json-binding-gated-hosted-alpha0.27-execution-pending"
     },
     {
       "id": "docker-compose-runtime",
@@ -55,7 +55,7 @@
     "source_integrity_tests": 44,
     "source_integrity_coverage_percent": 100,
     "source_integrity_violations": 0,
-    "python_tests": 186,
+    "python_tests": 187,
     "architecture_tests": 33,
     "architecture_violations": 0,
     "toolchain_tests": 24,
@@ -67,7 +67,7 @@
     "eventing_tests": 10,
     "eventing_coverage_percent": 100,
     "eventing_violations": 0,
-    "persistence_tests": 11,
+    "persistence_tests": 12,
     "persistence_coverage_percent": 98,
     "persistence_violations": 0,
     "capability_tests": 10,
@@ -109,7 +109,7 @@
     "architecture_coverage_status": "EXECUTED",
     "architecture_functional_tests": 33,
     "architecture_coverage_percent": 100,
-    "jdbc_module_tests_defined": 40,
+    "jdbc_module_tests_defined": 41,
     "jdbc_postgresql_live_tests_defined": 18,
     "server_module_tests_defined": 42,
     "server_capability_configuration_contract_local": "EXECUTED_JAVA21_STRICT_HARNESS",
@@ -125,11 +125,11 @@
     "pre_commit_hook": ".githooks/pre-commit"
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.26",
+    "prefix": "infranexum-2.0.0-alpha.0.27",
     "archive_entries": 474,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
     "source_recorded_files": 473
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.26-validation-evidence.zip"
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.27-validation-evidence.zip"
 }

@@ -378,7 +378,7 @@ public final class JdbcAdapterSmoke {
                 row.source = (String) parameters.get(5);
                 row.correlationId = identifier(parameters.get(6));
                 row.causationId = parameters.get(7) == null ? null : identifier(parameters.get(7));
-                row.payload = (String) parameters.get(8);
+                row.payload = text(parameters.get(8));
                 row.availableAt = instant(parameters.get(9));
                 outbox.put(id, row);
                 return 1;
@@ -560,6 +560,22 @@ public final class JdbcAdapterSmoke {
 
     private static String identifier(Object value) {
         return value.toString().strip().toLowerCase();
+    }
+
+    private static String text(Object value) {
+        if (value instanceof String text) return text;
+        if (value instanceof java.io.Reader reader) {
+            try {
+                StringBuilder result = new StringBuilder();
+                char[] buffer = new char[256];
+                int read;
+                while ((read = reader.read(buffer)) != -1) result.append(buffer, 0, read);
+                return result.toString();
+            } catch (java.io.IOException failure) {
+                throw new IllegalArgumentException("cannot read simulated JDBC character stream", failure);
+            }
+        }
+        throw new IllegalArgumentException("unsupported simulated text: " + value);
     }
 
     private static Instant instant(Object value) {

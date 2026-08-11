@@ -163,7 +163,7 @@ public final class JdbcAuditJournal implements AuditJournal {
 
     private void insertEntry(Connection connection, AuditRecord record) throws SQLException {
         String metadata = AuditMetadataJson.encode(record.entry().metadata());
-        String placeholder = dialect == JdbcDatabaseDialect.POSTGRESQL ? "CAST(? AS JSONB)" : "?";
+        String placeholder = dialect.jsonParameter();
         String sql = "INSERT INTO " + entryTable() + " (scope_type, scope_id, sequence_no, audit_id, actor_id, actor_type, action_name, "
                 + "target_type, target_id, authorization_decision, occurred_at, correlation_id, result_name, origin_name, reason_text, client_ip, "
                 + "user_agent, metadata_json, sensitivity, previous_hash, entry_hash, immutable_flag, created_at) VALUES "
@@ -188,7 +188,7 @@ public final class JdbcAuditJournal implements AuditJournal {
             statement.setString(index++, entry.reason());
             statement.setString(index++, entry.clientIp());
             statement.setString(index++, entry.userAgent());
-            statement.setString(index++, metadata);
+            dialect.bindJson(statement, index++, metadata);
             statement.setString(index++, entry.sensitivity());
             statement.setString(index++, record.previousHash());
             statement.setString(index, record.entryHash());

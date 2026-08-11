@@ -397,7 +397,7 @@ public final class JdbcTransactionalEventStore
                 statement.setString(5, event.source().value());
                 dialect.bindIdentifier(statement, 6, event.correlationId());
                 dialect.bindNullableIdentifier(statement, 7, event.causationId());
-                statement.setString(8, event.payload());
+                dialect.bindJson(statement, 8, event.payload());
                 JdbcTemporal.bindInstant(statement, 9, event.occurredAt());
                 requireSingleUpdate(statement.executeUpdate(), "insert outbox event");
             } catch (SQLException failure) {

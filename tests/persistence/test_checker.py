@@ -23,6 +23,8 @@ FILES = (
     "src/components/core/events/main/io/infranexum/core/events/EventTransaction.java",
     "src/components/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/JdbcTransactionalEventStore.java",
     "src/components/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/JdbcDatabaseDialect.java",
+    "src/components/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/JdbcActivationOperationalRepository.java",
+    "src/components/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/JdbcAuditJournal.java",
     "src/distribution/migrations/0003-core-inbox-reservation/postgresql.sql",
     "src/distribution/migrations/0003-core-inbox-reservation/oracle.sql",
     "src/distribution/migrations/0003-core-inbox-reservation/rollback/postgresql.sql",
@@ -64,9 +66,9 @@ class PersistenceCheckerTest(unittest.TestCase):
             (FILES[3], "CHECK-JDBC-UOW-001"),
             (FILES[4], "CHECK-JDBC-STORE-001"),
             (FILES[5], "CHECK-JDBC-DIALECT-001"),
-            (FILES[6], "CHECK-JDBC-MIGRATION-001"),
-            (FILES[8], "CHECK-JDBC-ROLLBACK-001"),
-            (FILES[10], "CHECK-JDBC-SERVER-001"),
+            (FILES[8], "CHECK-JDBC-MIGRATION-001"),
+            (FILES[10], "CHECK-JDBC-ROLLBACK-001"),
+            (FILES[12], "CHECK-JDBC-SERVER-001"),
         ):
             path = self.root / relative
             saved = path.read_bytes()
@@ -111,6 +113,34 @@ class PersistenceCheckerTest(unittest.TestCase):
         self.mutate(relative, "LIMIT ?\n                        FOR UPDATE SKIP LOCKED", "FOR UPDATE SKIP LOCKED\n                        LIMIT ?")
         self.assertIn("CHECK-JDBC-DIALECT-003", self.ids())
 
+    def test_json_binding_contract_is_enforced_for_all_structured_writes(self) -> None:
+        dialect = FILES[5]
+        self.mutate(dialect, '"CAST(? AS JSONB)"', '"?"')
+        self.assertIn("CHECK-JDBC-JSON-002", self.ids())
+        shutil.copy2(SOURCE / dialect, self.root / dialect)
+        self.mutate(dialect, 'statement.setCharacterStream(index, new java.io.StringReader(value), value.length())',
+                    'statement.setString(index, value)')
+        self.assertIn("CHECK-JDBC-JSON-002", self.ids())
+        shutil.copy2(SOURCE / dialect, self.root / dialect)
+
+        self.mutate(FILES[4], 'dialect.bindJson(statement, 8, event.payload())', 'statement.setString(8, event.payload())')
+        self.assertIn("CHECK-JDBC-JSON-003", self.ids())
+        shutil.copy2(SOURCE / FILES[4], self.root / FILES[4])
+
+        self.mutate(FILES[6], 'String jsonParameter = dialect.jsonParameter()', 'String jsonParameter = "?"')
+        self.assertIn("CHECK-JDBC-JSON-004", self.ids())
+        shutil.copy2(SOURCE / FILES[6], self.root / FILES[6])
+        self.mutate(FILES[6], 'dialect.bindJson(statement, index++, CanonicalJson.string(payload.capabilities().stream().sorted().toList()))',
+                    'statement.setString(index++, CanonicalJson.string(payload.capabilities().stream().sorted().toList()))')
+        self.assertIn("CHECK-JDBC-JSON-004", self.ids())
+        shutil.copy2(SOURCE / FILES[6], self.root / FILES[6])
+
+        self.mutate(FILES[7], 'String placeholder = dialect.jsonParameter()', 'String placeholder = "?"')
+        self.assertIn("CHECK-JDBC-JSON-005", self.ids())
+        shutil.copy2(SOURCE / FILES[7], self.root / FILES[7])
+        self.mutate(FILES[7], 'dialect.bindJson(statement, index++, metadata)', 'statement.setString(index++, metadata)')
+        self.assertIn("CHECK-JDBC-JSON-005", self.ids())
+
     def test_unit_of_work_inbox_contract_is_enforced(self) -> None:
         relative = FILES[3]
         self.mutate(relative, "InboxDecision beginInbox(InboxReservation reservation)", "InboxDecision beginInbox(InboxKey key)")
@@ -120,31 +150,31 @@ class PersistenceCheckerTest(unittest.TestCase):
         self.assertIn("CHECK-JDBC-UOW-003", self.ids())
 
     def test_migration_and_rollback_state_guards_are_enforced(self) -> None:
-        relative = FILES[6]
+        relative = FILES[8]
         self.mutate(relative, "PROCESSING", "ACTIVE")
         self.assertIn("CHECK-JDBC-MIGRATION-002", self.ids())
         shutil.copy2(SOURCE / relative, self.root / relative)
         self.mutate(relative, "completed_at IS NULL", "completed_at IS NOT NULL")
         self.assertIn("CHECK-JDBC-MIGRATION-003", self.ids())
-        relative = FILES[8]
+        relative = FILES[10]
         self.mutate(relative, "cannot roll back migration 0003", "rollback allowed")
         self.assertIn("CHECK-JDBC-ROLLBACK-002", self.ids())
 
     def test_server_composition_root_is_enforced(self) -> None:
-        relative = FILES[10]
+        relative = FILES[12]
         self.mutate(relative, 'havingValue = "ORACLE"')
         self.assertIn("CHECK-JDBC-SERVER-002", self.ids())
         shutil.copy2(SOURCE / relative, self.root / relative)
-        self.mutate(FILES[11], "components.adapters.persistence-jdbc")
+        self.mutate(FILES[13], "components.adapters.persistence-jdbc")
         self.assertIn("CHECK-JDBC-SERVER-003", self.ids())
-        shutil.copy2(SOURCE / FILES[11], self.root / FILES[11])
-        self.mutate(FILES[12], "infranexum-adapter-persistence-jdbc")
+        shutil.copy2(SOURCE / FILES[13], self.root / FILES[13])
+        self.mutate(FILES[14], "infranexum-adapter-persistence-jdbc")
         self.assertIn("CHECK-JDBC-SERVER-004", self.ids())
-        shutil.copy2(SOURCE / FILES[12], self.root / FILES[12])
-        self.mutate(FILES[10], "memoryDataSource()", "memoryDataSourceDisabled()")
+        shutil.copy2(SOURCE / FILES[14], self.root / FILES[14])
+        self.mutate(FILES[12], "memoryDataSource()", "memoryDataSourceDisabled()")
         self.assertIn("CHECK-JDBC-SERVER-005", self.ids())
-        shutil.copy2(SOURCE / FILES[10], self.root / FILES[10])
-        self.mutate(FILES[13], "throw unavailable()", "return null")
+        shutil.copy2(SOURCE / FILES[12], self.root / FILES[12])
+        self.mutate(FILES[15], "throw unavailable()", "return null")
         self.assertIn("CHECK-JDBC-SERVER-005", self.ids())
 
     def test_reactor_and_policy_registration_are_enforced(self) -> None:

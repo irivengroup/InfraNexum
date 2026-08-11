@@ -250,11 +250,12 @@ public final class JdbcActivationOperationalRepository implements EntitlementRun
             ActivationManifest manifest,
             Instant acceptedAt) throws SQLException {
         ActivationManifestPayload payload = manifest.payload();
+        String jsonParameter = dialect.jsonParameter();
         String sql = "INSERT INTO " + table("core_activation_manifest")
                 + " (activation_id,installation_id,customer_id,customer_legal_name,profile,allocation_tier,"
                 + "catalog_version,host_limit,capabilities_json,quotas_json,valid_from,valid_until,grace_period_days,"
                 + "issued_at,issuer,sequence,key_id,signature_base64,manifest_sha256,accepted_at) "
-                + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                + "VALUES (?,?,?,?,?,?,?,?," + jsonParameter + "," + jsonParameter + ",?,?,?,?,?,?,?,?,?,?)";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             int index = 1;
             dialect.bindIdentifier(statement, index++, payload.activationId());
@@ -265,8 +266,8 @@ public final class JdbcActivationOperationalRepository implements EntitlementRun
             statement.setString(index++, payload.allocationTier().name());
             statement.setString(index++, payload.catalogVersion());
             statement.setLong(index++, payload.hostLimit());
-            statement.setString(index++, CanonicalJson.string(payload.capabilities().stream().sorted().toList()));
-            statement.setString(index++, CanonicalJson.string(new TreeMap<>(payload.quotas())));
+            dialect.bindJson(statement, index++, CanonicalJson.string(payload.capabilities().stream().sorted().toList()));
+            dialect.bindJson(statement, index++, CanonicalJson.string(new TreeMap<>(payload.quotas())));
             JdbcTemporal.bindInstant(statement, index++, payload.validFrom());
             JdbcTemporal.bindInstant(statement, index++, payload.validUntil());
             statement.setInt(index++, payload.gracePeriodDays());

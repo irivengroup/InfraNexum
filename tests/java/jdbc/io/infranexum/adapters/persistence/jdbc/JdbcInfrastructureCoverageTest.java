@@ -149,7 +149,19 @@ class JdbcInfrastructureCoverageTest {
         assertTrue(JdbcDatabaseDialect.ORACLE.isUniqueViolation(new SQLException("duplicate", "23000", 1)));
         assertFalse(JdbcDatabaseDialect.ORACLE.isUniqueViolation(new SQLException("other", "23000", 2)));
 
-        assertTrue(JdbcDatabaseDialect.POSTGRESQL.insertOutboxSql().contains("JSONB"));
+        assertEquals("CAST(? AS JSONB)", JdbcDatabaseDialect.POSTGRESQL.jsonParameter());
+        assertEquals("?", JdbcDatabaseDialect.ORACLE.jsonParameter());
+        RecordingStatement pgJson = new RecordingStatement();
+        JdbcDatabaseDialect.POSTGRESQL.bindJson(pgJson.proxy(), 1, "{\"value\":1}");
+        assertEquals("{\"value\":1}", pgJson.values.get(1));
+        RecordingStatement oracleJson = new RecordingStatement();
+        JdbcDatabaseDialect.ORACLE.bindJson(oracleJson.proxy(), 1, "{\"value\":2}");
+        Reader oracleReader = assertInstanceOf(Reader.class, oracleJson.values.get(1));
+        assertEquals("{\"value\":2}", readAll(oracleReader));
+        assertThrows(NullPointerException.class,
+                () -> JdbcDatabaseDialect.POSTGRESQL.bindJson(pgJson.proxy(), 2, null));
+
+        assertTrue(JdbcDatabaseDialect.POSTGRESQL.insertOutboxSql().contains("CAST(? AS JSONB)"));
         assertTrue(JdbcDatabaseDialect.ORACLE.insertOutboxSql().contains("INFRANEXUM_CORE_OUTBOX_EVENT"));
         assertTrue(JdbcDatabaseDialect.POSTGRESQL.claimReturningSql().contains("SKIP LOCKED"));
         assertThrows(UnsupportedOperationException.class, JdbcDatabaseDialect.ORACLE::claimReturningSql);
@@ -200,6 +212,30 @@ class JdbcInfrastructureCoverageTest {
         assertTrue(dataSource.sql.stream().anyMatch(value -> value.contains("MERGE INTO CORE_ENTITLEMENT_STATE")));
         assertTrue(dataSource.sql.stream().anyMatch(value -> value.contains("MERGE INTO CORE_ENTITLEMENT_INTEGRITY_PROOF")));
         assertTrue(dataSource.sql.stream().anyMatch(value -> value.contains("JSON_OBJECT")));
+        assertTrue(dataSource.sql.stream().anyMatch(value -> value.contains("CORE_ACTIVATION_MANIFEST")));
+    }
+
+    @Test
+    void postgresqlActivationManifestUsesExplicitJsonbParameters() {
+        NoOpDataSource dataSource = new NoOpDataSource();
+        JdbcActivationOperationalRepository repository =
+                new JdbcActivationOperationalRepository(dataSource, JdbcDatabaseDialect.POSTGRESQL);
+        InstallationIdentity identity = identity(21);
+        ActivationManifestPayload payload = paidPayload(identity, 2);
+        ActivationManifest manifest = new ActivationManifest(payload, signature());
+        ActivationVerificationResult result = new ActivationVerificationResult(
+                ActivationUsageState.ACTIVE, payload,
+                new QuotaAllocationPlan("2.0.0-draft.20", InstallationProfile.PRO, AllocationTier.STANDARD,
+                        Map.of("rsot.managed_hosts.max", 10L)),
+                payload.capabilities(), payload.validUntil().plus(30, ChronoUnit.DAYS));
+
+        repository.accept(identity, manifest, result, proof(identity, NOW.plusSeconds(4), 3), NOW.plusSeconds(4));
+
+        String insert = dataSource.sql.stream()
+                .filter(value -> value.contains("core_activation_manifest"))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(2, insert.split("CAST\\(\\? AS JSONB\\)", -1).length - 1);
     }
 
 
@@ -343,7 +379,7 @@ class JdbcInfrastructureCoverageTest {
             InvocationHandler handler = (proxy, method, args) -> switch (method.getName()) {
                 case "executeUpdate" -> 1;
                 case "executeQuery" -> emptyResultSet();
-                case "close", "setString", "setLong", "setInt", "setObject", "setNull" -> null;
+                case "close", "setString", "setLong", "setInt", "setObject", "setNull", "setCharacterStream" -> null;
                 default -> defaultValue(method.getReturnType());
             };
             return (PreparedStatement) Proxy.newProxyInstance(
@@ -429,6 +465,17 @@ class JdbcInfrastructureCoverageTest {
             @Override public <T> T unwrap(Class<T> iface) throws SQLException { throw new SQLException("not a wrapper"); }
             @Override public boolean isWrapperFor(Class<?> iface) { return false; }
         };
+    }
+
+
+    private static String readAll(Reader reader) throws IOException {
+        StringBuilder value = new StringBuilder();
+        char[] buffer = new char[128];
+        int read;
+        while ((read = reader.read(buffer)) != -1) {
+            value.append(buffer, 0, read);
+        }
+        return value.toString();
     }
 
     private static Object defaultValue(Class<?> type) {

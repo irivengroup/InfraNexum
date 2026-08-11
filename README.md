@@ -1,8 +1,8 @@
-# InfraNexum 2.0.0-alpha.0.26 — Java Reactor Closure & JDBC Coverage Hardening
+# InfraNexum 2.0.0-alpha.0.27 — JDBC JSON Type Binding Hardening
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
-`alpha.0.26` closes two defects exposed by the hosted JDK 25 reactor: Server test-signature drift and JDBC coverage that depended on PostgreSQL integration tests which were skipped in the coverage job. The Java coverage jobs now provision PostgreSQL 17 and apply the canonical migration catalogue before Maven; the independent module bootstrap installs production artifacts with test compilation disabled, then recompiles and verifies every module separately. Deterministic JDBC infrastructure tests cover dialect/error paths without a live database, while PostgreSQL live contracts cover transactions, workers, audit, entitlements and revocations.
+`alpha.0.27` closes the first defect exposed after PostgreSQL live coverage became mandatory: activation-manifest JSON was bound as an untyped VARCHAR even though PostgreSQL stores `capabilities_json` and `quotas_json` as JSONB. JDBC JSON binding is now a single dialect contract used by Outbox, Audit and Activation: PostgreSQL uses an explicit `CAST(? AS JSONB)` placeholder and Oracle streams JSON into CLOB columns. Persistence validation blocks direct structured-JSON `setString` regressions, while the existing PostgreSQL integration contract proves paid activation persistence against the real schema.
 
 This repository is an executable implementation increment derived from architecture baseline `2.0.0-draft.21` and the complete implementation roadmap.
 
