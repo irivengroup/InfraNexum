@@ -31,8 +31,6 @@ infranexum:
     activation-state: ${INFRANEXUM_ACTIVATION_STATE:NOT_REQUIRED}
     catalog-version: ${INFRANEXUM_CAPABILITY_CATALOG_VERSION:2.0.0-draft.20}
     profile-version: ${INFRANEXUM_PROFILE_VERSION:1}
-    quota-overrides: {}
-    dependencies: {}
   persistence:
     mode: ${INFRANEXUM_PERSISTENCE_MODE:POSTGRESQL}
     isolation: ${INFRANEXUM_PERSISTENCE_ISOLATION:READ_COMMITTED}
@@ -49,7 +47,7 @@ infranexum:
     mode: ${INFRANEXUM_SERVER_MODE:STANDALONE}
     region: ${INFRANEXUM_SERVER_REGION:local}
     site: ${INFRANEXUM_SERVER_SITE:local}
-    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.27}
+    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.28}
     architecture-baseline: ${INFRANEXUM_ARCHITECTURE_BASELINE:2.0.0-draft.21}
 
 management:

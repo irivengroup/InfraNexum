@@ -471,7 +471,7 @@ public final class JdbcTaskStore implements TaskStore {
             JdbcTemporal.bindInstant(statement, 1, now);
             statement.setInt(2, MAX_LEASE_RECOVERY_BATCH);
             try (ResultSet resultSet = statement.executeQuery()) {
-                while (resultSet.next() && result.size() < MAX_LEASE_RECOVERY_BATCH) {
+                while (resultSet.next()) {
                     result.add(new ExpiredLease(
                             new TaskId(dialect.readIdentifier(resultSet, "task_id")),
                             RetrySafety.valueOf(resultSet.getString("retry_safety")),
@@ -496,7 +496,7 @@ public final class JdbcTaskStore implements TaskStore {
                 statement.setMaxRows(limit);
             }
             try (ResultSet resultSet = statement.executeQuery()) {
-                while (resultSet.next() && result.size() < limit) {
+                while (resultSet.next()) {
                     result.add(new TaskId(dialect.readIdentifier(resultSet, "task_id")));
                 }
             }

@@ -87,6 +87,36 @@ public final class JdbcTaskStoreSmoke {
                 conflict, JdbcDatabaseDialect.POSTGRESQL).submit(
                         newTaskId(903), submission("different"), RetrySafety.RETRY_SAFE, NOW));
         conflict.assertExhausted();
+
+        Map<String, Object> wrongKeyRow = new LinkedHashMap<>(replayRow);
+        wrongKeyRow.put("idempotency_key", "other-key");
+        ScriptedDataSource wrongKey = new ScriptedDataSource(
+                Step.query("/*inx:task-idempotency*/", wrongKeyRow),
+                Step.query("/*inx:task-parameters*/", parameterRow));
+        expect(IdempotencyConflictException.class, () -> new JdbcTaskStore(
+                wrongKey, JdbcDatabaseDialect.POSTGRESQL).submit(
+                        newTaskId(910), submission("alpha"), RetrySafety.RETRY_SAFE, NOW));
+        wrongKey.assertExhausted();
+
+        Map<String, Object> wrongSafetyRow = new LinkedHashMap<>(replayRow);
+        wrongSafetyRow.put("retry_safety", "AT_MOST_ONCE");
+        ScriptedDataSource wrongSafety = new ScriptedDataSource(
+                Step.query("/*inx:task-idempotency*/", wrongSafetyRow),
+                Step.query("/*inx:task-parameters*/", parameterRow));
+        expect(IdempotencyConflictException.class, () -> new JdbcTaskStore(
+                wrongSafety, JdbcDatabaseDialect.POSTGRESQL).submit(
+                        newTaskId(911), submission("alpha"), RetrySafety.RETRY_SAFE, NOW));
+        wrongSafety.assertExhausted();
+
+        Map<String, Object> wrongNotBeforeRow = new LinkedHashMap<>(replayRow);
+        wrongNotBeforeRow.put("requested_not_before", NOW.plusSeconds(1));
+        ScriptedDataSource wrongNotBefore = new ScriptedDataSource(
+                Step.query("/*inx:task-idempotency*/", wrongNotBeforeRow),
+                Step.query("/*inx:task-parameters*/", parameterRow));
+        expect(IdempotencyConflictException.class, () -> new JdbcTaskStore(
+                wrongNotBefore, JdbcDatabaseDialect.POSTGRESQL).submit(
+                        newTaskId(912), submission("alpha"), RetrySafety.RETRY_SAFE, NOW));
+        wrongNotBefore.assertExhausted();
     }
 
     static void provesClaimCheckpointRetryAndCancellation() {
@@ -221,6 +251,24 @@ public final class JdbcTaskStoreSmoke {
                 duplicateId, JdbcDatabaseDialect.POSTGRESQL).submit(
                         TASK_ID, submission("alpha"), RetrySafety.RETRY_SAFE, NOW));
         duplicateId.assertExhausted();
+
+        ScriptedDataSource duplicateUnknown = new ScriptedDataSource(
+                Step.query("/*inx:task-idempotency*/"),
+                Step.updateFailure("/*inx:task-insert*/", new SQLException("duplicate unknown", "23505")),
+                Step.query("/*inx:task-idempotency*/"),
+                Step.query("/*inx:task-exists*/"));
+        expect(JdbcPersistenceException.class, () -> new JdbcTaskStore(
+                duplicateUnknown, JdbcDatabaseDialect.POSTGRESQL).submit(
+                        newTaskId(908), submission("alpha"), RetrySafety.RETRY_SAFE, NOW));
+        duplicateUnknown.assertExhausted();
+
+        ScriptedDataSource zeroInsert = new ScriptedDataSource(
+                Step.query("/*inx:task-idempotency*/"),
+                Step.update("/*inx:task-insert*/", 0));
+        expect(IllegalStateException.class, () -> new JdbcTaskStore(
+                zeroInsert, JdbcDatabaseDialect.POSTGRESQL).submit(
+                        newTaskId(909), submission("alpha"), RetrySafety.RETRY_SAFE, NOW));
+        zeroInsert.assertExhausted();
 
         ScriptedDataSource sqlFailure = new ScriptedDataSource(
                 Step.query("/*inx:task-idempotency*/"),
@@ -418,6 +466,13 @@ public final class JdbcTaskStoreSmoke {
                 TASK_ID, "worker-a", 1, NOW, new IllegalStateException("ignored after cancel"));
         terminalCancelled.assertExhausted();
 
+        ScriptedDataSource blankFailure = new ScriptedDataSource(
+                Step.query("/*inx:task-lease-state*/", leaseState("worker-a", 1L, "N", 3)),
+                Step.update("/*inx:task-fail*/", 1));
+        new JdbcTaskStore(blankFailure, JdbcDatabaseDialect.POSTGRESQL).markFailed(
+                TASK_ID, "worker-a", 1, NOW, retryPolicy(), new IllegalStateException("   "));
+        blankFailure.assertExhausted();
+
         String longFailure = "x".repeat(2_000);
         ScriptedDataSource longFailureSource = new ScriptedDataSource(
                 Step.query("/*inx:task-lease-state*/", leaseState("worker-a", 1L, "N", 3)),
@@ -513,6 +568,33 @@ public final class JdbcTaskStoreSmoke {
                         TASK_ID, "worker-a", 1, "resume", NOW, Duration.ofSeconds(30)));
         stale.assertExhausted();
 
+        ScriptedDataSource validButRejected = new ScriptedDataSource(
+                Step.update("/*inx:task-checkpoint*/", 0),
+                Step.query("/*inx:task-lease-state*/", leaseState("worker-a", 1L, "N", 1)));
+        expect(TaskLeaseLostException.class, () -> new JdbcTaskStore(
+                validButRejected, JdbcDatabaseDialect.POSTGRESQL).saveCheckpoint(
+                        TASK_ID, "worker-a", 1, "resume", NOW, Duration.ofSeconds(30)));
+        validButRejected.assertExhausted();
+
+        ScriptedDataSource nonRunningLease = new ScriptedDataSource(
+                Step.update("/*inx:task-checkpoint*/", 0),
+                Step.query("/*inx:task-lease-state*/", row(
+                        "status", "PENDING", "attempts", 1, "retry_safety", "RETRY_SAFE",
+                        "available_at", NOW, "lease_owner", "worker-a", "lease_version", 1L,
+                        "cancellation_requested", "N")));
+        expect(TaskLeaseLostException.class, () -> new JdbcTaskStore(
+                nonRunningLease, JdbcDatabaseDialect.POSTGRESQL).saveCheckpoint(
+                        TASK_ID, "worker-a", 1, "resume", NOW, Duration.ofSeconds(30)));
+        nonRunningLease.assertExhausted();
+
+        ScriptedDataSource wrongVersion = new ScriptedDataSource(
+                Step.update("/*inx:task-checkpoint*/", 0),
+                Step.query("/*inx:task-lease-state*/", leaseState("worker-a", 2L, "N", 1)));
+        expect(TaskLeaseLostException.class, () -> new JdbcTaskStore(
+                wrongVersion, JdbcDatabaseDialect.POSTGRESQL).saveCheckpoint(
+                        TASK_ID, "worker-a", 1, "resume", NOW, Duration.ofSeconds(30)));
+        wrongVersion.assertExhausted();
+
         ScriptedDataSource disappeared = new ScriptedDataSource(
                 Step.update("/*inx:task-checkpoint*/", 1),
                 Step.query("/*inx:task-checkpoint-read*/"));
@@ -566,6 +648,15 @@ public final class JdbcTaskStoreSmoke {
                 invalidLeaseVersion, JdbcDatabaseDialect.POSTGRESQL).renewLease(
                         TASK_ID, "worker-a", 0, NOW, Duration.ofSeconds(30)));
         invalidLeaseVersion.assertExhausted();
+
+        ScriptedDataSource invalidFailureLease = new ScriptedDataSource(
+                Step.query("/*inx:task-lease-state*/", leaseState("worker-a", 1L, "N", 1)));
+        expect(IllegalArgumentException.class, () -> new JdbcTaskStore(
+                invalidFailureLease, JdbcDatabaseDialect.POSTGRESQL).markFailed(
+                        TASK_ID, "worker-a", 0, NOW, new io.infranexum.core.events.ExponentialBackoffPolicy(
+                                2, Duration.ofSeconds(1), Duration.ofSeconds(2), 0.0, () -> 0.0),
+                        new IllegalStateException("failed")));
+        invalidFailureLease.assertExhausted();
 
         ScriptedDataSource overflow = new ScriptedDataSource(Step.update("/*inx:task-renew*/", 1));
         expect(IllegalArgumentException.class, () -> new JdbcTaskStore(

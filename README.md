@@ -1,8 +1,10 @@
-# InfraNexum 2.0.0-alpha.0.27 — JDBC JSON Type Binding Hardening
+# InfraNexum 2.0.0-alpha.0.28 — JDBC Coverage, Server Bootstrap & Compose Runtime
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
-`alpha.0.27` closes the first defect exposed after PostgreSQL live coverage became mandatory: activation-manifest JSON was bound as an untyped VARCHAR even though PostgreSQL stores `capabilities_json` and `quotas_json` as JSONB. JDBC JSON binding is now a single dialect contract used by Outbox, Audit and Activation: PostgreSQL uses an explicit `CAST(? AS JSONB)` placeholder and Oracle streams JSON into CLOB columns. Persistence validation blocks direct structured-JSON `setString` regressions, while the existing PostgreSQL integration contract proves paid activation persistence against the real schema.
+`alpha.0.28` closes the failures exposed after the PostgreSQL live contracts became mandatory. JDBC now exercises the activation/revocation read, corruption, rollback and transaction-failure branches that remained outside the 41 successful `alpha.0.27` tests. Server bootstrap no longer encodes optional maps as empty YAML scalars, configuration-property ownership remains inside the entitlements module, and the Pro/Advanced quota fixture follows the current quota catalogue.
+
+This increment also promotes the first directly executable Docker Compose topology: Java 25 Server + PostgreSQL 17, generated runtime secrets, checksum-validated migrations, fresh-install identity bootstrap, health checks, durable volumes, an internal backend network, smoke tests, backup/restore, explicit schema rollback and confirmed destructive reset. Web and Agent remain outside this first topology until their independent deployment contracts are promoted.
 
 This repository is an executable implementation increment derived from architecture baseline `2.0.0-draft.21` and the complete implementation roadmap.
 
@@ -240,7 +242,7 @@ For Core Audit specifically, the following still require implementation or targe
 
 Broader platform limits remain: installer provisioning, production Server packaging, IAM bounded contexts, Kafka transport, business domains and deployment topologies.
 
-Docker Compose is deliberately not shipped yet. A Compose topology will only be delivered when a fresh environment can build/start the Java 25 Server, run migrations, provision installation identity/secrets, and pass health/smoke checks with PostgreSQL, Web and Agent.
+A production-oriented reference Docker Compose topology is now shipped for the executable Java 25 Server with PostgreSQL, checksum-validated migrations, installation identity/secret bootstrap, health checks, backup/restore, controlled rollback and smoke tests. Web and Agent remain outside this first runtime topology until their independent deployment compositions are promoted.
 
 ## Required toolchains
 

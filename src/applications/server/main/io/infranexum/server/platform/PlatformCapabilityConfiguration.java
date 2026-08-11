@@ -3,8 +3,8 @@ package io.infranexum.server.platform;
 import io.infranexum.core.capabilities.CapabilityCatalog;
 import io.infranexum.core.capabilities.CapabilityRegistry;
 import io.infranexum.core.capabilities.QuotaCatalog;
-import io.infranexum.server.platform.entitlements.ActivationRuntimeProperties;
 import java.time.Clock;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -26,9 +26,9 @@ public class PlatformCapabilityConfiguration {
             PlatformCapabilityProperties properties,
             CapabilityCatalog capabilityCatalog,
             QuotaCatalog quotaCatalog,
-            ActivationRuntimeProperties entitlements) {
+            @Value("${infranexum.entitlements.enabled:true}") boolean entitlementsEnabled) {
         return new PlatformCapabilityService(
                 new CapabilityRegistry(capabilityCatalog, Clock.systemUTC()),
-                properties, quotaCatalog, entitlements.enabled());
+                properties, quotaCatalog, entitlementsEnabled);
     }
 }

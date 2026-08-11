@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.27",
-  "profile": "jdbc-json-type-binding-hardening",
+  "version": "2.0.0-alpha.0.28",
+  "profile": "jdbc-coverage-server-bootstrap-compose-runtime",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -14,7 +14,7 @@
     },
     {
       "id": "infranexum-server",
-      "status": "source-authoritative-server-composition-capability-test-signature-drift-repaired-durable-workers-lifecycle-composition-pending-hosted-java25-jacoco-server-proof-pending"
+      "status": "source-server-bootstrap-optional-map-binding-corrected-entitlement-properties-conditionally-owned-executable-spring-boot-jar-compose-runtime-defined-hosted-jdk25-server-verify-pending"
     },
     {
       "id": "infranexum-agent",
@@ -34,7 +34,7 @@
     },
     {
       "id": "adapter-persistence-jdbc-workers-v1",
-      "status": "postgresql-oracle-jdbc-persistence-workers-entitlements-revocations-dialect-owned-json-binding-deterministic-infrastructure-contracts-and-live-postgresql17-18-ci-contracts-defined-alpha0.27-postgresql-jsonb-proof-pending"
+      "status": "postgresql-oracle-jdbc-persistence-workers-entitlements-revocations-dialect-json-binding-41-hosted-postgresql-tests-passed-alpha0.27-deterministic-branch-closure-expanded-alpha0.28-no-jacoco-exclusions-hosted-98-line-branch-proof-pending"
     },
     {
       "id": "migration-catalogue-0001-0006",
@@ -42,23 +42,23 @@
     },
     {
       "id": "ci-foundation",
-      "status": "unix-only-source-integrity-full-reactor-fail-at-end-independent-per-module-clean-verify-postgresql17-live-jacoco-schema-bootstrap-postgresql17-18-integration-archive-portability-and-jdbc-json-binding-gated-hosted-alpha0.27-execution-pending"
+      "status": "unix-only-source-integrity-reactor-and-independent-module-verification-postgresql17-live-jacoco-detailed-gap-reporting-compose-contract-build-start-smoke-and-cleanup-defined"
     },
     {
       "id": "docker-compose-runtime",
-      "status": "not-delivered-until-java25-server-artifact-fresh-install-migrations-installation-identity-and-secret-provisioning-are-executable"
+      "status": "delivered-server-postgresql17-secret-init-checksummed-migrations-identity-bootstrap-readiness-durable-volumes-private-network-backup-restore-controlled-rollback-reset-static-contracts-passed-runtime-execution-pending"
     }
   ],
   "validation_reports": [],
   "validation_summary": {
-    "source_inventory_paths": 472,
+    "source_inventory_paths": 484,
     "source_integrity_tests": 44,
     "source_integrity_coverage_percent": 100,
     "source_integrity_violations": 0,
-    "python_tests": 187,
+    "python_tests": 200,
     "architecture_tests": 33,
     "architecture_violations": 0,
-    "toolchain_tests": 24,
+    "toolchain_tests": 25,
     "toolchain_coverage_percent": 99,
     "toolchain_violations": 0,
     "migration_tests": 24,
@@ -90,14 +90,14 @@
     "web_branch_coverage_percent": 98.28,
     "web_function_coverage_percent": 100,
     "repository_syntax_counts": {
-      "python": 46,
+      "python": 48,
       "json": 44,
-      "yaml": 18,
+      "yaml": 19,
       "xml": 9,
       "javascript": 13,
       "go": 8,
-      "shell": 1,
-      "java": 271
+      "shell": 4,
+      "java": 273
     },
     "archive_compatibility_tests": 12,
     "archive_compatibility_coverage_percent": 100,
@@ -109,27 +109,32 @@
     "architecture_coverage_status": "EXECUTED",
     "architecture_functional_tests": 33,
     "architecture_coverage_percent": 100,
-    "jdbc_module_tests_defined": 41,
+    "jdbc_module_tests_defined": 51,
     "jdbc_postgresql_live_tests_defined": 18,
     "server_module_tests_defined": 42,
     "server_capability_configuration_contract_local": "EXECUTED_JAVA21_STRICT_HARNESS",
-    "agent_target_toolchain_status": "NON_EXECUTED_NETWORK_UNAVAILABLE"
+    "agent_target_toolchain_status": "NON_EXECUTED_NETWORK_UNAVAILABLE",
+    "jdbc_deterministic_harness_tests_executed": 33,
+    "jdbc_explicit_source_branch_gaps_diagnostic": 0,
+    "compose_contract_tests": 12,
+    "compose_contract_status": "EXECUTED",
+    "compose_runtime_status": "NON_EXECUTED_DOCKER_UNAVAILABLE"
   },
   "source_layout": "All production solution spaces are contained below src/; Java, Go and Web tests are repository-level under tests/; canonical relative paths are limited to 120 characters and path components to 80 characters.",
   "source_integrity": {
     "canonical_inventory": "source-inventory.json",
     "git_blob_checksums": "source-files.sha256",
-    "tracked_files": 474,
-    "source_recorded_files": 473,
+    "tracked_files": 487,
+    "source_recorded_files": 486,
     "staged_snapshot_required": true,
     "pre_commit_hook": ".githooks/pre-commit"
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.27",
-    "archive_entries": 474,
+    "prefix": "infranexum-2.0.0-alpha.0.28",
+    "archive_entries": 487,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
-    "source_recorded_files": 473
+    "source_recorded_files": 486
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.27-validation-evidence.zip"
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.28-validation-evidence.zip"
 }

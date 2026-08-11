@@ -6,6 +6,7 @@ import io.infranexum.core.events.EventEnvelope;
 import io.infranexum.core.events.EventSource;
 import io.infranexum.core.events.EventType;
 import io.infranexum.core.events.ExponentialBackoffPolicy;
+import io.infranexum.core.events.InboxKey;
 import io.infranexum.core.events.InboxProcessingResult;
 import io.infranexum.core.events.InboxProcessor;
 import io.infranexum.core.events.OutboxStatus;
@@ -145,13 +146,61 @@ public final class JdbcAdapterSmoke {
         SimulatedDataSource dataSource = new SimulatedDataSource(JdbcDatabaseDialect.POSTGRESQL);
         JdbcTransactionalEventStore store = new JdbcTransactionalEventStore(
                 dataSource, JdbcDatabaseDialect.POSTGRESQL);
+        var retryPolicy = new ExponentialBackoffPolicy(
+                2, Duration.ofSeconds(1), Duration.ofSeconds(4), 0.0, () -> 0.0);
         expect(IllegalArgumentException.class, () -> new JdbcTransactionalEventStore(
                 dataSource, JdbcDatabaseDialect.POSTGRESQL, Connection.TRANSACTION_NONE));
+        expect(NullPointerException.class, () -> new JdbcTransactionalEventStore(null, JdbcDatabaseDialect.POSTGRESQL));
+        expect(NullPointerException.class, () -> new JdbcTransactionalEventStore(dataSource, null));
         expect(IllegalStateException.class, store::requireCurrentConnection);
+        expect(NullPointerException.class, () -> store.execute(null));
         expect(TransactionExecutionException.class, () -> store.execute(outer ->
                 store.execute(inner -> null)));
         expect(IllegalArgumentException.class,
                 () -> store.claimBatch("worker", 0, NOW, Duration.ofSeconds(1)));
+        expect(IllegalArgumentException.class,
+                () -> store.claimBatch("worker", 1_001, NOW, Duration.ofSeconds(1)));
+        expect(NullPointerException.class,
+                () -> store.claimBatch(null, 1, NOW, Duration.ofSeconds(1)));
+        expect(IllegalArgumentException.class,
+                () -> store.claimBatch("   ", 1, NOW, Duration.ofSeconds(1)));
+        expect(IllegalArgumentException.class,
+                () -> store.claimBatch("w".repeat(161), 1, NOW, Duration.ofSeconds(1)));
+        expect(NullPointerException.class,
+                () -> store.claimBatch("worker", 1, null, Duration.ofSeconds(1)));
+        expect(NullPointerException.class,
+                () -> store.claimBatch("worker", 1, NOW, null));
+        expect(IllegalArgumentException.class,
+                () -> store.claimBatch("worker", 1, NOW, Duration.ZERO));
+        expect(IllegalArgumentException.class,
+                () -> store.claimBatch("worker", 1, NOW, Duration.ofSeconds(-1)));
+        expect(IllegalArgumentException.class,
+                () -> store.claimBatch("worker", 1, Instant.MAX.minusSeconds(1), Duration.ofSeconds(10)));
+
+        var postCommit = store.execute(transaction -> {
+            transaction.afterCommit(() -> { throw new InterruptedException("stop"); });
+            transaction.afterCommit(() -> { throw new RuntimeException() {}; });
+            return "ok";
+        });
+        require(postCommit.postCommitFailures().size() == 2, "post-commit failures were not isolated");
+        require(Thread.currentThread().isInterrupted(), "post-commit interruption was not restored");
+        Thread.interrupted();
+
+        expect(TransactionExecutionException.class, () -> store.execute(transaction -> {
+            throw new InterruptedException("work interrupted");
+        }));
+        require(Thread.currentThread().isInterrupted(), "transaction interruption was not restored");
+        Thread.interrupted();
+
+        InboxKey missingInbox = new InboxKey("core.jdbc-smoke", event(998).eventId());
+        expect(TransactionExecutionException.class, () -> store.execute(transaction -> {
+            transaction.completeInbox(missingInbox, NOW);
+            return null;
+        }));
+        expect(TransactionExecutionException.class, () -> store.execute(transaction -> {
+            transaction.afterCommit(null);
+            return null;
+        }));
 
         EventEnvelope event = event(30);
         store.execute(transaction -> { transaction.append(event); return null; });
@@ -160,6 +209,20 @@ public final class JdbcAdapterSmoke {
                 () -> store.markPublished(event.eventId(), "intruder", NOW.plusSeconds(41)));
         expect(IllegalArgumentException.class,
                 () -> store.markPublished(event(999).eventId(), "owner", NOW.plusSeconds(41)));
+        expect(NullPointerException.class, () -> store.markPublished(null, "owner", NOW));
+        expect(NullPointerException.class, () -> store.markPublished(event.eventId(), null, NOW));
+        expect(IllegalArgumentException.class, () -> store.markPublished(event.eventId(), " ", NOW));
+        expect(NullPointerException.class, () -> store.markPublished(event.eventId(), "owner", null));
+        expect(NullPointerException.class, () -> store.markFailed(
+                null, "owner", NOW, retryPolicy, new RuntimeException("x")));
+        expect(NullPointerException.class, () -> store.markFailed(
+                event.eventId(), null, NOW, retryPolicy, new RuntimeException("x")));
+        expect(NullPointerException.class, () -> store.markFailed(
+                event.eventId(), "owner", null, retryPolicy, new RuntimeException("x")));
+        expect(NullPointerException.class, () -> store.markFailed(
+                event.eventId(), "owner", NOW, null, new RuntimeException("x")));
+        expect(NullPointerException.class, () -> store.markFailed(
+                event.eventId(), "owner", NOW, retryPolicy, null));
     }
 
     private static EventEnvelope event(int sequence) {

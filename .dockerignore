@@ -1,0 +1,17 @@
+.git
+.github
+.infranexum
+artifacts
+bin
+**/target
+**/__pycache__
+**/*.pyc
+**/coverage.out
+**/coverage-summary.txt
+InfraNexum-*.zip
+InfraNexum-*.patch
+tests
+validation
+docs
+tools
+requirements

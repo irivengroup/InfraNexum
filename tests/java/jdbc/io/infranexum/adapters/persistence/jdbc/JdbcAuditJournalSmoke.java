@@ -1,5 +1,6 @@
 package io.infranexum.adapters.persistence.jdbc;
 
+import io.infranexum.core.audit.AuditCanonicalizer;
 import io.infranexum.core.audit.AuditEntry;
 import io.infranexum.core.audit.AuditRecord;
 import io.infranexum.core.audit.AuditScope;
@@ -83,6 +84,12 @@ public final class JdbcAuditJournalSmoke {
         source.tamperHash(scope);
         require(!journal.verify(scope).valid(), "tampered audit hash was accepted");
         source.restoreHash(scope);
+        source.tamperSequence(scope, 2L);
+        require(!journal.verify(scope).valid(), "tampered audit sequence was accepted");
+        source.tamperSequence(scope, 1L);
+        source.tamperPreviousHash(scope, "e".repeat(64));
+        require(!journal.verify(scope).valid(), "tampered previous audit hash was accepted");
+        source.tamperPreviousHash(scope, AuditCanonicalizer.GENESIS_HASH);
         source.setImmutable(scope, "N");
         expect(JdbcPersistenceException.class, () -> journal.readRange(scope, 1, 1, 1));
         source.setImmutable(scope, "Y");
@@ -103,6 +110,30 @@ public final class JdbcAuditJournalSmoke {
         expect(JdbcPersistenceException.class, () -> broken.append(entry(30, scope, true)));
         expect(JdbcPersistenceException.class, () -> broken.readRange(scope, 1, 1, 1));
         expect(JdbcPersistenceException.class, () -> broken.verify(scope));
+
+        // Exercise both connection-configuration branches without relying on driver defaults.
+        SimulatedAuditDataSource preconfigured = new SimulatedAuditDataSource(JdbcDatabaseDialect.POSTGRESQL);
+        preconfigured.initialAutoCommit = false;
+        preconfigured.initialIsolation = Connection.TRANSACTION_SERIALIZABLE;
+        new JdbcAuditJournal(preconfigured, JdbcDatabaseDialect.POSTGRESQL, Connection.TRANSACTION_SERIALIZABLE)
+                .append(entry(31, AuditScope.organization("org-preconfigured"), true));
+
+        SimulatedAuditDataSource differentIsolation = new SimulatedAuditDataSource(JdbcDatabaseDialect.POSTGRESQL);
+        differentIsolation.initialIsolation = Connection.TRANSACTION_SERIALIZABLE;
+        new JdbcAuditJournal(differentIsolation, JdbcDatabaseDialect.POSTGRESQL, Connection.TRANSACTION_READ_COMMITTED)
+                .append(entry(32, AuditScope.organization("org-reconfigured"), true));
+
+        SimulatedAuditDataSource rejectedInsert = new SimulatedAuditDataSource(JdbcDatabaseDialect.POSTGRESQL);
+        rejectedInsert.failEntryInsert = true;
+        expect(JdbcPersistenceException.class, () -> new JdbcAuditJournal(
+                rejectedInsert, JdbcDatabaseDialect.POSTGRESQL)
+                .append(entry(33, AuditScope.organization("org-insert-rejected"), true)));
+
+        SimulatedAuditDataSource runtimeFailure = new SimulatedAuditDataSource(JdbcDatabaseDialect.POSTGRESQL);
+        runtimeFailure.insertRuntimeFailure = new IllegalStateException("simulated runtime failure");
+        expect(IllegalStateException.class, () -> new JdbcAuditJournal(
+                runtimeFailure, JdbcDatabaseDialect.POSTGRESQL)
+                .append(entry(34, AuditScope.organization("org-runtime-failure"), true)));
     }
 
     private static AuditEntry entry(int value, AuditScope scope, boolean correlation) {
@@ -161,6 +192,10 @@ public final class JdbcAuditJournalSmoke {
         private AuditState committed = new AuditState();
         private boolean skipHeadCreation;
         private boolean failHeadUpdate;
+        private boolean failEntryInsert;
+        private RuntimeException insertRuntimeFailure;
+        private boolean initialAutoCommit = true;
+        private int initialIsolation = Connection.TRANSACTION_READ_COMMITTED;
 
         private SimulatedAuditDataSource(JdbcDatabaseDialect dialect) { this.dialect = dialect; }
 
@@ -191,6 +226,14 @@ public final class JdbcAuditJournalSmoke {
             row.entryHash = row.originalEntryHash;
         }
 
+        private synchronized void tamperSequence(AuditScope scope, long sequence) {
+            committed.rowsFor(scope).get(0).sequence = sequence;
+        }
+
+        private synchronized void tamperPreviousHash(AuditScope scope, String previousHash) {
+            committed.rowsFor(scope).get(0).previousHash = previousHash;
+        }
+
         private synchronized void setImmutable(AuditScope scope, String value) {
             committed.rowsFor(scope).get(0).immutableFlag = value;
         }
@@ -199,8 +242,8 @@ public final class JdbcAuditJournalSmoke {
     private static Connection connectionProxy(SimulatedAuditDataSource owner, AuditState initial) {
         class Handler implements InvocationHandler {
             private AuditState working = initial;
-            private boolean autoCommit = true;
-            private int isolation = Connection.TRANSACTION_READ_COMMITTED;
+            private boolean autoCommit = owner.initialAutoCommit;
+            private int isolation = owner.initialIsolation;
             private boolean closed;
 
             @Override
@@ -276,6 +319,8 @@ public final class JdbcAuditJournalSmoke {
                 return owner.skipHeadCreation ? 0 : 1;
             }
             if (normalized.startsWith("INSERT INTO INFRANEXUM_CORE.AUDIT_ENTRY") || normalized.startsWith("INSERT INTO INFRANEXUM_CORE_AUDIT_ENTRY")) {
+                if (owner.insertRuntimeFailure != null) throw owner.insertRuntimeFailure;
+                if (owner.failEntryInsert) return 0;
                 String auditId = identifier(p.get(4));
                 if (rows.stream().anyMatch(row -> row.auditId.equals(auditId))) throw new SQLException("duplicate audit id", "23505");
                 AuditRow row = new AuditRow();

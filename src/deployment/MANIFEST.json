@@ -3,7 +3,7 @@
   "id": "deployment",
   "kind": "space",
   "owner": "team.platform-engineering",
-  "lifecycle": "planned",
+  "lifecycle": "active",
   "languages": [
     "yaml",
     "json",
@@ -11,7 +11,7 @@
   ],
   "dependencies": [],
   "source_baseline": [
-    "IAR-01 §4-5",
+    "IAR-01 \u00a74-5",
     "ADR-0003",
     "ADR-0004",
     "PGM-01-E01"

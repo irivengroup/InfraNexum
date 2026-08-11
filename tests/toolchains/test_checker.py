@@ -33,6 +33,7 @@ class ToolchainCheckerTest(unittest.TestCase):
             "src/applications/web/pnpm-workspace.yaml",
             ".github/workflows/foundation.yml",
             "tools/bootstrap-maven.ps1",
+            "src/deployment/docker/compose.yaml",
         ):
             target = self.root / relative
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -304,6 +305,21 @@ class ToolchainCheckerTest(unittest.TestCase):
             encoding="utf-8",
         )
         self.assertIn("CHECK-TOOLCHAIN-042", self.ids())
+
+    def test_docker_compose_runtime_gate_is_mandatory_and_fail_closed(self) -> None:
+        workflow_path = self.root / ".github/workflows/foundation.yml"
+        workflow = workflow_path.read_text(encoding="utf-8")
+        workflow_path.write_text(
+            workflow.replace("make compose-smoke", "echo compose-smoke-disabled", 1),
+            encoding="utf-8",
+        )
+        self.assertIn("CHECK-TOOLCHAIN-043", self.ids())
+
+        shutil.copy2(SOURCE / ".github/workflows/foundation.yml", workflow_path)
+        compose_path = self.root / "src/deployment/docker/compose.yaml"
+        compose = compose_path.read_text(encoding="utf-8")
+        compose_path.write_text(compose.replace("internal: true", "internal: false", 1), encoding="utf-8")
+        self.assertIn("CHECK-TOOLCHAIN-043", self.ids())
 
     def test_ci_targeted_reactor_test_tolerates_upstream_modules_without_matches(self) -> None:
         workflow_path = self.root / ".github/workflows/foundation.yml"

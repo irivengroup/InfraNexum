@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 
-.PHONY: postgresql-test-schema archive-compatibility-test archive-compatibility-check source-integrity-test source-integrity-check source-integrity-precommit source-integrity-hook-install source-integrity-update source-checksum-update architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-module-verify java-test verify-foundation verify clean-generated
+.PHONY: compose-contract-test compose-config compose-build compose-up compose-down compose-smoke compose-backup compose-restore compose-rollback compose-reset compose-logs postgresql-test-schema archive-compatibility-test archive-compatibility-check source-integrity-test source-integrity-check source-integrity-precommit source-integrity-hook-install source-integrity-update source-checksum-update architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-module-verify java-test verify-foundation verify clean-generated
 
 PYTHON ?= python3
 GO ?= go
@@ -20,6 +20,8 @@ REPORT_ROOT := artifacts/validation
 REPORT_ROOT_ABS := $(abspath $(REPORT_ROOT))
 AGENT_ROOT := $(APPLICATION_ROOT)/agent
 WEB_ROOT := $(APPLICATION_ROOT)/web
+COMPOSE_FILE := $(PRODUCT_ROOT)/deployment/docker/compose.yaml
+COMPOSE := docker compose -f $(COMPOSE_FILE)
 
 # Python validation packages live at repository root outside the src/ product boundary.
 # PYTHONPATH=. keeps validation imports deterministic on every runner.
@@ -293,6 +295,70 @@ JAVA_MODULES := \
 
 # Install production artifacts without tests first, then verify each module in isolation.
 # This prevents an upstream test/coverage failure from hiding downstream module failures.
+
+compose-contract-test:
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(REPOSITORY_ROOT) $(PYTHON) -m unittest discover -s $(TEST_ROOT)/deployment -p 'test_*.py'
+
+compose-config:
+	$(COMPOSE) config --quiet
+
+compose-build: compose-config
+	$(COMPOSE) build --pull server
+
+compose-up: compose-config
+	$(COMPOSE) up --detach --build --wait server
+
+compose-down:
+	$(COMPOSE) down --remove-orphans
+
+compose-logs:
+	$(COMPOSE) logs --no-color --tail=200 server postgres migrate
+
+compose-smoke:
+	@set -eu; \
+	port="$${INFRANEXUM_SERVER_PUBLISHED_PORT:-8080}"; \
+	curl --fail --silent --show-error "http://127.0.0.1:$$port/actuator/health/readiness" > /tmp/infranexum-readiness.json; \
+	grep -q '"status":"UP"' /tmp/infranexum-readiness.json; \
+	curl --fail --silent --show-error "http://127.0.0.1:$$port/api/v1/system/build" > /tmp/infranexum-build.json; \
+	grep -q '"product":"InfraNexum"' /tmp/infranexum-build.json; \
+	rm -f /tmp/infranexum-readiness.json /tmp/infranexum-build.json; \
+	echo "compose-smoke: PASS"
+
+compose-backup:
+	@set -eu; \
+	mkdir -p .infranexum/backups; \
+	backup=".infranexum/backups/infranexum-$$(date -u +%Y%m%dT%H%M%SZ).dump"; \
+	$(COMPOSE) exec -T postgres sh -eu -c 'export PGPASSWORD="$$(cat /run/infranexum-secrets/db-password)"; pg_dump --format=custom --no-owner --no-privileges --username=infranexum --dbname=infranexum' > "$$backup"; \
+	test -s "$$backup"; \
+	echo "Backup written to $$backup"
+
+compose-restore:
+	@set -eu; \
+	: "$${BACKUP_FILE:?BACKUP_FILE is required}"; \
+	test "$${CONFIRM_INFRANEXUM_RESTORE:-}" = "YES" || { echo "Refusing restore; set CONFIRM_INFRANEXUM_RESTORE=YES" >&2; exit 64; }; \
+	test -s "$$BACKUP_FILE" || { echo "Backup does not exist or is empty: $$BACKUP_FILE" >&2; exit 66; }; \
+	$(COMPOSE) up --detach --wait postgres; \
+	$(COMPOSE) stop server >/dev/null 2>&1 || true; \
+	cat "$$BACKUP_FILE" | $(COMPOSE) exec -T postgres sh -eu -c 'export PGPASSWORD="$$(cat /run/infranexum-secrets/db-password)"; dropdb --if-exists --username=infranexum infranexum; createdb --username=infranexum --owner=infranexum infranexum; pg_restore --exit-on-error --no-owner --no-privileges --username=infranexum --dbname=infranexum'; \
+	$(COMPOSE) run --rm migrate; \
+	$(COMPOSE) up --detach --wait server
+
+compose-rollback:
+	@set -eu; \
+	: "$${MIGRATION_ID:?MIGRATION_ID is required}"; \
+	test "$${CONFIRM_INFRANEXUM_ROLLBACK:-}" = "YES" || { echo "Refusing rollback; set CONFIRM_INFRANEXUM_ROLLBACK=YES" >&2; exit 64; }; \
+	$(COMPOSE) up --detach --wait postgres; \
+	$(MAKE) compose-backup; \
+	$(COMPOSE) stop server >/dev/null 2>&1 || true; \
+	$(COMPOSE) --profile maintenance run --rm -e MIGRATION_ID="$$MIGRATION_ID" -e CONFIRM_INFRANEXUM_ROLLBACK=YES rollback; \
+	echo "Rollback completed. Server remains stopped; deploy a code version compatible with migration $$MIGRATION_ID before restarting."
+
+compose-reset:
+	@set -eu; \
+	test "$${CONFIRM_INFRANEXUM_VOLUME_DELETE:-}" = "YES" || { echo "Refusing volume deletion; set CONFIRM_INFRANEXUM_VOLUME_DELETE=YES" >&2; exit 64; }; \
+	$(COMPOSE) down --volumes --remove-orphans; \
+	echo "InfraNexum Compose volumes removed"
+
 postgresql-test-schema:
 	@set -eu; \
 	: "$${PGHOST:?PGHOST is required}"; \

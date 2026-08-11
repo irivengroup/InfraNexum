@@ -81,7 +81,7 @@ class PlatformCapabilityServiceTest {
                 7,
                 DomainIdentifier.parse("01989c82-7001-7abc-8def-0123456789ab"),
                 Set.of("iam.local-auth", "iam.ldap"),
-                Map.of("iam.users.max", 250L),
+                Map.of("iam.users.max", 500L),
                 true,
                 true);
 
@@ -89,7 +89,7 @@ class PlatformCapabilityServiceTest {
 
         assertTrue(service.explain("iam.local-auth").available());
         assertTrue(service.explain("iam.ldap").available());
-        assertEquals(250, service.quotaPlan().limit("iam.users.max"));
+        assertEquals(500, service.quotaPlan().limit("iam.users.max"));
         assertEquals(AllocationTier.ADVANCED, service.quotaPlan().tier());
     }
 

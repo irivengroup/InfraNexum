@@ -1,6 +1,5 @@
 package io.infranexum.server;
 
-import io.infranexum.server.platform.entitlements.ActivationRuntimeProperties;
 import io.infranexum.server.configuration.ServerRuntimeProperties;
 import io.infranexum.server.platform.PlatformCapabilityProperties;
 import org.springframework.boot.SpringApplication;
@@ -11,8 +10,7 @@ import org.springframework.modulith.Modulith;
 @Modulith
 @EnableConfigurationProperties({
     ServerRuntimeProperties.class,
-    PlatformCapabilityProperties.class,
-    ActivationRuntimeProperties.class
+    PlatformCapabilityProperties.class
 })
 public class InfraNexumServerApplication {
     public static void main(String[] args) {

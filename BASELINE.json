@@ -1,7 +1,7 @@
 {
   "schema": "infranexum.source-baseline/v1",
   "product": "InfraNexum — Infrastructure Control & Governance Platform",
-  "implementation_version": "2.0.0-alpha.0.27",
+  "implementation_version": "2.0.0-alpha.0.28",
   "architecture_baseline": "2.0.0-draft.21",
   "roadmap_baseline": "1.0.0-draft.1",
   "architecture_archive_sha256": "372cf19929f8ea3b7586c3af3e7c5004e590cf746ff2d6d59d4d0b88912aea64",
@@ -32,7 +32,8 @@
     "CI coverage repair alpha.0.24: Core Entitlements tests expanded from 13 to 38 and the full Maven reactor switched to fail-at-end diagnostics; hosted JDK25 revealed remaining Entitlements coverage gaps and independent Audit correctness defects, which are closed in alpha.0.25.",
     "CI/JDK25 coverage and audit correctness repair alpha.0.25: Entitlements paid-runtime, manifest-validation and canonical-input branch coverage hardened without JaCoCo exclusions; Audit fixtures preserve requested scopes, signed manifest/control-character validation is fail-closed, concurrent audit tests surface task failures, and independent per-module Maven verification prevents upstream failures from masking downstream JDBC/Server quality defects.",
     "CI/JDK25 reactor and JDBC coverage closure alpha.0.26: Server capability-composition tests follow the real factory signature, independent Maven bootstrap skips test compilation only while installing production artifacts, PostgreSQL 17 is provisioned in Java coverage jobs, canonical migrations are reused, and live JDBC entitlement/revocation contracts are mandatory.",
-    "JDBC JSON type-binding hardening alpha.0.27: PostgreSQL JSONB writes use explicit dialect-owned CAST(? AS JSONB) placeholders, Oracle JSON CLOB writes use character streams, Outbox/Audit/Activation share the same binding contract, and Persistence validation blocks direct structured-JSON bindings that can regress to VARCHAR semantics."
+    "JDBC JSON type-binding hardening alpha.0.27: PostgreSQL JSONB writes use explicit dialect-owned CAST(? AS JSONB) placeholders, Oracle JSON CLOB writes use character streams, Outbox/Audit/Activation share the same binding contract, and Persistence validation blocks direct structured-JSON bindings that can regress to VARCHAR semantics.",
+    "CI/JDBC-Server runtime closure alpha.0.28: JDBC activation/revocation error-path coverage is expanded without JaCoCo exclusions, Spring Boot optional-map binding and Modulith configuration-property ownership are corrected, Pro Advanced quota fixtures follow the authoritative catalogue, and the first production-oriented Docker Compose Server/PostgreSQL topology ships with secret bootstrap, checksum migrations, fresh-install identity, health checks, backup/restore, controlled rollback and destructive-reset confirmation."
   ],
   "roadmap_archive_sha256": "11db7d27bbc79f688cd1fda31a24aaf31b56a56db36b6487b64154c148ab54d3",
   "engineering_governance_sha256": "f24357051a5401f598c3d77bbe5814d3759a176095537659243658ba3ff109c7"

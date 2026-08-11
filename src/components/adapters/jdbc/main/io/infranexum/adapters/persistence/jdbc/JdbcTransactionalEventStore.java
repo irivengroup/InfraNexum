@@ -358,7 +358,7 @@ public final class JdbcTransactionalEventStore
     private static String sanitizeFailure(Throwable failure) {
         String simpleName = failure.getClass().getSimpleName();
         String safe = simpleName.isBlank() ? "Failure" : simpleName;
-        return safe.length() <= MAX_FAILURE_LENGTH ? safe : safe.substring(0, MAX_FAILURE_LENGTH);
+        return safe.substring(0, Math.min(safe.length(), MAX_FAILURE_LENGTH));
     }
 
     private static List<String> runPostCommitActions(List<PostCommitAction> actions) {

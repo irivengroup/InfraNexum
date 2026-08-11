@@ -176,6 +176,17 @@ class JdbcInfrastructureCoverageTest {
             assertFalse(dialect.completeInboxSql().isBlank());
             assertFalse(dialect.inboxStatusSql().isBlank());
         }
+
+        InboxReservation reservation = new InboxReservation(
+                new InboxKey("core.coverage", identifier),
+                new EventType("core.coverage.created.v1"),
+                "a".repeat(64), NOW);
+        assertFalse(JdbcDatabaseDialect.ORACLE.tryReserveInbox(
+                oracleReservationConnection(new SQLException("duplicate", "23000", 1)), reservation));
+        SQLException nonUnique = new SQLException("storage unavailable", "08006", 2);
+        SQLException observed = assertThrows(SQLException.class, () -> JdbcDatabaseDialect.ORACLE.tryReserveInbox(
+                oracleReservationConnection(nonUnique), reservation));
+        assertEquals(nonUnique, observed);
     }
 
     @Test
@@ -268,6 +279,31 @@ class JdbcInfrastructureCoverageTest {
         JdbcPersistenceException wrapped = assertThrows(JdbcPersistenceException.class,
                 () -> revocations.isKeyRevoked("key-1", NOW));
         assertEquals(cause, wrapped.getCause());
+    }
+
+
+    private static Connection oracleReservationConnection(SQLException failure) {
+        Savepoint savepoint = new Savepoint() {
+            @Override public int getSavepointId() { return 1; }
+            @Override public String getSavepointName() { return "oracle-reservation"; }
+        };
+        PreparedStatement statement = (PreparedStatement) Proxy.newProxyInstance(
+                JdbcInfrastructureCoverageTest.class.getClassLoader(),
+                new Class<?>[] {PreparedStatement.class},
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "executeUpdate" -> throw failure;
+                    case "setString", "setObject", "setNull", "close" -> null;
+                    default -> defaultValue(method.getReturnType());
+                });
+        return (Connection) Proxy.newProxyInstance(
+                JdbcInfrastructureCoverageTest.class.getClassLoader(),
+                new Class<?>[] {Connection.class},
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "setSavepoint" -> savepoint;
+                    case "prepareStatement" -> statement;
+                    case "rollback", "releaseSavepoint", "close" -> null;
+                    default -> defaultValue(method.getReturnType());
+                });
     }
 
     private static ActivationManifestPayload paidPayload(InstallationIdentity identity, long sequence) {

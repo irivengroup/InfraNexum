@@ -7,9 +7,6 @@ import io.infranexum.core.capabilities.AllocationTier;
 import io.infranexum.core.capabilities.DeploymentRole;
 import io.infranexum.core.capabilities.InstallationProfile;
 import io.infranexum.core.capabilities.InstallationTopology;
-import io.infranexum.server.platform.entitlements.ActivationRuntimeProperties;
-import java.nio.file.Path;
-import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -25,11 +22,8 @@ class PlatformCapabilityConfigurationTest {
         var configuration = new PlatformCapabilityConfiguration();
         var capabilityCatalog = configuration.capabilityCatalog(properties);
         var quotaCatalog = configuration.quotaCatalog(properties);
-        var entitlements = new ActivationRuntimeProperties(
-                false, "customer-1", null, Path.of("integrity.key"), Path.of("proofs"),
-                4096, Duration.ofMinutes(5));
         var service = configuration.platformCapabilityService(
-                properties, capabilityCatalog, quotaCatalog, entitlements);
+                properties, capabilityCatalog, quotaCatalog, false);
         assertEquals(119, service.quotaPlan().limits().size());
         assertEquals(21, service.snapshot().decisions().size());
         var snapshot = CapabilitySnapshotResponse.from(service.snapshot());
