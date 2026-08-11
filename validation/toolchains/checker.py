@@ -363,6 +363,14 @@ class ToolchainChecker:
                 f"Maven Wrapper must be made executable before use in jobs: {sorted(unprepared_jobs)}",
             )
 
+        reactor_verify = "run: ./mvnw --batch-mode --no-transfer-progress --fail-at-end verify"
+        if reactor_verify not in workflow:
+            self._add(
+                "CHECK-TOOLCHAIN-040",
+                workflow_path,
+                "The full Java reactor verify must use --fail-at-end so one CI run exposes every failing module",
+            )
+
         targeted_lines = [
             line.strip()
             for line in workflow.splitlines()

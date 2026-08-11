@@ -259,6 +259,15 @@ class ToolchainCheckerTest(unittest.TestCase):
         )
         self.assertIn("CHECK-TOOLCHAIN-034", self.ids())
 
+    def test_full_reactor_verify_must_report_all_failing_modules(self) -> None:
+        workflow_path = self.root / ".github/workflows/foundation.yml"
+        workflow = workflow_path.read_text(encoding="utf-8")
+        workflow_path.write_text(
+            workflow.replace("--no-transfer-progress --fail-at-end verify", "--no-transfer-progress verify", 1),
+            encoding="utf-8",
+        )
+        self.assertIn("CHECK-TOOLCHAIN-040", self.ids())
+
     def test_ci_targeted_reactor_test_tolerates_upstream_modules_without_matches(self) -> None:
         workflow_path = self.root / ".github/workflows/foundation.yml"
         workflow = workflow_path.read_text(encoding="utf-8")

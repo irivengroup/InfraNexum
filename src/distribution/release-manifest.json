@@ -2,7 +2,7 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.23",
+  "version": "2.0.0-alpha.0.24",
   "profile": "development-foundation-ci-deterministic-workers-unix-archive-compatibility-repair",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
@@ -79,15 +79,15 @@
     "../../artifacts/validation/web-smoke.json"
   ],
   "validation_summary": {
-    "source_inventory_paths": 464,
+    "source_inventory_paths": 467,
     "source_integrity_tests": 44,
     "source_integrity_coverage_percent": 100,
     "source_integrity_violations": 0,
-    "python_tests": 183,
+    "python_tests": 184,
     "architecture_tests": 33,
     "architecture_coverage_percent": 100,
     "architecture_violations": 0,
-    "toolchain_tests": 21,
+    "toolchain_tests": 22,
     "toolchain_coverage_percent": 99,
     "toolchain_violations": 0,
     "migration_tests": 24,
@@ -132,24 +132,25 @@
     "archive_compatibility_coverage_percent": 100,
     "archive_compatibility_violations": 0,
     "archive_compatibility_max_project_path": 114,
-    "archive_compatibility_max_member_path": 142
+    "archive_compatibility_max_member_path": 142,
+    "entitlements_module_tests_defined": 38
   },
   "source_layout": "All production solution spaces are contained below src/; Java, Go and Web tests are repository-level under tests/; canonical relative paths are limited to 120 characters and path components to 80 characters.",
   "source_integrity": {
     "canonical_inventory": "source-inventory.json",
     "git_blob_checksums": "source-files.sha256",
-    "tracked_files": 466,
-    "source_recorded_files": 465,
+    "tracked_files": 469,
+    "source_recorded_files": 468,
     "staged_snapshot_required": true,
     "pre_commit_hook": ".githooks/pre-commit"
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.23",
-    "archive_entries": 494,
+    "prefix": "infranexum-2.0.0-alpha.0.24",
+    "archive_entries": 497,
     "reproducible": true,
     "source_checksum_manifest": "source-files.sha256",
-    "source_recorded_files": 465,
+    "source_recorded_files": 468,
     "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
-    "release_recorded_files": 493
+    "release_recorded_files": 496
   }
 }

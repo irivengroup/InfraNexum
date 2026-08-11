@@ -124,7 +124,7 @@ jobs:
       - name: Prepare Maven Wrapper
         run: chmod 0755 mvnw && test -x mvnw
       - name: Verify Java modules and executable Server package
-        run: ./mvnw --batch-mode --no-transfer-progress verify
+        run: ./mvnw --batch-mode --no-transfer-progress --fail-at-end verify
 
 
   postgresql-integration:

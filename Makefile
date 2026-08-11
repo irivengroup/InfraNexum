@@ -282,7 +282,7 @@ web-smoke:
 web-verify: web-test web-smoke
 
 java-test:
-	./mvnw --batch-mode --no-transfer-progress verify
+	./mvnw --batch-mode --no-transfer-progress --fail-at-end verify
 
 verify-foundation: source-integrity-test source-integrity-check archive-compatibility-test archive-compatibility-check architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke agent-vet agent-test agent-build web-verify
 
