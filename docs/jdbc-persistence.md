@@ -72,10 +72,14 @@ En mode PostgreSQL ou Oracle, le déploiement doit fournir un bean `DataSource` 
 
 ```bash
 make persistence-test persistence-check java-jdbc-smoke java-jdbc-workers-smoke
-./mvnw --batch-mode --no-transfer-progress verify
+make postgresql-test-schema
+./mvnw --batch-mode --no-transfer-progress --fail-at-end verify
+make java-module-verify
 ```
 
-La CI PostgreSQL applique les migrations `0001` à `0006`, puis vérifie l’atomicité métier/outbox, le rollback, l’inbox, la déduplication, les claims concurrents, les retries, l’ownership des leases et les transitions du `JdbcTaskStore` sur PostgreSQL 17 et 18.
+Les deux jobs JaCoCo Java de la CI démarrent PostgreSQL 17, appliquent les migrations `0001` à `0006` via le target canonique `postgresql-test-schema`, puis exécutent les tests live. Les contrats PostgreSQL ne sont donc pas autorisés à disparaître du calcul de couverture par absence de DSN. La matrice d’intégration PostgreSQL 17/18 réutilise le même target de migration et vérifie l’atomicité métier/outbox, le rollback, l’inbox, la déduplication, les claims concurrents, les retries, l’ownership des leases, les transitions du `JdbcTaskStore`, la persistance Entitlements et les revocations.
+
+`JdbcInfrastructureCoverageTest` couvre en complément, sans base externe, les branches de dialecte PostgreSQL/Oracle, mapping JDBC, conversions temporelles, erreurs SQL et corruption du proof store. Les tests live restent l’autorité pour la sémantique transactionnelle du moteur réel ; ils ne sont plus le seul moyen d’atteindre les branches d’infrastructure.
 
 ## Limites opérationnelles
 

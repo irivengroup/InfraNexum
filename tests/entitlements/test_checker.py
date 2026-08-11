@@ -199,7 +199,7 @@ class EntitlementCheckerTest(unittest.TestCase):
             (FILES[1], "java-entitlement-runtime-smoke"),
             (FILES[2], "entitlements-test"),
             (FILES[2], "java-entitlement-runtime-smoke"),
-            (FILES[2], "0004-core-entitlements/postgresql.sql"),
+            (FILES[2], "make postgresql-test-schema"),
         )
         for relative, token in mutations:
             path = self.root / relative

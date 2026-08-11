@@ -246,7 +246,7 @@ class EntitlementChecker:
             ("Makefile", "java-entitlement-runtime-smoke"),
             (".github/workflows/foundation.yml", "entitlements-test"),
             (".github/workflows/foundation.yml", "java-entitlement-runtime-smoke"),
-            (".github/workflows/foundation.yml", "0004-core-entitlements/postgresql.sql"),
+            (".github/workflows/foundation.yml", "make postgresql-test-schema"),
         )
         for relative, token in checks:
             path = self.root / relative

@@ -141,7 +141,7 @@ class AuditChecker:
             (Path("Makefile"), "audit-test"),
             (Path("Makefile"), "java-audit-smoke"),
             (self.WORKFLOW, "audit-test"),
-            (self.WORKFLOW, "0005-core-audit/postgresql.sql"),
+            (self.WORKFLOW, "make postgresql-test-schema"),
         )
         for relative, token in checks:
             text = self._text(self.root / relative, "CHECK-AUD-WIRE-001")

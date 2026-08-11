@@ -112,6 +112,29 @@ jobs:
     needs: source-integrity
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: infranexum
+          POSTGRES_USER: infranexum
+          POSTGRES_PASSWORD: infranexum-ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U infranexum -d infranexum"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGDATABASE: infranexum
+      PGUSER: infranexum
+      PGPASSWORD: infranexum-ci
+      INFRANEXUM_POSTGRESQL_TEST_URL: jdbc:postgresql://127.0.0.1:5432/infranexum
+      INFRANEXUM_POSTGRESQL_TEST_USERNAME: infranexum
+      INFRANEXUM_POSTGRESQL_TEST_PASSWORD: infranexum-ci
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -123,6 +146,10 @@ jobs:
           cache: maven
       - name: Prepare Maven Wrapper
         run: chmod 0755 mvnw && test -x mvnw
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends postgresql-client
+      - name: Apply PostgreSQL test schema
+        run: make postgresql-test-schema
       - name: Verify Java modules and executable Server package
         run: ./mvnw --batch-mode --no-transfer-progress --fail-at-end verify
 
@@ -131,6 +158,29 @@ jobs:
     needs: source-integrity
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: infranexum
+          POSTGRES_USER: infranexum
+          POSTGRES_PASSWORD: infranexum-ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U infranexum -d infranexum"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGDATABASE: infranexum
+      PGUSER: infranexum
+      PGPASSWORD: infranexum-ci
+      INFRANEXUM_POSTGRESQL_TEST_URL: jdbc:postgresql://127.0.0.1:5432/infranexum
+      INFRANEXUM_POSTGRESQL_TEST_USERNAME: infranexum
+      INFRANEXUM_POSTGRESQL_TEST_PASSWORD: infranexum-ci
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -142,6 +192,10 @@ jobs:
           cache: maven
       - name: Prepare Maven Wrapper
         run: chmod 0755 mvnw && test -x mvnw
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends postgresql-client
+      - name: Apply PostgreSQL test schema
+        run: make postgresql-test-schema
       - name: Verify every Java module independently
         run: make java-module-verify
 
@@ -183,17 +237,15 @@ jobs:
         run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends postgresql-client
       - name: Apply paired PostgreSQL migrations
         env:
+          PGHOST: 127.0.0.1
+          PGPORT: '5432'
+          PGDATABASE: infranexum
+          PGUSER: infranexum
           PGPASSWORD: infranexum-ci
-        run: |
-          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file src/distribution/migrations/0001-core-schema-history/postgresql.sql
-          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file src/distribution/migrations/0002-core-transactional-events/postgresql.sql
-          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file src/distribution/migrations/0003-core-inbox-reservation/postgresql.sql
-          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file src/distribution/migrations/0004-core-entitlements/postgresql.sql
-          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file src/distribution/migrations/0005-core-audit/postgresql.sql
-          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file src/distribution/migrations/0006-core-workers/postgresql.sql
+        run: make postgresql-test-schema
       - name: Run live JDBC transaction and concurrency contracts
         env:
           INFRANEXUM_POSTGRESQL_TEST_URL: jdbc:postgresql://127.0.0.1:5432/infranexum
           INFRANEXUM_POSTGRESQL_TEST_USERNAME: infranexum
           INFRANEXUM_POSTGRESQL_TEST_PASSWORD: infranexum-ci
-        run: ./mvnw --batch-mode --no-transfer-progress -pl src/components/adapters/jdbc -am -Dtest=PostgreSqlJdbcTransactionalEventStoreTest,PostgreSqlJdbcAuditJournalTest,PostgreSqlJdbcTaskStoreTest -Dinfranexum.surefire.failIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false test
+        run: ./mvnw --batch-mode --no-transfer-progress -pl src/components/adapters/jdbc -am -Dtest=PostgreSqlJdbcTransactionalEventStoreTest,PostgreSqlJdbcAuditJournalTest,PostgreSqlJdbcTaskStoreTest,PostgreSqlJdbcEntitlementPersistenceTest -Dinfranexum.surefire.failIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false test

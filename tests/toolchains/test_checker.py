@@ -282,10 +282,28 @@ class ToolchainCheckerTest(unittest.TestCase):
         makefile_path = self.root / "Makefile"
         makefile = makefile_path.read_text(encoding="utf-8")
         makefile_path.write_text(
-            makefile.replace("-DskipTests -Djacoco.skip=true install", "-DskipTests install", 1),
+            makefile.replace("-Dmaven.test.skip=true -Djacoco.skip=true install", "-DskipTests -Djacoco.skip=true install", 1),
             encoding="utf-8",
         )
         self.assertIn("CHECK-TOOLCHAIN-041", self.ids())
+
+
+    def test_java_coverage_jobs_require_live_postgresql_contracts(self) -> None:
+        workflow_path = self.root / ".github/workflows/foundation.yml"
+        workflow = workflow_path.read_text(encoding="utf-8")
+        workflow_path.write_text(
+            workflow.replace("run: make postgresql-test-schema", "run: echo schema-disabled", 1),
+            encoding="utf-8",
+        )
+        self.assertIn("CHECK-TOOLCHAIN-042", self.ids())
+
+        shutil.copy2(SOURCE / ".github/workflows/foundation.yml", workflow_path)
+        workflow = workflow_path.read_text(encoding="utf-8")
+        workflow_path.write_text(
+            workflow.replace(",PostgreSqlJdbcEntitlementPersistenceTest", "", 1),
+            encoding="utf-8",
+        )
+        self.assertIn("CHECK-TOOLCHAIN-042", self.ids())
 
     def test_ci_targeted_reactor_test_tolerates_upstream_modules_without_matches(self) -> None:
         workflow_path = self.root / ".github/workflows/foundation.yml"

@@ -391,7 +391,7 @@ class ToolchainChecker:
         independent_contract = (
             makefile is not None
             and "java-module-verify:" in makefile
-            and "-DskipTests -Djacoco.skip=true install" in makefile
+            and "-Dmaven.test.skip=true -Djacoco.skip=true install" in makefile
             and '-pl "$$module" clean verify' in makefile
             and all(module in makefile for module in required_modules)
         )
@@ -404,7 +404,27 @@ class ToolchainChecker:
             self._add(
                 "CHECK-TOOLCHAIN-041",
                 workflow_path,
-                "CI must independently verify every Java module after a skip-tests dependency install so upstream coverage failures cannot hide downstream defects",
+                "CI must independently verify every Java module after a production-only dependency install that skips test compilation so upstream coverage failures cannot hide downstream defects",
+            )
+
+        jdbc_coverage_jobs = {
+            "java": job_bodies.get("java", ""),
+            "java-module-coverage": module_coverage_job,
+        }
+        missing_live_jdbc = []
+        for name, body in jdbc_coverage_jobs.items():
+            required_fragments = (
+                "image: postgres:17",
+                "INFRANEXUM_POSTGRESQL_TEST_URL: jdbc:postgresql://127.0.0.1:5432/infranexum",
+                "run: make postgresql-test-schema",
+            )
+            if any(fragment not in body for fragment in required_fragments):
+                missing_live_jdbc.append(name)
+        if missing_live_jdbc or "PostgreSqlJdbcEntitlementPersistenceTest" not in workflow:
+            self._add(
+                "CHECK-TOOLCHAIN-042",
+                workflow_path,
+                "Java coverage jobs must run the live PostgreSQL JDBC contracts, including entitlement persistence, so JaCoCo does not depend on skipped integration tests",
             )
 
         targeted_lines = [

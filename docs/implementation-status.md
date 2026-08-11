@@ -1,9 +1,17 @@
 
-### 2.0.0-alpha.0.25 — Entitlements coverage hardening
+### 2.0.0-alpha.0.26 — fermeture du reactor Java et couverture JDBC
 
-Le déficit JaCoCo observé sous JDK 25 sur `infranexum-core-entitlements` (66 % lignes / 64 % branches) est traité par des tests comportementaux supplémentaires couvrant l'import d'activation, la compensation transactionnelle, les preuves temporelles duales, le runtime authority Lite et les invariants des value objects. Aucun seuil JaCoCo n'est abaissé et aucune exclusion n'est ajoutée. Le verify Maven complet utilise désormais `--fail-at-end` afin qu'un seul run CI expose tous les modules Java restant sous 98 % au lieu de s'arrêter au premier échec.
+Le run hébergé `alpha.0.25` confirme désormais sous JDK 25 les gates JaCoCo de Contracts, Events, Workers, Capabilities, Entitlements et Audit. Il révèle deux derniers défauts structurels : `PlatformCapabilityConfigurationTest` appelait encore l’ancienne signature de `platformCapabilityService(...)`, et l’adaptateur JDBC tombait à 73 % lignes / 64 % branches parce que ses 13 tests PostgreSQL live étaient `Skipped` dans le job de couverture.
 
-# InfraNexum 2.0.0-alpha.0.25 — état d’implémentation
+La dérive Server est corrigée en construisant le service de capabilities avec les mêmes dépendances que la composition Spring réelle (`CapabilityCatalog`, `QuotaCatalog`, `ActivationRuntimeProperties`) et le test couvre aussi les projections publiques de snapshot/quota. Le bootstrap de `java-module-verify` utilise désormais `maven.test.skip=true` uniquement pour installer les artefacts de production : aucun test n’est compilé pendant ce bootstrap, puis chaque module est recompilé et exécuté par un `clean verify` indépendant.
+
+Les jobs Linux `java` et `java-module-coverage` disposent désormais d’un PostgreSQL 17 healthy, appliquent le catalogue canonique de migrations avec `make postgresql-test-schema`, puis exécutent Maven avec les variables JDBC live. Les contrats PostgreSQL ne sont donc plus optionnels au moment où JaCoCo calcule le bundle JDBC. La matrice PostgreSQL 17/18 réutilise le même target de migration afin d’éviter trois implémentations divergentes du bootstrap SQL.
+
+La couverture JDBC est également découplée autant que possible de la base live : `JdbcInfrastructureCoverageTest` couvre de manière déterministe les dialectes PostgreSQL/Oracle, conversions temporelles, identifiants, violations uniques, SQL de claims, erreurs JDBC, proof store et corruption de CLOB ; `PostgreSqlJdbcEntitlementPersistenceTest` complète les preuves live pour identité d’installation, états Lite/payants, revocations et rollback atomique. Aucun seuil JaCoCo n’est abaissé et aucune exclusion n’est ajoutée.
+
+Les gates Toolchains verrouillent ces invariants : `CHECK-TOOLCHAIN-041` interdit le retour à un bootstrap qui compile les tests, et `CHECK-TOOLCHAIN-042` exige PostgreSQL live + migrations + contrat Entitlements dans les deux jobs de couverture Java. Le statut reste **NON TERMINÉ** jusqu’au prochain reactor JDK 25 hébergé, qui doit confirmer JDBC et Server à ≥98 % lignes/branches.
+
+# InfraNexum 2.0.0-alpha.0.26 — état d’implémentation
 
 ## alpha.0.23 — deterministic Workers shutdown & Unix archive compatibility
 

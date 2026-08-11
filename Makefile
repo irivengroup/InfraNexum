@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 
-.PHONY: archive-compatibility-test archive-compatibility-check source-integrity-test source-integrity-check source-integrity-precommit source-integrity-hook-install source-integrity-update source-checksum-update architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-module-verify java-test verify-foundation verify clean-generated
+.PHONY: postgresql-test-schema archive-compatibility-test archive-compatibility-check source-integrity-test source-integrity-check source-integrity-precommit source-integrity-hook-install source-integrity-update source-checksum-update architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-module-verify java-test verify-foundation verify clean-generated
 
 PYTHON ?= python3
 GO ?= go
@@ -293,8 +293,18 @@ JAVA_MODULES := \
 
 # Install production artifacts without tests first, then verify each module in isolation.
 # This prevents an upstream test/coverage failure from hiding downstream module failures.
+postgresql-test-schema:
+	@set -eu; \
+	: "$${PGHOST:?PGHOST is required}"; \
+	: "$${PGUSER:?PGUSER is required}"; \
+	: "$${PGDATABASE:?PGDATABASE is required}"; \
+	for migration in $$(find src/distribution/migrations -mindepth 2 -maxdepth 2 -name postgresql.sql -print | sort); do \
+		echo "Applying $$migration"; \
+		psql --set ON_ERROR_STOP=1 --file "$$migration"; \
+	done
+
 java-module-verify:
-	./mvnw --batch-mode --no-transfer-progress -DskipTests -Djacoco.skip=true install
+	./mvnw --batch-mode --no-transfer-progress -Dmaven.test.skip=true -Djacoco.skip=true install
 	@failures=""; \
 	for module in $(JAVA_MODULES); do \
 		echo "=== Independent Maven verify: $$module ==="; \

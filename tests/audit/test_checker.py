@@ -144,7 +144,7 @@ class AuditCheckerTest(unittest.TestCase):
             (FILES[1], "audit-test"),
             (FILES[1], "java-audit-smoke"),
             (FILES[2], "audit-test"),
-            (FILES[2], "0005-core-audit/postgresql.sql"),
+            (FILES[2], "make postgresql-test-schema"),
             (FILES[3], "components/core/audit"),
             (FILES[13], "components.core.audit"),
             (FILES[14], "infranexum-core-audit"),

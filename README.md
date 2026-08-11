@@ -1,6 +1,8 @@
-# InfraNexum 2.0.0-alpha.0.25 — Repository Layout Hardening
+# InfraNexum 2.0.0-alpha.0.26 — Java Reactor Closure & JDBC Coverage Hardening
 
 **InfraNexum — Infrastructure Control & Governance Platform**
+
+`alpha.0.26` closes two defects exposed by the hosted JDK 25 reactor: Server test-signature drift and JDBC coverage that depended on PostgreSQL integration tests which were skipped in the coverage job. The Java coverage jobs now provision PostgreSQL 17 and apply the canonical migration catalogue before Maven; the independent module bootstrap installs production artifacts with test compilation disabled, then recompiles and verifies every module separately. Deterministic JDBC infrastructure tests cover dialect/error paths without a live database, while PostgreSQL live contracts cover transactions, workers, audit, entitlements and revocations.
 
 This repository is an executable implementation increment derived from architecture baseline `2.0.0-draft.21` and the complete implementation roadmap.
 
