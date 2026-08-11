@@ -16,6 +16,7 @@ class CoreWorkersMigrationTest(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.migration = (
             Path(__file__).resolve().parents[2]
+            / "src"
             / "distribution"
             / "migrations"
             / "0006-core-workers"

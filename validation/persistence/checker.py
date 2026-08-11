@@ -22,26 +22,26 @@ class PersistenceChecker:
 
     def run(self) -> tuple[PersistenceViolation, ...]:
         store_path = self.root / (
-            "components/adapters/jdbc/main/"
+            "src/components/adapters/jdbc/main/"
             "io/infranexum/adapters/persistence/jdbc/JdbcTransactionalEventStore.java"
         )
         dialect_path = store_path.with_name("JdbcDatabaseDialect.java")
         transaction_path = self.root / (
-            "components/core/events/main/"
+            "src/components/core/events/main/"
             "io/infranexum/core/events/EventTransaction.java"
         )
-        postgres_path = self.root / "distribution/migrations/0003-core-inbox-reservation/postgresql.sql"
-        oracle_path = self.root / "distribution/migrations/0003-core-inbox-reservation/oracle.sql"
+        postgres_path = self.root / "src/distribution/migrations/0003-core-inbox-reservation/postgresql.sql"
+        oracle_path = self.root / "src/distribution/migrations/0003-core-inbox-reservation/oracle.sql"
         rollback_pg = postgres_path.parent / "rollback/postgresql.sql"
         rollback_oracle = oracle_path.parent / "rollback/oracle.sql"
         server_config_path = self.root / (
-            "applications/server/main/io/infranexum/server/persistence/"
+            "src/applications/server/main/io/infranexum/server/persistence/"
             "EventPersistenceConfiguration.java"
         )
-        server_manifest_path = self.root / "applications/server/MANIFEST.json"
-        server_pom_path = self.root / "applications/server/pom.xml"
+        server_manifest_path = self.root / "src/applications/server/MANIFEST.json"
+        server_pom_path = self.root / "src/applications/server/pom.xml"
         unavailable_data_source_path = self.root / (
-            "applications/server/main/io/infranexum/server/persistence/"
+            "src/applications/server/main/io/infranexum/server/persistence/"
             "UnavailableDataSource.java"
         )
 
@@ -210,7 +210,7 @@ class PersistenceChecker:
     def _check_reactor(self) -> None:
         path = self.root / "pom.xml"
         text = self._read(path, "CHECK-JDBC-REACTOR-001")
-        if text is not None and "components/adapters/jdbc" not in text:
+        if text is not None and "src/components/adapters/jdbc" not in text:
             self._add("CHECK-JDBC-REACTOR-002", path, "JDBC adapter module is absent from the Maven reactor")
 
     def _check_policy(self) -> None:

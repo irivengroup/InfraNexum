@@ -27,17 +27,17 @@ class ToolchainCheckerTest(unittest.TestCase):
             ".python-version",
             "pom.xml",
             ".mvn/wrapper/maven-wrapper.properties",
-            "applications/web/package.json",
-            "applications/web/pnpm-lock.yaml",
-            "applications/web/pnpm-workspace.yaml",
+            "src/applications/web/package.json",
+            "src/applications/web/pnpm-lock.yaml",
+            "src/applications/web/pnpm-workspace.yaml",
             ".github/workflows/foundation.yml",
         ):
             target = self.root / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(SOURCE / relative, target)
-        go_target = self.root / "applications/agent/go.mod"
+        go_target = self.root / "src/applications/agent/go.mod"
         go_target.parent.mkdir(parents=True)
-        shutil.copy2(SOURCE / "applications/agent/go.mod", go_target)
+        shutil.copy2(SOURCE / "src/applications/agent/go.mod", go_target)
 
     def tearDown(self) -> None:
         self.temp.cleanup()
@@ -95,7 +95,7 @@ class ToolchainCheckerTest(unittest.TestCase):
         self.assertIn("CHECK-TOOLCHAIN-011", self.ids())
 
     def test_go_module_must_exist_and_match(self) -> None:
-        path = self.root / "applications/agent/go.mod"
+        path = self.root / "src/applications/agent/go.mod"
         path.write_text(path.read_text(encoding="utf-8").replace("toolchain go1.26.5", "toolchain go1.25.0"), encoding="utf-8")
         self.assertIn("CHECK-TOOLCHAIN-009", self.ids())
         path.unlink()
@@ -103,7 +103,7 @@ class ToolchainCheckerTest(unittest.TestCase):
 
 
     def test_web_runtime_package_and_lockfile_are_strictly_pinned(self) -> None:
-        package_path = self.root / "applications/web/package.json"
+        package_path = self.root / "src/applications/web/package.json"
         package = json.loads(package_path.read_text(encoding="utf-8"))
         package["packageManager"] = "pnpm@latest"
         package["engines"] = {"node": ">=22"}
@@ -128,14 +128,14 @@ class ToolchainCheckerTest(unittest.TestCase):
         self.assertIn("CHECK-TOOLCHAIN-014", self.ids())
 
     def test_web_lockfile_is_required_and_uses_expected_format(self) -> None:
-        lock_path = self.root / "applications/web/pnpm-lock.yaml"
+        lock_path = self.root / "src/applications/web/pnpm-lock.yaml"
         lock_path.write_text("lockfileVersion: '8.0'\n", encoding="utf-8")
         self.assertIn("CHECK-TOOLCHAIN-023", self.ids())
         lock_path.unlink()
         self.assertIn("CHECK-TOOLCHAIN-022", self.ids())
 
     def test_web_workspace_settings_match_lockfile_and_npmrc_is_forbidden(self) -> None:
-        workspace_path = self.root / "applications/web/pnpm-workspace.yaml"
+        workspace_path = self.root / "src/applications/web/pnpm-workspace.yaml"
         workspace_path.write_text("autoInstallPeers: true\n", encoding="utf-8")
         self.assertIn("CHECK-TOOLCHAIN-032", self.ids())
 
@@ -145,8 +145,8 @@ class ToolchainCheckerTest(unittest.TestCase):
         workspace_path.unlink()
         self.assertIn("CHECK-TOOLCHAIN-030", self.ids())
 
-        shutil.copy2(SOURCE / "applications/web/pnpm-workspace.yaml", workspace_path)
-        npmrc_path = self.root / "applications/web/.npmrc"
+        shutil.copy2(SOURCE / "src/applications/web/pnpm-workspace.yaml", workspace_path)
+        npmrc_path = self.root / "src/applications/web/.npmrc"
         npmrc_path.write_text("auto-install-peers=false\n", encoding="utf-8")
         self.assertIn("CHECK-TOOLCHAIN-033", self.ids())
 

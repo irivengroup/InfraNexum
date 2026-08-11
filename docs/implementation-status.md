@@ -1,10 +1,22 @@
-# InfraNexum 2.0.0-alpha.0.20 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.21 — état d’implémentation
+
+## alpha.0.21 — Product Source Containment
+
+**Statut : implémenté localement ; certification hébergée cible encore requise.**
+
+Tous les espaces constituant réellement la solution sont désormais contenus sous `src/` : applications, composants, moteurs, provisioning, installateur, déploiement, distribution/migrations et SDK. Les tests Java, Go et Web sont physiquement externes sous `tests/`; `validation/`, `tools/`, `docs/` et `.github/` restent également hors du périmètre produit.
+
+Les tests Java sont raccordés aux modules par des `testSourceDirectory` Maven explicites au niveau dépôt. Les tests Go same-package sont matérialisés uniquement dans un workspace temporaire isolé par `tools/materialize_go_tests.py`, ce qui préserve l'accès aux invariants non exportés sans réintroduire de tests sous `src/`. Les tests Web résident sous `tests/web/`.
+
+Source Integrity bloque désormais toute réapparition d'un espace produit historique à la racine, tout test sous `src/`, toute racine Maven de tests qui ne cible pas `tests/`, ainsi que les références de release qui ne remontent pas correctement de `src/distribution/` vers `BASELINE.json` et `artifacts/validation/`. Le budget de chemins introduit en `alpha.0.20` reste inchangé : 120 caractères par chemin canonique et 80 par composant.
+
+Les packages Java, coordonnées Maven, APIs, schémas de base, identifiants logiques des composants et contrats runtime restent inchangés. Cette passe est une migration physique et de gouvernance du dépôt ; elle ne remplace aucune fonctionnalité métier.
 
 ## alpha.0.20 — Repository Layout Hardening
 
-La structure physique du dépôt est aplatie afin d’éliminer le risque de dépassement de longueur de chemin observé lors de l’extraction Windows. Les espaces `applications`, `components`, `distribution`, `deployment`, `engines`, `installer`, `provisioning`, `sdk`, `tests`, `validation` et `tools` sont désormais directement à la racine du dépôt.
+À `alpha.0.20`, la structure physique du dépôt avait été aplatie afin d’éliminer le risque de dépassement de longueur de chemin observé lors de l’extraction Windows. `alpha.0.21` conserve cette réduction de profondeur mais replace tous les espaces produit sous `src/`, avec les tests et outils de validation à l'extérieur.
 
-Les modules Java conservent leurs packages et coordonnées Maven, mais utilisent des racines physiques courtes `main/`, `test/` et `resources/`. L’adaptateur JDBC est physiquement situé dans `components/adapters/jdbc`; son identifiant logique `components.adapters.persistence-jdbc`, son package `io.infranexum.adapters.persistence.jdbc` et l’artifact Maven `infranexum-adapter-persistence-jdbc` restent inchangés.
+Les modules Java conservent leurs packages et coordonnées Maven et leurs racines produit courtes `main/` et `resources/`; les racines de tests sont externalisées sous `tests/java/...` depuis `alpha.0.21`. L’adaptateur JDBC est physiquement situé dans `src/components/adapters/jdbc`; son identifiant logique `components.adapters.persistence-jdbc`, son package `io.infranexum.adapters.persistence.jdbc` et l’artifact Maven `infranexum-adapter-persistence-jdbc` restent inchangés.
 
 Le gate Source Integrity impose maintenant **120 caractères maximum par chemin relatif** et **80 caractères maximum par composant de chemin**. Le chemin canonique le plus long de cet incrément mesure **116 caractères**. Le préfixe de l’archive source est limité à `infranexum-<version>` et contrôlé par le même gate.
 
@@ -26,7 +38,7 @@ La fermeture de PGM-02-E07 exige encore la composition du `TaskStore`, du `TaskS
 
 **Statut de l’incrément : implémenté localement, certification cible partielle. Statut de l’epic PGM-02-E07 : NON TERMINÉ.**
 
-Le nouveau module `components/core/workers` fournit un ordonnanceur idempotent, un `TaskStore` de référence thread-safe et borné, un worker unitaire et un pool à concurrence fixe. Les contrats de sûreté couvrent les leases versionnés, le fencing des workers obsolètes, le heartbeat, les checkpoints, l’annulation coopérative, les retries uniquement pour les tâches déclarées `RETRY_SAFE` et le fail-closed `AT_MOST_ONCE`.
+Le nouveau module `src/components/core/workers` fournit un ordonnanceur idempotent, un `TaskStore` de référence thread-safe et borné, un worker unitaire et un pool à concurrence fixe. Les contrats de sûreté couvrent les leases versionnés, le fencing des workers obsolètes, le heartbeat, les checkpoints, l’annulation coopérative, les retries uniquement pour les tâches déclarées `RETRY_SAFE` et le fail-closed `AT_MOST_ONCE`.
 
 L’arrêt ne surdéclare jamais l’état : lorsqu’un handler ignore l’interruption, le délai d’arrêt reste borné mais le pool demeure `STOPPING` et `ShutdownReport.terminated=false` jusqu’à la terminaison réelle du thread.
 
@@ -43,7 +55,7 @@ La correction devient préventive : `source-integrity` peut maintenant reconstru
 
 Un hook versionné `.githooks/pre-commit` appelle `make source-integrity-precommit`. Ce target exécute les tests, impose le tracking Git, valide le snapshot staged, vérifie le manifeste SHA-256 des blobs staged et exécute `git diff --cached --check`. L’installation locale est explicite et idempotente avec `make source-integrity-hook-install`; la CI active également la validation staged après `actions/checkout`. Aucun contrôle existant n’est assoupli.
 Le target pré-commit n’écrit aucun rapport persistant : ses fichiers de couverture et diagnostics sont temporaires puis supprimés. Le commit ne peut donc pas modifier silencieusement les preuves de validation ou invalider le manifeste SHA-256 de livraison.
-Le contrôle d’intégrité est séparé en deux niveaux : `distribution/source-files.sha256` couvre le snapshot Git tracké à partir des **blobs immuables de l’index Git**, ce qui neutralise les conversions LF/CRLF de `.gitattributes`; `artifacts/validation/release-files.sha256` couvre les octets réellement présents dans le payload de l’archive, preuves de validation comprises. Un patch Git reste ainsi cohérent entre Windows et Linux sans dépendre de fichiers volontairement ignorés par Git.
+Le contrôle d’intégrité est séparé en deux niveaux : `src/distribution/source-files.sha256` couvre le snapshot Git tracké à partir des **blobs immuables de l’index Git**, ce qui neutralise les conversions LF/CRLF de `.gitattributes`; `artifacts/validation/release-files.sha256` couvre les octets réellement présents dans le payload de l’archive, preuves de validation comprises. Un patch Git reste ainsi cohérent entre Windows et Linux sans dépendre de fichiers volontairement ignorés par Git.
 
 Preuves locales `alpha.0.17` : **31/31 tests source-integrity, 100 % lignes/branches, inventaire 411 chemins, 0 violation sur le snapshot staged complet et son manifeste Git-blob SHA-256**. La reproduction exacte des 10 omissions du runner échoue avant commit avec **26 violations** lorsque le manifeste staged reste inchangé : 10 `CHECK-SOURCE-GIT-002`, 1 `CHECK-SOURCE-GIT-004` et 15 `CHECK-SOURCE-STAGED-002`, dont 10 absences d’inventaire et 5 imports Java non résolus. Même après régénération volontaire du manifeste sur l’index incomplet, le candidat reste refusé avec **25 violations** (10 tracking + 15 snapshot staged), ce qui prouve l’indépendance des barrières. Architecture-as-Code passe **29/29** avec **100 % lignes/branches** ; le gate toolchain passe **19/19** avec **99 %**. Les autres gates Python restent ≥98 %, les 8 smokes Java autonomes passent sous OpenJDK 21, le Web passe 27/27 et l’Agent passe localement sous Go 1.23.2 avec race detector et 98,4 % de couverture. Les toolchains cibles Java 25, Go 1.26.5 et Node 24.18.1/pnpm 11.17.0 restent à confirmer par la CI hébergée.
 
@@ -57,7 +69,7 @@ La preuve locale de fermeture du dépôt a été exécutée dans un snapshot Git
 
 ## Sources concernées par le checkout incomplet
 
-Les 17 chemins signalés par le runner sont conservés dans la livraison et dans `distribution/source-inventory.json` :
+Les 17 chemins signalés par le runner sont conservés dans la livraison et dans `src/distribution/source-inventory.json` :
 
 - 5 tests Server Entitlements (`ActivationAdministrationServiceTest`, `ActivationRuntimeConfigurationTest`, `EntitlementMutationInterceptorTest`, `EntitlementWebMvcConfigurationTest`, `EntitlementWebServerStartupGuardTest`) ;
 - 6 sources JDBC (`FileIntegrityProofStore`, `JdbcActivationOperationalRepository`, `JdbcConnectionAccess`, `JdbcPersistenceException`, `JdbcRevocationRegistry`, `JdbcTransactionalEventStore`) ;
@@ -103,7 +115,7 @@ Les 37 scénarios ont été compilés avec `javac -Xlint:all -Werror` et exécut
 Le fichier canonique suivant est présent dans la livraison :
 
 ```text
-components/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/JdbcTransactionalEventStore.java
+src/components/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/JdbcTransactionalEventStore.java
 ```
 
 `persistence-test` dépend désormais de `persistence-check`. Si cette source ou un autre contrat obligatoire disparaît du checkout, le gate statique échoue avant la création des fixtures de test. Le scénario a été vérifié explicitement : suppression temporaire du fichier → `CHECK-JDBC-STORE-001`, sans `FileNotFoundError`.

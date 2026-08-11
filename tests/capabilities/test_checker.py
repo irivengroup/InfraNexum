@@ -20,21 +20,21 @@ SOURCE = Path(__file__).resolve().parents[2]
 FILES = (
     "pom.xml",
     "validation/architecture/policy.json",
-    "components/core/capabilities/MANIFEST.json",
-    "components/core/capabilities/pom.xml",
-    "components/core/capabilities/resources/io/infranexum/core/capabilities/capability-contract-pack.json",
-    "components/core/capabilities/resources/io/infranexum/core/capabilities/capability-catalog.csv",
-    "components/core/capabilities/resources/io/infranexum/core/capabilities/quota-catalog.csv",
-    "components/core/capabilities/resources/io/infranexum/core/capabilities/quota-policy.json",
-    "components/core/capabilities/main/io/infranexum/core/capabilities/CapabilityRegistry.java",
-    "components/core/capabilities/main/io/infranexum/core/capabilities/CapabilityEnvironment.java",
-    "components/core/capabilities/main/io/infranexum/core/capabilities/QuotaCatalog.java",
-    "components/core/capabilities/main/io/infranexum/core/capabilities/QuotaPolicy.java",
-    "applications/server/main/io/infranexum/server/platform/PlatformCapabilityController.java",
-    "applications/server/main/io/infranexum/server/platform/PlatformCapabilityConfiguration.java",
-    "applications/server/pom.xml",
-    "applications/server/MANIFEST.json",
-    "components/core/capabilities/main/io/infranexum/core/capabilities/QuotaDefinition.java",
+    "src/components/core/capabilities/MANIFEST.json",
+    "src/components/core/capabilities/pom.xml",
+    "src/components/core/capabilities/resources/io/infranexum/core/capabilities/capability-contract-pack.json",
+    "src/components/core/capabilities/resources/io/infranexum/core/capabilities/capability-catalog.csv",
+    "src/components/core/capabilities/resources/io/infranexum/core/capabilities/quota-catalog.csv",
+    "src/components/core/capabilities/resources/io/infranexum/core/capabilities/quota-policy.json",
+    "src/components/core/capabilities/main/io/infranexum/core/capabilities/CapabilityRegistry.java",
+    "src/components/core/capabilities/main/io/infranexum/core/capabilities/CapabilityEnvironment.java",
+    "src/components/core/capabilities/main/io/infranexum/core/capabilities/QuotaCatalog.java",
+    "src/components/core/capabilities/main/io/infranexum/core/capabilities/QuotaPolicy.java",
+    "src/applications/server/main/io/infranexum/server/platform/PlatformCapabilityController.java",
+    "src/applications/server/main/io/infranexum/server/platform/PlatformCapabilityConfiguration.java",
+    "src/applications/server/pom.xml",
+    "src/applications/server/MANIFEST.json",
+    "src/components/core/capabilities/main/io/infranexum/core/capabilities/QuotaDefinition.java",
 )
 
 
@@ -47,7 +47,7 @@ class CapabilityCheckerTest(unittest.TestCase):
             target = self.root / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(SOURCE / relative, target)
-        (self.root / "components/domains").mkdir(parents=True, exist_ok=True)
+        (self.root / "src/components/domains").mkdir(parents=True, exist_ok=True)
 
     def tearDown(self) -> None:
         self.temp.cleanup()
@@ -234,7 +234,7 @@ class CapabilityCheckerTest(unittest.TestCase):
         self.assertIn("CHECK-CAP-JAVA-005", self.ids())
 
     def test_reactor_server_manifest_and_policy_wiring_are_enforced(self) -> None:
-        self.mutate(FILES[0], "    <module>components/core/capabilities</module>\n")
+        self.mutate(FILES[0], "    <module>src/components/core/capabilities</module>\n")
         self.assertIn("CHECK-CAP-WIRING-005", self.ids())
         self.reset(FILES[0])
         self.mutate(FILES[14], "infranexum-core-capabilities")
@@ -253,12 +253,12 @@ class CapabilityCheckerTest(unittest.TestCase):
         self.assertIn("CHECK-CAP-WIRING-008", self.ids())
 
     def test_domain_profile_branching_is_blocked(self) -> None:
-        path = self.root / "components/domains/example/ProfileDriven.java"
+        path = self.root / "src/components/domains/example/ProfileDriven.java"
         path.parent.mkdir(parents=True)
         path.write_text("class ProfileDriven { Object x = InstallationProfile.PRO; }", encoding="utf-8")
         self.assertIn("CHECK-CAP-DOMAIN-002", self.ids())
         path.unlink()
-        broken = self.root / "components/domains/example/Broken.java"
+        broken = self.root / "src/components/domains/example/Broken.java"
         broken.write_text("class Broken {}", encoding="utf-8")
         with patch.object(Path, "read_text", side_effect=OSError("denied")):
             self.assertIn("CHECK-CAP-DOMAIN-001", self.ids())

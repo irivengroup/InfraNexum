@@ -1,6 +1,6 @@
 {
   "schema": "infranexum.architecture-policy/v1",
-  "source_root": ".",
+  "source_root": "src",
   "required_structural_spaces": [
     "applications",
     "components",
@@ -158,12 +158,14 @@
     "installer",
     "deployment",
     "distribution",
-    "sdk",
-    "tests",
-    "validation",
-    "tools"
+    "sdk"
   ],
   "manifest_id_overrides": {
     "components/adapters/jdbc": "components.adapters.persistence-jdbc"
-  }
+  },
+  "allowed_support_roots": [
+    "tests",
+    "validation",
+    "tools"
+  ]
 }

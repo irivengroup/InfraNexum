@@ -94,12 +94,28 @@ class ArchitectureChecker:
                 "allowed_code_roots must be a non-empty array of top-level directory names",
             )
             allowed_roots = []
-        allowed = {self.source_root / item for item in allowed_roots}
+        support_roots = self.policy.get("allowed_support_roots", [])
+        if not isinstance(support_roots, list) or not all(
+            isinstance(item, str) and item and "/" not in item and "\\" not in item
+            for item in support_roots
+        ):
+            self._add(
+                "CHECK-ARCH-SRC-005",
+                self.policy_path,
+                "allowed_support_roots must be an array of top-level directory names",
+            )
+            support_roots = []
+
+        product_bases = {self.source_root / item for item in allowed_roots}
+        support_bases = {self.root / item for item in support_roots}
+        allowed = product_bases | support_bases
         for path in self._repository_paths():
             if not path.is_file() or path.suffix not in self._CODE_EXTENSIONS:
                 continue
             if not any(path.is_relative_to(base) for base in allowed):
-                rendered = sorted(item.name for item in allowed)
+                rendered = sorted(
+                    [f"src/{item}" for item in allowed_roots] + list(support_roots)
+                )
                 self._add(
                     "CHECK-ARCH-SRC-002",
                     path,

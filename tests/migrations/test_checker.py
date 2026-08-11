@@ -16,7 +16,7 @@ import yaml
 from validation.migrations.checker import MigrationChecker
 from validation.migrations.cli import main as cli_main
 
-SOURCE = Path(__file__).resolve().parents[2] / "distribution/migrations"
+SOURCE = Path(__file__).resolve().parents[2] / "src/distribution/migrations"
 
 
 class MigrationCheckerTest(unittest.TestCase):

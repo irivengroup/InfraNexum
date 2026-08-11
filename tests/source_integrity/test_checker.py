@@ -4,6 +4,7 @@ import contextlib
 import io
 import json
 import runpy
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -24,8 +25,8 @@ from validation.source_integrity.checker import (
 from validation.source_integrity.cli import main as cli_main
 
 
-POM = """<project xmlns=\"http://maven.apache.org/POM/4.0.0\"><modelVersion>4.0.0</modelVersion><groupId>io.infranexum</groupId><artifactId>root</artifactId><version>1</version><packaging>pom</packaging><modules><module>components/module</module></modules></project>"""
-MODULE_POM = """<project xmlns=\"http://maven.apache.org/POM/4.0.0\"><modelVersion>4.0.0</modelVersion><groupId>io.infranexum</groupId><artifactId>module</artifactId><version>1</version></project>"""
+POM = """<project xmlns=\"http://maven.apache.org/POM/4.0.0\"><modelVersion>4.0.0</modelVersion><groupId>io.infranexum</groupId><artifactId>root</artifactId><version>1</version><packaging>pom</packaging><modules><module>src/components/module</module></modules></project>"""
+MODULE_POM = """<project xmlns=\"http://maven.apache.org/POM/4.0.0\"><modelVersion>4.0.0</modelVersion><groupId>io.infranexum</groupId><artifactId>module</artifactId><version>1</version><build><testSourceDirectory>${maven.multiModuleProjectDirectory}/tests/java/module</testSourceDirectory></build></project>"""
 A_JAVA = """package io.infranexum.a;\nimport io.infranexum.b.B;\npublic final class A { private final B b = new B(); }\n"""
 B_JAVA = """package io.infranexum.b;\npublic final class B {}\n"""
 
@@ -47,9 +48,13 @@ class SourceIntegrityCheckerTest(unittest.TestCase):
                 )
             ) + "\n",
         )
-        self.write("components/module/pom.xml", MODULE_POM)
-        self.write("components/module/main/io/infranexum/a/A.java", A_JAVA)
-        self.write("components/module/main/io/infranexum/b/B.java", B_JAVA)
+        self.write("src/components/module/pom.xml", MODULE_POM)
+        self.write("src/components/module/main/io/infranexum/a/A.java", A_JAVA)
+        self.write("src/components/module/main/io/infranexum/b/B.java", B_JAVA)
+        self.write(
+            "tests/java/module/io/infranexum/a/ATest.java",
+            "package io.infranexum.a; final class ATest {}\n",
+        )
         self.write(".github/workflows/test.yml", "name: test\n")
         self.write_inventory()
 
@@ -80,7 +85,7 @@ class SourceIntegrityCheckerTest(unittest.TestCase):
 
     def test_path_budget_rejects_long_relative_path(self) -> None:
         stem = "x" * 40
-        relative = f"components/module/test/io/infranexum/{stem}/{stem}/TooLong.java"
+        relative = f"src/components/module/test/io/infranexum/{stem}/{stem}/TooLong.java"
         self.assertGreater(len(relative), MAX_RELATIVE_PATH_LENGTH)
         self.write(relative, "package io.infranexum.longpath;\nfinal class TooLong {}\n")
         self.write_inventory()
@@ -88,29 +93,84 @@ class SourceIntegrityCheckerTest(unittest.TestCase):
 
     def test_path_budget_rejects_long_component(self) -> None:
         component = "x" * (MAX_PATH_COMPONENT_LENGTH + 1)
-        relative = f"components/module/{component}/file.txt"
+        relative = f"src/components/module/{component}/file.txt"
         self.write(relative, "x\n")
         self.write_inventory()
         self.assertIn("CHECK-SOURCE-PATH-002", self.ids())
 
+    def test_product_layout_rejects_test_sources_under_src(self) -> None:
+        self.write(
+            "src/components/module/test/io/infranexum/a/ATest.java",
+            "package io.infranexum.a; final class ATest {}\n",
+        )
+        self.write_inventory()
+        self.assertIn("CHECK-SOURCE-LAYOUT-003", self.ids())
+
+    def test_product_layout_rejects_legacy_top_level_product_spaces(self) -> None:
+        self.write("applications/server/runtime.txt", "legacy layout\n")
+        self.write_inventory()
+        self.assertIn("CHECK-SOURCE-LAYOUT-002", self.ids())
+
+    def test_product_layout_reports_missing_source_root(self) -> None:
+        shutil.rmtree(self.root / "src")
+        checker = SourceIntegrityChecker(self.root, require_git_tracking=False)
+        checker._check_product_layout()
+        self.assertEqual("CHECK-SOURCE-LAYOUT-001", checker.violations[0].check_id)
+
     def test_release_archive_prefix_is_short_and_version_derived(self) -> None:
         self.write(
-            "distribution/release-manifest.json",
-            json.dumps({"source_archive": {"prefix": "infranexum-test"}}),
+            "src/distribution/release-manifest.json",
+            json.dumps({
+                "baseline": "../../BASELINE.json",
+                "validation_reports": ["../../artifacts/validation/source-integrity.json"],
+                "source_archive": {
+                    "prefix": "infranexum-test",
+                    "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
+                },
+            }),
         )
         self.write_inventory()
         self.assertEqual(set(), self.ids())
 
         self.write(
-            "distribution/release-manifest.json",
+            "src/distribution/release-manifest.json",
             json.dumps({"source_archive": {"prefix": "x" * (MAX_ARCHIVE_PREFIX_LENGTH + 1)}}),
         )
         self.write_inventory()
         self.assertIn("CHECK-SOURCE-PATH-003", self.ids())
 
-        self.write("distribution/release-manifest.json", "{")
+        self.write("src/distribution/release-manifest.json", "{")
         self.write_inventory()
         self.assertIn("CHECK-SOURCE-PATH-003", self.ids())
+
+    def test_release_manifest_references_follow_repository_support_layout(self) -> None:
+        manifest = {
+            "baseline": "../BASELINE.json",
+            "validation_reports": ["../artifacts/validation/source-integrity.json"],
+            "source_archive": {
+                "prefix": "infranexum-test",
+                "release_checksum_manifest": "../artifacts/validation/release-files.sha256",
+            },
+        }
+        self.write("src/distribution/release-manifest.json", json.dumps(manifest))
+        self.write_inventory()
+        ids = self.ids()
+        self.assertIn("CHECK-SOURCE-LAYOUT-004", ids)
+        self.assertIn("CHECK-SOURCE-LAYOUT-005", ids)
+        self.assertIn("CHECK-SOURCE-LAYOUT-006", ids)
+
+    def test_release_manifest_rejects_validation_reference_escape(self) -> None:
+        manifest = {
+            "baseline": "../../BASELINE.json",
+            "validation_reports": ["../../artifacts/validation/../../secrets.txt"],
+            "source_archive": {
+                "prefix": "infranexum-test",
+                "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
+            },
+        }
+        self.write("src/distribution/release-manifest.json", json.dumps(manifest))
+        self.write_inventory()
+        self.assertIn("CHECK-SOURCE-LAYOUT-005", self.ids())
 
     def test_inventory_missing_invalid_unsafe_duplicate_and_unsorted_are_rejected(self) -> None:
         (self.root / INVENTORY_PATH).unlink()
@@ -126,24 +186,24 @@ class SourceIntegrityCheckerTest(unittest.TestCase):
 
     def test_inventory_rejects_case_insensitive_collisions(self) -> None:
         paths = self.canonical()
-        paths.extend(["components/Case.txt", "components/case.txt"])
-        self.write("components/Case.txt", "a")
-        self.write("components/case.txt", "b")
+        paths.extend(["src/components/Case.txt", "src/components/case.txt"])
+        self.write("src/components/Case.txt", "a")
+        self.write("src/components/case.txt", "b")
         self.write_inventory(paths)
         self.assertIn("CHECK-SOURCE-INVENTORY-004", self.ids())
 
     def test_inventory_detects_missing_and_undeclared_files(self) -> None:
         paths = self.canonical()
-        declared = paths + ["components/expected-but-missing.txt"]
+        declared = paths + ["src/components/expected-but-missing.txt"]
         self.write_inventory(declared)
         self.assertIn("CHECK-SOURCE-INVENTORY-002", self.ids())
         self.write_inventory(paths)
-        self.write("components/module/extra.txt", "extra")
+        self.write("src/components/module/extra.txt", "extra")
         self.assertIn("CHECK-SOURCE-INVENTORY-003", self.ids())
 
     def test_java_graph_rejects_filename_type_mismatch(self) -> None:
         self.write(
-            "components/module/main/io/infranexum/a/WrongName.java",
+            "src/components/module/main/io/infranexum/a/WrongName.java",
             "package io.infranexum.a;\npublic final class RightName {}\n",
         )
         self.write_inventory()
@@ -151,29 +211,29 @@ class SourceIntegrityCheckerTest(unittest.TestCase):
 
     def test_java_graph_accepts_package_private_top_level_type(self) -> None:
         self.write(
-            "components/module/main/io/infranexum/internal/Internal.java",
+            "src/components/module/main/io/infranexum/internal/Internal.java",
             "package io.infranexum.internal;\nfinal class Internal {}\n",
         )
         self.write_inventory()
         self.assertEqual(set(), self.ids())
 
     def test_java_graph_detects_missing_import_duplicate_and_malformed_source(self) -> None:
-        (self.root / "components/module/main/io/infranexum/b/B.java").unlink()
+        (self.root / "src/components/module/main/io/infranexum/b/B.java").unlink()
         self.write_inventory()
         self.assertIn("CHECK-SOURCE-JAVA-003", self.ids())
 
-        self.write("components/module/main/io/infranexum/b/B.java", B_JAVA)
-        self.write("components/module/main/io/infranexum/duplicate/B.java", B_JAVA)
+        self.write("src/components/module/main/io/infranexum/b/B.java", B_JAVA)
+        self.write("src/components/module/main/io/infranexum/duplicate/B.java", B_JAVA)
         self.write_inventory()
         self.assertIn("CHECK-SOURCE-JAVA-002", self.ids())
 
-        self.write("components/module/main/io/infranexum/invalid/Invalid.java", "final class Invalid {}\n")
+        self.write("src/components/module/main/io/infranexum/invalid/Invalid.java", "final class Invalid {}\n")
         self.write_inventory()
         self.assertIn("CHECK-SOURCE-JAVA-001", self.ids())
 
     def test_java_read_failure_is_reported(self) -> None:
         checker = SourceIntegrityChecker(self.root, require_git_tracking=False)
-        missing = self.root / "components/missing.java"
+        missing = self.root / "src/components/missing.java"
         self.assertIsNone(checker._read(missing, "CHECK-SOURCE-JAVA-001"))
         self.assertEqual("CHECK-SOURCE-JAVA-001", checker.violations[0].check_id)
 
@@ -191,8 +251,53 @@ class SourceIntegrityCheckerTest(unittest.TestCase):
             checker._check_java_graph()
         self.assertIn("CHECK-SOURCE-JAVA-001", {item.check_id for item in checker.violations})
 
+    def test_maven_requires_external_test_source(self) -> None:
+        path = self.root / "src/components/module/pom.xml"
+        path.write_text(MODULE_POM.replace(
+            "${maven.multiModuleProjectDirectory}/tests/java/module", "test"
+        ), encoding="utf-8")
+        self.write_inventory()
+        self.assertIn("CHECK-SOURCE-MAVEN-004", self.ids())
+
+    def test_maven_requires_existing_external_tests(self) -> None:
+        shutil.rmtree(self.root / "tests/java/module")
+        self.write_inventory()
+        self.assertIn("CHECK-SOURCE-MAVEN-005", self.ids())
+
+    def test_maven_rejects_invalid_module_pom(self) -> None:
+        self.write("src/components/module/pom.xml", "<")
+        self.write_inventory()
+        self.assertIn("CHECK-SOURCE-MAVEN-004", self.ids())
+
+    def test_maven_rejects_unsafe_or_non_test_external_root(self) -> None:
+        path = self.root / "src/components/module/pom.xml"
+        for value in (
+            "${maven.multiModuleProjectDirectory}/../escape",
+            "${maven.multiModuleProjectDirectory}/support/java/module",
+        ):
+            path.write_text(
+                MODULE_POM.replace(
+                    "${maven.multiModuleProjectDirectory}/tests/java/module", value
+                ),
+                encoding="utf-8",
+            )
+            self.write_inventory()
+            self.assertIn("CHECK-SOURCE-MAVEN-004", self.ids())
+
+    def test_maven_rejects_missing_test_source_declaration(self) -> None:
+        path = self.root / "src/components/module/pom.xml"
+        path.write_text(
+            MODULE_POM.replace(
+                "<build><testSourceDirectory>${maven.multiModuleProjectDirectory}/tests/java/module</testSourceDirectory></build>",
+                "",
+            ),
+            encoding="utf-8",
+        )
+        self.write_inventory()
+        self.assertIn("CHECK-SOURCE-MAVEN-004", self.ids())
+
     def test_maven_detects_orphan_module_pom(self) -> None:
-        self.write("components/orphan/pom.xml", MODULE_POM.replace("<artifactId>module</artifactId>", "<artifactId>orphan</artifactId>"))
+        self.write("src/components/orphan/pom.xml", MODULE_POM.replace("<artifactId>module</artifactId>", "<artifactId>orphan</artifactId>"))
         self.write_inventory()
         self.assertIn("CHECK-SOURCE-MAVEN-003", self.ids())
 
@@ -210,11 +315,11 @@ class SourceIntegrityCheckerTest(unittest.TestCase):
         self.write("pom.xml", "<")
         self.write_inventory()
         self.assertIn("CHECK-SOURCE-MAVEN-001", self.ids())
-        self.write("pom.xml", POM.replace("components/module", "../module"))
+        self.write("pom.xml", POM.replace("src/components/module", "../module"))
         self.write_inventory()
         self.assertIn("CHECK-SOURCE-MAVEN-001", self.ids())
         self.write("pom.xml", POM)
-        (self.root / "components/module/pom.xml").unlink()
+        (self.root / "src/components/module/pom.xml").unlink()
         self.write_inventory()
         self.assertIn("CHECK-SOURCE-MAVEN-002", self.ids())
 
@@ -222,7 +327,7 @@ class SourceIntegrityCheckerTest(unittest.TestCase):
         subprocess.run(["git", "init", "-q", str(self.root)], check=True)
         subprocess.run(["git", "-C", str(self.root), "add", "."], check=True)
         self.assertEqual(set(), self.ids(require_git_tracking=True))
-        tracked = self.root / "components/module/main/io/infranexum/b/B.java"
+        tracked = self.root / "src/components/module/main/io/infranexum/b/B.java"
         subprocess.run(["git", "-C", str(self.root), "rm", "--cached", "-q", str(tracked.relative_to(self.root))], check=True)
         self.assertIn("CHECK-SOURCE-GIT-002", self.ids(require_git_tracking=True))
 
@@ -235,7 +340,7 @@ class SourceIntegrityCheckerTest(unittest.TestCase):
         """
         subprocess.run(["git", "init", "-q", str(self.root)], check=True)
         subprocess.run(["git", "-C", str(self.root), "add", "."], check=True)
-        tracked = self.root / "components/module/main/io/infranexum/b/B.java"
+        tracked = self.root / "src/components/module/main/io/infranexum/b/B.java"
         subprocess.run(
             ["git", "-C", str(self.root), "rm", "--cached", "-q", str(tracked.relative_to(self.root))],
             check=True,
@@ -276,7 +381,7 @@ class SourceIntegrityCheckerTest(unittest.TestCase):
         """The candidate commit fails even while the working tree still has the source."""
         subprocess.run(["git", "init", "-q", str(self.root)], check=True)
         subprocess.run(["git", "-C", str(self.root), "add", "."], check=True)
-        relative = "components/module/main/io/infranexum/b/B.java"
+        relative = "src/components/module/main/io/infranexum/b/B.java"
         subprocess.run(
             ["git", "-C", str(self.root), "rm", "--cached", "-q", relative],
             check=True,
@@ -340,9 +445,9 @@ class SourceIntegrityCheckerTest(unittest.TestCase):
         checker.update_git_checksum_manifest()
         subprocess.run(["git", "-C", str(self.root), "add", CHECKSUM_PATH.as_posix()], check=True)
 
-        self.write("components/module/main/io/infranexum/a/A.java", A_JAVA + "// staged change\n")
+        self.write("src/components/module/main/io/infranexum/a/A.java", A_JAVA + "// staged change\n")
         subprocess.run(
-            ["git", "-C", str(self.root), "add", "components/module/main/io/infranexum/a/A.java"],
+            ["git", "-C", str(self.root), "add", "src/components/module/main/io/infranexum/a/A.java"],
             check=True,
         )
         violations = SourceIntegrityChecker(
@@ -353,7 +458,7 @@ class SourceIntegrityCheckerTest(unittest.TestCase):
 
         mismatches = [item for item in violations if item.check_id == "CHECK-SOURCE-GIT-005"]
         self.assertEqual(1, len(mismatches))
-        self.assertEqual("components/module/main/io/infranexum/a/A.java", mismatches[0].path)
+        self.assertEqual("src/components/module/main/io/infranexum/a/A.java", mismatches[0].path)
 
     def test_git_checksum_manifest_rejects_malformed_and_incomplete_manifests(self) -> None:
         subprocess.run(["git", "init", "-q", str(self.root)], check=True)
@@ -517,7 +622,7 @@ class SourceIntegrityCheckerTest(unittest.TestCase):
                 self.assertEqual(0, cli_main())
         self.assertEqual(0, json.loads(report.read_text(encoding="utf-8"))["violation_count"])
 
-        (self.root / "components/module/main/io/infranexum/b/B.java").unlink()
+        (self.root / "src/components/module/main/io/infranexum/b/B.java").unlink()
         with patch.object(sys, "argv", ["source-integrity", "--root", str(self.root)]):
             with contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(1, cli_main())
@@ -537,7 +642,7 @@ class SourceIntegrityCheckerTest(unittest.TestCase):
         payload = json.loads(inventory.read_text(encoding="utf-8"))
         self.assertEqual(SCHEMA, payload["schema"])
         self.assertEqual(sorted(payload["paths"]), payload["paths"])
-        self.assertIn("components/module/main/io/infranexum/a/A.java", payload["paths"])
+        self.assertIn("src/components/module/main/io/infranexum/a/A.java", payload["paths"])
 
     def test_safe_relative_and_git_autodetection(self) -> None:
         self.assertTrue(SourceIntegrityChecker._safe_relative("src/a.txt"))

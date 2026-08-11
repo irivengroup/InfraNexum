@@ -17,12 +17,12 @@ from validation.eventing.cli import main as cli_main
 
 SOURCE = Path(__file__).resolve().parents[2]
 FILES = (
-    "components/core/events/event-contract-pack.json",
-    "components/core/events/event-envelope.schema.json",
-    "components/core/events/main/io/infranexum/core/events/EventEnvelope.java",
-    "distribution/migrations/0002-core-transactional-events/logical-model.json",
-    "distribution/migrations/0002-core-transactional-events/postgresql.sql",
-    "distribution/migrations/0002-core-transactional-events/oracle.sql",
+    "src/components/core/events/event-contract-pack.json",
+    "src/components/core/events/event-envelope.schema.json",
+    "src/components/core/events/main/io/infranexum/core/events/EventEnvelope.java",
+    "src/distribution/migrations/0002-core-transactional-events/logical-model.json",
+    "src/distribution/migrations/0002-core-transactional-events/postgresql.sql",
+    "src/distribution/migrations/0002-core-transactional-events/oracle.sql",
 )
 
 
@@ -52,14 +52,14 @@ class EventingCheckerTest(unittest.TestCase):
         self.assertEqual(set(), self.ids())
 
     def test_invalid_or_missing_json_is_reported(self) -> None:
-        path = self.root / "components/core/events/event-contract-pack.json"
+        path = self.root / "src/components/core/events/event-contract-pack.json"
         path.write_text("{", encoding="utf-8")
         self.assertIn("CHECK-EVENT-PACK-001", self.ids())
         path.unlink()
         self.assertIn("CHECK-EVENT-PACK-001", self.ids())
 
     def test_contract_pack_invariants_and_checksum_are_enforced(self) -> None:
-        relative = "components/core/events/event-contract-pack.json"
+        relative = "src/components/core/events/event-contract-pack.json"
         pack = self.load(relative)
         pack["schema"] = "unexpected"
         pack["envelope_fields"] = list(reversed(pack["envelope_fields"]))
@@ -79,14 +79,14 @@ class EventingCheckerTest(unittest.TestCase):
         self.assertIn("CHECK-EVENT-PACK-006", self.ids())
 
     def test_invalid_schema_and_model_json_are_reported(self) -> None:
-        schema = self.root / "components/core/events/event-envelope.schema.json"
-        model = self.root / "distribution/migrations/0002-core-transactional-events/logical-model.json"
+        schema = self.root / "src/components/core/events/event-envelope.schema.json"
+        model = self.root / "src/distribution/migrations/0002-core-transactional-events/logical-model.json"
         schema.write_text("{", encoding="utf-8")
         model.write_text("{", encoding="utf-8")
         self.assertTrue({"CHECK-EVENT-SCHEMA-001", "CHECK-EVENT-MODEL-001"} <= self.ids())
 
     def test_schema_order_closure_and_payload_shape_are_enforced(self) -> None:
-        relative = "components/core/events/event-envelope.schema.json"
+        relative = "src/components/core/events/event-envelope.schema.json"
         schema = self.load(relative)
         schema["additionalProperties"] = True
         schema["required"] = list(reversed(schema["required"]))
@@ -98,17 +98,17 @@ class EventingCheckerTest(unittest.TestCase):
             "CHECK-EVENT-SCHEMA-003",
             "CHECK-EVENT-SCHEMA-004",
         } <= self.ids())
-        schema["properties"] = self.load("components/core/events/event-envelope.schema.json").get("properties", {})
+        schema["properties"] = self.load("src/components/core/events/event-envelope.schema.json").get("properties", {})
 
     def test_payload_shape_branch_is_checked_when_property_order_is_valid(self) -> None:
-        relative = "components/core/events/event-envelope.schema.json"
+        relative = "src/components/core/events/event-envelope.schema.json"
         schema = self.load(relative)
         schema["properties"]["payload"] = {"oneOf": [{"type": "string"}]}
         self.write(relative, schema)
         self.assertIn("CHECK-EVENT-SCHEMA-005", self.ids())
 
     def test_java_record_presence_and_field_order_are_enforced(self) -> None:
-        path = self.root / "components/core/events/main/io/infranexum/core/events/EventEnvelope.java"
+        path = self.root / "src/components/core/events/main/io/infranexum/core/events/EventEnvelope.java"
         original = path.read_text(encoding="utf-8")
         path.write_text(original.replace("DomainIdentifier eventId,", "DomainIdentifier wrongId,"), encoding="utf-8")
         self.assertIn("CHECK-EVENT-JAVA-003", self.ids())
@@ -120,7 +120,7 @@ class EventingCheckerTest(unittest.TestCase):
         self.assertIn("CHECK-EVENT-JAVA-001", self.ids())
 
     def test_logical_model_requires_local_outbox_envelope_and_inbox_key(self) -> None:
-        relative = "distribution/migrations/0002-core-transactional-events/logical-model.json"
+        relative = "src/distribution/migrations/0002-core-transactional-events/logical-model.json"
         model = self.load(relative)
         model["objects"] = "invalid"
         self.write(relative, model)
@@ -140,7 +140,7 @@ class EventingCheckerTest(unittest.TestCase):
         self.assertTrue({"CHECK-EVENT-MODEL-004", "CHECK-EVENT-MODEL-005"} <= self.ids())
 
     def test_sql_columns_are_required_and_non_normative_fields_are_blocked(self) -> None:
-        path = self.root / "distribution/migrations/0002-core-transactional-events/postgresql.sql"
+        path = self.root / "src/distribution/migrations/0002-core-transactional-events/postgresql.sql"
         text = path.read_text(encoding="utf-8")
         path.write_text(
             text.replace("event_source", "removed_source") + "\n-- aggregate_id metadata_json\n",
@@ -163,7 +163,7 @@ class EventingCheckerTest(unittest.TestCase):
         self.assertEqual(0, json.loads(report.read_text(encoding="utf-8"))["violation_count"])
         self.assertIn("infranexum.eventing-validation/v1", output.getvalue())
 
-        (self.root / "components/core/events/event-envelope.schema.json").write_text("{}", encoding="utf-8")
+        (self.root / "src/components/core/events/event-envelope.schema.json").write_text("{}", encoding="utf-8")
         with patch.object(sys, "argv", ["eventing", "--root", str(self.root)]):
             with contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(1, cli_main())

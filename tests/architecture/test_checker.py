@@ -88,6 +88,20 @@ class ArchitectureCheckerTest(unittest.TestCase):
         policy_path.write_text(json.dumps(payload), encoding="utf-8")
         self.assert_check("CHECK-ARCH-SRC-004")
 
+    def test_invalid_support_roots_policy_is_blocked(self) -> None:
+        policy_path = self.root / "validation/architecture/policy.json"
+        payload = json.loads(policy_path.read_text(encoding="utf-8"))
+        payload["allowed_support_roots"] = ["tests/nested"]
+        policy_path.write_text(json.dumps(payload), encoding="utf-8")
+        self.assert_check("CHECK-ARCH-SRC-005")
+
+    def test_tests_are_allowed_outside_product_source_root(self) -> None:
+        support = self.root / "tests" / "outside_product.py"
+        support.write_text("VALUE = 1\n", encoding="utf-8")
+        report = self.run_check()
+        violations = [item for item in report.violations if item.path == "tests/outside_product.py"]
+        self.assertEqual([], violations)
+
     def test_manifest_id_override_preserves_logical_adapter_identity(self) -> None:
         report = self.run_check()
         self.assertNotIn("CHECK-ARCH-MANIFEST-005", {item.check_id for item in report.violations})
@@ -98,21 +112,21 @@ class ArchitectureCheckerTest(unittest.TestCase):
         self.assert_check("CHECK-ARCH-MANIFEST-010")
 
     def test_missing_structural_space_is_blocked(self) -> None:
-        shutil.rmtree(self.root / "engines")
+        shutil.rmtree(self.root / "src/engines")
         self.assert_check("CHECK-ARCH-ROOT-001")
 
     def test_fourth_application_is_blocked(self) -> None:
-        (self.root / "applications/worker").mkdir()
+        (self.root / "src/applications/worker").mkdir()
         self.assert_check("CHECK-ARCH-APP-001")
 
     def test_missing_and_invalid_manifest_are_blocked(self) -> None:
-        (self.root / "sdk/MANIFEST.json").unlink()
+        (self.root / "src/sdk/MANIFEST.json").unlink()
         self.assert_check("CHECK-ARCH-MANIFEST-001")
-        (self.root / "sdk/MANIFEST.json").write_text("[]", encoding="utf-8")
+        (self.root / "src/sdk/MANIFEST.json").write_text("[]", encoding="utf-8")
         self.assert_check("CHECK-ARCH-MANIFEST-002")
 
     def test_manifest_contract_errors_are_blocked(self) -> None:
-        path = self.root / "applications/server/MANIFEST.json"
+        path = self.root / "src/applications/server/MANIFEST.json"
         payload = json.loads(path.read_text(encoding="utf-8"))
         del payload["kind"]
         path.write_text(json.dumps(payload), encoding="utf-8")
@@ -129,7 +143,7 @@ class ArchitectureCheckerTest(unittest.TestCase):
         self.assertTrue({"CHECK-ARCH-MANIFEST-004", "CHECK-ARCH-MANIFEST-005", "CHECK-ARCH-OWNER-001", "CHECK-ARCH-MANIFEST-006", "CHECK-ARCH-TRACE-001"} <= ids)
 
     def test_manifest_array_types_are_blocked(self) -> None:
-        path = self.root / "applications/server/MANIFEST.json"
+        path = self.root / "src/applications/server/MANIFEST.json"
         payload = json.loads(path.read_text(encoding="utf-8"))
         payload["languages"] = "java"
         path.write_text(json.dumps(payload), encoding="utf-8")
@@ -149,7 +163,7 @@ class ArchitectureCheckerTest(unittest.TestCase):
         self.assert_check("CHECK-ARCH-OWNER-004")
 
     def test_dependency_errors_are_blocked(self) -> None:
-        path = self.root / "applications/server/MANIFEST.json"
+        path = self.root / "src/applications/server/MANIFEST.json"
         payload = json.loads(path.read_text(encoding="utf-8"))
         payload["dependencies"] = ["applications.server", "missing.component", "missing.component"]
         path.write_text(json.dumps(payload), encoding="utf-8")
@@ -157,23 +171,22 @@ class ArchitectureCheckerTest(unittest.TestCase):
         self.assertTrue({"CHECK-ARCH-DEP-001", "CHECK-ARCH-DEP-002", "CHECK-ARCH-DEP-003"} <= ids)
 
     def test_language_and_namespace_errors_are_blocked(self) -> None:
-        bad_go = self.root / "applications/server/main/bad.go"
+        bad_go = self.root / "src/applications/server/main/bad.go"
         bad_go.parent.mkdir(parents=True, exist_ok=True)
         bad_go.write_text("package bad", encoding="utf-8")
-        bad_java = self.root / "components/core/contracts/main/Bad.java"
+        bad_java = self.root / "src/components/core/contracts/main/Bad.java"
         bad_java.write_text("package wrong;", encoding="utf-8")
         ids = {v.check_id for v in self.run_check().violations}
         self.assertTrue({"CHECK-ARCH-LANG-001", "CHECK-ARCH-NS-001"} <= ids)
 
     def test_active_component_without_source_is_blocked(self) -> None:
-        shutil.rmtree(self.root / "components/core/contracts/main")
-        shutil.rmtree(self.root / "components/core/contracts/test")
+        shutil.rmtree(self.root / "src/components/core/contracts/main")
         self.assert_check("CHECK-ARCH-CODE-001")
 
     def test_legacy_brand_and_artifact_are_blocked(self) -> None:
-        legacy = self.root / "sdk/legacy.md"
+        legacy = self.root / "src/sdk/legacy.md"
         legacy.write_text("legacy open" + "infra namespace", encoding="utf-8")
-        artifact = self.root / "sdk/__pycache__"
+        artifact = self.root / "src/sdk/__pycache__"
         artifact.mkdir()
         ids = {v.check_id for v in self.run_check().violations}
         self.assertTrue({"CHECK-BRAND-001", "CHECK-REPO-CLEAN-001"} <= ids)
@@ -189,7 +202,7 @@ class ArchitectureCheckerTest(unittest.TestCase):
         self.assertEqual([], git_violations)
 
     def test_secret_material_is_blocked_without_echoing_it(self) -> None:
-        secret_path = self.root / "applications/agent/configs/compromised.json"
+        secret_path = self.root / "src/applications/agent/configs/compromised.json"
         secret_path.parent.mkdir(parents=True, exist_ok=True)
         fake_access_key = "AK" + "IA" + "ABCDEFGHIJKLMNOP"
         secret_path.write_text(json.dumps({"access_key": fake_access_key}), encoding="utf-8")
@@ -199,7 +212,7 @@ class ArchitectureCheckerTest(unittest.TestCase):
         self.assertNotIn(fake_access_key, violations[0].message)
 
     def test_secret_material_is_scanned_in_web_runtime_modules(self) -> None:
-        secret_path = self.root / "applications/web/runtime/compromised.mjs"
+        secret_path = self.root / "src/applications/web/runtime/compromised.mjs"
         secret_path.parent.mkdir(parents=True, exist_ok=True)
         fake_token = "gh" + "p_" + "ABCDEFGHIJKLMNOPQRSTUVWX"
         secret_path.write_text(f"export const token = {fake_token!r};\n", encoding="utf-8")
@@ -224,12 +237,12 @@ class ArchitectureCheckerTest(unittest.TestCase):
         self.assert_check("CHECK-SECRET-POLICY-001")
 
     def test_secret_scan_skips_generated_large_and_non_utf8_files(self) -> None:
-        generated = self.root / "sdk/node_modules/generated.json"
+        generated = self.root / "src/sdk/node_modules/generated.json"
         generated.parent.mkdir(parents=True)
         generated.write_text("AK" + "IA" + "ABCDEFGHIJKLMNOP", encoding="utf-8")
-        large = self.root / "sdk/large.json"
+        large = self.root / "src/sdk/large.json"
         large.write_bytes(b"x" * 1_048_577)
-        binary = self.root / "sdk/binary.json"
+        binary = self.root / "src/sdk/binary.json"
         binary.write_bytes(b"\xff\xfe\xfd")
         secret_violations = [
             item for item in self.run_check().violations if item.check_id == "CHECK-SECRET-001"
@@ -237,19 +250,19 @@ class ArchitectureCheckerTest(unittest.TestCase):
         self.assertEqual([], secret_violations)
 
     def test_missing_applications_directory_is_handled(self) -> None:
-        shutil.rmtree(self.root / "applications")
+        shutil.rmtree(self.root / "src/applications")
         report = self.run_check()
         self.assertIn("CHECK-ARCH-ROOT-001", {violation.check_id for violation in report.violations})
 
     def test_duplicate_manifest_identifier_is_blocked(self) -> None:
-        path = self.root / "applications/server/MANIFEST.json"
+        path = self.root / "src/applications/server/MANIFEST.json"
         payload = json.loads(path.read_text(encoding="utf-8"))
         payload["id"] = "applications.agent"
         path.write_text(json.dumps(payload), encoding="utf-8")
         self.assert_check("CHECK-ARCH-MANIFEST-009")
 
     def test_legacy_agent_import_namespace_is_blocked(self) -> None:
-        path = self.root / "applications/agent/internal/legacy/legacy.go"
+        path = self.root / "src/applications/agent/internal/legacy/legacy.go"
         path.parent.mkdir(parents=True)
         legacy_prefix = "open" + "infra"
         path.write_text(

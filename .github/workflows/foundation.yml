@@ -114,7 +114,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: '1.26.5'
-          cache-dependency-path: applications/agent/go.mod
+          cache-dependency-path: src/applications/agent/go.mod
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: '3.13'
@@ -134,14 +134,14 @@ jobs:
           version: '11.17.0'
           runtime: node@24.18.1
           cache: true
-          cache-dependency-path: applications/web/pnpm-lock.yaml
+          cache-dependency-path: src/applications/web/pnpm-lock.yaml
           install: false
       - name: Verify exact Web toolchains
         run: |
           test "$(node --version)" = "v24.18.1"
           test "$(pnpm --version)" = "11.17.0"
       - name: Verify empty dependency graph and immutable lockfile
-        working-directory: applications/web
+        working-directory: src/applications/web
         run: pnpm install --frozen-lockfile --offline
       - name: Test and smoke Web runtime
         run: make web-verify
@@ -204,15 +204,15 @@ jobs:
         env:
           PGPASSWORD: infranexum-ci
         run: |
-          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file distribution/migrations/0001-core-schema-history/postgresql.sql
-          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file distribution/migrations/0002-core-transactional-events/postgresql.sql
-          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file distribution/migrations/0003-core-inbox-reservation/postgresql.sql
-          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file distribution/migrations/0004-core-entitlements/postgresql.sql
-          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file distribution/migrations/0005-core-audit/postgresql.sql
-          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file distribution/migrations/0006-core-workers/postgresql.sql
+          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file src/distribution/migrations/0001-core-schema-history/postgresql.sql
+          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file src/distribution/migrations/0002-core-transactional-events/postgresql.sql
+          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file src/distribution/migrations/0003-core-inbox-reservation/postgresql.sql
+          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file src/distribution/migrations/0004-core-entitlements/postgresql.sql
+          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file src/distribution/migrations/0005-core-audit/postgresql.sql
+          psql --host 127.0.0.1 --username infranexum --dbname infranexum --set ON_ERROR_STOP=1 --file src/distribution/migrations/0006-core-workers/postgresql.sql
       - name: Run live JDBC transaction and concurrency contracts
         env:
           INFRANEXUM_POSTGRESQL_TEST_URL: jdbc:postgresql://127.0.0.1:5432/infranexum
           INFRANEXUM_POSTGRESQL_TEST_USERNAME: infranexum
           INFRANEXUM_POSTGRESQL_TEST_PASSWORD: infranexum-ci
-        run: ./mvnw --batch-mode --no-transfer-progress -pl components/adapters/jdbc -am -Dtest=PostgreSqlJdbcTransactionalEventStoreTest,PostgreSqlJdbcAuditJournalTest,PostgreSqlJdbcTaskStoreTest -Dinfranexum.surefire.failIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false test
+        run: ./mvnw --batch-mode --no-transfer-progress -pl src/components/adapters/jdbc -am -Dtest=PostgreSqlJdbcTransactionalEventStoreTest,PostgreSqlJdbcAuditJournalTest,PostgreSqlJdbcTaskStoreTest -Dinfranexum.surefire.failIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false test

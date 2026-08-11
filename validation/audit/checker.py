@@ -15,11 +15,11 @@ class AuditViolation:
 class AuditChecker:
     """Block drift in append-only audit, integrity-chain, export and persistence contracts."""
 
-    MODULE = Path("components/core/audit")
+    MODULE = Path("src/components/core/audit")
     JAVA = MODULE / "main/io/infranexum/core/audit"
-    JDBC = Path("components/adapters/jdbc")
+    JDBC = Path("src/components/adapters/jdbc")
     JDBC_JAVA = JDBC / "main/io/infranexum/adapters/persistence/jdbc"
-    MIGRATION = Path("distribution/migrations/0005-core-audit")
+    MIGRATION = Path("src/distribution/migrations/0005-core-audit")
     WORKFLOW = Path(".github/workflows/foundation.yml")
 
     def __init__(self, root: Path) -> None:
@@ -134,7 +134,7 @@ class AuditChecker:
 
     def _wiring(self) -> None:
         checks = (
-            (Path("pom.xml"), "<module>components/core/audit</module>"),
+            (Path("pom.xml"), "<module>src/components/core/audit</module>"),
             (self.JDBC / "pom.xml", "infranexum-core-audit"),
             (self.JDBC / "MANIFEST.json", "components.core.audit"),
             (Path("validation/architecture/policy.json"), "components/core/audit"),

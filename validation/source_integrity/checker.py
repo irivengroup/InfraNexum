@@ -16,8 +16,8 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 
-INVENTORY_PATH = Path("distribution/source-inventory.json")
-CHECKSUM_PATH = Path("distribution/source-files.sha256")
+INVENTORY_PATH = Path("src/distribution/source-inventory.json")
+CHECKSUM_PATH = Path("src/distribution/source-files.sha256")
 SCHEMA = "infranexum.source-inventory/v1"
 MAX_RELATIVE_PATH_LENGTH = 120
 MAX_PATH_COMPONENT_LENGTH = 80
@@ -45,24 +45,28 @@ _SCAN_PREFIXES = (
     ".github",
     ".githooks",
     ".mvn",
-    "applications",
-    "components",
-    "deployment",
-    "distribution",
+    "src",
     "docs",
-    "engines",
-    "installer",
-    "provisioning",
     "requirements",
-    "sdk",
     "tests",
     "tools",
     "validation",
 )
 _EXCLUDED_RELATIVE = {
     INVENTORY_PATH.as_posix(),
-    "distribution/source-files.sha256",
+    "src/distribution/source-files.sha256",
 }
+_PRODUCT_SPACES = (
+    "applications",
+    "components",
+    "deployment",
+    "distribution",
+    "engines",
+    "installer",
+    "provisioning",
+    "sdk",
+)
+
 _EXCLUDED_PARTS = {
     "__pycache__",
     ".pytest_cache",
@@ -128,6 +132,7 @@ class SourceIntegrityChecker:
             self._add("CHECK-SOURCE-INVENTORY-003", Path(undeclared), "canonical file is not declared in the source inventory")
 
         self._check_path_budget(declared | actual)
+        self._check_product_layout()
         self._check_release_archive_prefix()
         self._check_java_graph()
         self._check_maven_modules()
@@ -195,9 +200,43 @@ class SourceIntegrityChecker:
                     )
                     break
 
+    def _check_product_layout(self) -> None:
+        """Keep product implementation below src/ and all tests outside it."""
+        product_root = self.root / "src"
+        if not product_root.is_dir():
+            self._add("CHECK-SOURCE-LAYOUT-001", Path("src"), "product source root is missing")
+            return
+
+        for space in _PRODUCT_SPACES:
+            legacy = self.root / space
+            if legacy.exists():
+                self._add(
+                    "CHECK-SOURCE-LAYOUT-002",
+                    Path(space),
+                    f"product space {space!r} must live below src/",
+                )
+
+        for path in product_root.rglob("*"):
+            if not path.is_file():
+                continue
+            relative = path.relative_to(product_root)
+            name = path.name
+            if (
+                "test" in relative.parts
+                or "tests" in relative.parts
+                or name.endswith("_test.go")
+                or ".test." in name
+                or ".spec." in name
+            ):
+                self._add(
+                    "CHECK-SOURCE-LAYOUT-003",
+                    path.relative_to(self.root),
+                    "test source must live below repository-level tests/, not src/",
+                )
+
     def _check_release_archive_prefix(self) -> None:
         """Require a short, deterministic source-archive root prefix."""
-        path = self.root / "distribution/release-manifest.json"
+        path = self.root / "src/distribution/release-manifest.json"
         if not path.is_file():
             return
         try:
@@ -215,12 +254,49 @@ class SourceIntegrityChecker:
                 f"source archive prefix must be {expected!r} and at most {MAX_ARCHIVE_PREFIX_LENGTH} characters",
             )
 
+        # release-manifest.json moved one directory deeper with the product source
+        # tree. Keep its repository-support references explicit so a layout move
+        # cannot silently redirect validation evidence below src/.
+        if payload.get("baseline") != "../../BASELINE.json":
+            self._add(
+                "CHECK-SOURCE-LAYOUT-004",
+                path,
+                "release baseline reference must resolve to repository-level BASELINE.json",
+            )
+
+        reports = payload.get("validation_reports")
+        if reports is not None and (
+            not isinstance(reports, list)
+            or any(
+                not isinstance(report, str)
+                or not report.startswith("../../artifacts/validation/")
+                or not self._manifest_reference_is_within(path.parent, report, self.root / "artifacts" / "validation")
+                for report in reports
+            )
+        ):
+            self._add(
+                "CHECK-SOURCE-LAYOUT-005",
+                path,
+                "validation reports must resolve below repository-level artifacts/validation/",
+            )
+
+        source_archive = payload.get("source_archive")
+        if isinstance(source_archive, dict) and source_archive.get("release_checksum_manifest") not in (
+            None,
+            "../../artifacts/validation/release-files.sha256",
+        ):
+            self._add(
+                "CHECK-SOURCE-LAYOUT-006",
+                path,
+                "release checksum manifest must resolve to repository-level artifacts/validation/release-files.sha256",
+            )
+
     def _check_java_graph(self) -> None:
         main_sources = sorted(
             [
                 path
                 for prefix in ("applications", "components")
-                for path in self.root.glob(f"{prefix}/**/main/**/*.java")
+                for path in self.root.glob(f"src/{prefix}/**/main/**/*.java")
             ]
         )
         fqcn_to_path: dict[str, Path] = {}
@@ -265,17 +341,54 @@ class SourceIntegrityChecker:
             if not self._safe_relative(module):
                 self._add("CHECK-SOURCE-MAVEN-001", pom, f"unsafe Maven module path: {module}")
                 continue
-            if not (self.root / module_path / "pom.xml").is_file():
+            module_pom = self.root / module_path / "pom.xml"
+            if not module_pom.is_file():
                 self._add("CHECK-SOURCE-MAVEN-002", module_path, "Maven reactor module has no pom.xml")
+                continue
+            self._check_maven_test_source(module_path, module_pom)
 
         discovered_modules = {
             path.parent.relative_to(self.root).as_posix()
             for prefix in ("applications", "components")
-            for path in (self.root / prefix).rglob("pom.xml")
+            for path in (self.root / "src" / prefix).rglob("pom.xml")
             if path.is_file() and "target" not in path.parts
         }
         for orphan in sorted(discovered_modules - declared_modules):
             self._add("CHECK-SOURCE-MAVEN-003", Path(orphan), "Maven module pom.xml exists but is absent from the root reactor")
+
+    def _check_maven_test_source(self, module_path: Path, module_pom: Path) -> None:
+        """Require every active Maven module to consume tests from repository-level tests/."""
+        namespace = {"m": "http://maven.apache.org/POM/4.0.0"}
+        try:
+            tree = ElementTree.parse(module_pom)
+        except (OSError, ElementTree.ParseError) as error:
+            self._add("CHECK-SOURCE-MAVEN-004", module_pom, f"cannot parse module pom.xml: {error}")
+            return
+        node = tree.find("./m:build/m:testSourceDirectory", namespace)
+        value = node.text.strip() if node is not None and node.text else ""
+        prefix = "${maven.multiModuleProjectDirectory}/"
+        if not value.startswith(prefix):
+            self._add(
+                "CHECK-SOURCE-MAVEN-004",
+                module_pom,
+                "module testSourceDirectory must use ${maven.multiModuleProjectDirectory}/tests/...",
+            )
+            return
+        relative = value[len(prefix):]
+        if not self._safe_relative(relative) or not relative.startswith("tests/"):
+            self._add(
+                "CHECK-SOURCE-MAVEN-004",
+                module_pom,
+                "module tests must resolve below repository-level tests/",
+            )
+            return
+        test_root = self.root / relative
+        if not test_root.is_dir() or not any(test_root.rglob("*.java")):
+            self._add(
+                "CHECK-SOURCE-MAVEN-005",
+                Path(relative),
+                f"Maven module {module_path.as_posix()} has no external Java tests",
+            )
 
     def _check_makefile_preflight(self) -> None:
         path = self.root / "Makefile"
@@ -545,6 +658,15 @@ class SourceIntegrityChecker:
         except OSError:
             return False
         return result.returncode == 0 and result.stdout.strip() == "true"
+
+    @staticmethod
+    def _manifest_reference_is_within(manifest_dir: Path, reference: str, expected_root: Path) -> bool:
+        """Return whether a manifest-relative reference stays within the expected repository support root."""
+        try:
+            (manifest_dir / reference).resolve().relative_to(expected_root.resolve())
+        except (OSError, ValueError):
+            return False
+        return True
 
     @staticmethod
     def _safe_relative(value: str) -> bool:

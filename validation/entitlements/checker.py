@@ -16,12 +16,12 @@ class EntitlementViolation:
 class EntitlementChecker:
     """Block drift in activation, Lite lifecycle, trusted-time and persistence contracts."""
 
-    MODULE = Path("components/core/entitlements")
+    MODULE = Path("src/components/core/entitlements")
     JAVA = MODULE / "main/io/infranexum/core/entitlements"
     RESOURCES = MODULE / "resources/io/infranexum/core/entitlements"
-    MIGRATION = Path("distribution/migrations/0004-core-entitlements")
-    SERVER = Path("applications/server/main/io/infranexum/server/platform/entitlements")
-    JDBC = Path("components/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc")
+    MIGRATION = Path("src/distribution/migrations/0004-core-entitlements")
+    SERVER = Path("src/applications/server/main/io/infranexum/server/platform/entitlements")
+    JDBC = Path("src/components/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc")
 
     def __init__(self, root: Path) -> None:
         self.root = root.resolve()
@@ -63,8 +63,8 @@ class EntitlementChecker:
             self.SERVER / "EntitlementMutationInterceptor.java",
             self.SERVER / "EvaluationStatusController.java",
             self.SERVER / "EntitlementExceptionHandler.java",
-            Path("applications/server/resources/contracts/activation-trust-store.schema.json"),
-            Path("applications/server/resources/openapi/platform-entitlements.yaml"),
+            Path("src/applications/server/resources/contracts/activation-trust-store.schema.json"),
+            Path("src/applications/server/resources/openapi/platform-entitlements.yaml"),
             self.MIGRATION / "migration.yaml",
             self.MIGRATION / "postgresql.sql",
             self.MIGRATION / "oracle.sql",
@@ -127,7 +127,7 @@ class EntitlementChecker:
             "verifier": self._text(self.root / self.JAVA / "ActivationManifestVerifier.java", "CHECK-ENT-JAVA-002"),
             "lite": self._text(self.root / self.JAVA / "LiteEvaluationPolicy.java", "CHECK-ENT-JAVA-003"),
             "time": self._text(self.root / self.JAVA / "TrustedTimeGuard.java", "CHECK-ENT-JAVA-004"),
-            "activation": self._text(self.root / "components/core/capabilities/main/io/infranexum/core/capabilities/ActivationState.java", "CHECK-ENT-JAVA-005"),
+            "activation": self._text(self.root / "src/components/core/capabilities/main/io/infranexum/core/capabilities/ActivationState.java", "CHECK-ENT-JAVA-005"),
             "guard": self._text(self.root / self.JAVA / "EntitlementGuard.java", "CHECK-ENT-JAVA-009"),
         }
         required = {
@@ -220,26 +220,26 @@ class EntitlementChecker:
                 if token not in text:
                     self._add("CHECK-ENT-RUNTIME-002", path, f"missing runtime entitlement invariant: {token}")
         application = self._text(
-            self.root / "applications/server/resources/application.yaml",
+            self.root / "src/applications/server/resources/application.yaml",
             "CHECK-ENT-RUNTIME-003")
         if application is not None:
             for token in ("INFRANEXUM_ENTITLEMENTS_ENABLED:true", "INFRANEXUM_INTEGRITY_KEY_FILE",
                           "INFRANEXUM_INTEGRITY_PROOF_DIRECTORY", "INFRANEXUM_PERSISTENCE_MODE:POSTGRESQL"):
                 if token not in application:
-                    self._add("CHECK-ENT-RUNTIME-004", self.root / "applications/server/resources/application.yaml",
+                    self._add("CHECK-ENT-RUNTIME-004", self.root / "src/applications/server/resources/application.yaml",
                               f"missing fail-closed runtime configuration: {token}")
-        server_pom = self._text(self.root / "applications/server/pom.xml", "CHECK-ENT-RUNTIME-005")
+        server_pom = self._text(self.root / "src/applications/server/pom.xml", "CHECK-ENT-RUNTIME-005")
         if server_pom is not None:
             for token in ("spring-boot-starter-jdbc", "org.postgresql", "postgresql"):
                 if token not in server_pom:
-                    self._add("CHECK-ENT-RUNTIME-006", self.root / "applications/server/pom.xml",
+                    self._add("CHECK-ENT-RUNTIME-006", self.root / "src/applications/server/pom.xml",
                               f"missing runtime persistence dependency: {token}")
 
     def _check_wiring(self) -> None:
         checks = (
-            ("pom.xml", "<module>components/core/entitlements</module>"),
-            ("applications/server/pom.xml", "infranexum-core-entitlements"),
-            ("applications/server/MANIFEST.json", "components.core.entitlements"),
+            ("pom.xml", "<module>src/components/core/entitlements</module>"),
+            ("src/applications/server/pom.xml", "infranexum-core-entitlements"),
+            ("src/applications/server/MANIFEST.json", "components.core.entitlements"),
             ("validation/architecture/policy.json", "components/core/entitlements"),
             ("Makefile", "entitlements-test"),
             ("Makefile", "java-entitlements-smoke"),

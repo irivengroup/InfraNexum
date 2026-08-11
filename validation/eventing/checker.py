@@ -44,12 +44,12 @@ class EventingChecker:
         self.violations: list[EventingViolation] = []
 
     def run(self) -> tuple[EventingViolation, ...]:
-        pack_path = self.root / "components/core/events/event-contract-pack.json"
-        schema_path = self.root / "components/core/events/event-envelope.schema.json"
-        java_path = self.root / "components/core/events/main/io/infranexum/core/events/EventEnvelope.java"
-        model_path = self.root / "distribution/migrations/0002-core-transactional-events/logical-model.json"
-        postgresql_path = self.root / "distribution/migrations/0002-core-transactional-events/postgresql.sql"
-        oracle_path = self.root / "distribution/migrations/0002-core-transactional-events/oracle.sql"
+        pack_path = self.root / "src/components/core/events/event-contract-pack.json"
+        schema_path = self.root / "src/components/core/events/event-envelope.schema.json"
+        java_path = self.root / "src/components/core/events/main/io/infranexum/core/events/EventEnvelope.java"
+        model_path = self.root / "src/distribution/migrations/0002-core-transactional-events/logical-model.json"
+        postgresql_path = self.root / "src/distribution/migrations/0002-core-transactional-events/postgresql.sql"
+        oracle_path = self.root / "src/distribution/migrations/0002-core-transactional-events/oracle.sql"
 
         pack = self._load_json(pack_path, "CHECK-EVENT-PACK-001")
         schema = self._load_json(schema_path, "CHECK-EVENT-SCHEMA-001")

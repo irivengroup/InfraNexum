@@ -19,9 +19,9 @@ class CapabilityChecker:
     """Block drift between capability code, catalogues, Server wiring and profile invariants."""
 
     RESOURCE_ROOT = Path(
-        "components/core/capabilities/resources/io/infranexum/core/capabilities"
+        "src/components/core/capabilities/resources/io/infranexum/core/capabilities"
     )
-    JAVA_ROOT = Path("components/core/capabilities/main/io/infranexum/core/capabilities")
+    JAVA_ROOT = Path("src/components/core/capabilities/main/io/infranexum/core/capabilities")
 
     def __init__(self, root: Path) -> None:
         self.root = root.resolve()
@@ -39,8 +39,8 @@ class CapabilityChecker:
 
     def _check_required_files(self) -> None:
         required = (
-            "components/core/capabilities/MANIFEST.json",
-            "components/core/capabilities/pom.xml",
+            "src/components/core/capabilities/MANIFEST.json",
+            "src/components/core/capabilities/pom.xml",
             self.RESOURCE_ROOT / "capability-contract-pack.json",
             self.RESOURCE_ROOT / "capability-catalog.csv",
             self.RESOURCE_ROOT / "quota-catalog.csv",
@@ -50,8 +50,8 @@ class CapabilityChecker:
             self.JAVA_ROOT / "QuotaCatalog.java",
             self.JAVA_ROOT / "QuotaDefinition.java",
             self.JAVA_ROOT / "QuotaPolicy.java",
-            "applications/server/main/io/infranexum/server/platform/PlatformCapabilityController.java",
-            "applications/server/main/io/infranexum/server/platform/PlatformCapabilityConfiguration.java",
+            "src/applications/server/main/io/infranexum/server/platform/PlatformCapabilityController.java",
+            "src/applications/server/main/io/infranexum/server/platform/PlatformCapabilityConfiguration.java",
         )
         for relative in required:
             path = self.root / relative
@@ -237,14 +237,14 @@ class CapabilityChecker:
 
     def _check_reactor_and_server(self) -> None:
         pom_path = self.root / "pom.xml"
-        server_pom_path = self.root / "applications/server/pom.xml"
-        manifest_path = self.root / "applications/server/MANIFEST.json"
+        server_pom_path = self.root / "src/applications/server/pom.xml"
+        manifest_path = self.root / "src/applications/server/MANIFEST.json"
         policy_path = self.root / "validation/architecture/policy.json"
         pom = self._read_text(pom_path, "CHECK-CAP-WIRING-001")
         server_pom = self._read_text(server_pom_path, "CHECK-CAP-WIRING-002")
         manifest = self._read_json(manifest_path, "CHECK-CAP-WIRING-003")
         policy = self._read_json(policy_path, "CHECK-CAP-WIRING-004")
-        if pom is not None and "<module>components/core/capabilities</module>" not in pom:
+        if pom is not None and "<module>src/components/core/capabilities</module>" not in pom:
             self._add("CHECK-CAP-WIRING-005", pom_path, "capability module missing from Maven reactor")
         if server_pom is not None and "infranexum-core-capabilities" not in server_pom:
             self._add("CHECK-CAP-WIRING-006", server_pom_path, "Server does not depend on capability module")
@@ -254,7 +254,7 @@ class CapabilityChecker:
             self._add("CHECK-CAP-WIRING-008", policy_path, "architecture policy misses capability manifest")
 
     def _check_domain_profile_branching(self) -> None:
-        domain_root = self.root / "components/domains"
+        domain_root = self.root / "src/components/domains"
         if not domain_root.exists():
             return
         forbidden = re.compile(

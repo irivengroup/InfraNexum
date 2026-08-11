@@ -2,7 +2,7 @@
 
 ## Scope
 
-`components/core/workers` is the first executable foundation for roadmap epic **PGM-02-E07**. It defines the domain/application contracts for one-shot background tasks and a bounded in-process worker runtime. The module deliberately does not introduce a message broker: durable scheduling is expressed through the `TaskStore` port so PostgreSQL/Oracle adapters can provide the same semantics without coupling the core to a persistence technology.
+`src/components/core/workers` is the first executable foundation for roadmap epic **PGM-02-E07**. It defines the domain/application contracts for one-shot background tasks and a bounded in-process worker runtime. The module deliberately does not introduce a message broker: durable scheduling is expressed through the `TaskStore` port so PostgreSQL/Oracle adapters can provide the same semantics without coupling the core to a persistence technology.
 
 The in-memory reference runtime and the durable JDBC adapter are implemented. **PGM-02-E07 remains NON TERMINÉ** until the Server composition root owns the worker-pool lifecycle/readiness/metrics and target database execution, including Oracle, is proven.
 
@@ -77,7 +77,7 @@ Invalid configuration fails explicitly; there is no silent degraded mode.
 
 ## Durable persistence — alpha.0.19
 
-`components/adapters/jdbc` (`JdbcTaskStore`) implements the same `TaskStore` contract for PostgreSQL and Oracle. Each mutation owns a short transaction. Expired leases are reconciled first through a bounded optimistic compare-and-set keyed by `task_id`, `lease_version`, expiration and cancellation state; a concurrent zero-row update is benign, while any multi-row update fails closed. Due rows are then claimed with `FOR UPDATE SKIP LOCKED`, transitioned to `RUNNING`, assigned a new owner, and advanced through the monotonically increasing `leaseVersion`. The adapter reconstructs the immutable `TaskRecord` including parameters after the claim transaction.
+`src/components/adapters/jdbc` (`JdbcTaskStore`) implements the same `TaskStore` contract for PostgreSQL and Oracle. Each mutation owns a short transaction. Expired leases are reconciled first through a bounded optimistic compare-and-set keyed by `task_id`, `lease_version`, expiration and cancellation state; a concurrent zero-row update is benign, while any multi-row update fails closed. Due rows are then claimed with `FOR UPDATE SKIP LOCKED`, transitioned to `RUNNING`, assigned a new owner, and advanced through the monotonically increasing `leaseVersion`. The adapter reconstructs the immutable `TaskRecord` including parameters after the claim transaction.
 
 Migration `0006-core-workers` stores task parameters in a child table instead of opaque database-specific JSON. This keeps the logical schema equivalent across PostgreSQL and Oracle and preserves exact semantic comparison for idempotent replay. PostgreSQL uses bounded character columns for the 4096-character token/value contract. Oracle uses `CLOB` for those two fields and dedicated triggers for LOB-dependent length/tuple invariants. Relational constraints still enforce retry/status values, lease state, checkpoint sequence/time coherence and cancellation markers.
 

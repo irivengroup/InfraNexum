@@ -108,7 +108,7 @@ class ToolchainChecker:
                 )
 
     def _check_go(self, tools: dict[str, Any]) -> None:
-        path = self.root / "applications/agent/go.mod"
+        path = self.root / "src/applications/agent/go.mod"
         text = self._read_text(path, "CHECK-TOOLCHAIN-013", "Go module cannot be read")
         if text is None:
             return
@@ -117,7 +117,7 @@ class ToolchainChecker:
             self._add("CHECK-TOOLCHAIN-009", path, "Go toolchain does not match lock")
 
     def _check_web(self, tools: dict[str, Any]) -> None:
-        package_path = self.root / "applications/web/package.json"
+        package_path = self.root / "src/applications/web/package.json"
         try:
             package = json.loads(package_path.read_text(encoding="utf-8"))
         except (OSError, ValueError) as error:
@@ -150,12 +150,12 @@ class ToolchainChecker:
             if floating:
                 self._add("CHECK-TOOLCHAIN-021", package_path, f"Web dependencies must use exact versions: {floating}")
 
-        lock_path = self.root / "applications/web/pnpm-lock.yaml"
+        lock_path = self.root / "src/applications/web/pnpm-lock.yaml"
         lock_text = self._read_text(lock_path, "CHECK-TOOLCHAIN-022", "Web pnpm lockfile cannot be read")
         if lock_text is not None and ("lockfileVersion: '9.0'" not in lock_text or "importers:" not in lock_text):
             self._add("CHECK-TOOLCHAIN-023", lock_path, "Web pnpm lockfile format is invalid")
 
-        workspace_path = self.root / "applications/web/pnpm-workspace.yaml"
+        workspace_path = self.root / "src/applications/web/pnpm-workspace.yaml"
         workspace_text = self._read_text(
             workspace_path,
             "CHECK-TOOLCHAIN-030",
@@ -183,7 +183,7 @@ class ToolchainChecker:
                         "pnpm workspace settings must match the immutable lockfile and secure install policy",
                     )
 
-        npmrc_path = self.root / "applications/web/.npmrc"
+        npmrc_path = self.root / "src/applications/web/.npmrc"
         if npmrc_path.exists():
             self._add(
                 "CHECK-TOOLCHAIN-033",
@@ -240,7 +240,7 @@ class ToolchainChecker:
             f"version: '{pnpm_version}'",
             f"runtime: node@{node_version}",
             "cache: true",
-            "cache-dependency-path: applications/web/pnpm-lock.yaml",
+            "cache-dependency-path: src/applications/web/pnpm-lock.yaml",
             "install: false",
         )
         if any(token not in workflow for token in required_pnpm_tokens):

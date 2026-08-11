@@ -1,4 +1,4 @@
-# InfraNexum 2.0.0-alpha.0.20 — Repository Layout Hardening
+# InfraNexum 2.0.0-alpha.0.21 — Repository Layout Hardening
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
@@ -6,27 +6,35 @@ This repository is an executable implementation increment derived from architect
 
 ## Source layout
 
-InfraNexum now uses a shallow legacy 2.0-style repository layout. Product spaces live directly at repository root; Java modules use shortened `main/`, `test/` and `resources/` roots while keeping all Java packages and Maven coordinates unchanged.
+InfraNexum now enforces a strict production-source boundary: every product space required for compilation, packaging, installation, upgrade or runtime is below `src/`; tests and engineering-only support remain outside it. Java physical roots stay short and Java packages/Maven coordinates are unchanged.
 
 ```text
-applications/
-components/
-engines/
-provisioning/
-installer/
-deployment/
-distribution/
-sdk/
+src/
+  applications/
+  components/
+  engines/
+  provisioning/
+  installer/
+  deployment/
+  distribution/
+  sdk/
 tests/
 validation/
 tools/
+docs/
 ```
 
-`source-integrity` enforces a 120-character maximum repository-relative path and an 80-character maximum path component. The current longest canonical path is 116 characters. Release archives use the short `infranexum-<version>` root prefix. See `docs/source-layout.md`.
+Java tests live under `tests/java/...`, Go tests under `tests/go/agent`, and Web tests under `tests/web`. Source Integrity blocks tests under `src/`, legacy product roots outside `src/`, repository-relative paths over 120 characters, path components over 80 characters, and invalid release-manifest references after layout moves. See `docs/source-layout.md`.
+
+## alpha.0.21 — Product Source Containment
+
+This increment supersedes the physical placement introduced by `alpha.0.20`: the shallow-path guarantees are preserved, but all production solution spaces are now contained below `src/`. Test trees are deliberately external. Maven modules use explicit repository-level test sources, Go same-package tests are materialized into an isolated temporary workspace by `tools/materialize_go_tests.py`, and Web tests import the product runtime from `src/applications/web`.
+
+The longest canonical repository-relative path remains below the 120-character fail-closed budget. `source-integrity` additionally verifies the `src/` boundary and the relative references in `src/distribution/release-manifest.json`, preventing a future move from silently redirecting baseline or release-evidence paths. Runtime contracts, Java package names, Maven artifacts, database schemas and logical component identifiers are unchanged.
 
 ## alpha.0.20 — Repository Layout Hardening
 
-This increment fixes the Windows extraction/path-depth defect as an architecture invariant rather than relying on `LongPathsEnabled`, extractor-specific behavior or a local Git configuration. The former enclosing `src/` directory is removed, Maven modules are lifted to the repository root, Java physical source roots are shortened, and `components/adapters/persistence-jdbc` becomes the physical path `components/adapters/jdbc`. Logical component identity, Java package names, Maven artifacts, APIs and database contracts remain unchanged.
+This historical increment fixed the Windows extraction/path-depth defect as an architecture invariant rather than relying on `LongPathsEnabled`, extractor-specific behavior or a local Git configuration. At `alpha.0.20`, product modules were temporarily lifted to the repository root and Java physical source roots were shortened. `alpha.0.21` keeps the shallow roots while restoring the explicit `src/` production boundary. Logical component identity, Java package names, Maven artifacts, APIs and database contracts remain unchanged.
 
 The Source Integrity gate now blocks any canonical path over 120 characters or path component over 80 characters. Architecture-as-Code allows code only inside governed top-level spaces even though the repository root is the configured source root. The GitHub workflow also includes a Windows path-safety job so checkout, the path gate and the Maven reactor are exercised on a GitHub-hosted Windows runner.
 
@@ -59,7 +67,7 @@ The PostgreSQL 17/18 CI job now applies migration `0006` and includes `PostgreSq
 
 ## alpha.0.18 — Core Workers Foundation
 
-This increment starts **PGM-02-E07** with an executable `components/core/workers` module. It adds idempotent scheduling, bounded worker concurrency, retry-safety contracts, versioned claim leases, heartbeat renewal, atomic checkpoints, cooperative cancellation, deterministic lease-expiry recovery and bounded graceful/forced shutdown.
+This increment starts **PGM-02-E07** with an executable `src/components/core/workers` module. It adds idempotent scheduling, bounded worker concurrency, retry-safety contracts, versioned claim leases, heartbeat renewal, atomic checkpoints, cooperative cancellation, deterministic lease-expiry recovery and bounded graceful/forced shutdown.
 
 The runtime is deliberately fail-closed: stale lease holders cannot mutate a reclaimed task; `AT_MOST_ONCE` work is never automatically retried after an uncertain lease expiry; and a handler that ignores interruption leaves the pool in `STOPPING` with `ShutdownReport.terminated=false` instead of producing a false termination signal.
 
@@ -75,9 +83,9 @@ The source-integrity gate now supports `--require-staged-snapshot`. When enabled
 
 A repository-local pre-commit hook is provided in `.githooks/pre-commit`. Install it once in an existing clone with `make source-integrity-hook-install`. The hook executes `make source-integrity-precommit`, which runs the source-integrity tests, validates Git tracking, validates the exact staged snapshot, verifies the staged Git-blob checksum manifest and executes `git diff --cached --check`. CI performs the same fail-closed validations after checkout.
 The pre-commit target is side-effect free: coverage and diagnostic reports are written only to temporary files, so committing cannot silently mutate release evidence or invalidate archive checksums.
-The tracked `distribution/source-files.sha256` covers the Git-tracked source snapshot (excluding itself) by hashing the immutable **Git index blobs**, not working-tree bytes. This keeps the manifest deterministic across checkout filters such as LF/CRLF conversion. The release bundle separately carries `artifacts/validation/release-files.sha256`, which hashes the actual packaged bytes, including validation evidence. This separation keeps Git recovery patches and release verification independently coherent.
+The tracked `src/distribution/source-files.sha256` covers the Git-tracked source snapshot (excluding itself) by hashing the immutable **Git index blobs**, not working-tree bytes. This keeps the manifest deterministic across checkout filters such as LF/CRLF conversion. The release bundle separately carries `artifacts/validation/release-files.sha256`, which hashes the actual packaged bytes, including validation evidence. This separation keeps Git recovery patches and release verification independently coherent.
 
-Before every InfraNexum commit that changes tracked sources, stage the intended change, run `make source-checksum-update`, stage `distribution/source-files.sha256`, then run `make source-integrity-precommit`. The installed hook is defense in depth; CI remains fail-closed and authoritative.
+Before every InfraNexum commit that changes tracked sources, stage the intended change, run `make source-checksum-update`, stage `src/distribution/source-files.sha256`, then run `make source-integrity-precommit`. The installed hook is defense in depth; CI remains fail-closed and authoritative.
 
 The `alpha.0.17` recovery patch is built against the exact incomplete `alpha.0.16` state observed in the supplied hosted log: the ten missing paths are recreated explicitly and staged by `git apply --index`, while the staged-snapshot hardening is applied in the same change. This removes reliance on archive overlay behavior for the immediate repair.
 
@@ -98,7 +106,7 @@ Before pushing this increment from an existing repository, stage modifications t
 
 This increment generalizes the checkout regression fixes instead of maintaining per-file exceptions:
 
-- `distribution/source-inventory.json` is the canonical path inventory for source, tests, configuration, CI and documentation;
+- `src/distribution/source-inventory.json` is the canonical path inventory for source, tests, configuration, CI and documentation;
 - `validation.source_integrity` rejects missing or undeclared canonical files before language builds start;
 - when Git metadata is available, every inventory entry must be present in `git ls-files`; a file that exists locally but was not committed is rejected with `CHECK-SOURCE-GIT-002`;
 - project-local Java imports must resolve to a main-source definition, top-level filenames must match their declared type, and duplicate FQCNs are rejected;
@@ -110,7 +118,7 @@ The gate explicitly inventories `CapabilityUnavailableException.java`, `JdbcData
 
 ## alpha.0.12 — Core Audit (baseline conservée)
 
-`components/core/audit` now provides:
+`src/components/core/audit` now provides:
 
 - immutable scoped `AuditEntry` values containing actor, action, target, authorization decision, UTC timestamp, correlation ID, result and origin;
 - strict metadata sanitation with rejection of secret-bearing keys and a 4 KiB aggregate UTF-8 bound;
@@ -202,12 +210,12 @@ Target-environment validation:
 ```bash
 test "$(node --version)" = "v24.18.1"
 test "$(pnpm --version)" = "11.17.0"
-cd applications/web && pnpm install --frozen-lockfile --offline && pnpm run verify
+cd src/applications/web && pnpm install --frozen-lockfile --offline && pnpm run verify
 cd ../../..
 GOTOOLCHAIN=go1.26.5 make agent-vet agent-test agent-build
 ./mvnw --batch-mode --no-transfer-progress verify
 ./mvnw --batch-mode --no-transfer-progress \
-  -pl components/adapters/jdbc -am \
+  -pl src/components/adapters/jdbc -am \
   -Dtest=PostgreSqlJdbcTransactionalEventStoreTest,PostgreSqlJdbcAuditJournalTest,PostgreSqlJdbcTaskStoreTest \
   -Dinfranexum.surefire.failIfNoTests=false \
   -Dsurefire.failIfNoSpecifiedTests=false test
@@ -239,10 +247,10 @@ The authoritative catalogue is `toolchains.lock.json`. Principal targets include
 ## Sources of truth
 
 - `BASELINE.json` — documentary baselines and digests;
-- `distribution/source-inventory.json` — canonical checkout/source inventory enforced before every build job;
+- `src/distribution/source-inventory.json` — canonical checkout/source inventory enforced before every build job;
 - `toolchains.lock.json` — build toolchain catalogue;
-- `components/core/audit/` — Core Audit contract;
-- `components/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/JdbcAuditJournal.java` — JDBC audit adapter;
-- `distribution/migrations/0005-core-audit/` — paired audit persistence;
+- `src/components/core/audit/` — Core Audit contract;
+- `src/components/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/JdbcAuditJournal.java` — JDBC audit adapter;
+- `src/distribution/migrations/0005-core-audit/` — paired audit persistence;
 - `validation/audit/` — blocking audit drift gate;
 - `artifacts/validation/validation-status.json` — validation status.

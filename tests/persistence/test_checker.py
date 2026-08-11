@@ -20,17 +20,17 @@ FILES = (
     "pom.xml",
     "Makefile",
     "validation/architecture/policy.json",
-    "components/core/events/main/io/infranexum/core/events/EventTransaction.java",
-    "components/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/JdbcTransactionalEventStore.java",
-    "components/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/JdbcDatabaseDialect.java",
-    "distribution/migrations/0003-core-inbox-reservation/postgresql.sql",
-    "distribution/migrations/0003-core-inbox-reservation/oracle.sql",
-    "distribution/migrations/0003-core-inbox-reservation/rollback/postgresql.sql",
-    "distribution/migrations/0003-core-inbox-reservation/rollback/oracle.sql",
-    "applications/server/main/io/infranexum/server/persistence/EventPersistenceConfiguration.java",
-    "applications/server/MANIFEST.json",
-    "applications/server/pom.xml",
-    "applications/server/main/io/infranexum/server/persistence/UnavailableDataSource.java",
+    "src/components/core/events/main/io/infranexum/core/events/EventTransaction.java",
+    "src/components/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/JdbcTransactionalEventStore.java",
+    "src/components/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/JdbcDatabaseDialect.java",
+    "src/distribution/migrations/0003-core-inbox-reservation/postgresql.sql",
+    "src/distribution/migrations/0003-core-inbox-reservation/oracle.sql",
+    "src/distribution/migrations/0003-core-inbox-reservation/rollback/postgresql.sql",
+    "src/distribution/migrations/0003-core-inbox-reservation/rollback/oracle.sql",
+    "src/applications/server/main/io/infranexum/server/persistence/EventPersistenceConfiguration.java",
+    "src/applications/server/MANIFEST.json",
+    "src/applications/server/pom.xml",
+    "src/applications/server/main/io/infranexum/server/persistence/UnavailableDataSource.java",
 )
 
 
@@ -148,7 +148,7 @@ class PersistenceCheckerTest(unittest.TestCase):
         self.assertIn("CHECK-JDBC-SERVER-005", self.ids())
 
     def test_reactor_and_policy_registration_are_enforced(self) -> None:
-        self.mutate("pom.xml", "    <module>components/adapters/jdbc</module>\n")
+        self.mutate("pom.xml", "    <module>src/components/adapters/jdbc</module>\n")
         self.assertIn("CHECK-JDBC-REACTOR-002", self.ids())
         shutil.copy2(SOURCE / "pom.xml", self.root / "pom.xml")
         policy = self.root / FILES[2]

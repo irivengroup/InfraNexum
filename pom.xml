@@ -6,20 +6,20 @@
 
   <groupId>io.infranexum</groupId>
   <artifactId>infranexum-parent</artifactId>
-  <version>2.0.0-alpha.0.20</version>
+  <version>2.0.0-alpha.0.21</version>
   <packaging>pom</packaging>
   <name>InfraNexum</name>
   <description>InfraNexum — Infrastructure Control &amp; Governance Platform</description>
 
   <modules>
-    <module>components/core/contracts</module>
-    <module>components/core/events</module>
-    <module>components/core/workers</module>
-    <module>components/core/capabilities</module>
-    <module>components/core/entitlements</module>
-    <module>components/core/audit</module>
-    <module>components/adapters/jdbc</module>
-    <module>applications/server</module>
+    <module>src/components/core/contracts</module>
+    <module>src/components/core/events</module>
+    <module>src/components/core/workers</module>
+    <module>src/components/core/capabilities</module>
+    <module>src/components/core/entitlements</module>
+    <module>src/components/core/audit</module>
+    <module>src/components/adapters/jdbc</module>
+    <module>src/applications/server</module>
   </modules>
 
   <properties>
@@ -59,7 +59,6 @@
     <!-- Short source roots are intentional: they preserve Java package paths while
          keeping repository-relative paths safely below the Windows extraction budget. -->
     <sourceDirectory>main</sourceDirectory>
-    <testSourceDirectory>test</testSourceDirectory>
     <resources>
       <resource><directory>resources</directory></resource>
     </resources>

@@ -8,26 +8,27 @@ GO ?= go
 JAVAC ?= javac
 JAVA ?= java
 
-SOURCE_ROOT := .
-APPLICATION_ROOT := applications
-COMPONENT_ROOT := components
+REPOSITORY_ROOT := .
+PRODUCT_ROOT := src
+APPLICATION_ROOT := $(PRODUCT_ROOT)/applications
+COMPONENT_ROOT := $(PRODUCT_ROOT)/components
 TEST_ROOT := tests
 VALIDATION_ROOT := validation
 TOOLS_ROOT := tools
-MIGRATION_ROOT := distribution/migrations
+MIGRATION_ROOT := src/distribution/migrations
 REPORT_ROOT := artifacts/validation
 REPORT_ROOT_ABS := $(abspath $(REPORT_ROOT))
 AGENT_ROOT := $(APPLICATION_ROOT)/agent
 WEB_ROOT := $(APPLICATION_ROOT)/web
 
-# Python validation packages live at repository root beside the OpenInfra-style
-# product spaces. PYTHONPATH=. keeps package imports deterministic on every runner.
+# Python validation packages live at repository root outside the src/ product boundary.
+# PYTHONPATH=. keeps validation imports deterministic on every runner.
 define PY_COVERAGE
 	mkdir -p $(REPORT_ROOT); \
 	coverage_file="$$(mktemp)"; \
 	trap 'rm -f "$$coverage_file"' EXIT; \
-	COVERAGE_FILE="$$coverage_file" PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m coverage run --branch --source=$(1) -m unittest discover -s $(2) -p 'test_*.py'; \
-	COVERAGE_FILE="$$coverage_file" PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m coverage report --fail-under=98 > $(3); \
+	COVERAGE_FILE="$$coverage_file" PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(REPOSITORY_ROOT) $(PYTHON) -m coverage run --branch --source=$(1) -m unittest discover -s $(2) -p 'test_*.py'; \
+	COVERAGE_FILE="$$coverage_file" PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(REPOSITORY_ROOT) $(PYTHON) -m coverage report --fail-under=98 > $(3); \
 	cat $(3)
 endef
 
@@ -36,15 +37,15 @@ source-integrity-test:
 
 source-integrity-check:
 	@mkdir -p $(REPORT_ROOT)
-	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.source_integrity.cli --root . --json-report $(REPORT_ROOT)/source-integrity.json $(if $(SOURCE_INTEGRITY_REQUIRE_GIT),--require-git-tracking,) $(if $(SOURCE_INTEGRITY_REQUIRE_STAGED),--require-staged-snapshot,) $(if $(SOURCE_INTEGRITY_REQUIRE_CHECKSUMS),--require-git-checksums,)
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(REPOSITORY_ROOT) $(PYTHON) -m validation.source_integrity.cli --root . --json-report $(REPORT_ROOT)/source-integrity.json $(if $(SOURCE_INTEGRITY_REQUIRE_GIT),--require-git-tracking,) $(if $(SOURCE_INTEGRITY_REQUIRE_STAGED),--require-staged-snapshot,) $(if $(SOURCE_INTEGRITY_REQUIRE_CHECKSUMS),--require-git-checksums,)
 
 source-integrity-precommit:
 	@coverage_file="$$(mktemp)"; report_file="$$(mktemp)"; \
 	trap 'rm -f "$$coverage_file" "$$report_file"' EXIT; \
-	COVERAGE_FILE="$$coverage_file" PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m coverage run --branch --source=validation.source_integrity -m unittest discover -s $(TEST_ROOT)/source_integrity -p 'test_*.py'; \
-	COVERAGE_FILE="$$coverage_file" PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m coverage report --fail-under=98 > "$$report_file"; \
+	COVERAGE_FILE="$$coverage_file" PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(REPOSITORY_ROOT) $(PYTHON) -m coverage run --branch --source=validation.source_integrity -m unittest discover -s $(TEST_ROOT)/source_integrity -p 'test_*.py'; \
+	COVERAGE_FILE="$$coverage_file" PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(REPOSITORY_ROOT) $(PYTHON) -m coverage report --fail-under=98 > "$$report_file"; \
 	cat "$$report_file"
-	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.source_integrity.cli --root . --require-git-tracking --require-staged-snapshot --require-git-checksums
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(REPOSITORY_ROOT) $(PYTHON) -m validation.source_integrity.cli --root . --require-git-tracking --require-staged-snapshot --require-git-checksums
 	git diff --cached --check
 
 source-integrity-hook-install:
@@ -52,66 +53,66 @@ source-integrity-hook-install:
 	test "$$(git config --get core.hooksPath)" = ".githooks"
 
 source-integrity-update:
-	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.source_integrity.cli --root . --update-inventory
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(REPOSITORY_ROOT) $(PYTHON) -m validation.source_integrity.cli --root . --update-inventory
 
 source-checksum-update:
-	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.source_integrity.cli --root . --update-git-checksums
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(REPOSITORY_ROOT) $(PYTHON) -m validation.source_integrity.cli --root . --update-git-checksums
 
 architecture-test: source-integrity-check
 	@$(call PY_COVERAGE,validation.architecture,$(TEST_ROOT)/architecture,$(REPORT_ROOT)/architecture-coverage.txt)
 
 architecture-check:
 	@mkdir -p $(REPORT_ROOT)
-	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.architecture.cli --root . --policy $(VALIDATION_ROOT)/architecture/policy.json --json-report $(REPORT_ROOT)/architecture.json
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(REPOSITORY_ROOT) $(PYTHON) -m validation.architecture.cli --root . --policy $(VALIDATION_ROOT)/architecture/policy.json --json-report $(REPORT_ROOT)/architecture.json
 
 toolchain-test: source-integrity-check
 	@$(call PY_COVERAGE,validation.toolchains,$(TEST_ROOT)/toolchains,$(REPORT_ROOT)/toolchain-coverage.txt)
 
 toolchain-check:
 	@mkdir -p $(REPORT_ROOT)
-	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.toolchains.cli --root . --json-report $(REPORT_ROOT)/toolchains.json
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(REPOSITORY_ROOT) $(PYTHON) -m validation.toolchains.cli --root . --json-report $(REPORT_ROOT)/toolchains.json
 
 migration-test: source-integrity-check
 	@$(call PY_COVERAGE,validation.migrations,$(TEST_ROOT)/migrations,$(REPORT_ROOT)/migration-coverage.txt)
 
 migration-check:
 	@mkdir -p $(REPORT_ROOT)
-	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.migrations.cli --root $(MIGRATION_ROOT) --json-report $(REPORT_ROOT)/migrations.json
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(REPOSITORY_ROOT) $(PYTHON) -m validation.migrations.cli --root $(MIGRATION_ROOT) --json-report $(REPORT_ROOT)/migrations.json
 
 eventing-test: source-integrity-check
 	@$(call PY_COVERAGE,validation.eventing,$(TEST_ROOT)/eventing,$(REPORT_ROOT)/eventing-coverage.txt)
 
 eventing-check:
 	@mkdir -p $(REPORT_ROOT)
-	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.eventing.cli --root . --json-report $(REPORT_ROOT)/eventing.json
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(REPOSITORY_ROOT) $(PYTHON) -m validation.eventing.cli --root . --json-report $(REPORT_ROOT)/eventing.json
 
 persistence-test: source-integrity-check persistence-check
 	@$(call PY_COVERAGE,validation.persistence,$(TEST_ROOT)/persistence,$(REPORT_ROOT)/persistence-coverage.txt)
 
 persistence-check:
 	@mkdir -p $(REPORT_ROOT)
-	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.persistence.cli --root . --json-report $(REPORT_ROOT)/persistence.json
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(REPOSITORY_ROOT) $(PYTHON) -m validation.persistence.cli --root . --json-report $(REPORT_ROOT)/persistence.json
 
 capabilities-test: source-integrity-check
 	@$(call PY_COVERAGE,validation.capabilities,$(TEST_ROOT)/capabilities,$(REPORT_ROOT)/capabilities-coverage.txt)
 
 capabilities-check:
 	@mkdir -p $(REPORT_ROOT)
-	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.capabilities.cli --root . --json-report $(REPORT_ROOT)/capabilities.json
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(REPOSITORY_ROOT) $(PYTHON) -m validation.capabilities.cli --root . --json-report $(REPORT_ROOT)/capabilities.json
 
 entitlements-test: source-integrity-check
 	@$(call PY_COVERAGE,validation.entitlements,$(TEST_ROOT)/entitlements,$(REPORT_ROOT)/entitlements-coverage.txt)
 
 entitlements-check:
 	@mkdir -p $(REPORT_ROOT)
-	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.entitlements.cli --root . --json-report $(REPORT_ROOT)/entitlements.json
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(REPOSITORY_ROOT) $(PYTHON) -m validation.entitlements.cli --root . --json-report $(REPORT_ROOT)/entitlements.json
 
 audit-test: source-integrity-check
 	@$(call PY_COVERAGE,validation.audit,$(TEST_ROOT)/audit,$(REPORT_ROOT)/audit-coverage.txt)
 
 audit-check:
 	@mkdir -p $(REPORT_ROOT)
-	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SOURCE_ROOT) $(PYTHON) -m validation.audit.cli --root . --json-report $(REPORT_ROOT)/audit.json
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(REPOSITORY_ROOT) $(PYTHON) -m validation.audit.cli --root . --json-report $(REPORT_ROOT)/audit.json
 
 java-contract-smoke:
 	@build_dir="$$(mktemp -d)"; \
@@ -160,8 +161,8 @@ java-jdbc-smoke:
 		$(COMPONENT_ROOT)/core/entitlements/main/io/infranexum/core/entitlements/*.java \
 		$(COMPONENT_ROOT)/core/audit/main/io/infranexum/core/audit/*.java \
 		$(COMPONENT_ROOT)/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/*.java \
-		$(COMPONENT_ROOT)/adapters/jdbc/test/io/infranexum/adapters/persistence/jdbc/JdbcAdapterSmoke.java \
-		$(COMPONENT_ROOT)/adapters/jdbc/test/io/infranexum/adapters/persistence/jdbc/JdbcAuditJournalSmoke.java; \
+		$(TEST_ROOT)/java/jdbc/io/infranexum/adapters/persistence/jdbc/JdbcAdapterSmoke.java \
+		$(TEST_ROOT)/java/jdbc/io/infranexum/adapters/persistence/jdbc/JdbcAuditJournalSmoke.java; \
 	$(JAVA) -ea -cp "$$build_dir" io.infranexum.adapters.persistence.jdbc.JdbcAdapterSmoke; \
 	$(JAVA) -ea -cp "$$build_dir" io.infranexum.adapters.persistence.jdbc.JdbcAuditJournalSmoke
 
@@ -176,7 +177,7 @@ java-jdbc-workers-smoke:
 		$(COMPONENT_ROOT)/core/entitlements/main/io/infranexum/core/entitlements/*.java \
 		$(COMPONENT_ROOT)/core/audit/main/io/infranexum/core/audit/*.java \
 		$(COMPONENT_ROOT)/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/*.java \
-		$(COMPONENT_ROOT)/adapters/jdbc/test/io/infranexum/adapters/persistence/jdbc/JdbcTaskStoreSmoke.java; \
+		$(TEST_ROOT)/java/jdbc/io/infranexum/adapters/persistence/jdbc/JdbcTaskStoreSmoke.java; \
 	$(JAVA) -ea -cp "$$build_dir" io.infranexum.adapters.persistence.jdbc.JdbcTaskStoreSmoke
 
 java-capabilities-smoke:
@@ -230,14 +231,18 @@ java-activation-operations-smoke:
 	$(JAVA) -ea -cp "$$build_dir" io.infranexum.core.entitlements.ActivationOperationsSmoke
 
 agent-vet:
-	cd $(AGENT_ROOT) && GOTOOLCHAIN=$${GOTOOLCHAIN:-auto} $(GO) vet ./...
+	@workspace="$$(mktemp -d)"; \
+	trap 'rm -rf "$$workspace"' EXIT; \
+	$(PYTHON) $(TOOLS_ROOT)/materialize_go_tests.py --source $(AGENT_ROOT) --tests $(TEST_ROOT)/go/agent --output "$$workspace/agent"; \
+	cd "$$workspace/agent"; \
+	GOTOOLCHAIN=$${GOTOOLCHAIN:-auto} $(GO) vet ./...
 
 agent-test:
 	@mkdir -p $(REPORT_ROOT); \
-	coverage_file="$$(mktemp)"; \
-	summary_file="$$(mktemp)"; \
-	trap 'rm -f "$$coverage_file" "$$summary_file"' EXIT; \
-	cd $(AGENT_ROOT); \
+	workspace="$$(mktemp -d)"; coverage_file="$$(mktemp)"; summary_file="$$(mktemp)"; \
+	trap 'rm -rf "$$workspace"; rm -f "$$coverage_file" "$$summary_file"' EXIT; \
+	$(PYTHON) $(TOOLS_ROOT)/materialize_go_tests.py --source $(AGENT_ROOT) --tests $(TEST_ROOT)/go/agent --output "$$workspace/agent"; \
+	cd "$$workspace/agent"; \
 	GOTOOLCHAIN=$${GOTOOLCHAIN:-auto} $(GO) test -race -coverprofile="$$coverage_file" ./...; \
 	GOTOOLCHAIN=$${GOTOOLCHAIN:-auto} $(GO) tool cover -func="$$coverage_file" > "$$summary_file"; \
 	cat "$$summary_file"; \
@@ -254,13 +259,13 @@ agent-build:
 web-test:
 	@mkdir -p $(REPORT_ROOT); \
 	cd $(WEB_ROOT); \
-	node --test --experimental-test-coverage --test-coverage-lines=98 --test-coverage-branches=98 --test-coverage-functions=98 --test-coverage-include='runtime/config.mjs' --test-coverage-include='runtime/logger.mjs' --test-coverage-include='runtime/static-assets.mjs' --test-coverage-include='runtime/web-application.mjs' runtime/tests/*.test.mjs \
+	node --test --experimental-test-coverage --test-coverage-lines=98 --test-coverage-branches=98 --test-coverage-functions=98 --test-coverage-include='runtime/config.mjs' --test-coverage-include='runtime/logger.mjs' --test-coverage-include='runtime/static-assets.mjs' --test-coverage-include='runtime/web-application.mjs' ../../../tests/web/*.test.mjs \
 		| tee "$(REPORT_ROOT_ABS)/web-coverage.txt"
 
 web-smoke:
 	@mkdir -p $(REPORT_ROOT); \
 	cd $(WEB_ROOT); \
-	node runtime/tests/smoke.mjs | tee "$(REPORT_ROOT_ABS)/web-smoke.json"
+	node ../../../tests/web/smoke.mjs | tee "$(REPORT_ROOT_ABS)/web-smoke.json"
 
 web-verify: web-test web-smoke
 
