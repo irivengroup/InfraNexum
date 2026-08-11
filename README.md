@@ -1,10 +1,10 @@
-# InfraNexum 2.0.0-alpha.0.36 — Managed Spring Scheduling Runtime
+# InfraNexum 2.0.0-alpha.0.37 — Workers Operational Readiness & Metrics
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
-`alpha.0.35` closes the Spring application-context collision exposed after the explicit Entitlements/Workers Clock qualification delivered in `alpha.0.34`. InfraNexum now provides one canonical `platformClock` marked `@Primary` for framework integrations that resolve `Clock` by type, while bounded contexts retain their explicit `entitlementClock` and `workerClock` qualifiers. A Spring Modulith Moments auto-configuration regression test reproduces the three-clock composition and requires successful context creation.
+`alpha.0.37` completes the operational-readiness layer for **PGM-02-E07 Core Workers**. `TaskWorkerPool` now exposes a secret-free cumulative snapshot with configured/live worker capacity, active executions, task outcomes and fatal loop failures. Server readiness is fail-closed when an enabled worker pool is missing, partially dead or no longer running, and Micrometer publishes fixed-cardinality Workers gauges/counters through the Actuator metrics endpoint. A worker-loop failure that would previously disappear inside an `ExecutorService` `Future` is now observable through readiness and metrics without introducing an unbounded infrastructure retry loop.
 
-The UUIDv7 and whole-second persistence repairs delivered in `alpha.0.32` and `alpha.0.33` remain unchanged. Production deployment remains standalone bare-metal or VM; root Docker/Compose remains developer/test tooling.
+The successful Docker/JDK 25 bootstrap achieved by `alpha.0.35` and the managed Spring scheduler delivered in `alpha.0.36` remain unchanged. Production deployment remains standalone bare-metal or VM; root Docker/Compose remains developer/test tooling.
 
 ## Source layout
 

@@ -17,7 +17,6 @@ import javax.sql.DataSource;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -30,7 +29,6 @@ import org.springframework.context.annotation.Configuration;
  * registry when the application context is created.
  */
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties(WorkerRuntimeProperties.class)
 @ConditionalOnProperty(
         name = "infranexum.workers.enabled",
         havingValue = "true",

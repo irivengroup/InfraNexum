@@ -153,11 +153,20 @@ public final class WorkersSmoke {
         WorkerPoolConfiguration configuration = new WorkerPoolConfiguration(
                 2, Duration.ofMillis(5), Duration.ofMillis(100), Duration.ofMillis(20), Duration.ofSeconds(2));
         TaskWorkerPool pool = new TaskWorkerPool(store, registry, RETRY, clock, "smoke", configuration);
+        assert !pool.snapshot().ready();
         pool.start();
+        assert awaitReady(pool, 5, TimeUnit.SECONDS);
         assert enteredLong.await(5, TimeUnit.SECONDS);
         Thread.sleep(180);
         assert store.claimBatch("intruder", 1, clock.instant(), Duration.ofMillis(100), RETRY).isEmpty();
         assert allDone.await(5, TimeUnit.SECONDS);
+        WorkerPoolSnapshot snapshot = pool.snapshot();
+        assert snapshot.ready();
+        assert snapshot.configuredConcurrency() == 2;
+        assert snapshot.liveWorkers() == 2;
+        assert snapshot.claimed() == 4;
+        assert snapshot.succeeded() == 4;
+        assert snapshot.fatalLoopFailures() == 0;
         ShutdownReport report = pool.shutdown();
         assert report.graceful();
         assert report.terminated();
@@ -205,6 +214,17 @@ public final class WorkersSmoke {
         assert second.forced();
         assert second.terminated();
         assert pool.state() == WorkerPoolState.TERMINATED;
+    }
+
+    private static boolean awaitReady(TaskWorkerPool pool, long timeout, TimeUnit unit) throws InterruptedException {
+        long deadline = System.nanoTime() + unit.toNanos(timeout);
+        while (System.nanoTime() < deadline) {
+            if (pool.snapshot().ready()) {
+                return true;
+            }
+            Thread.sleep(5);
+        }
+        return pool.snapshot().ready();
     }
 
     private static TaskSubmission submission(String key) {

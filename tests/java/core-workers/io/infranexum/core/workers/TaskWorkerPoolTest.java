@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 /** End-to-end pool tests for bounded concurrency, heartbeat and truthful shutdown. */
@@ -91,6 +92,45 @@ final class TaskWorkerPoolTest {
     }
 
     @Test
+    void operationalSnapshotCountsOutcomesAndDetectsADeadWorkerLoop() throws Exception {
+        Clock clock = Clock.systemUTC();
+        InMemoryTaskStore store = new InMemoryTaskStore();
+        CountDownLatch completed = new CountDownLatch(1);
+        TaskHandler handler = handler(RetrySafety.RETRY_SAFE, context -> completed.countDown());
+        TaskHandlerRegistry registry = new TaskHandlerRegistry(List.of(handler));
+        TaskScheduler scheduler = new TaskScheduler(store, registry, new UuidV7Generator(), clock);
+        scheduler.schedule(new TaskSubmission(TYPE, "metrics", Map.of(), clock.instant()));
+        WorkerPoolConfiguration configuration = new WorkerPoolConfiguration(
+                1, Duration.ofMillis(5), Duration.ofSeconds(1), Duration.ofMillis(100), Duration.ofSeconds(1));
+        TaskWorkerPool pool = new TaskWorkerPool(store, registry, RETRY, clock, "metrics", configuration);
+
+        assertFalse(pool.snapshot().ready());
+        pool.start();
+        assertTrue(completed.await(5, TimeUnit.SECONDS));
+        assertTrue(awaitReady(pool, 5, TimeUnit.SECONDS));
+        WorkerPoolSnapshot completedSnapshot = pool.snapshot();
+        assertEquals(1, completedSnapshot.claimed());
+        assertEquals(1, completedSnapshot.succeeded());
+        assertEquals(0, completedSnapshot.fatalLoopFailures());
+        assertTrue(pool.shutdown().terminated());
+
+        TaskWorkerPool failingPool = new TaskWorkerPool(
+                new FailingClaimStore(),
+                registry,
+                RETRY,
+                clock,
+                "failing",
+                configuration);
+        failingPool.start();
+        assertTrue(awaitFatalFailure(failingPool, 5, TimeUnit.SECONDS));
+        WorkerPoolSnapshot failedSnapshot = failingPool.snapshot();
+        assertFalse(failedSnapshot.ready());
+        assertEquals(0, failedSnapshot.liveWorkers());
+        assertEquals(1, failedSnapshot.fatalLoopFailures());
+        assertTrue(failingPool.shutdown().terminated());
+    }
+
+    @Test
     void shutdownBeforeStartIsGracefulAndIdempotent() {
         TaskHandler handler = handler(RetrySafety.RETRY_SAFE, context -> {});
         TaskWorkerPool pool = new TaskWorkerPool(
@@ -149,6 +189,80 @@ final class TaskWorkerPoolTest {
         assertTrue(second.forced());
         assertTrue(second.terminated());
         assertEquals(WorkerPoolState.TERMINATED, pool.state());
+    }
+
+    private static boolean awaitReady(TaskWorkerPool pool, long timeout, TimeUnit unit) throws InterruptedException {
+        long deadline = System.nanoTime() + unit.toNanos(timeout);
+        while (System.nanoTime() < deadline) {
+            if (pool.snapshot().ready()) {
+                return true;
+            }
+            Thread.sleep(5);
+        }
+        return pool.snapshot().ready();
+    }
+
+    private static boolean awaitFatalFailure(TaskWorkerPool pool, long timeout, TimeUnit unit) throws InterruptedException {
+        long deadline = System.nanoTime() + unit.toNanos(timeout);
+        while (System.nanoTime() < deadline) {
+            if (pool.snapshot().fatalLoopFailures() > 0) {
+                return true;
+            }
+            Thread.sleep(5);
+        }
+        return pool.snapshot().fatalLoopFailures() > 0;
+    }
+
+    private static final class FailingClaimStore implements TaskStore {
+        @Override
+        public TaskSubmissionResult submit(TaskId proposedId, TaskSubmission submission, RetrySafety retrySafety, Instant submittedAt) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<TaskRecord> claimBatch(String workerId, int limit, Instant now, Duration leaseDuration, RetryPolicy retryPolicy) {
+            throw new IllegalStateException("simulated persistence failure");
+        }
+
+        @Override
+        public void renewLease(TaskId taskId, String workerId, long leaseVersion, Instant now, Duration leaseDuration) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public TaskCheckpoint saveCheckpoint(TaskId taskId, String workerId, long leaseVersion, String token, Instant now, Duration leaseDuration) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void markSucceeded(TaskId taskId, String workerId, long leaseVersion, Instant completedAt) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public TaskStatus markFailed(TaskId taskId, String workerId, long leaseVersion, Instant failedAt, RetryPolicy retryPolicy, Throwable failure) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void markTerminalFailure(TaskId taskId, String workerId, long leaseVersion, Instant failedAt, Throwable failure) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void markCancelled(TaskId taskId, String workerId, long leaseVersion, Instant cancelledAt) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public CancellationOutcome requestCancellation(TaskId taskId, Instant requestedAt) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Optional<TaskRecord> find(TaskId taskId) {
+            return Optional.empty();
+        }
     }
 
     private static TaskHandler handler(RetrySafety safety, HandlerBody body) {

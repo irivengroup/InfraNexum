@@ -90,6 +90,32 @@ final class WorkerValueObjectsTest {
     }
 
     @Test
+    void workerPoolSnapshotIsStrictAndReadinessRequiresCompleteLiveCapacity() {
+        WorkerPoolSnapshot ready = new WorkerPoolSnapshot(
+                WorkerPoolState.RUNNING, 2, 2, 1, 5, 2, 1, 1, 0, 1, 0);
+        assertTrue(ready.ready());
+        assertFalse(new WorkerPoolSnapshot(
+                WorkerPoolState.RUNNING, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0).ready());
+        assertFalse(new WorkerPoolSnapshot(
+                WorkerPoolState.STOPPING, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0).ready());
+        assertFalse(new WorkerPoolSnapshot(
+                WorkerPoolState.RUNNING, 2, 2, 0, 0, 0, 0, 0, 0, 0, 1).ready());
+
+        assertThrows(NullPointerException.class, () -> new WorkerPoolSnapshot(
+                null, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
+                WorkerPoolState.NEW, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
+                WorkerPoolState.NEW, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0));
+        assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
+                WorkerPoolState.NEW, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0));
+        assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
+                WorkerPoolState.NEW, 1, 0, 0, -1, 0, 0, 0, 0, 0, 0));
+        assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
+                WorkerPoolState.NEW, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0));
+    }
+
+    @Test
     void shutdownReportCannotClaimAFalseTermination() {
         ShutdownReport graceful = new ShutdownReport(true, false, true, 2, Duration.ZERO);
         ShutdownReport forcedIncomplete = new ShutdownReport(false, true, false, 2, Duration.ofSeconds(1));

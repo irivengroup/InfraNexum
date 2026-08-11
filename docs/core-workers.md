@@ -4,7 +4,7 @@
 
 `src/components/core/workers` is the first executable foundation for roadmap epic **PGM-02-E07**. It defines the domain/application contracts for one-shot background tasks and a bounded in-process worker runtime. The module deliberately does not introduce a message broker: durable scheduling is expressed through the `TaskStore` port so PostgreSQL/Oracle adapters can provide the same semantics without coupling the core to a persistence technology.
 
-The in-memory reference runtime, durable JDBC adapter and Server composition root are implemented. **PGM-02-E07 remains NON TERMINÉ** for target-environment proof, operational readiness/metrics hardening and live Oracle execution.
+The in-memory reference runtime, durable JDBC adapter, Server composition root and operational readiness/metrics layer are implemented. **PGM-02-E07 remains NON TERMINÉ** only for target-environment certification of this increment and live Oracle execution.
 
 ## Invariants
 
@@ -94,6 +94,14 @@ The JDBC recovery pass is capped at 1,000 expired leases per claim transaction; 
 `WorkerRuntimeProperties` exposes only bounded settings and delegates invariant validation to the Core value objects. Invalid concurrency, lease/heartbeat timing, retry limits or jitter fail application-context construction rather than silently degrading execution. The runtime can be disabled explicitly with `INFRANEXUM_WORKERS_ENABLED=false`; persistence-mode selection has no fallback between database dialects.
 
 The Server composition has dedicated JUnit tests for configuration invariants, explicit persistence selection, handler discovery, scheduler construction and start/close lifecycle. Official Server JaCoCo proof still requires the project JDK 25 toolchain; Oracle remains a live target-database obligation.
+
+## Operational readiness and metrics — alpha.0.37
+
+`TaskWorkerPool.snapshot()` is the single runtime observation contract. It reports configured concurrency, live worker loops, active executions, cumulative task outcomes and fatal loop failures without exposing task identifiers, parameters or failure messages. Readiness is strict: an enabled pool is ready only while its lifecycle state is `RUNNING`, every configured worker loop is alive and no fatal loop failure has been observed.
+
+The Server always registers a `workers` health contributor. Explicitly disabled Workers are healthy with `enabled=false`; an enabled-but-missing/ambiguous pool, a partially dead pool or a stopped pool is `DOWN`. The Actuator readiness group includes `workers`, so Docker and standalone probes no longer report the Server ready when background execution capacity is silently lost.
+
+Micrometer publishes only fixed-cardinality metrics: `infranexum.workers.enabled`, `ready`, `capacity`, `live`, `active`, cumulative task outcome counters and `infranexum.workers.loop.failures`. Task IDs, worker IDs, task types and arbitrary failure strings are deliberately excluded from tags.
 
 ## Verification
 

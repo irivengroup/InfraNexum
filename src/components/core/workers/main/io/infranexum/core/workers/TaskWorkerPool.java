@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
  * Fixed-concurrency worker runtime with lease heartbeats and bounded shutdown.
@@ -33,6 +34,14 @@ public final class TaskWorkerPool implements AutoCloseable {
     private final AtomicBoolean stopRequested = new AtomicBoolean();
     private final AtomicReference<WorkerPoolState> state = new AtomicReference<>(WorkerPoolState.NEW);
     private final AtomicReference<ShutdownReport> shutdownReport = new AtomicReference<>();
+    private final AtomicInteger liveWorkers = new AtomicInteger();
+    private final LongAdder claimed = new LongAdder();
+    private final LongAdder succeeded = new LongAdder();
+    private final LongAdder retried = new LongAdder();
+    private final LongAdder failed = new LongAdder();
+    private final LongAdder cancelled = new LongAdder();
+    private final LongAdder abandoned = new LongAdder();
+    private final LongAdder fatalLoopFailures = new LongAdder();
 
     public TaskWorkerPool(
             TaskStore store,
@@ -85,6 +94,22 @@ public final class TaskWorkerPool implements AutoCloseable {
 
     public int activeExecutions() {
         return (int) workers.stream().filter(TaskWorker::active).count();
+    }
+
+    /** Returns a stable, secret-free view used by readiness and metrics adapters. */
+    public WorkerPoolSnapshot snapshot() {
+        return new WorkerPoolSnapshot(
+                state.get(),
+                configuration.concurrency(),
+                liveWorkers.get(),
+                activeExecutions(),
+                claimed.sum(),
+                succeeded.sum(),
+                retried.sum(),
+                failed.sum(),
+                cancelled.sum(),
+                abandoned.sum(),
+                fatalLoopFailures.sum());
     }
 
     /** Stops accepting new claims and waits a bounded interval for active handlers. */
@@ -154,25 +179,45 @@ public final class TaskWorkerPool implements AutoCloseable {
     }
 
     private void runLoop(TaskWorker worker) {
-        while (!stopRequested.get()) {
-            WorkerIterationReport report = worker.runOnce();
-            if (stopRequested.get()) {
-                break;
-            }
-            if (report.claimed() == 0) {
-                try {
-                    TimeUnit.NANOSECONDS.sleep(configuration.pollInterval().toNanos());
-                } catch (InterruptedException interrupted) {
-                    if (stopRequested.get()) {
-                        Thread.currentThread().interrupt();
-                        break;
+        liveWorkers.incrementAndGet();
+        try {
+            while (!stopRequested.get()) {
+                WorkerIterationReport report = worker.runOnce();
+                record(report);
+                if (stopRequested.get()) {
+                    break;
+                }
+                if (report.claimed() == 0) {
+                    try {
+                        TimeUnit.NANOSECONDS.sleep(configuration.pollInterval().toNanos());
+                    } catch (InterruptedException interrupted) {
+                        if (stopRequested.get()) {
+                            Thread.currentThread().interrupt();
+                            break;
+                        }
                     }
                 }
+                if (Thread.currentThread().isInterrupted() && !stopRequested.get()) {
+                    Thread.interrupted();
+                }
             }
-            if (Thread.currentThread().isInterrupted() && !stopRequested.get()) {
-                Thread.interrupted();
-            }
+        } catch (RuntimeException failure) {
+            // ExecutorService otherwise hides loop termination inside its Future. Record the
+            // failure so readiness becomes fail-closed instead of reporting a partially dead pool.
+            fatalLoopFailures.increment();
+            throw failure;
+        } finally {
+            liveWorkers.decrementAndGet();
         }
+    }
+
+    private void record(WorkerIterationReport report) {
+        claimed.add(report.claimed());
+        succeeded.add(report.succeeded());
+        retried.add(report.retried());
+        failed.add(report.failed());
+        cancelled.add(report.cancelled());
+        abandoned.add(report.abandoned());
     }
 
     private void heartbeatAll() {

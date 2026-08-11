@@ -56,13 +56,16 @@ smoke() {
   require_repo
   port=${INFRANEXUM_SERVER_PUBLISHED_PORT:-8080}
   readiness=$(mktemp)
+  workers_metric=$(mktemp)
   build=$(mktemp)
-  trap 'rm -f "$readiness" "$build"' EXIT HUP INT TERM
+  trap 'rm -f "$readiness" "$workers_metric" "$build"' EXIT HUP INT TERM
   curl --fail --silent --show-error "http://127.0.0.1:$port/actuator/health/readiness" > "$readiness"
   grep -q '"status":"UP"' "$readiness"
+  curl --fail --silent --show-error "http://127.0.0.1:$port/actuator/metrics/infranexum.workers.ready" > "$workers_metric"
+  grep -q '"name":"infranexum.workers.ready"' "$workers_metric"
   curl --fail --silent --show-error "http://127.0.0.1:$port/api/v1/system/build" > "$build"
   grep -q '"product":"InfraNexum"' "$build"
-  rm -f "$readiness" "$build"
+  rm -f "$readiness" "$workers_metric" "$build"
   trap - EXIT HUP INT TERM
   echo "compose-smoke: PASS"
 }

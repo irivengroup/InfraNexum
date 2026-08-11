@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.36",
-  "profile": "spring-framework-clock-arbitration-repair",
+  "version": "2.0.0-alpha.0.37",
+  "profile": "workers-operational-readiness-metrics",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -14,7 +14,7 @@
     },
     {
       "id": "infranexum-server",
-      "status": "source-server-bootstrap-worker-runtime-composition-explicit-bounded-context-clocks-canonical-primary-platform-clock-spring-modulith-moments-regression-hosted-jdk25-server-verify-pending"
+      "status": "source-server-bootstrap-worker-runtime-composition-managed-platform-scheduling-workers-fail-closed-readiness-fixed-cardinality-micrometer-metrics-hosted-jdk25-server-verify-pending"
     },
     {
       "id": "infranexum-agent",
@@ -30,7 +30,7 @@
     },
     {
       "id": "core-workers-v1",
-      "status": "bounded-runtime-idempotency-retry-safety-lease-fencing-heartbeat-checkpoint-cancellation-deterministic-interruption-aware-truthful-shutdown-serialized-runonce-and-lifecycle-race-hardening-hosted-jdk25-jacoco-passed-on-alpha0.24"
+      "status": "bounded-runtime-idempotency-retry-safety-lease-fencing-heartbeat-checkpoint-cancellation-truthful-shutdown-secret-free-operational-snapshot-live-loop-and-fatal-failure-observability-hosted-jdk25-jacoco-proof-pending"
     },
     {
       "id": "adapter-persistence-jdbc-workers-v1",
@@ -51,12 +51,12 @@
   ],
   "validation_reports": [],
   "validation_summary": {
-    "source_inventory_paths": 513,
+    "source_inventory_paths": 526,
     "source_integrity_tests": 45,
     "source_integrity_coverage_percent": 100,
     "source_integrity_violations": 0,
-    "python_tests": 202,
-    "architecture_tests": 36,
+    "python_tests": 208,
+    "architecture_tests": 42,
     "architecture_violations": 0,
     "toolchain_tests": 25,
     "toolchain_coverage_percent": 99,
@@ -80,7 +80,7 @@
     "audit_coverage_percent": 100,
     "audit_violations": 0,
     "java_offline_smoke_targets": 10,
-    "workers_module_tests_defined": 48,
+    "workers_module_tests_defined": 50,
     "jdbc_workers_scripted_contract_groups": 10,
     "jdbc_workers_junit_tests_defined": 10,
     "jdbc_workers_postgresql_live_tests_defined": 5,
@@ -90,14 +90,14 @@
     "web_branch_coverage_percent": 98.28,
     "web_function_coverage_percent": 100,
     "repository_syntax_counts": {
-      "python": 51,
+      "python": 53,
       "json": 45,
       "yaml": 24,
       "xml": 9,
       "javascript": 13,
       "go": 8,
       "shell": 5,
-      "java": 280
+      "java": 291
     },
     "archive_compatibility_tests": 12,
     "archive_compatibility_coverage_percent": 100,
@@ -106,35 +106,36 @@
     "archive_compatibility_max_member_path": 142,
     "entitlements_module_tests_defined": 49,
     "audit_module_tests_defined": 21,
-    "architecture_coverage_status": "NON_EXECUTED_ALPHA035_COVERAGE_WRAPPER_TIMEOUT_AFTER_PARTIAL_INSTRUMENTED_SUITE",
-    "architecture_functional_tests": 36,
+    "architecture_coverage_status": "NON_EXECUTED_ALPHA037_COVERAGE_WRAPPER_TIMEOUT_AFTER_PARTIAL_INSTRUMENTED_SUITE",
+    "architecture_functional_tests": 42,
     "jdbc_module_tests_defined": 52,
     "jdbc_postgresql_live_tests_defined": 18,
-    "server_module_tests_defined": 50,
+    "server_module_tests_defined": 59,
     "server_capability_configuration_contract_local": "EXECUTED_JAVA21_STRICT_HARNESS",
     "agent_target_toolchain_status": "NON_EXECUTED_LOCAL_GO_1_23_2_TARGET_GO_1_26_5",
     "jdbc_deterministic_harness_tests_executed": 33,
     "jdbc_explicit_source_branch_gaps_diagnostic": 0,
-    "server_workers_runtime_tests_defined": 5,
+    "server_workers_runtime_tests_defined": 10,
     "server_workers_runtime_strict_harness": "EXECUTED_JAVA21_STUBBED_SPRING_DIAGNOSTIC",
-    "compose_contract_tests": 21,
-    "server_clock_framework_autoconfiguration_regression": "DEFINED_REQUIRES_JDK25_MAVEN_EXECUTION"
+    "compose_contract_tests": 24,
+    "server_clock_framework_autoconfiguration_regression": "DEFINED_REQUIRES_JDK25_MAVEN_EXECUTION",
+    "server_workers_observability_regressions": "DEFINED_HEALTH_METRICS_LIVE_LOOP_REQUIRES_JDK25_MAVEN_EXECUTION"
   },
   "source_layout": "All production solution spaces are contained below src/; Java, Go and Web tests are repository-level under tests/; canonical relative paths are limited to 120 characters and path components to 80 characters.",
   "source_integrity": {
     "canonical_inventory": "source-inventory.json",
     "git_blob_checksums": "source-files.sha256",
-    "tracked_files": 515,
-    "source_recorded_files": 514,
+    "tracked_files": 528,
+    "source_recorded_files": 527,
     "staged_snapshot_required": true,
     "pre_commit_hook": ".githooks/pre-commit"
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.36",
-    "archive_entries": 515,
+    "prefix": "infranexum-2.0.0-alpha.0.37",
+    "archive_entries": 528,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
-    "source_recorded_files": 514
+    "source_recorded_files": 527
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.36-validation-evidence.zip"
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.37-validation-evidence.zip"
 }

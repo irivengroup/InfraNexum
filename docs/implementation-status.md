@@ -1,7 +1,14 @@
-# InfraNexum 2.0.0-alpha.0.36 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.37 — état d’implémentation
+
+## 2.0.0-alpha.0.37 — Workers operational readiness and metrics
+
+**Statut : implémenté localement ; certification Docker/JDK25 du nouvel observability path et Oracle live restent requises.**
+
+PGM-02-E07 reçoit sa couche d’exploitation manquante. `TaskWorkerPool` expose désormais un `WorkerPoolSnapshot` cumulatif et sans donnée sensible : état, concurrence configurée, boucles réellement vivantes, exécutions actives, tâches claimed/succeeded/retried/failed/cancelled/abandoned et erreurs fatales de boucle. Une exception runtime non gérée dans une boucle de worker est comptabilisée avant que l’`ExecutorService` ne la masque dans son `Future`; la perte d’une boucle rend immédiatement `snapshot.ready()` faux. Le Server publie un `WorkerHealthIndicator` toujours présent, y compris lorsque Workers est explicitement désactivé, et le groupe Actuator `readiness` inclut `workers`. Les métriques Micrometer restent à cardinalité fixe (`enabled`, `ready`, `capacity`, `live`, `active`, compteurs de résultats et erreurs fatales de boucle) et l’endpoint `metrics` est exposé pour l’exploitation. Les smokes Docker PowerShell/POSIX exigent maintenant la readiness et la présence de `infranexum.workers.ready`.
 
 
-## 2.0.0-alpha.0.36 — explicit managed Spring scheduling runtime
+
+## 2.0.0-alpha.0.37 — explicit managed Spring scheduling runtime
 
 **Statut : correction implémentée ; certification Docker/JDK25 cible requise.**
 

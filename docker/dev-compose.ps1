@@ -51,6 +51,8 @@ function Invoke-Smoke {
     $port = if ($env:INFRANEXUM_SERVER_PUBLISHED_PORT) { $env:INFRANEXUM_SERVER_PUBLISHED_PORT } else { '8080' }
     $readiness = Invoke-RestMethod -Method Get -Uri "http://127.0.0.1:$port/actuator/health/readiness" -TimeoutSec 10
     if ($readiness.status -ne 'UP') { throw 'Server readiness is not UP' }
+    $workersMetric = Invoke-RestMethod -Method Get -Uri "http://127.0.0.1:$port/actuator/metrics/infranexum.workers.ready" -TimeoutSec 10
+    if ($workersMetric.name -ne 'infranexum.workers.ready') { throw 'Workers readiness metric is unavailable' }
     $build = Invoke-RestMethod -Method Get -Uri "http://127.0.0.1:$port/api/v1/system/build" -TimeoutSec 10
     if ($build.product -ne 'InfraNexum') { throw 'Unexpected build endpoint product' }
     Write-Output 'compose-smoke: PASS'

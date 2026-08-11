@@ -28,7 +28,7 @@ test('composition root loads application-local version and injects runtime depen
   });
   assert.equal(application.state, 'created');
   const base = await application.start();
-  assert.equal((await (await fetch(`${base}/api/v1/system/build`)).json()).version, '2.0.0-alpha.0.36');
+  assert.equal((await (await fetch(`${base}/api/v1/system/build`)).json()).version, '2.0.0-alpha.0.37');
   await application.stop();
   assert.match(sink.chunks.join(''), /runtime stopped/);
 });

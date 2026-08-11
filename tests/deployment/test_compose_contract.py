@@ -86,6 +86,23 @@ class ComposeContractTest(unittest.TestCase):
             environment["INFRANEXUM_SCHEDULING_SHUTDOWN_TIMEOUT"],
         )
 
+    def test_server_forwards_bounded_worker_runtime_overrides(self) -> None:
+        environment = self.services["server"]["environment"]
+        expected = {
+            "INFRANEXUM_WORKERS_ENABLED": "${INFRANEXUM_WORKERS_ENABLED:-true}",
+            "INFRANEXUM_WORKERS_CONCURRENCY": "${INFRANEXUM_WORKERS_CONCURRENCY:-2}",
+            "INFRANEXUM_WORKERS_POLL_INTERVAL": "${INFRANEXUM_WORKERS_POLL_INTERVAL:-PT0.5S}",
+            "INFRANEXUM_WORKERS_LEASE_DURATION": "${INFRANEXUM_WORKERS_LEASE_DURATION:-PT30S}",
+            "INFRANEXUM_WORKERS_HEARTBEAT_INTERVAL": "${INFRANEXUM_WORKERS_HEARTBEAT_INTERVAL:-PT10S}",
+            "INFRANEXUM_WORKERS_SHUTDOWN_TIMEOUT": "${INFRANEXUM_WORKERS_SHUTDOWN_TIMEOUT:-PT15S}",
+            "INFRANEXUM_WORKERS_MAXIMUM_ATTEMPTS": "${INFRANEXUM_WORKERS_MAXIMUM_ATTEMPTS:-5}",
+            "INFRANEXUM_WORKERS_INITIAL_RETRY_DELAY": "${INFRANEXUM_WORKERS_INITIAL_RETRY_DELAY:-PT1S}",
+            "INFRANEXUM_WORKERS_MAXIMUM_RETRY_DELAY": "${INFRANEXUM_WORKERS_MAXIMUM_RETRY_DELAY:-PT1M}",
+            "INFRANEXUM_WORKERS_JITTER_RATIO": "${INFRANEXUM_WORKERS_JITTER_RATIO:-0.2}",
+        }
+        for name, value in expected.items():
+            self.assertEqual(value, environment[name])
+
     def test_server_is_published_on_loopback_only_by_default(self) -> None:
         self.assertEqual(
             ["127.0.0.1:${INFRANEXUM_SERVER_PUBLISHED_PORT:-8080}:8080"],
@@ -207,6 +224,18 @@ class ComposeContractTest(unittest.TestCase):
         bootstrap = migrate.index('installation_id="$($psql_base')
         self.assertLess(migration_loop, bootstrap)
         self.assertTrue((ROOT / "src/distribution/migrations/0007-core-installation-uuidv7/postgresql.sql").is_file())
+
+
+    def test_smoke_requires_workers_readiness_and_metrics(self) -> None:
+        """Runtime smoke must prove the Workers readiness contribution and metric endpoint."""
+        shell = (DOCKER / "dev-compose.sh").read_text(encoding="utf-8")
+        powershell = (DOCKER / "dev-compose.ps1").read_text(encoding="utf-8")
+        application = (ROOT / "src/applications/server/resources/application.yaml").read_text(encoding="utf-8")
+        self.assertIn("/actuator/health/readiness", shell)
+        self.assertIn("/actuator/metrics/infranexum.workers.ready", shell)
+        self.assertIn("/actuator/metrics/infranexum.workers.ready", powershell)
+        self.assertIn("include: health,info,metrics", application)
+        self.assertIn("include: readinessState,workers", application)
 
     def test_root_docker_is_explicitly_developer_only(self) -> None:
         readme = (DOCKER / "README.md").read_text(encoding="utf-8")
