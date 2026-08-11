@@ -37,6 +37,9 @@ public record ActivationValidationContext(
 
     private static String requireText(String value, String field) {
         Objects.requireNonNull(value, field);
+        if (value.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException(field + " must not contain control characters");
+        }
         String result = value.strip();
         if (result.isEmpty()) {
             throw new IllegalArgumentException(field + " must not be blank");

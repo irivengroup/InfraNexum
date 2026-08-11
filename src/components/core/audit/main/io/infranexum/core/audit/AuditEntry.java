@@ -56,6 +56,7 @@ public record AuditEntry(
 
     private static String token(String value, String field) {
         Objects.requireNonNull(value, field);
+        if (value.chars().anyMatch(Character::isISOControl)) throw new IllegalArgumentException("invalid " + field);
         String normalized = value.strip();
         if (!TOKEN.matcher(normalized).matches()) throw new IllegalArgumentException("invalid " + field);
         return normalized;
@@ -63,6 +64,7 @@ public record AuditEntry(
 
     private static String decision(String value, String field) {
         Objects.requireNonNull(value, field);
+        if (value.chars().anyMatch(Character::isISOControl)) throw new IllegalArgumentException("invalid " + field);
         String normalized = value.strip().toUpperCase(Locale.ROOT);
         if (!DECISION.matcher(normalized).matches()) throw new IllegalArgumentException("invalid " + field);
         return normalized;
@@ -73,12 +75,15 @@ public record AuditEntry(
             if (optional) return null;
             throw new NullPointerException(field);
         }
+        if (value.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException("invalid " + field);
+        }
         String normalized = value.strip();
         if (normalized.isEmpty()) {
             if (optional) return null;
             throw new IllegalArgumentException(field + " must not be blank");
         }
-        if (normalized.length() > maximum || normalized.chars().anyMatch(Character::isISOControl)) {
+        if (normalized.length() > maximum) {
             throw new IllegalArgumentException("invalid " + field);
         }
         return normalized;

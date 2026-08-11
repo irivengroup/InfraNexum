@@ -22,11 +22,13 @@ public record ActivationVerificationResult(
     }
 
     public ActivationState capabilityActivationState() {
-        return switch (state) {
-            case ACTIVE -> ActivationState.ACTIVE;
-            case GRACE -> ActivationState.GRACE;
-            case HARD_STOPPED -> ActivationState.LOCKED;
-        };
+        if (state == ActivationUsageState.ACTIVE) {
+            return ActivationState.ACTIVE;
+        }
+        if (state == ActivationUsageState.GRACE) {
+            return ActivationState.GRACE;
+        }
+        return ActivationState.LOCKED;
     }
 
     public boolean permitsServiceStartup() {

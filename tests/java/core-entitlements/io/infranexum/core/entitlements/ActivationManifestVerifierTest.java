@@ -122,6 +122,14 @@ class ActivationManifestVerifierTest {
                 InstallationProfile.PRO, "wrong", capabilityCatalog, quotaCatalog, AcceptedSequence.none(),
                 keyStore(), emptyRevocations(), T0.plusSeconds(1));
         assertInvalid(verifier, manifest, wrongCatalog, EntitlementErrorCodes.ACTIVATION_INVALID);
+        ActivationValidationContext wrongCapabilityCatalog = new ActivationValidationContext(identity, "customer-1",
+                InstallationProfile.PRO, CATALOG, CapabilityCatalog.loadEmbedded("wrong"), quotaCatalog,
+                AcceptedSequence.none(), keyStore(), emptyRevocations(), T0.plusSeconds(1));
+        assertInvalid(verifier, manifest, wrongCapabilityCatalog, EntitlementErrorCodes.ACTIVATION_INVALID);
+        ActivationValidationContext wrongQuotaCatalog = new ActivationValidationContext(identity, "customer-1",
+                InstallationProfile.PRO, CATALOG, capabilityCatalog, QuotaCatalog.loadEmbedded("wrong"),
+                AcceptedSequence.none(), keyStore(), emptyRevocations(), T0.plusSeconds(1));
+        assertInvalid(verifier, manifest, wrongQuotaCatalog, EntitlementErrorCodes.ACTIVATION_INVALID);
         assertInvalid(verifier, manifest, context(T0.minusSeconds(1), AcceptedSequence.none(), emptyRevocations()),
                 EntitlementErrorCodes.ACTIVATION_INVALID);
 
@@ -148,12 +156,38 @@ class ActivationManifestVerifierTest {
     }
 
     @Test
+    void malformedCapabilityAndInvalidEd25519KeyFailClosed() throws Exception {
+        ActivationManifestVerifier verifier = new ActivationManifestVerifier();
+        Set<String> malformed = new java.util.HashSet<>(payload.capabilities());
+        malformed.add("not valid");
+        assertInvalid(verifier, sign(copy(payload.quotas(), payload.hostLimit(), malformed)),
+                context(T0.plusSeconds(1), AcceptedSequence.none(), emptyRevocations()),
+                EntitlementErrorCodes.ACTIVATION_INVALID);
+
+        java.security.PublicKey invalidEd25519 = new java.security.PublicKey() {
+            @Override public String getAlgorithm() { return "EdDSA"; }
+            @Override public String getFormat() { return "X.509"; }
+            @Override public byte[] getEncoded() { return new byte[] {1, 2, 3}; }
+        };
+        TrustedKey unusable = new TrustedKey("key-1", invalidEd25519, T0.minusSeconds(1), T0.plusSeconds(100));
+        assertThrows(IllegalStateException.class, () -> verifier.verify(manifest,
+                contextWithKey(T0.plusSeconds(1), AcceptedSequence.none(),
+                        new InMemoryTrustedKeyStore(Map.of("key-1", unusable)), emptyRevocations())));
+    }
+
+    @Test
     void validationContextAndResultProtectInvalidConstruction() {
         assertThrows(IllegalArgumentException.class, () -> new ActivationValidationContext(identity, "customer-1",
                 InstallationProfile.LITE, CATALOG, capabilityCatalog, quotaCatalog, AcceptedSequence.none(),
                 keyStore(), emptyRevocations(), T0));
         assertThrows(IllegalArgumentException.class, () -> new ActivationValidationContext(identity, " ",
                 InstallationProfile.PRO, CATALOG, capabilityCatalog, quotaCatalog, AcceptedSequence.none(),
+                keyStore(), emptyRevocations(), T0));
+        assertThrows(IllegalArgumentException.class, () -> new ActivationValidationContext(identity, "customer-1\n",
+                InstallationProfile.PRO, CATALOG, capabilityCatalog, quotaCatalog, AcceptedSequence.none(),
+                keyStore(), emptyRevocations(), T0));
+        assertThrows(IllegalArgumentException.class, () -> new ActivationValidationContext(identity, "customer-1",
+                InstallationProfile.PRO, "catalog\r", capabilityCatalog, quotaCatalog, AcceptedSequence.none(),
                 keyStore(), emptyRevocations(), T0));
         assertThrows(IllegalArgumentException.class, () -> new ActivationValidationContext(identity, "customer-1",
                 InstallationProfile.PRO, CATALOG, capabilityCatalog, quotaCatalog, AcceptedSequence.none(),

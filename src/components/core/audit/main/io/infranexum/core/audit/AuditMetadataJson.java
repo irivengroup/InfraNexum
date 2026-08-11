@@ -18,9 +18,9 @@ public final class AuditMetadataJson {
         for (Map.Entry<String, String> item : new TreeMap<>(metadata).entrySet()) {
             if (!first) out.append(',');
             first = false;
-            quote(out, item.getKey());
+            AuditJsonStrings.quote(out, item.getKey());
             out.append(':');
-            quote(out, item.getValue());
+            AuditJsonStrings.quote(out, item.getValue());
         }
         return out.append('}').toString();
     }
@@ -47,26 +47,6 @@ public final class AuditMetadataJson {
         cursor.skipWhitespace();
         if (!cursor.atEnd()) throw new IllegalArgumentException("trailing audit metadata content");
         return Map.copyOf(values);
-    }
-
-    private static void quote(StringBuilder out, String value) {
-        out.append('"');
-        for (int index = 0; index < value.length(); index++) {
-            char ch = value.charAt(index);
-            switch (ch) {
-                case '"' -> out.append("\\\"");
-                case '\\' -> out.append("\\\\");
-                case '\b' -> out.append("\\b");
-                case '\f' -> out.append("\\f");
-                case '\n' -> out.append("\\n");
-                case '\r' -> out.append("\\r");
-                case '\t' -> out.append("\\t");
-                default -> {
-                    if (ch < 0x20) out.append("\\u%04x".formatted((int) ch)); else out.append(ch);
-                }
-            }
-        }
-        out.append('"');
     }
 
     private static final class Cursor {

@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 
-.PHONY: archive-compatibility-test archive-compatibility-check source-integrity-test source-integrity-check source-integrity-precommit source-integrity-hook-install source-integrity-update source-checksum-update architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-test verify-foundation verify clean-generated
+.PHONY: archive-compatibility-test archive-compatibility-check source-integrity-test source-integrity-check source-integrity-precommit source-integrity-hook-install source-integrity-update source-checksum-update architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-module-verify java-test verify-foundation verify clean-generated
 
 PYTHON ?= python3
 GO ?= go
@@ -280,6 +280,32 @@ web-smoke:
 	node ../../../tests/web/smoke.mjs | tee "$(REPORT_ROOT_ABS)/web-smoke.json"
 
 web-verify: web-test web-smoke
+
+JAVA_MODULES := \
+	src/components/core/contracts \
+	src/components/core/events \
+	src/components/core/workers \
+	src/components/core/capabilities \
+	src/components/core/entitlements \
+	src/components/core/audit \
+	src/components/adapters/jdbc \
+	src/applications/server
+
+# Install production artifacts without tests first, then verify each module in isolation.
+# This prevents an upstream test/coverage failure from hiding downstream module failures.
+java-module-verify:
+	./mvnw --batch-mode --no-transfer-progress -DskipTests -Djacoco.skip=true install
+	@failures=""; \
+	for module in $(JAVA_MODULES); do \
+		echo "=== Independent Maven verify: $$module ==="; \
+		if ! ./mvnw --batch-mode --no-transfer-progress -pl "$$module" clean verify; then \
+			failures="$$failures $$module"; \
+		fi; \
+	done; \
+	if [ -n "$$failures" ]; then \
+		echo "Independent Maven module failures:$$failures" >&2; \
+		exit 1; \
+	fi
 
 java-test:
 	./mvnw --batch-mode --no-transfer-progress --fail-at-end verify

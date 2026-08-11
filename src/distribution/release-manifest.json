@@ -2,11 +2,11 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.24",
-  "profile": "development-foundation-ci-deterministic-workers-unix-archive-compatibility-repair",
+  "version": "2.0.0-alpha.0.25",
+  "profile": "ci-entitlements-audit-coverage-and-independent-java-module-diagnostics",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
-  "delivery_contents": "source and validation evidence; generated binaries, caches, dependency directories and temporary artifacts excluded",
+  "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
   "artifacts": [
     {
       "id": "repository-layout-v3",
@@ -30,7 +30,7 @@
     },
     {
       "id": "core-workers-v1",
-      "status": "bounded-runtime-idempotency-retry-safety-lease-fencing-heartbeat-checkpoint-cancellation-deterministic-interruption-aware-truthful-shutdown-serialized-runonce-and-lifecycle-race-hardening-implemented-jdk25-jacoco-proof-pending"
+      "status": "bounded-runtime-idempotency-retry-safety-lease-fencing-heartbeat-checkpoint-cancellation-deterministic-interruption-aware-truthful-shutdown-serialized-runonce-and-lifecycle-race-hardening-hosted-jdk25-jacoco-passed-on-alpha0.24"
     },
     {
       "id": "adapter-persistence-jdbc-workers-v1",
@@ -42,52 +42,23 @@
     },
     {
       "id": "ci-foundation",
-      "status": "source-integrity-preflight-blocking-unix-only-foundation-jobs-os-independent-windows-archive-portability-gate-postgresql17-18-worker-live-contract-defined-target-hosted-execution-pending"
+      "status": "source-integrity-preflight-blocking-unix-only-full-reactor-fail-at-end-independent-per-module-java-verify-archive-portability-postgresql17-18-worker-live-contract-defined-target-hosted-execution-pending"
     },
     {
       "id": "docker-compose-runtime",
       "status": "not-delivered-until-java25-server-artifact-fresh-install-migrations-installation-identity-and-secret-provisioning-are-executable"
     }
   ],
-  "validation_reports": [
-    "../../artifacts/validation/archive-compatibility.json",
-    "../../artifacts/validation/archive-compatibility-coverage.txt",
-    "../../artifacts/validation/agent-coverage.txt",
-    "../../artifacts/validation/architecture-coverage.txt",
-    "../../artifacts/validation/architecture.json",
-    "../../artifacts/validation/audit-coverage.txt",
-    "../../artifacts/validation/audit.json",
-    "../../artifacts/validation/capabilities-coverage.txt",
-    "../../artifacts/validation/capabilities.json",
-    "../../artifacts/validation/entitlements-coverage.txt",
-    "../../artifacts/validation/entitlements.json",
-    "../../artifacts/validation/eventing-coverage.txt",
-    "../../artifacts/validation/eventing.json",
-    "../../artifacts/validation/migration-coverage.txt",
-    "../../artifacts/validation/migrations.json",
-    "../../artifacts/validation/persistence-coverage.txt",
-    "../../artifacts/validation/persistence.json",
-    "../../artifacts/validation/repository-syntax.json",
-    "../../artifacts/validation/source-integrity-coverage.txt",
-    "../../artifacts/validation/source-integrity-git.json",
-    "../../artifacts/validation/source-integrity-staged.json",
-    "../../artifacts/validation/source-integrity.json",
-    "../../artifacts/validation/toolchain-coverage.txt",
-    "../../artifacts/validation/toolchains.json",
-    "../../artifacts/validation/validation-status.json",
-    "../../artifacts/validation/web-coverage.txt",
-    "../../artifacts/validation/web-smoke.json"
-  ],
+  "validation_reports": [],
   "validation_summary": {
-    "source_inventory_paths": 467,
+    "source_inventory_paths": 470,
     "source_integrity_tests": 44,
     "source_integrity_coverage_percent": 100,
     "source_integrity_violations": 0,
-    "python_tests": 184,
+    "python_tests": 185,
     "architecture_tests": 33,
-    "architecture_coverage_percent": 100,
     "architecture_violations": 0,
-    "toolchain_tests": 22,
+    "toolchain_tests": 23,
     "toolchain_coverage_percent": 99,
     "toolchain_violations": 0,
     "migration_tests": 24,
@@ -133,24 +104,26 @@
     "archive_compatibility_violations": 0,
     "archive_compatibility_max_project_path": 114,
     "archive_compatibility_max_member_path": 142,
-    "entitlements_module_tests_defined": 38
+    "entitlements_module_tests_defined": 49,
+    "audit_module_tests_defined": 21,
+    "architecture_coverage_status": "NON_EXECUTED_TIMEOUT",
+    "architecture_functional_tests": 33
   },
   "source_layout": "All production solution spaces are contained below src/; Java, Go and Web tests are repository-level under tests/; canonical relative paths are limited to 120 characters and path components to 80 characters.",
   "source_integrity": {
     "canonical_inventory": "source-inventory.json",
     "git_blob_checksums": "source-files.sha256",
-    "tracked_files": 469,
-    "source_recorded_files": 468,
+    "tracked_files": 472,
+    "source_recorded_files": 471,
     "staged_snapshot_required": true,
     "pre_commit_hook": ".githooks/pre-commit"
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.24",
-    "archive_entries": 497,
+    "prefix": "infranexum-2.0.0-alpha.0.25",
+    "archive_entries": 472,
     "reproducible": true,
-    "source_checksum_manifest": "source-files.sha256",
-    "source_recorded_files": 468,
-    "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
-    "release_recorded_files": 496
-  }
+    "source_checksum_manifest": "src/distribution/source-files.sha256",
+    "source_recorded_files": 471
+  },
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.25-validation-evidence.zip"
 }

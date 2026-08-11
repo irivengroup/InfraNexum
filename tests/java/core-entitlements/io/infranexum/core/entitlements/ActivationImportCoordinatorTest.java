@@ -101,6 +101,16 @@ class ActivationImportCoordinatorTest {
     }
 
     @Test
+    void incompleteTemporalEvidenceFailsClosedWhenOnlyIndependentProofExists() {
+        IntegrityProof proof = new TrustedTimeGuard().initialize(identity, NOW.minusSeconds(1), integrityKey).independentProof();
+        FakeRepository repository = new FakeRepository(identity);
+        MemoryProofStore store = new MemoryProofStore();
+        store.store(proof);
+
+        assertThrows(ClockRollbackException.class, () -> coordinator(repository, store).importManifest(manifest));
+    }
+
+    @Test
     void missingInstallationIdentityIsRejectedBeforeVerification() {
         FakeRepository repository = new FakeRepository(null);
         assertThrows(IllegalStateException.class,

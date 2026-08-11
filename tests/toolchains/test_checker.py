@@ -26,6 +26,7 @@ class ToolchainCheckerTest(unittest.TestCase):
             ".node-version",
             ".python-version",
             "pom.xml",
+            "Makefile",
             ".mvn/wrapper/maven-wrapper.properties",
             "src/applications/web/package.json",
             "src/applications/web/pnpm-lock.yaml",
@@ -267,6 +268,24 @@ class ToolchainCheckerTest(unittest.TestCase):
             encoding="utf-8",
         )
         self.assertIn("CHECK-TOOLCHAIN-040", self.ids())
+
+    def test_ci_independently_verifies_java_modules_after_dependency_install(self) -> None:
+        workflow_path = self.root / ".github/workflows/foundation.yml"
+        workflow = workflow_path.read_text(encoding="utf-8")
+        workflow_path.write_text(
+            workflow.replace("run: make java-module-verify", "run: echo module-gate-disabled"),
+            encoding="utf-8",
+        )
+        self.assertIn("CHECK-TOOLCHAIN-041", self.ids())
+
+        shutil.copy2(SOURCE / ".github/workflows/foundation.yml", workflow_path)
+        makefile_path = self.root / "Makefile"
+        makefile = makefile_path.read_text(encoding="utf-8")
+        makefile_path.write_text(
+            makefile.replace("-DskipTests -Djacoco.skip=true install", "-DskipTests install", 1),
+            encoding="utf-8",
+        )
+        self.assertIn("CHECK-TOOLCHAIN-041", self.ids())
 
     def test_ci_targeted_reactor_test_tolerates_upstream_modules_without_matches(self) -> None:
         workflow_path = self.root / ".github/workflows/foundation.yml"

@@ -12,6 +12,9 @@ public record AuditScope(String type, String id) implements Comparable<AuditScop
     public AuditScope {
         Objects.requireNonNull(type, "type");
         Objects.requireNonNull(id, "id");
+        if (type.chars().anyMatch(Character::isISOControl) || id.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException("audit scope values must not contain control characters");
+        }
         type = type.strip().toUpperCase(Locale.ROOT);
         id = id.strip();
         if (!TYPE.matcher(type).matches()) throw new IllegalArgumentException("invalid audit scope type");

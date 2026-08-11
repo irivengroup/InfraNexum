@@ -41,8 +41,11 @@ public final class InstallationFingerprint {
 
     private static String requireText(String value, String field) {
         Objects.requireNonNull(value, field);
+        if (value.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException(field + " must not contain control characters");
+        }
         String result = value.strip();
-        if (result.isEmpty() || result.indexOf('\n') >= 0 || result.indexOf('\r') >= 0) {
+        if (result.isEmpty()) {
             throw new IllegalArgumentException(field + " must be non-blank and single-line");
         }
         return result;

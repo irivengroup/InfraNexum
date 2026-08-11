@@ -40,11 +40,10 @@ public record EntitlementRuntimeStatus(
         }
         entitledCapabilities = Set.copyOf(Objects.requireNonNull(entitledCapabilities, "entitledCapabilities"));
         quotaOverrides = Map.copyOf(Objects.requireNonNull(quotaOverrides, "quotaOverrides"));
-        if (entitledCapabilities.stream().anyMatch(value -> value == null || value.isBlank())) {
+        if (entitledCapabilities.stream().anyMatch(String::isBlank)) {
             throw new IllegalArgumentException("entitledCapabilities must contain non-blank values");
         }
-        if (quotaOverrides.entrySet().stream().anyMatch(entry -> entry.getKey() == null
-                || entry.getKey().isBlank() || entry.getValue() == null || entry.getValue() < 0)) {
+        if (quotaOverrides.entrySet().stream().anyMatch(entry -> entry.getKey().isBlank() || entry.getValue() < 0)) {
             throw new IllegalArgumentException("quotaOverrides must contain named non-negative values");
         }
     }

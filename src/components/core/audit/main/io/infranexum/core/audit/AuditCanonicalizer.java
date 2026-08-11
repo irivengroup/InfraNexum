@@ -44,7 +44,7 @@ public final class AuditCanonicalizer {
         for (Map.Entry<String, String> item : new java.util.TreeMap<>(entry.metadata()).entrySet()) {
             if (!first) out.append(',');
             first = false;
-            quote(out, item.getKey()); out.append(':'); quote(out, item.getValue());
+            AuditJsonStrings.quote(out, item.getKey()); out.append(':'); AuditJsonStrings.quote(out, item.getValue());
         }
         out.append('}');
         comma(out); field(out, "sensitivity", entry.sensitivity());
@@ -62,34 +62,14 @@ public final class AuditCanonicalizer {
     }
 
     private static void field(StringBuilder out, String name, String value) {
-        quote(out, name); out.append(':'); quote(out, value);
+        AuditJsonStrings.quote(out, name); out.append(':'); AuditJsonStrings.quote(out, value);
     }
 
     private static void nullableField(StringBuilder out, String name, String value) {
-        quote(out, name); out.append(':');
-        if (value == null) out.append("null"); else quote(out, value);
+        AuditJsonStrings.quote(out, name); out.append(':');
+        if (value == null) out.append("null"); else AuditJsonStrings.quote(out, value);
     }
 
     private static void comma(StringBuilder out) { out.append(','); }
 
-    private static void quote(StringBuilder out, String value) {
-        out.append('"');
-        for (int index = 0; index < value.length(); index++) {
-            char ch = value.charAt(index);
-            switch (ch) {
-                case '"' -> out.append("\\\"");
-                case '\\' -> out.append("\\\\");
-                case '\b' -> out.append("\\b");
-                case '\f' -> out.append("\\f");
-                case '\n' -> out.append("\\n");
-                case '\r' -> out.append("\\r");
-                case '\t' -> out.append("\\t");
-                default -> {
-                    if (ch < 0x20) out.append("\\u%04x".formatted((int) ch));
-                    else out.append(ch);
-                }
-            }
-        }
-        out.append('"');
-    }
 }

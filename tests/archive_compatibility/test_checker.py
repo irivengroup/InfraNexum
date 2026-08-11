@@ -28,7 +28,7 @@ class ArchiveCompatibilityCheckerTest(unittest.TestCase):
         subprocess.run(["git", "-C", str(self.root), "add", "README.md"], check=True)
         subprocess.run(["git", "-C", str(self.root), "commit", "-qm", "fixture"], check=True)
         self.archive = Path(self.temp.name) / "source.zip"
-        self.write_zip([("infranexum-2.0.0-alpha.0.24/README.md", b"ok\n")])
+        self.write_zip([("infranexum-2.0.0-alpha.0.25/README.md", b"ok\n")])
 
     def tearDown(self) -> None:
         self.temp.cleanup()

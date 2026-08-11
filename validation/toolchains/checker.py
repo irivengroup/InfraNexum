@@ -371,6 +371,42 @@ class ToolchainChecker:
                 "The full Java reactor verify must use --fail-at-end so one CI run exposes every failing module",
             )
 
+        module_coverage_job = job_bodies.get("java-module-coverage", "")
+        makefile_path = self.root / "Makefile"
+        makefile = self._read_text(
+            makefile_path,
+            "CHECK-TOOLCHAIN-041",
+            "Makefile cannot be read for independent Java module verification",
+        )
+        required_modules = (
+            "src/components/core/contracts",
+            "src/components/core/events",
+            "src/components/core/workers",
+            "src/components/core/capabilities",
+            "src/components/core/entitlements",
+            "src/components/core/audit",
+            "src/components/adapters/jdbc",
+            "src/applications/server",
+        )
+        independent_contract = (
+            makefile is not None
+            and "java-module-verify:" in makefile
+            and "-DskipTests -Djacoco.skip=true install" in makefile
+            and '-pl "$$module" clean verify' in makefile
+            and all(module in makefile for module in required_modules)
+        )
+        if (
+            java_action not in module_coverage_job
+            or java_version not in module_coverage_job
+            or "run: make java-module-verify" not in module_coverage_job
+            or not independent_contract
+        ):
+            self._add(
+                "CHECK-TOOLCHAIN-041",
+                workflow_path,
+                "CI must independently verify every Java module after a skip-tests dependency install so upstream coverage failures cannot hide downstream defects",
+            )
+
         targeted_lines = [
             line.strip()
             for line in workflow.splitlines()

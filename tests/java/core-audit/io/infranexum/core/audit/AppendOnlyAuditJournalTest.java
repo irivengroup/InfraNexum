@@ -3,11 +3,13 @@ package io.infranexum.core.audit;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.junit.jupiter.api.Test;
 
 final class AppendOnlyAuditJournalTest {
@@ -58,18 +60,20 @@ final class AppendOnlyAuditJournalTest {
         int count = 64;
         CountDownLatch start = new CountDownLatch(1);
         ExecutorService executor = Executors.newFixedThreadPool(8);
+        List<Future<?>> futures = new ArrayList<>();
         try {
             for (int i = 1; i <= count; i++) {
                 final int sequence = i + 100;
-                executor.submit(() -> {
+                futures.add(executor.submit(() -> {
                     start.await();
                     journal.append(AuditModelTest.entry(sequence, scope, Map.of("worker", Integer.toString(sequence % 8))));
                     return null;
-                });
+                }));
             }
             start.countDown();
             executor.shutdown();
             assertTrue(executor.awaitTermination(10, java.util.concurrent.TimeUnit.SECONDS));
+            for (Future<?> future : futures) future.get();
         } finally {
             executor.shutdownNow();
         }

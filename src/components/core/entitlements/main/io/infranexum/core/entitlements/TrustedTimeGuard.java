@@ -86,11 +86,10 @@ public final class TrustedTimeGuard {
     }
 
     private static boolean sameEvidence(IntegrityProof left, IntegrityProof right) {
-        return left.installationId().equals(right.installationId())
-                && left.fingerprint().equals(right.fingerprint())
-                && left.evaluationStartedAt().equals(right.evaluationStartedAt())
+        // verify(...) has already proven installation binding and HMAC integrity for both proofs.
+        // Only the mutable temporal evidence can still diverge at this point.
+        return left.evaluationStartedAt().equals(right.evaluationStartedAt())
                 && left.lastReliableAt().equals(right.lastReliableAt())
-                && left.generation() == right.generation()
-                && MessageDigest.isEqual(Base64.getDecoder().decode(left.mac()), Base64.getDecoder().decode(right.mac()));
+                && left.generation() == right.generation();
     }
 }

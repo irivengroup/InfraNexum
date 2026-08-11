@@ -65,11 +65,15 @@ final class AuditModelTest {
     }
 
     static AuditEntry entry(int sequence, AuditScope scope, Map<String, String> metadata) {
-        return entryWith(id(sequence), "user-1", "USER", "iam.role.create", "ROLE", "role-1", "allow", Instant.parse("2026-08-10T08:00:00Z").plusSeconds(sequence), "success", "api/server", metadata, "internal");
+        return entryWithScope(scope, id(sequence), "user-1", "USER", "iam.role.create", "ROLE", "role-1", "allow", Instant.parse("2026-08-10T08:00:00Z").plusSeconds(sequence), "success", "api/server", metadata, "internal");
     }
 
     private static AuditEntry entryWith(DomainIdentifier auditId, String actorId, String actorType, String action, String targetType, String targetId, String auth, Instant at, String result, String origin, Map<String, String> metadata, String sensitivity) {
-        return new AuditEntry(auditId, AuditScope.platform(), actorId, actorType, action, targetType, targetId, auth, at, id(900), result, origin, null, "192.0.2.1", "test-agent", metadata, sensitivity);
+        return entryWithScope(AuditScope.platform(), auditId, actorId, actorType, action, targetType, targetId, auth, at, result, origin, metadata, sensitivity);
+    }
+
+    private static AuditEntry entryWithScope(AuditScope scope, DomainIdentifier auditId, String actorId, String actorType, String action, String targetType, String targetId, String auth, Instant at, String result, String origin, Map<String, String> metadata, String sensitivity) {
+        return new AuditEntry(auditId, scope, actorId, actorType, action, targetType, targetId, auth, at, id(900), result, origin, null, "192.0.2.1", "test-agent", metadata, sensitivity);
     }
 
     static DomainIdentifier id(int sequence) {

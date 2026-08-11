@@ -1,7 +1,7 @@
 {
   "schema": "infranexum.source-baseline/v1",
   "product": "InfraNexum — Infrastructure Control & Governance Platform",
-  "implementation_version": "2.0.0-alpha.0.24",
+  "implementation_version": "2.0.0-alpha.0.25",
   "architecture_baseline": "2.0.0-draft.21",
   "roadmap_baseline": "1.0.0-draft.1",
   "architecture_archive_sha256": "372cf19929f8ea3b7586c3af3e7c5004e590cf746ff2d6d59d4d0b88912aea64",
@@ -28,7 +28,9 @@
     "Repository layout hardening alpha.0.20: shortened Maven production roots, physical JDBC adapter path shortened without logical-ID/package/artifact changes, fail-closed path budget and stressed archive extraction proof.",
     "Product source containment alpha.0.21: all production solution spaces live below src/, Java/Go/Web tests are external under tests/, Maven external test roots and release-manifest depth references are fail-closed validated, while the 120-character path budget and public runtime contracts remain unchanged.",
     "CI regression repair alpha.0.22: platform-independent canonical source-path validation, exhaustive Core Workers regression coverage without JaCoCo exclusions, serialized same-worker execution and synchronized worker-pool lifecycle transitions; hosted JDK 25 JaCoCo confirmation remains required.",
-    "CI deterministic shutdown and Unix archive-compatibility repair alpha.0.23: TaskWorkerPool preserves caller interruption only after bounded executor cleanup, the timing-dependent Workers shutdown regression is removed, PowerShell Maven bootstrap captures java -version stderr without NativeCommandError, and hosted CI remains Unix-only while published ZIP Windows extraction compatibility is enforced by an OS-independent archive gate."
+    "CI deterministic shutdown and Unix archive-compatibility repair alpha.0.23: TaskWorkerPool preserves caller interruption only after bounded executor cleanup, the timing-dependent Workers shutdown regression is removed, PowerShell Maven bootstrap captures java -version stderr without NativeCommandError, and hosted CI remains Unix-only while published ZIP Windows extraction compatibility is enforced by an OS-independent archive gate.",
+    "CI coverage repair alpha.0.24: Core Entitlements tests expanded from 13 to 38 and the full Maven reactor switched to fail-at-end diagnostics; hosted JDK25 revealed remaining Entitlements coverage gaps and independent Audit correctness defects, which are closed in alpha.0.25.",
+    "CI/JDK25 coverage and audit correctness repair alpha.0.25: Entitlements paid-runtime, manifest-validation and canonical-input branch coverage hardened without JaCoCo exclusions; Audit fixtures preserve requested scopes, signed manifest/control-character validation is fail-closed, concurrent audit tests surface task failures, and independent per-module Maven verification prevents upstream failures from masking downstream JDBC/Server quality defects."
   ],
   "roadmap_archive_sha256": "11db7d27bbc79f688cd1fda31a24aaf31b56a56db36b6487b64154c148ab54d3",
   "engineering_governance_sha256": "f24357051a5401f598c3d77bbe5814d3759a176095537659243658ba3ff109c7"

@@ -32,8 +32,11 @@ public record AuditPurgeTombstone(
 
     private static String text(String value, String field, int maximum) {
         Objects.requireNonNull(value, field);
+        if (value.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException("invalid " + field);
+        }
         String normalized = value.strip();
-        if (normalized.isEmpty() || normalized.length() > maximum || normalized.chars().anyMatch(Character::isISOControl)) {
+        if (normalized.isEmpty() || normalized.length() > maximum) {
             throw new IllegalArgumentException("invalid " + field);
         }
         return normalized;

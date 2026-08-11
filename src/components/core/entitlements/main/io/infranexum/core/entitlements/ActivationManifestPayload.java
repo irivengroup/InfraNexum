@@ -44,20 +44,28 @@ public record ActivationManifestPayload(
         Objects.requireNonNull(profile, "profile");
         Objects.requireNonNull(allocationTier, "allocationTier");
         catalogVersion = requireText(catalogVersion, "catalogVersion");
-        if (profile == InstallationProfile.LITE) {
-            throw new IllegalArgumentException("Lite activation manifests are forbidden");
+        switch (profile) {
+            case LITE -> throw new IllegalArgumentException("Lite activation manifests are forbidden");
+            case PRO -> {
+                if (allocationTier != AllocationTier.STANDARD && allocationTier != AllocationTier.ADVANCED) {
+                    throw new IllegalArgumentException("allocation tier is incompatible with activation profile");
+                }
+            }
+            case ENTERPRISE -> {
+                if (allocationTier != AllocationTier.STANDARD && allocationTier != AllocationTier.ULTIMATE) {
+                    throw new IllegalArgumentException("allocation tier is incompatible with activation profile");
+                }
+            }
         }
-        validateTier(profile, allocationTier);
         if (hostLimit < 0) {
             throw new IllegalArgumentException("hostLimit must be non-negative");
         }
         capabilities = Set.copyOf(Objects.requireNonNull(capabilities, "capabilities"));
-        if (capabilities.stream().anyMatch(value -> value == null || value.isBlank())) {
+        if (capabilities.stream().anyMatch(String::isBlank)) {
             throw new IllegalArgumentException("capabilities must contain non-blank values");
         }
         quotas = Map.copyOf(Objects.requireNonNull(quotas, "quotas"));
-        if (quotas.entrySet().stream().anyMatch(entry -> entry.getKey() == null || entry.getKey().isBlank()
-                || entry.getValue() == null || entry.getValue() < 0)) {
+        if (quotas.entrySet().stream().anyMatch(entry -> entry.getKey().isBlank() || entry.getValue() < 0)) {
             throw new IllegalArgumentException("quotas must contain named non-negative integer values");
         }
         Objects.requireNonNull(validFrom, "validFrom");
@@ -111,19 +119,11 @@ public record ActivationManifestPayload(
         return CanonicalJson.bytes(canonicalValue());
     }
 
-    private static void validateTier(InstallationProfile profile, AllocationTier tier) {
-        boolean valid = switch (profile) {
-            case LITE -> false;
-            case PRO -> tier == AllocationTier.STANDARD || tier == AllocationTier.ADVANCED;
-            case ENTERPRISE -> tier == AllocationTier.STANDARD || tier == AllocationTier.ULTIMATE;
-        };
-        if (!valid) {
-            throw new IllegalArgumentException("allocation tier is incompatible with activation profile");
-        }
-    }
-
     private static String requireText(String value, String field) {
         Objects.requireNonNull(value, field);
+        if (value.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException(field + " must not contain control characters");
+        }
         String result = value.strip();
         if (result.isEmpty()) {
             throw new IllegalArgumentException(field + " must not be blank");

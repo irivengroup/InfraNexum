@@ -48,8 +48,11 @@ public record AuditExportManifest(
 
     private static String requireText(String value, String field, int max) {
         Objects.requireNonNull(value, field);
+        if (value.chars().anyMatch(Character::isISOControl) || value.contains("=")) {
+            throw new IllegalArgumentException("invalid " + field);
+        }
         String normalized = value.strip();
-        if (normalized.isEmpty() || normalized.length() > max || normalized.contains("\n") || normalized.contains("=")) {
+        if (normalized.isEmpty() || normalized.length() > max) {
             throw new IllegalArgumentException("invalid " + field);
         }
         return normalized;

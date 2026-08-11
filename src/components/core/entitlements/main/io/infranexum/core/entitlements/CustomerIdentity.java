@@ -11,6 +11,9 @@ public record CustomerIdentity(String customerId, String legalName) {
 
     private static String requireText(String value, String field) {
         Objects.requireNonNull(value, field);
+        if (value.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException(field + " must not contain control characters");
+        }
         String result = value.strip();
         if (result.isEmpty() || result.length() > 255) {
             throw new IllegalArgumentException(field + " must contain 1 to 255 characters");

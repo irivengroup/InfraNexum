@@ -1,4 +1,4 @@
-# InfraNexum 2.0.0-alpha.0.24 — Repository Layout Hardening
+# InfraNexum 2.0.0-alpha.0.25 — Repository Layout Hardening
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 

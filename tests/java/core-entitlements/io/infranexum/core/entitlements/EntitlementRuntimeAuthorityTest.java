@@ -3,14 +3,24 @@ package io.infranexum.core.entitlements;
 import static org.junit.jupiter.api.Assertions.*;
 
 import io.infranexum.core.capabilities.AllocationTier;
+import io.infranexum.core.capabilities.CapabilityCatalog;
 import io.infranexum.core.capabilities.InstallationProfile;
+import io.infranexum.core.capabilities.QuotaAllocationPlan;
+import io.infranexum.core.capabilities.QuotaCatalog;
 import io.infranexum.core.contracts.DomainIdentifier;
 import io.infranexum.core.contracts.UuidV7Generator;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.Signature;
+import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import org.junit.jupiter.api.BeforeEach;
@@ -161,6 +171,68 @@ class EntitlementRuntimeAuthorityTest {
     }
 
     @Test
+    void paidRuntimeRevalidatesDurableManifestAcrossActiveGraceAndHardStop() throws Exception {
+        PaidFixture active = paidFixture(NOW.plusSeconds(60));
+        EntitlementRuntimeAuthority activeAuthority = paidAuthority(active, NOW);
+        EntitlementRuntimeStatus activeStatus = activeAuthority.initializeAndRequireStartup(InstallationProfile.PRO);
+        assertEquals(EntitlementRuntimePhase.ACTIVE, activeStatus.phase());
+        assertTrue(activeStatus.serviceStartupPermitted());
+        assertTrue(activeStatus.mutationPermitted());
+        activeAuthority.requireMutation();
+
+        PaidFixture grace = paidFixture(NOW.minusSeconds(1));
+        EntitlementRuntimeAuthority graceAuthority = paidAuthority(grace, NOW);
+        EntitlementRuntimeStatus graceStatus = graceAuthority.initializeAndRequireStartup(InstallationProfile.PRO);
+        assertEquals(EntitlementRuntimePhase.GRACE, graceStatus.phase());
+        assertTrue(graceStatus.serviceStartupPermitted());
+        assertTrue(graceStatus.mutationPermitted());
+
+        PaidFixture stopped = paidFixture(NOW.minus(31, ChronoUnit.DAYS));
+        EntitlementRuntimeAuthority stoppedAuthority = paidAuthority(stopped, NOW);
+        EntitlementRuntimeStatus stoppedStatus = stoppedAuthority.refresh(InstallationProfile.PRO);
+        assertEquals(EntitlementRuntimePhase.HARD_STOPPED, stoppedStatus.phase());
+        EntitlementAccessException mutation = assertThrows(EntitlementAccessException.class, stoppedAuthority::requireMutation);
+        assertEquals(EntitlementErrorCodes.ACTIVATION_EXPIRED, mutation.code());
+        EntitlementAccessException startup = assertThrows(EntitlementAccessException.class,
+                () -> paidAuthority(stopped, NOW).initializeAndRequireStartup(InstallationProfile.PRO));
+        assertEquals(EntitlementErrorCodes.ACTIVATION_EXPIRED, startup.code());
+    }
+
+    @Test
+    void paidRuntimeRejectsMissingOrMismatchedDurableManifest() throws Exception {
+        PaidFixture missingFixture = paidFixture(NOW.plusSeconds(60));
+        missingFixture.repository.document = null;
+        EntitlementAccessException missing = assertThrows(EntitlementAccessException.class,
+                () -> paidAuthority(missingFixture, NOW).refresh(InstallationProfile.PRO));
+        assertEquals(EntitlementErrorCodes.ACTIVATION_INVALID, missing.code());
+
+        PaidFixture mismatched = paidFixture(NOW.plusSeconds(60));
+        DomainIdentifier otherActivation = idAt(NOW.plusSeconds(100));
+        mismatched.repository.state = new EntitlementStateRecord(InstallationProfile.PRO, AllocationTier.STANDARD,
+                null, mismatched.repository.proof.lastReliableAt(), mismatched.repository.proof.generation(),
+                new AcceptedSequence(1, otherActivation), EntitlementRuntimePhase.ACTIVE,
+                mismatched.manifest.payload().validUntil(), mismatched.manifest.payload().validUntil().plus(30, ChronoUnit.DAYS), NOW);
+        EntitlementAccessException mismatch = assertThrows(EntitlementAccessException.class,
+                () -> paidAuthority(mismatched, NOW).refresh(InstallationProfile.PRO));
+        assertEquals(EntitlementErrorCodes.ACTIVATION_INVALID, mismatch.code());
+    }
+
+    @Test
+    void preflightReturnsVerifiedPaidManifestWithoutMutatingDurableState() throws Exception {
+        PaidFixture paid = paidFixture(NOW.plusSeconds(60));
+        EntitlementStateRecord stateBefore = paid.repository.state;
+        IntegrityProof proofBefore = paid.repository.proof;
+        EntitlementRuntimeAuthority authority = paidAuthority(paid, NOW);
+
+        ActivationVerificationResult result = authority.preflight(paid.manifest);
+
+        assertEquals(ActivationUsageState.ACTIVE, result.state());
+        assertEquals(paid.manifest.payload().activationId(), result.payload().activationId());
+        assertSame(stateBefore, paid.repository.state);
+        assertSame(proofBefore, paid.repository.proof);
+    }
+
+    @Test
     void preflightRequiresIdentityAndManifest() {
         RuntimeRepository repository = new RuntimeRepository(null);
         EntitlementRuntimeAuthority authority = authority(repository, new MemoryProofStore(), NOW);
@@ -168,6 +240,55 @@ class EntitlementRuntimeAuthorityTest {
         ActivationManifest dummy = new ActivationManifest(newDummyPayload(), java.util.Base64.getEncoder().encodeToString(new byte[64]));
         assertThrows(IllegalStateException.class, () -> authority.preflight(dummy));
     }
+
+    private PaidFixture paidFixture(Instant validUntil) throws Exception {
+        String catalogVersion = "2.0.0-draft.20";
+        CapabilityCatalog capabilityCatalog = CapabilityCatalog.loadEmbedded(catalogVersion);
+        QuotaCatalog quotaCatalog = QuotaCatalog.loadEmbedded(catalogVersion);
+        QuotaAllocationPlan plan = quotaCatalog.allocate(InstallationProfile.PRO, AllocationTier.STANDARD, catalogVersion, Map.of());
+        Set<String> capabilities = capabilityCatalog.codes().stream()
+                .filter(code -> capabilityCatalog.find(code).allowedProfiles().contains(InstallationProfile.PRO))
+                .map(Object::toString)
+                .collect(Collectors.toUnmodifiableSet());
+        KeyPair keyPair = KeyPairGenerator.getInstance("Ed25519").generateKeyPair();
+        TrustedKey trustedKey = new TrustedKey("runtime-key", keyPair.getPublic(), NOW.minus(1000, ChronoUnit.DAYS), NOW.plus(1000, ChronoUnit.DAYS));
+        Instant validFrom = validUntil.minus(365, ChronoUnit.DAYS);
+        ActivationManifestPayload payload = new ActivationManifestPayload(
+                ActivationManifestPayload.SCHEMA, idAt(NOW.minusSeconds(2)),
+                new CustomerIdentity("runtime-customer", "Runtime Customer"),
+                new ManifestInstallation(identity.installationId(), identity.fingerprintVersion(), identity.fingerprint()),
+                InstallationProfile.PRO, AllocationTier.STANDARD, catalogVersion,
+                plan.limit("rsot.managed_hosts.max"), capabilities, plan.limits(), validFrom, validUntil, 30,
+                validFrom, "runtime-test", 1, trustedKey.keyId());
+        Signature signer = Signature.getInstance("Ed25519");
+        signer.initSign(keyPair.getPrivate());
+        signer.update(payload.canonicalBytes());
+        ActivationManifest manifest = new ActivationManifest(payload, Base64.getEncoder().encodeToString(signer.sign()));
+
+        IntegrityProof proof = new TrustedTimeGuard().initialize(identity, NOW.minusSeconds(5), key).databaseProof();
+        RuntimeRepository repository = new RuntimeRepository(identity);
+        repository.proof = proof;
+        repository.document = manifest.canonicalDocument();
+        repository.state = new EntitlementStateRecord(InstallationProfile.PRO, AllocationTier.STANDARD, null,
+                proof.lastReliableAt(), proof.generation(), new AcceptedSequence(payload.sequence(), payload.activationId()),
+                EntitlementRuntimePhase.ACTIVE, payload.validUntil(), payload.validUntil().plus(30, ChronoUnit.DAYS), NOW.minusSeconds(5));
+        MemoryProofStore store = storeWith(proof);
+        ActivationContextFactory contextFactory = (runtimeIdentity, sequence, at) -> new ActivationValidationContext(
+                runtimeIdentity, payload.customer().customerId(), InstallationProfile.PRO, catalogVersion,
+                capabilityCatalog, quotaCatalog, sequence, new InMemoryTrustedKeyStore(Map.of(trustedKey.keyId(), trustedKey)),
+                new InMemoryRevocationRegistry(Map.of(), Map.of()), at);
+        return new PaidFixture(repository, store, manifest, contextFactory);
+    }
+
+    private EntitlementRuntimeAuthority paidAuthority(PaidFixture fixture, Instant now) {
+        return new EntitlementRuntimeAuthority(fixture.repository, fixture.store, new ActivationManifestVerifier(),
+                fixture.contextFactory, ignored -> fixture.manifest, new TrustedTimeGuard(),
+                new LiteEvaluationPolicy(), new EntitlementGuard(), key, Clock.fixed(now, ZoneOffset.UTC));
+    }
+
+    private record PaidFixture(
+            RuntimeRepository repository, MemoryProofStore store, ActivationManifest manifest,
+            ActivationContextFactory contextFactory) {}
 
     private ActivationManifestPayload newDummyPayload() {
         return new ActivationManifestPayload(ActivationManifestPayload.SCHEMA, idAt(NOW),
@@ -210,6 +331,7 @@ class EntitlementRuntimeAuthorityTest {
         private final InstallationIdentity identity;
         private IntegrityProof proof;
         private EntitlementStateRecord state;
+        private String document;
         private RuntimeException initializeFailure;
         private RuntimeException updateFailure;
 
@@ -224,7 +346,7 @@ class EntitlementRuntimeAuthorityTest {
             throw new UnsupportedOperationException();
         }
         @Override public Optional<EntitlementStateRecord> entitlementState(InstallationIdentity ignored) { return Optional.ofNullable(state); }
-        @Override public Optional<String> acceptedManifestDocument(InstallationIdentity ignored) { return Optional.empty(); }
+        @Override public Optional<String> acceptedManifestDocument(InstallationIdentity ignored) { return Optional.ofNullable(document); }
         @Override public void initializeLite(InstallationIdentity ignored, IntegrityProof databaseProof, Instant initializedAt) {
             if (initializeFailure != null) throw initializeFailure;
             proof = databaseProof;

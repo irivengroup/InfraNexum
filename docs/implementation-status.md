@@ -1,9 +1,9 @@
 
-### 2.0.0-alpha.0.24 — Entitlements coverage hardening
+### 2.0.0-alpha.0.25 — Entitlements coverage hardening
 
 Le déficit JaCoCo observé sous JDK 25 sur `infranexum-core-entitlements` (66 % lignes / 64 % branches) est traité par des tests comportementaux supplémentaires couvrant l'import d'activation, la compensation transactionnelle, les preuves temporelles duales, le runtime authority Lite et les invariants des value objects. Aucun seuil JaCoCo n'est abaissé et aucune exclusion n'est ajoutée. Le verify Maven complet utilise désormais `--fail-at-end` afin qu'un seul run CI expose tous les modules Java restant sous 98 % au lieu de s'arrêter au premier échec.
 
-# InfraNexum 2.0.0-alpha.0.24 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.25 — état d’implémentation
 
 ## alpha.0.23 — deterministic Workers shutdown & Unix archive compatibility
 
