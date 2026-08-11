@@ -122,9 +122,10 @@ class SourceIntegrityCheckerTest(unittest.TestCase):
         self.assertIn("CHECK-SOURCE-LAYOUT-007", self.ids())
 
         (self.root / "src/applications/server/server.Dockerfile").unlink()
+        self.write("docker/server.Dockerfile", "FROM scratch\n")
         self.write(".dockerignore", "target\n")
         self.write_inventory()
-        self.assertIn("CHECK-SOURCE-LAYOUT-007", self.ids())
+        self.assertNotIn("CHECK-SOURCE-LAYOUT-007", self.ids())
 
     def test_product_layout_reports_missing_source_root(self) -> None:
         shutil.rmtree(self.root / "src")

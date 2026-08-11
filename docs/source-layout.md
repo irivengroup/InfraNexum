@@ -21,14 +21,19 @@ src/
 tests/                # Java, Go, Web and validation regression tests
 validation/           # Architecture-as-Code and blocking contract gates
 tools/                # build/validation support utilities
+docker/               # Docker Desktop/Compose development and test environment
 docs/                 # project documentation
 .github/               # hosted CI/CD workflows
 ```
 
 Root build orchestration files (`pom.xml`, `Makefile`, Maven Wrapper and toolchain
 catalogues) stay at repository root because they orchestrate the build rather than
-forming part of a deployed InfraNexum runtime. Generated evidence and binaries are
-also outside canonical product source spaces:
+forming part of a deployed InfraNexum runtime. The root `docker/` directory follows
+the same repository-support rule: it provides the Docker Desktop/Compose development
+and test topology, while production deployment remains standalone bare-metal or VM
+and must not depend on a container engine. Container deployment assets remain
+forbidden below `src/`. Generated evidence and binaries are also outside canonical
+product source spaces:
 
 ```text
 artifacts/validation/

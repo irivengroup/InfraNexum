@@ -428,20 +428,42 @@ class ToolchainChecker:
                 "Java coverage jobs must run the live PostgreSQL JDBC contracts, including entitlement persistence, so JaCoCo does not depend on skipped integration tests",
             )
 
-        forbidden_container_wiring = (
-            "docker-compose:",
-            "make compose-up",
-            "make compose-smoke",
-            "compose-up:",
-            "compose-build:",
-            "src/deployment/docker",
-        )
         makefile_text = makefile or ""
-        if any(token in workflow or token in makefile_text for token in forbidden_container_wiring):
+        compose_path = self.root / "docker/compose.yaml"
+        compose_text = self._read_text(
+            compose_path,
+            "CHECK-TOOLCHAIN-043",
+            "Root developer Docker Compose topology cannot be read",
+        )
+        required_make_targets = (
+            "compose-contract-test:",
+            "compose-config:",
+            "compose-build:",
+            "compose-up:",
+            "compose-down:",
+            "compose-logs:",
+            "compose-smoke:",
+            "compose-backup:",
+            "compose-restore:",
+            "compose-rollback:",
+            "compose-reset:",
+        )
+        forbidden_ci_tokens = ("docker-compose:", "make compose-up", "make compose-smoke")
+        if (
+            any(token in workflow for token in forbidden_ci_tokens)
+            or "src/deployment/docker" in makefile_text
+            or any(token not in makefile_text for token in required_make_targets)
+            or compose_text is None
+            or "service_healthy" not in compose_text
+            or "service_completed_successfully" not in compose_text
+            or "internal: true" not in compose_text
+            or "docker/server.Dockerfile" not in compose_text
+            or "docker/postgres-tools.Dockerfile" not in compose_text
+        ):
             self._add(
                 "CHECK-TOOLCHAIN-043",
                 workflow_path,
-                "Docker/Compose is developer-only and must not be wired into product CI, Make targets or src/deployment",
+                "Docker/Compose must remain root-level developer tooling with complete Make commands and must not become a product CI/deployment dependency",
             )
 
         targeted_lines = [

@@ -1,10 +1,10 @@
-# InfraNexum 2.0.0-alpha.0.29 — Standalone Boundary & Server Workers Runtime
+# InfraNexum 2.0.0-alpha.0.30 — Root Docker Developer Runtime
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
-`alpha.0.29` corrects the deployment boundary introduced in `alpha.0.28`: Docker/Compose is strictly developer-only and is no longer part of the canonical product source, release inventory, Make targets or product CI. InfraNexum remains targeted at standalone bare-metal and VM deployments; the future installer/deployment assets must implement that contract directly.
+`alpha.0.30` keeps Docker/Compose as development and test tooling but tracks it directly at repository root under `docker/`, outside the production `src/` boundary. The repository now includes the Server and PostgreSQL-tools Dockerfiles, Compose topology, Windows PowerShell and WSL/Unix launchers, and root Make targets for config/build/up/smoke/logs/down/backup/restore/rollback/reset. Production deployment remains standalone bare-metal or VM and must not depend on Docker, Compose or Podman.
 
-This increment also completes the missing Server composition for PGM-02-E07: MEMORY, PostgreSQL and Oracle task stores are selected explicitly, bounded retry and worker-pool configuration is validated at startup, task handlers are frozen into an immutable registry, the scheduler is injectable, and Spring owns TaskWorkerPool start/close lifecycle with bounded shutdown.
+The Server Workers composition delivered in `alpha.0.29` is preserved unchanged: MEMORY, PostgreSQL and Oracle task stores remain explicit, configuration remains fail-fast, and Spring still owns the bounded TaskWorkerPool lifecycle.
 
 This repository is an executable implementation increment derived from architecture baseline `2.0.0-draft.21` and the complete implementation roadmap.
 
@@ -25,10 +25,36 @@ src/
 tests/
 validation/
 tools/
+docker/
 docs/
 ```
 
 Java tests live under `tests/java/...`, Go tests under `tests/go/agent`, and Web tests under `tests/web`. Source Integrity blocks tests under `src/`, legacy product roots outside `src/`, repository-relative paths over 120 characters, path components over 80 characters, and invalid release-manifest references after layout moves. See `docs/source-layout.md`.
+
+## Docker Desktop / Compose development runtime
+
+The complete developer topology is versioned under `docker/`. From the repository root:
+
+```sh
+make compose-config
+make compose-build
+make compose-up
+make compose-smoke
+```
+
+Windows / VS Code PowerShell can start the same topology with:
+
+```powershell
+.\docker\dev-compose.ps1 up
+```
+
+The direct Compose command is:
+
+```sh
+docker compose -f docker/compose.yaml up --detach --build --wait server
+```
+
+See `docker/README.md` for logs, stop, backup, restore, rollback and controlled volume deletion. These files are repository engineering tooling, not the production deployment mechanism.
 
 ## alpha.0.21 — Product Source Containment
 

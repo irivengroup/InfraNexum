@@ -2,7 +2,7 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.29",
+  "version": "2.0.0-alpha.0.30",
   "profile": "standalone-deployment-boundary-server-workers-runtime",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
@@ -129,11 +129,11 @@
     "pre_commit_hook": ".githooks/pre-commit"
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.29",
+    "prefix": "infranexum-2.0.0-alpha.0.30",
     "archive_entries": 481,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
     "source_recorded_files": 480
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.29-validation-evidence.zip"
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.30-validation-evidence.zip"
 }

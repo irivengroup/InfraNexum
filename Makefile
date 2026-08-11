@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 
-.PHONY: postgresql-test-schema archive-compatibility-test archive-compatibility-check source-integrity-test source-integrity-check source-integrity-precommit source-integrity-hook-install source-integrity-update source-checksum-update architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-module-verify java-test verify-foundation verify clean-generated
+.PHONY: compose-contract-test compose-config compose-build compose-up compose-down compose-smoke compose-backup compose-restore compose-rollback compose-reset compose-logs postgresql-test-schema archive-compatibility-test archive-compatibility-check source-integrity-test source-integrity-check source-integrity-precommit source-integrity-hook-install source-integrity-update source-checksum-update architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-module-verify java-test verify-foundation verify clean-generated
 
 PYTHON ?= python3
 GO ?= go
@@ -20,6 +20,9 @@ REPORT_ROOT := artifacts/validation
 REPORT_ROOT_ABS := $(abspath $(REPORT_ROOT))
 AGENT_ROOT := $(APPLICATION_ROOT)/agent
 WEB_ROOT := $(APPLICATION_ROOT)/web
+DOCKER_ROOT := docker
+DOCKER_COMPOSE_SH := ./$(DOCKER_ROOT)/dev-compose.sh
+
 
 # Python validation packages live at repository root outside the src/ product boundary.
 # PYTHONPATH=. keeps validation imports deterministic on every runner.
@@ -281,6 +284,39 @@ web-smoke:
 
 web-verify: web-test web-smoke
 
+compose-contract-test:
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(REPOSITORY_ROOT) $(PYTHON) -m unittest discover -s $(TEST_ROOT)/deployment -p 'test_*.py'
+
+compose-config:
+	$(DOCKER_COMPOSE_SH) config
+
+compose-build:
+	$(DOCKER_COMPOSE_SH) build
+
+compose-up:
+	$(DOCKER_COMPOSE_SH) up
+
+compose-down:
+	$(DOCKER_COMPOSE_SH) down
+
+compose-logs:
+	$(DOCKER_COMPOSE_SH) logs
+
+compose-smoke:
+	$(DOCKER_COMPOSE_SH) smoke
+
+compose-backup:
+	$(DOCKER_COMPOSE_SH) backup
+
+compose-restore:
+	$(DOCKER_COMPOSE_SH) restore
+
+compose-rollback:
+	$(DOCKER_COMPOSE_SH) rollback
+
+compose-reset:
+	$(DOCKER_COMPOSE_SH) reset
+
 JAVA_MODULES := \
 	src/components/core/contracts \
 	src/components/core/events \
@@ -321,7 +357,7 @@ java-module-verify:
 java-test:
 	./mvnw --batch-mode --no-transfer-progress --fail-at-end verify
 
-verify-foundation: source-integrity-test source-integrity-check archive-compatibility-test archive-compatibility-check architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke agent-vet agent-test agent-build web-verify
+verify-foundation: compose-contract-test source-integrity-test source-integrity-check archive-compatibility-test archive-compatibility-check architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke agent-vet agent-test agent-build web-verify
 
 verify: verify-foundation java-test
 

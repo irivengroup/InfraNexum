@@ -1,4 +1,12 @@
-# InfraNexum 2.0.0-alpha.0.29 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.30 — état d’implémentation
+
+## 2.0.0-alpha.0.30 — root Docker developer runtime
+
+**Statut : implémenté ; exécution Docker réelle NON EXÉCUTÉE dans l’environnement de génération faute de moteur Docker.**
+
+Le dossier Docker est désormais versionné directement à la racine sous `docker/`, jamais sous `src/`. Il contient `server.Dockerfile`, `postgres-tools.Dockerfile`, `compose.yaml`, les scripts de secrets/migration/rollback/entrypoint, ainsi que les lanceurs PowerShell et POSIX. Le Makefile expose `compose-config`, `compose-build`, `compose-up`, `compose-smoke`, `compose-logs`, `compose-down`, `compose-backup`, `compose-restore`, `compose-rollback` et `compose-reset`. Les opérations destructives restent fail-closed et le rollback laisse le Server arrêté.
+
+Cette présence dans le dépôt ne modifie pas le contrat de déploiement produit : `src/` reste la frontière des sources de la solution déployable et les installations de production ciblent bare metal ou VM sans dépendance à Docker/Compose. Le gate Source Integrity inventorie le nouveau dossier racine et continue de refuser tout Dockerfile/Compose sous `src/`. Le gate Toolchains exige les commandes Make et la topologie racine tout en interdisant de transformer Docker en dépendance du pipeline produit.
 
 ## 2.0.0-alpha.0.29 — standalone deployment boundary and Server Workers runtime
 

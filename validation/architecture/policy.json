@@ -164,8 +164,9 @@
     "components/adapters/jdbc": "components.adapters.persistence-jdbc"
   },
   "allowed_support_roots": [
+    "docker",
     "tests",
-    "validation",
-    "tools"
+    "tools",
+    "validation"
   ]
 }

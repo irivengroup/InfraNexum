@@ -24,6 +24,7 @@ MAX_PATH_COMPONENT_LENGTH = 80
 MAX_ARCHIVE_PREFIX_LENGTH = 32
 
 _ROOT_FILES = {
+    ".dockerignore",
     ".editorconfig",
     ".gitattributes",
     ".gitignore",
@@ -45,6 +46,7 @@ _SCAN_PREFIXES = (
     ".github",
     ".githooks",
     ".mvn",
+    "docker",
     "src",
     "docs",
     "requirements",
@@ -215,13 +217,6 @@ class SourceIntegrityChecker:
                     Path(space),
                     f"product space {space!r} must live below src/",
                 )
-
-        if (self.root / ".dockerignore").exists():
-            self._add(
-                "CHECK-SOURCE-LAYOUT-007",
-                Path(".dockerignore"),
-                "Docker build metadata is developer-only and must not be part of the product source snapshot",
-            )
 
         for path in product_root.rglob("*"):
             if not path.is_file():

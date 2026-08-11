@@ -33,6 +33,7 @@ class ToolchainCheckerTest(unittest.TestCase):
             "src/applications/web/pnpm-workspace.yaml",
             ".github/workflows/foundation.yml",
             "tools/bootstrap-maven.ps1",
+            "docker/compose.yaml",
         ):
             target = self.root / relative
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -305,7 +306,7 @@ class ToolchainCheckerTest(unittest.TestCase):
         )
         self.assertIn("CHECK-TOOLCHAIN-042", self.ids())
 
-    def test_product_ci_rejects_compose_deployment_wiring(self) -> None:
+    def test_root_compose_tooling_is_complete_but_not_a_product_ci_dependency(self) -> None:
         workflow_path = self.root / ".github/workflows/foundation.yml"
         workflow = workflow_path.read_text(encoding="utf-8")
         workflow_path.write_text(workflow + "\n  docker-compose:\n    runs-on: ubuntu-24.04\n    steps: []\n", encoding="utf-8")
@@ -314,7 +315,13 @@ class ToolchainCheckerTest(unittest.TestCase):
         shutil.copy2(SOURCE / ".github/workflows/foundation.yml", workflow_path)
         makefile_path = self.root / "Makefile"
         makefile = makefile_path.read_text(encoding="utf-8")
-        makefile_path.write_text(makefile + "\ncompose-up:\n\t@echo forbidden\n", encoding="utf-8")
+        makefile_path.write_text(makefile.replace("compose-up:", "compose-up-disabled:", 1), encoding="utf-8")
+        self.assertIn("CHECK-TOOLCHAIN-043", self.ids())
+
+        shutil.copy2(SOURCE / "Makefile", makefile_path)
+        compose_path = self.root / "docker/compose.yaml"
+        compose = compose_path.read_text(encoding="utf-8")
+        compose_path.write_text(compose.replace("internal: true", "internal: false", 1), encoding="utf-8")
         self.assertIn("CHECK-TOOLCHAIN-043", self.ids())
 
     def test_ci_targeted_reactor_test_tolerates_upstream_modules_without_matches(self) -> None:
