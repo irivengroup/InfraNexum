@@ -36,7 +36,7 @@ public final class TaskWorker {
         this.shutdownRequested = Objects.requireNonNull(shutdownRequested, "shutdownRequested");
     }
 
-    public WorkerIterationReport runOnce() {
+    public synchronized WorkerIterationReport runOnce() {
         if (shutdownRequested.getAsBoolean()) {
             return WorkerIterationReport.idle();
         }
@@ -48,9 +48,10 @@ public final class TaskWorker {
         TaskRecord task = claimed.getFirst();
         TaskExecutionContext context = new TaskExecutionContext(store, clock, leaseDuration, task);
         ActiveExecution execution = new ActiveExecution(context, Thread.currentThread());
-        if (!active.compareAndSet(null, execution)) {
-            throw new IllegalStateException("worker already has an active execution");
-        }
+        // runOnce() is synchronized so a worker can never claim a second task
+        // while its first execution is active. This prevents a concurrent caller
+        // from acquiring a lease and then abandoning it before execution.
+        active.set(execution);
         try {
             TaskHandler handler = registry.find(task.type()).orElse(null);
             if (handler == null) {

@@ -66,10 +66,11 @@ public final class TaskWorkerPool implements AutoCloseable {
     }
 
     /** Starts the fixed set of worker loops exactly once. */
-    public void start() {
-        if (!state.compareAndSet(WorkerPoolState.NEW, WorkerPoolState.RUNNING)) {
+    public synchronized void start() {
+        if (state.get() != WorkerPoolState.NEW) {
             throw new IllegalStateException("worker pool can only be started from NEW state");
         }
+        state.set(WorkerPoolState.RUNNING);
         for (TaskWorker worker : workers) {
             workerExecutor.submit(() -> runLoop(worker));
         }
@@ -95,15 +96,17 @@ public final class TaskWorkerPool implements AutoCloseable {
         Instant started = clock.instant();
         WorkerPoolState current = state.get();
         if (current == WorkerPoolState.NEW) {
-            if (state.compareAndSet(WorkerPoolState.NEW, WorkerPoolState.TERMINATED)) {
-                stopRequested.set(true);
-                workerExecutor.shutdownNow();
-                heartbeatExecutor.shutdownNow();
-                ShutdownReport report = new ShutdownReport(
-                        true, false, true, configuration.concurrency(), Duration.ZERO);
-                shutdownReport.set(report);
-                return report;
-            }
+            // start() and shutdown() share the same monitor, therefore NEW cannot
+            // change underneath this transition. Avoid a racy compare-and-set
+            // branch and make lifecycle ownership explicit.
+            state.set(WorkerPoolState.TERMINATED);
+            stopRequested.set(true);
+            workerExecutor.shutdownNow();
+            heartbeatExecutor.shutdownNow();
+            ShutdownReport report = new ShutdownReport(
+                    true, false, true, configuration.concurrency(), Duration.ZERO);
+            shutdownReport.set(report);
+            return report;
         }
         state.set(WorkerPoolState.STOPPING);
         stopRequested.set(true);

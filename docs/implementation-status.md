@@ -1,4 +1,14 @@
-# InfraNexum 2.0.0-alpha.0.21 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.22 — état d’implémentation
+
+## alpha.0.22 — CI Workers Coverage & Cross-platform Path Repair
+
+**Statut : correction implémentée localement ; validation Maven/JDK 25 hébergée encore requise.**
+
+Cette correction ferme les deux défauts révélés par la CI `alpha.0.21` sans réduire les seuils qualité. Le validateur Source Integrity ne dépend plus de la sémantique `pathlib.Path` de l’OS hôte pour décider si un chemin d’inventaire est relatif : il valide simultanément les syntaxes POSIX et Windows et refuse chemins POSIX racinés, lecteurs Windows, UNC, backslashes, traversées `..`, segments non canoniques et retours ligne. Le scénario `/tmp/a` est donc rejeté de manière identique sur Linux et Windows.
+
+Le module Core Workers conserve les seuils JaCoCo **98 % lignes et 98 % branches** sans exclusion. La suite couvre désormais les validations de capacité et de lease, conflits d’idempotence, récupération de leases expirés, fencing, checkpoint, annulation, retries, erreurs de persistence, heartbeat, shutdown, interruptions et branches de value objects. Deux durcissements de concurrence accompagnent ces tests : `TaskWorker.runOnce()` est sérialisé pour empêcher deux claims simultanés par le même worker, et `TaskWorkerPool.start()/shutdown()` partagent le même verrou de lifecycle afin d’éliminer la course NEW/RUNNING/TERMINATED.
+
+Le harnais local strict JDK 21 compile le module et ses tests avec `-Xlint:all -Werror` et exécute **46/46 scénarios Workers**. La preuve exacte JaCoCo sous JDK 25 reste NON EXÉCUTÉE localement et doit être fournie par `./mvnw --batch-mode --no-transfer-progress verify` sur le runner cible.
 
 ## alpha.0.21 — Product Source Containment
 

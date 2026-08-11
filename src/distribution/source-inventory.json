@@ -375,6 +375,7 @@
     "tests/java/core-workers/io/infranexum/core/workers/TaskSchedulerTest.java",
     "tests/java/core-workers/io/infranexum/core/workers/TaskWorkerPoolTest.java",
     "tests/java/core-workers/io/infranexum/core/workers/TaskWorkerTest.java",
+    "tests/java/core-workers/io/infranexum/core/workers/WorkerCoverageRegressionTest.java",
     "tests/java/core-workers/io/infranexum/core/workers/WorkerTestFixtures.java",
     "tests/java/core-workers/io/infranexum/core/workers/WorkerValueObjectsTest.java",
     "tests/java/jdbc/io/infranexum/adapters/persistence/jdbc/JdbcAdapterSmoke.java",

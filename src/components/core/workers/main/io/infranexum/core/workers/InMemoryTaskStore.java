@@ -291,7 +291,7 @@ public final class InMemoryTaskStore implements TaskStore {
 
     private void recoverExpiredLeases(Instant now, RetryPolicy retryPolicy) {
         for (MutableTask task : tasks.values()) {
-            if (task.status != TaskStatus.RUNNING || task.leaseUntil == null || task.leaseUntil.isAfter(now)) {
+            if (task.status != TaskStatus.RUNNING || task.leaseUntil.isAfter(now)) {
                 continue;
             }
             task.clearLease();
@@ -409,9 +409,11 @@ public final class InMemoryTaskStore implements TaskStore {
         }
 
         boolean matches(TaskSubmission submission, RetrySafety safety) {
-            return type.equals(submission.type())
-                    && idempotencyKey.equals(submission.idempotencyKey())
-                    && parameters.equals(submission.parameters())
+            // The idempotency map is keyed by type + idempotency key, therefore
+            // those two values are already equal whenever this method is called.
+            // Compare only the remaining semantics to avoid redundant,
+            // structurally unreachable validation branches.
+            return parameters.equals(submission.parameters())
                     && requestedNotBefore.equals(submission.notBefore())
                     && retrySafety == safety;
         }

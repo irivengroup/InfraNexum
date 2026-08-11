@@ -57,6 +57,6 @@ class EventPersistenceConfigurationTest {
 
     private static ServerRuntimeProperties server(RuntimeMode mode, String region, String site) {
         return new ServerRuntimeProperties(
-                "server-test", mode, region, site, "2.0.0-alpha.0.21", "2.0.0-draft.21");
+                "server-test", mode, region, site, "2.0.0-alpha.0.22", "2.0.0-draft.21");
     }
 }

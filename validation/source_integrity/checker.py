@@ -12,7 +12,7 @@ import json
 import re
 import subprocess
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from xml.etree import ElementTree
 
 
@@ -670,8 +670,22 @@ class SourceIntegrityChecker:
 
     @staticmethod
     def _safe_relative(value: str) -> bool:
-        path = Path(value)
-        return bool(value) and not path.is_absolute() and ".." not in path.parts and value == path.as_posix()
+        """Return whether *value* is a canonical repository-relative POSIX path.
+
+        Inventory and checksum paths are serialized once and consumed on both
+        POSIX and Windows runners.  ``pathlib.Path`` follows the host platform,
+        so a POSIX-rooted path such as ``/tmp/a`` is not reliably classified as
+        absolute on Windows.  Validate both path syntaxes explicitly and reject
+        backslash-based or drive/root-qualified forms before accepting the
+        canonical POSIX representation.
+        """
+        if not value or "\\" in value or "\n" in value or "\r" in value:
+            return False
+        posix = PurePosixPath(value)
+        windows = PureWindowsPath(value)
+        if posix.is_absolute() or windows.is_absolute() or windows.drive or windows.root:
+            return False
+        return ".." not in posix.parts and value == posix.as_posix()
 
     def _read(self, path: Path, check_id: str) -> str | None:
         try:

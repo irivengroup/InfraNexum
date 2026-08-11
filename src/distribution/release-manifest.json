@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.21",
-  "profile": "development-foundation-product-source-containment",
+  "version": "2.0.0-alpha.0.22",
+  "profile": "development-foundation-ci-workers-coverage-path-portability-repair",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "source and validation evidence; generated binaries, caches, dependency directories and temporary artifacts excluded",
@@ -26,11 +26,11 @@
     },
     {
       "id": "source-integrity-v1",
-      "status": "canonical-inventory-git-tracking-exact-staged-snapshot-git-blob-checksums-precommit-java-import-case-collision-filename-type-maven-reactor-make-preflight-and-path-budget-enforced"
+      "status": "canonical-inventory-git-tracking-exact-staged-snapshot-git-blob-checksums-precommit-cross-platform-canonical-path-java-import-case-collision-filename-type-maven-reactor-make-preflight-and-path-budget-enforced"
     },
     {
       "id": "core-workers-v1",
-      "status": "bounded-runtime-idempotency-retry-safety-lease-fencing-heartbeat-checkpoint-cancellation-and-truthful-shutdown-implemented"
+      "status": "bounded-runtime-idempotency-retry-safety-lease-fencing-heartbeat-checkpoint-cancellation-truthful-shutdown-serialized-runonce-and-lifecycle-race-hardening-implemented-jdk25-jacoco-proof-pending"
     },
     {
       "id": "adapter-persistence-jdbc-workers-v1",
@@ -77,7 +77,7 @@
     "../../artifacts/validation/web-smoke.json"
   ],
   "validation_summary": {
-    "source_inventory_paths": 459,
+    "source_inventory_paths": 460,
     "source_integrity_tests": 44,
     "source_integrity_coverage_percent": 100,
     "source_integrity_violations": 0,
@@ -107,7 +107,7 @@
     "audit_coverage_percent": 100,
     "audit_violations": 0,
     "java_offline_smoke_targets": 10,
-    "workers_module_tests_defined": 30,
+    "workers_module_tests_defined": 47,
     "jdbc_workers_scripted_contract_groups": 10,
     "jdbc_workers_junit_tests_defined": 10,
     "jdbc_workers_postgresql_live_tests_defined": 5,
@@ -131,18 +131,18 @@
   "source_integrity": {
     "canonical_inventory": "source-inventory.json",
     "git_blob_checksums": "source-files.sha256",
-    "tracked_files": 461,
-    "source_recorded_files": 460,
+    "tracked_files": 462,
+    "source_recorded_files": 461,
     "staged_snapshot_required": true,
     "pre_commit_hook": ".githooks/pre-commit"
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.21",
-    "archive_entries": 487,
+    "prefix": "infranexum-2.0.0-alpha.0.22",
+    "archive_entries": 488,
     "reproducible": true,
     "source_checksum_manifest": "source-files.sha256",
-    "source_recorded_files": 460,
+    "source_recorded_files": 461,
     "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
-    "release_recorded_files": 486
+    "release_recorded_files": 487
   }
 }
