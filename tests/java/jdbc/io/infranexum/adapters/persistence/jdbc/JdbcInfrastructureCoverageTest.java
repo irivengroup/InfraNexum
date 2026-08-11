@@ -144,6 +144,11 @@ class JdbcInfrastructureCoverageTest {
                 resultSet(Map.of("id", identifier.toString().toUpperCase(java.util.Locale.ROOT))), "id"));
         assertThrows(SQLException.class, () -> JdbcDatabaseDialect.POSTGRESQL.readIdentifier(
                 resultSet(Map.of("id", 42)), "id"));
+        SQLException invalidUuid = assertThrows(SQLException.class, () ->
+                JdbcDatabaseDialect.POSTGRESQL.readIdentifier(
+                        resultSet(Map.of("id", UUID.fromString("550e8400-e29b-41d4-a716-446655440000"))), "id"));
+        assertTrue(invalidUuid.getMessage().contains("invalid UUIDv7 identifier in column id"));
+        assertInstanceOf(IllegalArgumentException.class, invalidUuid.getCause());
         assertTrue(JdbcDatabaseDialect.POSTGRESQL.isUniqueViolation(new SQLException("duplicate", "23505")));
         assertFalse(JdbcDatabaseDialect.POSTGRESQL.isUniqueViolation(new SQLException("other", "22000")));
         assertTrue(JdbcDatabaseDialect.ORACLE.isUniqueViolation(new SQLException("duplicate", "23000", 1)));

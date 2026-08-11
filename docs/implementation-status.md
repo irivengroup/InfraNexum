@@ -1,4 +1,22 @@
-# InfraNexum 2.0.0-alpha.0.30 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.32 — état d’implémentation
+
+## 2.0.0-alpha.0.32 — UUIDv7 installation identity repair
+
+**Statut : correction implémentée ; validation Docker réelle à confirmer sur Docker Desktop après reconstruction des images.**
+
+Le premier démarrage Compose réel a démontré que `docker/migrate-postgresql.sh` persistait `core_installation_identity.installation_id` via `/proc/sys/kernel/random/uuid`, donc en UUIDv4, alors que `DomainIdentifier` impose UUIDv7. Le Server échouait fail-closed pendant l’initialisation Entitlements avant le démarrage Tomcat.
+
+Le bootstrap Compose construit maintenant un UUIDv7 RFC 9562 à partir de l’horloge PostgreSQL et de 74 bits aléatoires. La migration appariée `0007-core-installation-uuidv7` répare automatiquement l’identité UUIDv4 introduite par alpha.0.31 uniquement lorsqu’aucun état Entitlements, proof d’intégrité ni manifeste d’activation ne la référence ; sinon elle refuse la migration. Une contrainte base empêche ensuite toute réintroduction d’un identifiant d’installation non UUIDv7. Le mapping JDBC traduit également une valeur persistée invalide en `SQLException` contextualisée.
+
+## 2.0.0-alpha.0.31 — Docker PostgreSQL portability and diagnostics repair
+
+**Statut : correction implémentée ; exécution Docker réelle NON EXÉCUTÉE dans l’environnement de génération faute de moteur Docker.**
+
+Le défaut observé sous Docker Desktop est corrigé à la cause : les scripts `migrate-postgresql.sh` et `rollback-postgresql.sh` n’utilisent plus `echo` pour produire des méta-commandes `psql`. POSIX laisse le traitement des antislashs par `echo` dépendre de l’implémentation ; le conteneur Alpine/BusyBox pouvait donc produire un contrôle commençant par `\\set`, que `psql` interprétait comme une commande `\`. Les lignes de contrôle sont désormais produites exclusivement avec `printf '%s\n'`, avec un seul antislash attendu.
+
+Un `compose.yaml` de commodité est ajouté à la racine et inclut le modèle canonique `docker/compose.yaml`, ce qui permet les commandes `docker compose ...` directement depuis la racine du dépôt sans dupliquer la topologie. Les lanceurs PowerShell/POSIX acceptent désormais un ou plusieurs noms de services pour `logs`, par exemple `logs migrate`; la documentation distingue explicitement les noms de services Compose des noms de conteneurs générés.
+
+Les tests de non-régression bloquent tout retour d’un rendu des méta-commandes `psql` via `echo`, vérifient le forwarding des services dans le lanceur POSIX et protègent le loader Compose racine.
 
 ## 2.0.0-alpha.0.30 — root Docker developer runtime
 

@@ -68,12 +68,22 @@ smoke() {
 }
 
 command=${1:-help}
+if [ "$#" -gt 0 ]; then
+  shift
+fi
 case "$command" in
   config) require_repo; compose config --quiet ;;
   build) require_repo; compose config --quiet; compose build --pull ;;
   up) require_repo; compose config --quiet; compose up --detach --build --wait server ;;
   down) require_repo; compose down --remove-orphans ;;
-  logs) require_repo; compose logs --no-color --tail=200 server postgres migrate ;;
+  logs)
+    require_repo
+    if [ "$#" -gt 0 ]; then
+      compose logs --no-color --tail=200 "$@"
+    else
+      compose logs --no-color --tail=200 server postgres migrate
+    fi
+    ;;
   smoke) smoke ;;
   backup) backup ;;
   restore) restore ;;
@@ -96,14 +106,18 @@ case "$command" in
     ;;
   help|-h|--help)
     cat <<'USAGE'
-Usage: ./docker/dev-compose.sh COMMAND
+Usage: ./docker/dev-compose.sh COMMAND [SERVICE ...]
 Commands: config build up down logs smoke backup restore rollback reset
 
 Start the complete developer topology:
   ./docker/dev-compose.sh up
 
 Equivalent direct Compose command:
-  docker compose -f docker/compose.yaml up --detach --build --wait server
+  docker compose up --detach --build --wait server
+
+Migration diagnostics:
+  ./docker/dev-compose.sh logs migrate
+  docker compose logs migrate
 
 Destructive/restore operations require:
   BACKUP_FILE=... CONFIRM_INFRANEXUM_RESTORE=YES ./docker/dev-compose.sh restore

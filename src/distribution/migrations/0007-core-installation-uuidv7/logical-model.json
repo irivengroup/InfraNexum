@@ -1,0 +1,12 @@
+{
+  "schema": "infranexum.logical-schema/v1",
+  "objects": [
+    {
+      "kind": "table-constraint",
+      "logical_name": "core.installation_identity.uuidv7",
+      "table": "core.installation_identity",
+      "columns": ["installation_id"],
+      "invariant": "installation_id is an RFC 9562 UUID version 7 identifier"
+    }
+  ]
+}

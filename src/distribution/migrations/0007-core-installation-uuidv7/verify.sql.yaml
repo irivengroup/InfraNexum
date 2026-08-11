@@ -1,0 +1,8 @@
+schema: infranexum.migration-verification/v1
+checks:
+- id: installation-identity-values-are-uuidv7
+  postgresql: "SELECT COUNT(*) = 0 FROM core_installation_identity WHERE uuid_extract_version(installation_id) IS DISTINCT FROM 7"
+  oracle: "SELECT CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END FROM core_installation_identity WHERE NOT REGEXP_LIKE(installation_id, '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$')"
+- id: installation-identity-uuidv7-constraint-exists
+  postgresql: "SELECT COUNT(*) = 1 FROM pg_constraint WHERE conname = 'ck_core_installation_uuidv7' AND conrelid = 'core_installation_identity'::regclass"
+  oracle: "SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM user_constraints WHERE table_name = 'CORE_INSTALLATION_IDENTITY' AND constraint_name = 'CK_CORE_INSTALL_UUIDV7' AND constraint_type = 'C' AND status = 'ENABLED'"

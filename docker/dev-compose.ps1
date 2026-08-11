@@ -2,7 +2,10 @@
 param(
     [Parameter(Position = 0)]
     [ValidateSet('config','build','up','down','logs','smoke','backup','restore','rollback','reset','help')]
-    [string]$Command = 'help'
+    [string]$Command = 'help',
+
+    [Parameter(Position = 1, ValueFromRemainingArguments = $true)]
+    [string[]]$Services = @()
 )
 
 $ErrorActionPreference = 'Stop'
@@ -58,7 +61,14 @@ switch ($Command) {
     'build' { Assert-Repository; Invoke-Compose config --quiet; Invoke-Compose build --pull }
     'up' { Assert-Repository; Invoke-Compose config --quiet; Invoke-Compose up --detach --build --wait server }
     'down' { Assert-Repository; Invoke-Compose down --remove-orphans }
-    'logs' { Assert-Repository; Invoke-Compose logs --no-color --tail=200 server postgres migrate }
+    'logs' {
+        Assert-Repository
+        if ($Services.Count -gt 0) {
+            Invoke-Compose logs --no-color --tail=200 @Services
+        } else {
+            Invoke-Compose logs --no-color --tail=200 server postgres migrate
+        }
+    }
     'smoke' { Invoke-Smoke }
     'backup' { New-DatabaseBackup }
     'restore' {
@@ -98,14 +108,18 @@ switch ($Command) {
     }
     'help' {
         @'
-Usage: .\docker\dev-compose.ps1 COMMAND
+Usage: .\docker\dev-compose.ps1 COMMAND [SERVICE ...]
 Commands: config build up down logs smoke backup restore rollback reset
 
 Start the complete developer topology:
   .\docker\dev-compose.ps1 up
 
 Equivalent direct Compose command:
-  docker compose -f docker/compose.yaml up --detach --build --wait server
+  docker compose up --detach --build --wait server
+
+Migration diagnostics:
+  .\docker\dev-compose.ps1 logs migrate
+  docker compose logs migrate
 
 Destructive/restore operations require:
   $env:BACKUP_FILE='...'; $env:CONFIRM_INFRANEXUM_RESTORE='YES'; .\docker\dev-compose.ps1 restore

@@ -1,0 +1,27 @@
+schema: infranexum.migration/v1
+id: '0007'
+name: core-installation-uuidv7
+owner_context: core
+dependencies:
+- '0004'
+- '0006'
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 10
+preconditions:
+- core-installation-identity-table-exists
+- no-consumed-invalid-installation-identity
+postconditions:
+- installation-identity-is-uuidv7
+- database-rejects-non-uuidv7-installation-identities
+recovery: restore-from-pre-migration-backup-if-invalid-consumed-identity-is-detected
+rollback: drops-only-the-uuidv7-check-constraint-and-never-restores-an-invalid-identifier
+checksums:
+  postgresql.sql: 170226499c96d0f0078045d2c5d479a46a6158738e4019bc0f146153e28d0683
+  oracle.sql: 0550ad0e61def61214eff639d75d3f5ca53b29c808471a9fc122e76599c0b460
+  rollback/postgresql.sql: 6e4190c1c54598607456856e4564b15424ffa527ce50806418819ec7bd21452a
+  rollback/oracle.sql: 97b6e2cf5e7957d88ac657c6f4144096eda005e6327332e318fa467a6a83c640
+  logical-model.json: 0690c72445c04bbedd498cceb49f9d90cff4e3d3f39247dde9d7d1d1235bc0fe
+  verify.sql.yaml: 84a6d0d143647549b8f4518958edef8f106f446317aa77bcf269382e5f030415

@@ -1,0 +1,6 @@
+# Developer convenience entrypoint. The canonical Compose model remains in docker/compose.yaml.
+# `include` preserves that file's own project directory, so its relative build and bind paths
+# stay correct while `docker compose ...` can be run directly from the repository root.
+name: infranexum-dev
+include:
+  - docker/compose.yaml

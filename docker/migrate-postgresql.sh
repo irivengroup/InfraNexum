@@ -60,45 +60,76 @@ for migration_dir in "$migration_root"/000*; do
 
   control="$(mktemp)"
   trap 'rm -f "$control"' EXIT HUP INT TERM
+  # POSIX echo is implementation-defined for backslash escapes. Alpine/BusyBox
+  # turns a source argument such as "\\set" into a different byte stream than
+  # dash/bash. Use printf with a data format so psql receives exactly one leading
+  # backslash for every meta-command on every supported developer platform.
   {
-    echo '\\set ON_ERROR_STOP on'
-    echo 'BEGIN;'
-    echo "SELECT pg_advisory_xact_lock(723091144);"
-    echo "SELECT to_regclass('infranexum_core.schema_history') IS NOT NULL AS has_history \\gset"
-    echo '\\if :has_history'
-    echo "  SELECT EXISTS(SELECT 1 FROM infranexum_core.schema_history WHERE migration_id = '$migration_id') AS applied \\gset"
-    echo '  \\if :applied'
-    echo "    SELECT logical_checksum = '$logical_checksum' AS checksum_ok FROM infranexum_core.schema_history WHERE migration_id = '$migration_id' \\gset"
-    echo '    \\if :checksum_ok'
-    echo "      \\echo migration $migration_id already applied"
-    echo '    \\else'
-    echo "      \\echo migration $migration_id logical checksum mismatch"
-    echo '      \\quit 44'
-    echo '    \\endif'
-    echo '  \\else'
-    echo "    \\i $sql_file"
-    echo "    INSERT INTO infranexum_core.schema_history (migration_id, logical_checksum, application_version, applied_by) VALUES ('$migration_id', '$logical_checksum', '$application_version', current_user);"
-    echo '  \\endif'
-    echo '\\else'
+    printf '%s\n' '\set ON_ERROR_STOP on'
+    printf '%s\n' 'BEGIN;'
+    printf '%s\n' 'SELECT pg_advisory_xact_lock(723091144);'
+    printf '%s\n' "SELECT to_regclass('infranexum_core.schema_history') IS NOT NULL AS has_history \\gset"
+    printf '%s\n' '\if :has_history'
+    printf '%s\n' "  SELECT EXISTS(SELECT 1 FROM infranexum_core.schema_history WHERE migration_id = '$migration_id') AS applied \\gset"
+    printf '%s\n' '  \if :applied'
+    printf '%s\n' "    SELECT logical_checksum = '$logical_checksum' AS checksum_ok FROM infranexum_core.schema_history WHERE migration_id = '$migration_id' \\gset"
+    printf '%s\n' '    \if :checksum_ok'
+    printf '%s\n' "      \echo migration $migration_id already applied"
+    printf '%s\n' '    \else'
+    printf '%s\n' "      \echo migration $migration_id logical checksum mismatch"
+    printf '%s\n' '      \quit 44'
+    printf '%s\n' '    \endif'
+    printf '%s\n' '  \else'
+    printf '%s\n' "    \i $sql_file"
+    printf '%s\n' "    INSERT INTO infranexum_core.schema_history (migration_id, logical_checksum, application_version, applied_by) VALUES ('$migration_id', '$logical_checksum', '$application_version', current_user);"
+    printf '%s\n' '  \endif'
+    printf '%s\n' '\else'
     if [ "$migration_id" = '0001' ]; then
-      echo "  \\i $sql_file"
-      echo "  INSERT INTO infranexum_core.schema_history (migration_id, logical_checksum, application_version, applied_by) VALUES ('$migration_id', '$logical_checksum', '$application_version', current_user);"
+      printf '%s\n' "  \i $sql_file"
+      printf '%s\n' "  INSERT INTO infranexum_core.schema_history (migration_id, logical_checksum, application_version, applied_by) VALUES ('$migration_id', '$logical_checksum', '$application_version', current_user);"
     else
-      echo "  \\echo schema history is missing before migration $migration_id"
-      echo '  \\quit 45'
+      printf '%s\n' "  \echo schema history is missing before migration $migration_id"
+      printf '%s\n' '  \quit 45'
     fi
-    echo '\\endif'
-    echo 'COMMIT;'
+    printf '%s\n' '\endif'
+    printf '%s\n' 'COMMIT;'
   } > "$control"
   $psql_base --file "$control"
   rm -f "$control"
   trap - EXIT HUP INT TERM
 done
 
-# A fresh deployment must have exactly one stable installation identity before Entitlements starts.
-# Bootstrap is serialized with the same advisory lock as schema migrations so concurrent
-# compose invocations cannot create two identities between validation and INSERT.
-installation_id="$(cat /proc/sys/kernel/random/uuid)"
+# A fresh deployment must have exactly one stable UUIDv7 installation identity before
+# Entitlements starts. PostgreSQL 17 exposes gen_random_uuid() as UUIDv4 only, so construct
+# the RFC 9562 UUIDv7 layout from the database clock and 74 random payload bits. This keeps
+# the bootstrap aligned with DomainIdentifier without depending on a host-specific UUID tool.
+installation_id="$($psql_base --tuples-only --no-align --command "
+WITH source AS (
+    SELECT LPAD(TO_HEX(FLOOR(EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::BIGINT), 12, '0') AS ts,
+           REPLACE(gen_random_uuid()::TEXT, '-', '') AS entropy
+), shaped AS (
+    SELECT ts, entropy,
+           SUBSTRING('89ab89ab89ab89ab'
+                     FROM STRPOS('0123456789abcdef', SUBSTRING(entropy FROM 4 FOR 1))
+                     FOR 1) AS variant_nibble
+      FROM source
+)
+SELECT (
+    SUBSTRING(ts FROM 1 FOR 8) || '-' ||
+    SUBSTRING(ts FROM 9 FOR 4) || '-7' ||
+    SUBSTRING(entropy FROM 1 FOR 3) || '-' ||
+    variant_nibble || SUBSTRING(entropy FROM 5 FOR 3) || '-' ||
+    SUBSTRING(entropy FROM 8 FOR 12)
+)::UUID::TEXT
+FROM shaped;
+")"
+case "$installation_id" in
+  ????????-????-7???-[89ab]???-????????????) ;;
+  *)
+    echo "Generated installation identity is not UUIDv7: $installation_id" >&2
+    exit 66
+    ;;
+esac
 fingerprint="$(head -c 64 /dev/urandom | sha256sum | awk '{print $1}')"
 identity_sql="$(mktemp)"
 trap 'rm -f "$identity_sql"' EXIT HUP INT TERM

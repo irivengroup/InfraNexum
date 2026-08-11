@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.30",
-  "profile": "standalone-deployment-boundary-server-workers-runtime",
+  "version": "2.0.0-alpha.0.32",
+  "profile": "uuidv7-installation-identity-repair",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -34,11 +34,11 @@
     },
     {
       "id": "adapter-persistence-jdbc-workers-v1",
-      "status": "postgresql-oracle-jdbc-persistence-workers-entitlements-revocations-dialect-json-binding-41-hosted-postgresql-tests-passed-alpha0.27-deterministic-branch-closure-expanded-alpha0.28-no-jacoco-exclusions-hosted-98-line-branch-proof-pending"
+      "status": "postgresql-oracle-jdbc-persistence-workers-entitlements-revocations-dialect-json-binding-invalid-domain-identifiers-translated-to-contextual-sql-errors-hosted-jdk25-jacoco-proof-pending"
     },
     {
-      "id": "migration-catalogue-0001-0006",
-      "status": "paired-static-checksum-logical-model-verification-and-central-postgresql-test-schema-target-gated-postgresql17-18-live-ci-oracle19c-26ai-pending"
+      "id": "migration-catalogue-0001-0007",
+      "status": "paired-static-checksum-logical-model-verification-postgresql17-18-live-ci-oracle19c-26ai-with-uuidv7-installation-identity-invariant-postgresql-alpha031-safe-repair-oracle-fail-closed"
     },
     {
       "id": "ci-foundation",
@@ -46,12 +46,12 @@
     },
     {
       "id": "deployment-boundary",
-      "status": "standalone-baremetal-vm-is-product-target-docker-compose-is-developer-only-external-to-canonical-source-and-release"
+      "status": "standalone-baremetal-vm-is-product-target-root-docker-compose-is-developer-test-tooling-and-not-a-production-deployment-dependency"
     }
   ],
   "validation_reports": [],
   "validation_summary": {
-    "source_inventory_paths": 479,
+    "source_inventory_paths": 501,
     "source_integrity_tests": 45,
     "source_integrity_coverage_percent": 100,
     "source_integrity_violations": 0,
@@ -61,7 +61,7 @@
     "toolchain_tests": 25,
     "toolchain_coverage_percent": 99,
     "toolchain_violations": 0,
-    "migration_tests": 24,
+    "migration_tests": 29,
     "migration_coverage_percent": 99,
     "migration_violations": 0,
     "eventing_tests": 10,
@@ -90,9 +90,9 @@
     "web_branch_coverage_percent": 98.28,
     "web_function_coverage_percent": 100,
     "repository_syntax_counts": {
-      "python": 47,
-      "json": 44,
-      "yaml": 18,
+      "python": 48,
+      "json": 45,
+      "yaml": 20,
       "xml": 9,
       "javascript": 13,
       "go": 8,
@@ -106,9 +106,8 @@
     "archive_compatibility_max_member_path": 142,
     "entitlements_module_tests_defined": 49,
     "audit_module_tests_defined": 21,
-    "architecture_coverage_status": "EXECUTED",
+    "architecture_coverage_status": "NON_EXECUTED_ALPHA032_COVERAGE_WRAPPER_TIMEOUT_AFTER_FUNCTIONAL_TESTS",
     "architecture_functional_tests": 33,
-    "architecture_coverage_percent": 100,
     "jdbc_module_tests_defined": 51,
     "jdbc_postgresql_live_tests_defined": 18,
     "server_module_tests_defined": 47,
@@ -123,17 +122,17 @@
   "source_integrity": {
     "canonical_inventory": "source-inventory.json",
     "git_blob_checksums": "source-files.sha256",
-    "tracked_files": 481,
-    "source_recorded_files": 480,
+    "tracked_files": 503,
+    "source_recorded_files": 502,
     "staged_snapshot_required": true,
     "pre_commit_hook": ".githooks/pre-commit"
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.30",
-    "archive_entries": 481,
+    "prefix": "infranexum-2.0.0-alpha.0.32",
+    "archive_entries": 503,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
-    "source_recorded_files": 480
+    "source_recorded_files": 502
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.30-validation-evidence.zip"
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.32-validation-evidence.zip"
 }

@@ -53,6 +53,8 @@ Une clé déjà `COMPLETED` retourne `DUPLICATE`. Une clé concurrente encore `P
 
 La migration appariée `0006-core-workers` crée `worker_task` et `worker_task_parameter`, ainsi que les indexes de due-task et lease expiry. PostgreSQL conserve les tokens/valeurs dans des colonnes bornées à 4096 caractères ; Oracle utilise des `CLOB` et des triggers dédiés aux invariants qui dépendent du contenu LOB. Le rollback est fail-closed dès qu’une tâche durable existe.
 
+La migration `0007-core-installation-uuidv7` impose également le contrat `DomainIdentifier` sur l’identité d’installation persistée. PostgreSQL peut réparer automatiquement l’UUIDv4 introduit par le bootstrap Docker alpha.0.31 uniquement avant toute consommation par Entitlements ; Oracle refuse toute identité legacy invalide et exige une réparation explicite. Après migration, la base refuse les identifiants d’installation non UUIDv7.
+
 ## Configuration Server
 
 ```yaml

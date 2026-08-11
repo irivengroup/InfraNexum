@@ -300,7 +300,7 @@ compose-down:
 	$(DOCKER_COMPOSE_SH) down
 
 compose-logs:
-	$(DOCKER_COMPOSE_SH) logs
+	$(DOCKER_COMPOSE_SH) logs $(SERVICES)
 
 compose-smoke:
 	$(DOCKER_COMPOSE_SH) smoke

@@ -166,11 +166,15 @@ public enum JdbcDatabaseDialect {
 
     DomainIdentifier readIdentifier(ResultSet resultSet, String column) throws SQLException {
         Object value = resultSet.getObject(column);
-        if (value instanceof UUID uuid) {
-            return new DomainIdentifier(uuid);
-        }
-        if (value instanceof String text) {
-            return DomainIdentifier.parse(text.strip().toLowerCase(Locale.ROOT));
+        try {
+            if (value instanceof UUID uuid) {
+                return new DomainIdentifier(uuid);
+            }
+            if (value instanceof String text) {
+                return DomainIdentifier.parse(text.strip().toLowerCase(Locale.ROOT));
+            }
+        } catch (IllegalArgumentException invalidIdentifier) {
+            throw new SQLException("invalid UUIDv7 identifier in column " + column, invalidIdentifier);
         }
         throw new SQLException("unsupported identifier representation for " + column);
     }

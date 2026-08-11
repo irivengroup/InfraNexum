@@ -33,6 +33,7 @@ _ROOT_FILES = {
     ".tool-versions",
     "BASELINE.json",
     "Makefile",
+    "compose.yaml",
     "OWNERS.json",
     "README.md",
     "VERSION",

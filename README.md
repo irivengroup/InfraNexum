@@ -1,8 +1,8 @@
-# InfraNexum 2.0.0-alpha.0.30 — Root Docker Developer Runtime
+# InfraNexum 2.0.0-alpha.0.32 — UUIDv7 Installation Identity Repair
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
-`alpha.0.30` keeps Docker/Compose as development and test tooling but tracks it directly at repository root under `docker/`, outside the production `src/` boundary. The repository now includes the Server and PostgreSQL-tools Dockerfiles, Compose topology, Windows PowerShell and WSL/Unix launchers, and root Make targets for config/build/up/smoke/logs/down/backup/restore/rollback/reset. Production deployment remains standalone bare-metal or VM and must not depend on Docker, Compose or Podman.
+`alpha.0.32` fixes the Server restart loop exposed by the first successful Compose migration run. The PostgreSQL developer bootstrap now persists the installation identifier as an RFC 9562 UUIDv7 instead of using the Linux kernel UUIDv4 generator. Migration `0007-core-installation-uuidv7` repairs the invalid alpha.0.31 identity only while it is still unconsumed, then installs a database constraint preventing future non-UUIDv7 installation identifiers. Production deployment remains standalone bare-metal or VM; root Docker/Compose remains developer/test tooling.
 
 The Server Workers composition delivered in `alpha.0.29` is preserved unchanged: MEMORY, PostgreSQL and Oracle task stores remain explicit, configuration remains fail-fast, and Spring still owns the bounded TaskWorkerPool lifecycle.
 
@@ -48,11 +48,14 @@ Windows / VS Code PowerShell can start the same topology with:
 .\docker\dev-compose.ps1 up
 ```
 
-The direct Compose command is:
+Direct Compose commands from the repository root are:
 
 ```sh
-docker compose -f docker/compose.yaml up --detach --build --wait server
+docker compose up --detach --build --wait server
+docker compose logs migrate
 ```
+
+The canonical file can still be selected explicitly with `-f docker/compose.yaml`.
 
 See `docker/README.md` for logs, stop, backup, restore, rollback and controlled volume deletion. These files are repository engineering tooling, not the production deployment mechanism.
 
@@ -90,6 +93,8 @@ The repository currently contains:
 This increment continues **PGM-02-E07** with a production JDBC implementation of the `TaskStore` port. `JdbcTaskStore` preserves the Core Workers semantics on PostgreSQL and Oracle: semantic idempotent submission, ordered due-task claims with `FOR UPDATE SKIP LOCKED`, versioned lease fencing, atomic checkpoint + lease renewal, cancellation, bounded optimistic compare-and-set recovery of expired leases, retry backoff and fail-closed `AT_MOST_ONCE` recovery. Expiry recovery is deliberately non-locking and bounded to avoid holding a large recovery lock set.
 
 Paired migration `0006-core-workers` creates `worker_task` and `worker_task_parameter`, enforces status/lease/checkpoint invariants in the database, adds the `(task_type, idempotency_key)` uniqueness contract, and provides due/lease indexes. PostgreSQL uses bounded `VARCHAR(4096)` payloads; Oracle uses `CLOB` for checkpoint tokens and parameter values with invariant triggers where LOB-dependent checks are required. Rollback is refused once any durable task exists.
+
+Paired migration `0007-core-installation-uuidv7` closes the persisted identity contract. PostgreSQL automatically repairs the alpha.0.31 UUIDv4 bootstrap defect only when no entitlement state, integrity proof or activation manifest references the installation identity; otherwise migration fails closed. Oracle was not affected by that Docker bootstrap path and rejects any pre-existing non-UUIDv7 identity for explicit offline repair. Both dialects end with a database-level UUIDv7 constraint.
 
 The PostgreSQL 17/18 CI job now applies migration `0006` and includes `PostgreSqlJdbcTaskStoreTest`, including a four-worker concurrent claim contract. A dependency-free `java-jdbc-workers-smoke` exercises submission replay/conflict, claim reconstruction, checkpointing, retries, cancellation, stale-lease fencing and at-most-once expiry recovery with `javac -Xlint:all -Werror`.
 
@@ -268,7 +273,7 @@ For Core Audit specifically, the following still require implementation or targe
 
 Broader platform limits remain: installer provisioning, production Server packaging, IAM bounded contexts, Kafka transport, business domains and deployment topologies.
 
-A production-oriented reference Docker Compose topology is now shipped for the executable Java 25 Server with PostgreSQL, checksum-validated migrations, installation identity/secret bootstrap, health checks, backup/restore, controlled rollback and smoke tests. Web and Agent remain outside this first runtime topology until their independent deployment compositions are promoted.
+A developer/test Docker Compose topology is available for the executable Java 25 Server with PostgreSQL, checksum-validated migrations, installation identity/secret bootstrap, health checks, backup/restore, controlled rollback and smoke tests. It is not the production deployment mechanism; standalone bare-metal/VM deployment remains authoritative. Web and Agent remain outside this developer topology.
 
 ## Required toolchains
 

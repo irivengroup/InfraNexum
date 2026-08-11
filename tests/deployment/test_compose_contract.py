@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import os
 import pathlib
+import subprocess
+import tempfile
 import unittest
 
 import yaml
@@ -8,6 +11,7 @@ import yaml
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 DOCKER = ROOT / "docker"
 COMPOSE = DOCKER / "compose.yaml"
+ROOT_COMPOSE = ROOT / "compose.yaml"
 
 
 class ComposeContractTest(unittest.TestCase):
@@ -104,7 +108,7 @@ class ComposeContractTest(unittest.TestCase):
         makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
         self.assertIn(r".\docker\dev-compose.ps1 up", readme)
         self.assertIn("./docker/dev-compose.sh up", readme)
-        self.assertIn("docker compose -f docker/compose.yaml up --detach --build --wait server", readme)
+        self.assertIn("docker compose up --detach --build --wait server", readme)
         self.assertIn("compose-up:", makefile)
         self.assertIn("$(DOCKER_COMPOSE_SH) up", makefile)
 
@@ -112,6 +116,80 @@ class ComposeContractTest(unittest.TestCase):
         ignored = set((ROOT / ".dockerignore").read_text(encoding="utf-8").splitlines())
         for path in ("tests", "validation", "docs", "tools", "requirements", "artifacts", ".git", ".github"):
             self.assertIn(path, ignored)
+
+
+    def test_repository_root_compose_loader_keeps_docker_model_canonical(self) -> None:
+        loader = yaml.safe_load(ROOT_COMPOSE.read_text(encoding="utf-8"))
+        self.assertEqual("infranexum-dev", loader["name"])
+        self.assertEqual(["docker/compose.yaml"], loader["include"])
+
+    def test_psql_meta_commands_are_rendered_with_printf_not_echo(self) -> None:
+        """Prevent BusyBox/dash echo differences from corrupting psql control files."""
+        for name in ("migrate-postgresql.sh", "rollback-postgresql.sh"):
+            text = (DOCKER / name).read_text(encoding="utf-8")
+            self.assertIn("printf '%s\\n' '\\set ON_ERROR_STOP on'", text, name)
+            for line in text.splitlines():
+                stripped = line.strip()
+                if stripped.startswith("echo ") and any(
+                    token in stripped for token in ("\\\\set", "\\\\gset", "\\\\if", "\\\\else", "\\\\endif", "\\\\quit", "\\\\i ")
+                ):
+                    self.fail(f"{name} renders a psql meta-command with non-portable echo: {stripped}")
+
+    def test_unix_logs_command_forwards_requested_compose_services(self) -> None:
+        """A service-scoped diagnostic must not be rewritten to the default service set."""
+        with tempfile.TemporaryDirectory() as temporary:
+            temp = pathlib.Path(temporary)
+            trace = temp / "docker.trace"
+            fake = temp / "docker"
+            fake.write_text(
+                "#!/bin/sh\nprintf '%s\\n' \"$*\" >> \"$INFRANEXUM_DOCKER_TRACE\"\n",
+                encoding="utf-8",
+            )
+            fake.chmod(0o755)
+            env = os.environ.copy()
+            env["PATH"] = f"{temp}{os.pathsep}{env.get('PATH', '')}"
+            env["INFRANEXUM_DOCKER_TRACE"] = str(trace)
+            completed = subprocess.run(
+                [str(DOCKER / "dev-compose.sh"), "logs", "migrate"],
+                cwd=ROOT,
+                env=env,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(0, completed.returncode, completed.stderr)
+            calls = trace.read_text(encoding="utf-8").splitlines()
+            self.assertEqual("compose version", calls[0])
+            self.assertIn("logs --no-color --tail=200 migrate", calls[-1])
+            self.assertNotIn("server postgres migrate", calls[-1])
+
+    def test_migration_log_commands_use_service_names(self) -> None:
+        readme = (DOCKER / "README.md").read_text(encoding="utf-8")
+        powershell = (DOCKER / "dev-compose.ps1").read_text(encoding="utf-8")
+        shell = (DOCKER / "dev-compose.sh").read_text(encoding="utf-8")
+        self.assertIn("docker compose logs migrate", readme)
+        self.assertIn(r".\docker\dev-compose.ps1 logs migrate", readme)
+        self.assertIn("./docker/dev-compose.sh logs migrate", shell)
+        self.assertIn("ValueFromRemainingArguments = $true", powershell)
+
+
+    def test_installation_identity_bootstrap_generates_uuidv7_not_kernel_uuidv4(self) -> None:
+        """The developer bootstrap must satisfy DomainIdentifier before Server startup."""
+        migrate = (DOCKER / "migrate-postgresql.sh").read_text(encoding="utf-8")
+        self.assertNotIn("/proc/sys/kernel/random/uuid", migrate)
+        self.assertIn("gen_random_uuid()", migrate)
+        self.assertIn("'-7'", migrate)
+        self.assertIn("'89ab89ab89ab89ab'", migrate)
+        self.assertIn("????????-????-7???-[89ab]???-????????????", migrate)
+
+    def test_uuidv7_repair_migration_precedes_identity_bootstrap(self) -> None:
+        """Existing alpha.0.31 UUIDv4 identities must be repaired before Entitlements starts."""
+        migrate = (DOCKER / "migrate-postgresql.sh").read_text(encoding="utf-8")
+        migration_loop = migrate.index('for migration_dir in "$migration_root"/000*; do')
+        bootstrap = migrate.index('installation_id="$($psql_base')
+        self.assertLess(migration_loop, bootstrap)
+        self.assertTrue((ROOT / "src/distribution/migrations/0007-core-installation-uuidv7/postgresql.sql").is_file())
 
     def test_root_docker_is_explicitly_developer_only(self) -> None:
         readme = (DOCKER / "README.md").read_text(encoding="utf-8")
