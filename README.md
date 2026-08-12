@@ -1,8 +1,8 @@
-# InfraNexum 2.0.0-alpha.0.45 — PRO Docker HA Topology
+# InfraNexum 2.0.0-alpha.0.46 — PRO Docker HA etcd Healthcheck Repair
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
-`alpha.0.45` changes the repository-level Docker/Compose developer reference to profile **PRO**. The database tier is a three-node PostgreSQL 17.10 cluster managed by Patroni with a three-member etcd DCS, strict synchronous replication to at least one standby and a second replica. Four `REGIONAL` Server nodes form the PRO `single_cluster` topology behind a readiness-aware HAProxy router. A separate HAProxy database router exposes stable writer and replica endpoints.
+`alpha.0.46` repairs the first runtime defect observed on the PRO Docker HA topology: the official etcd 3.6.14 image is distroless, so its healthcheck must execute `/usr/local/bin/etcdctl` directly rather than through `CMD-SHELL`. The PRO topology introduced in `alpha.0.45` remains unchanged: three PostgreSQL 17.10 nodes managed by Patroni with a three-member etcd DCS, strict synchronous replication to at least one standby and a second replica, plus four `REGIONAL` Server nodes behind a readiness-aware HAProxy router.
 
 Only router ports are published on `127.0.0.1`; individual etcd, PostgreSQL/Patroni and Server nodes stay on the private Compose bridge. `smoke` proves cluster health and replication invariants, while the deliberately disruptive `ha-smoke` verifies bounded PostgreSQL primary failover, writer recovery, Server readiness and rejoin without deleting volumes. The PRO Web cluster is intentionally deferred to a later increment. Production deployment remains standalone bare-metal or VM, and signed PRO activation remains a separate certification concern.
 

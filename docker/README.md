@@ -98,6 +98,16 @@ SERVICES=migrate make compose-logs
 make compose-down
 ```
 
+## etcd healthchecks
+
+The official etcd 3.6 container is distroless and must not be probed through `CMD-SHELL`. Each etcd member is health-checked with the absolute `/usr/local/bin/etcdctl` executable in Compose exec form:
+
+```text
+/usr/local/bin/etcdctl --endpoints=http://127.0.0.1:2379 endpoint health
+```
+
+This checks a successful etcd proposal rather than merely testing whether TCP/2379 is open.
+
 ## PRO HA validation
 
 `smoke` requires the three etcd members, the three Patroni/PostgreSQL nodes, both routers and all four Server nodes to be healthy. It also requires two streaming standbys and at least one synchronous/quorum standby.

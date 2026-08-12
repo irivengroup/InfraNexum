@@ -1,4 +1,11 @@
-# InfraNexum 2.0.0-alpha.0.45 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.46 — état d’implémentation
+
+
+## 2.0.0-alpha.0.46 — etcd distroless healthcheck repair
+
+**Statut : correction implémentée ; runtime Docker Desktop PRO à revalider.**
+
+Le premier démarrage réel de la topologie PRO `alpha.0.45` a montré les trois membres etcd capables de rejoindre le cluster, d’élire un leader et de passer le service gRPC en `SERVING`, tandis que Compose déclarait néanmoins `etcd-3` `unhealthy`. La cause est le healthcheck `CMD-SHELL` : l’image officielle etcd 3.6.14 est distroless et ne fournit pas `/bin/sh`. Les trois probes etcd utilisent désormais directement `/usr/local/bin/etcdctl` en exec-form `CMD`, sans shell, redirection ni dépendance au `PATH`. La commande `endpoint health` conserve une vérification active nécessitant une proposition etcd réussie et protège donc le quorum, pas seulement l’ouverture du port TCP. Un contrat Compose interdit toute réintroduction de `CMD-SHELL` sur les membres etcd.
 
 
 ## 2.0.0-alpha.0.45 — PRO Docker HA topology

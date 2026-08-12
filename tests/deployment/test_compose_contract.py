@@ -55,6 +55,19 @@ class ComposeContractTest(unittest.TestCase):
             self.assertIn("--initial-cluster=etcd-1=http://etcd-1:2380,etcd-2=http://etcd-2:2380,etcd-3=http://etcd-3:2380", " ".join(service["command"]))
             self.assertIn("healthcheck", service)
 
+    def test_etcd_healthchecks_are_shell_free_exec_form(self) -> None:
+        expected = [
+            "CMD",
+            "/usr/local/bin/etcdctl",
+            "--endpoints=http://127.0.0.1:2379",
+            "endpoint",
+            "health",
+        ]
+        for name in ETCD:
+            healthcheck = self.services[name]["healthcheck"]
+            self.assertEqual(expected, healthcheck["test"], name)
+            self.assertNotIn("CMD-SHELL", healthcheck["test"], name)
+
     def test_patroni_is_pinned_on_postgres_17(self) -> None:
         dockerfile = (DOCKER / "patroni-postgres.Dockerfile").read_text(encoding="utf-8")
         self.assertIn("FROM postgres:17.10-alpine3.24", dockerfile)

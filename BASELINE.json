@@ -1,7 +1,7 @@
 {
   "schema": "infranexum.source-baseline/v1",
   "product": "InfraNexum — Infrastructure Control & Governance Platform",
-  "implementation_version": "2.0.0-alpha.0.45",
+  "implementation_version": "2.0.0-alpha.0.46",
   "architecture_baseline": "2.0.0-draft.21",
   "roadmap_baseline": "1.0.0-draft.1",
   "architecture_archive_sha256": "372cf19929f8ea3b7586c3af3e7c5004e590cf746ff2d6d59d4d0b88912aea64",
@@ -47,7 +47,8 @@
     "PGM-12-E01 durable asynchronous correlation alpha.0.42: validated HTTP UUIDv7 correlation is captured by the Server task scheduler, persisted as nullable UUIDv7 worker_task metadata through paired migration 0009, preserved across idempotent replay and process/node boundaries, exposed in TaskExecutionContext, and bound/restored around handler execution without propagating raw headers or security context; OpenTelemetry export, systematic masking and dashboards remain pending.",
     "PGM-12-E01 OpenTelemetry tracing foundation alpha.0.43: Spring Boot OpenTelemetry/OTLP tracing is integrated with W3C Trace Context only, baggage disabled, bounded span/export limits, OTLP export disabled by default, and durable Worker executions emit bounded CONSUMER spans tagged only with validated task type and InfraNexum correlation metadata; sensitive task payloads remain excluded.",
     "PGM-12-E01 sensitive observability redaction alpha.0.44: mandatory ECS structured-value customizer redacts credential-bearing fields and inline password/token/cookie/authorization/URI-userinfo/JWT/private-key material including stack traces, Entitlement RFC Problem details reuse the same policy, runtime log-format override is removed, and manual span attributes remain allowlisted; dashboards/runbooks and target OTLP certification remain pending.",
-    "Developer PRO HA topology alpha.0.45: Docker/Compose now models the PRO single_cluster shape with three Patroni-managed PostgreSQL nodes coordinated by three etcd members, one strict synchronous standby, a second replica, HAProxy writer/read routers, four REGIONAL Server nodes behind a readiness-aware HAProxy router, bounded HA failover/rejoin smoke tests and cluster-aware backup/restore/rollback; Web clustering remains deferred and signed activation remains separately certified."
+    "Developer PRO HA topology alpha.0.45: Docker/Compose now models the PRO single_cluster shape with three Patroni-managed PostgreSQL nodes coordinated by three etcd members, one strict synchronous standby, a second replica, HAProxy writer/read routers, four REGIONAL Server nodes behind a readiness-aware HAProxy router, bounded HA failover/rejoin smoke tests and cluster-aware backup/restore/rollback; Web clustering remains deferred and signed activation remains separately certified.",
+    "Developer PRO HA etcd healthcheck repair alpha.0.46: official etcd 3.6.14 distroless members are probed with absolute /usr/local/bin/etcdctl exec-form healthchecks instead of CMD-SHELL, eliminating false unhealthy states caused by the image having no /bin/sh while retaining quorum-sensitive endpoint health semantics."
   ],
   "roadmap_archive_sha256": "11db7d27bbc79f688cd1fda31a24aaf31b56a56db36b6487b64154c148ab54d3",
   "engineering_governance_sha256": "f24357051a5401f598c3d77bbe5814d3759a176095537659243658ba3ff109c7"
