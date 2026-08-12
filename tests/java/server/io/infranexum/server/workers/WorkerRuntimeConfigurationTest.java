@@ -86,7 +86,7 @@ class WorkerRuntimeConfigurationTest {
                 RuntimeMode.STANDALONE,
                 "local",
                 "local",
-                "2.0.0-alpha.0.38",
+                "2.0.0-alpha.0.39",
                 "2.0.0-draft.21");
     }
 

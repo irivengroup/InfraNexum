@@ -15,6 +15,35 @@ compose() {
   fi
 }
 
+published_port() {
+  service=$1
+  container_port=$2
+  binding=$(compose port "$service" "$container_port") || {
+    echo "Unable to resolve published port for $service/$container_port" >&2
+    exit 69
+  }
+  test -n "$binding" || {
+    echo "Compose does not publish $service container port $container_port to the host" >&2
+    exit 69
+  }
+  port=${binding##*:}
+  case "$port" in
+    ''|*[!0-9]*) echo "Unexpected Compose port binding for $service/$container_port: $binding" >&2; exit 69 ;;
+  esac
+  printf '%s\n' "$port"
+}
+
+assert_service_running() {
+  service=$1
+  if ! compose ps --status running --services | grep -Fxq "$service"; then
+    echo "Compose service '$service' is not running; current topology and recent logs follow." >&2
+    compose ps >&2 || true
+    compose logs --no-color --tail=200 "$service" >&2 || true
+    echo "Compose service '$service' is not running" >&2
+    exit 69
+  fi
+}
+
 require_repo() {
   command -v docker >/dev/null 2>&1 || { echo "Docker CLI is required" >&2; exit 127; }
   docker compose version >/dev/null 2>&1 || { echo "Docker Compose v2 plugin is required" >&2; exit 127; }
@@ -54,7 +83,11 @@ restore() {
 
 smoke() {
   require_repo
-  port=${INFRANEXUM_SERVER_PUBLISHED_PORT:-8080}
+  assert_service_running postgres
+  assert_service_running server
+  postgres_port=$(published_port postgres 5432)
+  port=$(published_port server 8080)
+  echo "Compose bindings: postgres=127.0.0.1:$postgres_port server=127.0.0.1:$port"
   readiness=$(mktemp)
   workers_metric=$(mktemp)
   build=$(mktemp)

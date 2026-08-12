@@ -103,11 +103,20 @@ class ComposeContractTest(unittest.TestCase):
         for name, value in expected.items():
             self.assertEqual(value, environment[name])
 
-    def test_server_is_published_on_loopback_only_by_default(self) -> None:
-        self.assertEqual(
-            ["127.0.0.1:${INFRANEXUM_SERVER_PUBLISHED_PORT:-8080}:8080"],
-            self.services["server"]["ports"],
-        )
+    def test_server_and_postgres_are_published_on_loopback_only_by_default(self) -> None:
+        server_port = self.services["server"]["ports"][0]
+        self.assertEqual("http", server_port["name"])
+        self.assertEqual(8080, server_port["target"])
+        self.assertEqual("${INFRANEXUM_SERVER_PUBLISHED_PORT:-8080}", server_port["published"])
+        self.assertEqual("127.0.0.1", server_port["host_ip"])
+        self.assertEqual("tcp", server_port["protocol"])
+
+        postgres_port = self.services["postgres"]["ports"][0]
+        self.assertEqual("postgres", postgres_port["name"])
+        self.assertEqual(5432, postgres_port["target"])
+        self.assertEqual("${INFRANEXUM_POSTGRES_PUBLISHED_PORT:-5432}", postgres_port["published"])
+        self.assertEqual("127.0.0.1", postgres_port["host_ip"])
+        self.assertEqual("tcp", postgres_port["protocol"])
 
     def test_rollback_remains_maintenance_only_and_fail_closed(self) -> None:
         self.assertEqual(["maintenance"], self.services["rollback"]["profiles"])
@@ -236,6 +245,32 @@ class ComposeContractTest(unittest.TestCase):
         self.assertIn("/actuator/metrics/infranexum.workers.ready", powershell)
         self.assertIn("include: health,info,metrics", application)
         self.assertIn("include: readinessState,workers", application)
+
+    def test_smoke_resolves_effective_compose_bindings_instead_of_assuming_ports(self) -> None:
+        """Smoke must use Docker's effective bindings, including docker/.env overrides."""
+        shell = (DOCKER / "dev-compose.sh").read_text(encoding="utf-8")
+        powershell = (DOCKER / "dev-compose.ps1").read_text(encoding="utf-8")
+        env_example = (DOCKER / ".env.example").read_text(encoding="utf-8")
+
+        self.assertIn('published_port postgres 5432', shell)
+        self.assertIn('published_port server 8080', shell)
+        self.assertNotIn('port=${INFRANEXUM_SERVER_PUBLISHED_PORT:-8080}', shell)
+        self.assertIn("Get-PublishedPort -Service 'postgres' -ContainerPort 5432", powershell)
+        self.assertIn("Get-PublishedPort -Service 'server' -ContainerPort 8080", powershell)
+        self.assertNotIn("$env:INFRANEXUM_SERVER_PUBLISHED_PORT) { $env:INFRANEXUM_SERVER_PUBLISHED_PORT", powershell)
+        self.assertIn("INFRANEXUM_POSTGRES_PUBLISHED_PORT=5432", env_example)
+        self.assertIn("INFRANEXUM_SERVER_PUBLISHED_PORT=8080", env_example)
+
+    def test_smoke_fails_with_compose_diagnostics_when_server_is_not_running(self) -> None:
+        """A stopped/restarting Server must yield topology diagnostics before HTTP probing."""
+        shell = (DOCKER / "dev-compose.sh").read_text(encoding="utf-8")
+        powershell = (DOCKER / "dev-compose.ps1").read_text(encoding="utf-8")
+        self.assertIn("assert_service_running server", shell)
+        self.assertIn('compose ps >&2 || true', shell)
+        self.assertIn('compose logs --no-color --tail=200 "$service"', shell)
+        self.assertIn("Assert-ComposeServiceRunning -Service 'server'", powershell)
+        self.assertIn("Invoke-Compose ps", powershell)
+        self.assertIn("Invoke-Compose logs --no-color --tail=200 $Service", powershell)
 
     def test_root_docker_is_explicitly_developer_only(self) -> None:
         readme = (DOCKER / "README.md").read_text(encoding="utf-8")

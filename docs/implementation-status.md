@@ -1,4 +1,11 @@
-# InfraNexum 2.0.0-alpha.0.38 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.39 — état d’implémentation
+
+## 2.0.0-alpha.0.39 — Docker loopback port publication and smoke diagnostics
+
+**Statut : correction implémentée ; validation Docker Desktop cible requise.**
+
+Le runtime Compose de développement publie désormais explicitement PostgreSQL et le Server sur la loopback hôte avec des bindings nommés : `${INFRANEXUM_POSTGRES_PUBLISHED_PORT:-5432} -> 5432/tcp` et `${INFRANEXUM_SERVER_PUBLISHED_PORT:-8080} -> 8080/tcp`. Aucun binding wildcard n’est autorisé par défaut. Le smoke PowerShell/POSIX ne suppose plus un port hôte : il résout les bindings effectifs via `docker compose port`, ce qui respecte notamment `docker/.env`. Avant toute requête HTTP, il vérifie que `postgres` et `server` sont réellement `running`; en cas d’échec il produit `compose ps` et les derniers logs du service au lieu d’une erreur de connexion opaque. Le smoke Java Workers découvert pendant la certification a également été stabilisé : il attend désormais la publication observable du compteur `succeeded` après la fin du handler, au lieu de courir contre la transition terminale du worker.
+
 
 
 ## 2.0.0-alpha.0.38 — PGM-12-E01 HTTP correlation and structured logging foundation
@@ -17,7 +24,7 @@ PGM-02-E07 reçoit sa couche d’exploitation manquante. `TaskWorkerPool` expose
 
 
 
-## 2.0.0-alpha.0.37 — explicit managed Spring scheduling runtime
+## 2.0.0-alpha.0.36 — explicit managed Spring scheduling runtime
 
 **Statut : correction implémentée ; certification Docker/JDK25 cible requise.**
 

@@ -15,15 +15,54 @@ $ComposeFile = Join-Path $ScriptDir 'compose.yaml'
 $StateDir = Join-Path $RepoRoot '.infranexum-dev\state'
 $BackupDir = Join-Path $StateDir 'backups'
 
-function Invoke-Compose {
-    param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Arguments)
+function Get-ComposeBaseArguments {
     $base = @('compose')
     $envFile = Join-Path $ScriptDir '.env'
     if (Test-Path -LiteralPath $envFile) { $base += @('--env-file', $envFile) }
     $base += @('-f', $ComposeFile)
+    return $base
+}
+
+function Invoke-Compose {
+    param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Arguments)
+    $base = @(Get-ComposeBaseArguments)
     & docker @base @Arguments
     if ($LASTEXITCODE -ne 0) { throw "docker compose failed with exit code $LASTEXITCODE" }
 }
+
+function Invoke-ComposeCapture {
+    param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Arguments)
+    $base = @(Get-ComposeBaseArguments)
+    $output = & docker @base @Arguments 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        $details = ($output | Out-String).Trim()
+        throw "docker compose failed with exit code ${LASTEXITCODE}: $details"
+    }
+    return $output
+}
+
+function Get-PublishedPort {
+    param(
+        [Parameter(Mandatory = $true)][string]$Service,
+        [Parameter(Mandatory = $true)][int]$ContainerPort
+    )
+    $binding = ((Invoke-ComposeCapture port $Service $ContainerPort) | Out-String).Trim()
+    if (-not $binding) { throw "Compose does not publish $Service container port $ContainerPort to the host" }
+    if ($binding -notmatch ':(?<port>[0-9]+)$') { throw "Unexpected Compose port binding for $Service/$ContainerPort: $binding" }
+    return [int]$Matches['port']
+}
+
+function Assert-ComposeServiceRunning {
+    param([Parameter(Mandatory = $true)][string]$Service)
+    $running = @((Invoke-ComposeCapture ps --status running --services) | ForEach-Object { $_.ToString().Trim() } | Where-Object { $_ })
+    if ($running -notcontains $Service) {
+        Write-Warning "Compose service '$Service' is not running; current topology and recent logs follow."
+        try { Invoke-Compose ps } catch { Write-Warning $_ }
+        try { Invoke-Compose logs --no-color --tail=200 $Service } catch { Write-Warning $_ }
+        throw "Compose service '$Service' is not running"
+    }
+}
+
 
 function Assert-Repository {
     if (-not (Get-Command docker -ErrorAction SilentlyContinue)) { throw 'Docker CLI is required' }
@@ -48,7 +87,11 @@ function New-DatabaseBackup {
 
 function Invoke-Smoke {
     Assert-Repository
-    $port = if ($env:INFRANEXUM_SERVER_PUBLISHED_PORT) { $env:INFRANEXUM_SERVER_PUBLISHED_PORT } else { '8080' }
+    Assert-ComposeServiceRunning -Service 'postgres'
+    Assert-ComposeServiceRunning -Service 'server'
+    $postgresPort = Get-PublishedPort -Service 'postgres' -ContainerPort 5432
+    $port = Get-PublishedPort -Service 'server' -ContainerPort 8080
+    Write-Output "Compose bindings: postgres=127.0.0.1:$postgresPort server=127.0.0.1:$port"
     $readiness = Invoke-RestMethod -Method Get -Uri "http://127.0.0.1:$port/actuator/health/readiness" -TimeoutSec 10
     if ($readiness.status -ne 'UP') { throw 'Server readiness is not UP' }
     $workersMetric = Invoke-RestMethod -Method Get -Uri "http://127.0.0.1:$port/actuator/metrics/infranexum.workers.ready" -TimeoutSec 10

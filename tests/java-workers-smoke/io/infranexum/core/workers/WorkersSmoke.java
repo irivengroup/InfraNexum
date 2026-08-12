@@ -160,6 +160,9 @@ public final class WorkersSmoke {
         Thread.sleep(180);
         assert store.claimBatch("intruder", 1, clock.instant(), Duration.ofMillis(100), RETRY).isEmpty();
         assert allDone.await(5, TimeUnit.SECONDS);
+        // Handler completion happens immediately before the worker records the terminal
+        // iteration. Wait on the observable pool counter rather than racing that handoff.
+        assert awaitSucceeded(pool, 4, 5, TimeUnit.SECONDS);
         WorkerPoolSnapshot snapshot = pool.snapshot();
         assert snapshot.ready();
         assert snapshot.configuredConcurrency() == 2;
@@ -214,6 +217,18 @@ public final class WorkersSmoke {
         assert second.forced();
         assert second.terminated();
         assert pool.state() == WorkerPoolState.TERMINATED;
+    }
+
+    private static boolean awaitSucceeded(
+            TaskWorkerPool pool, long expected, long timeout, TimeUnit unit) throws InterruptedException {
+        long deadline = System.nanoTime() + unit.toNanos(timeout);
+        while (System.nanoTime() < deadline) {
+            if (pool.snapshot().succeeded() >= expected) {
+                return true;
+            }
+            Thread.sleep(5);
+        }
+        return pool.snapshot().succeeded() >= expected;
     }
 
     private static boolean awaitReady(TaskWorkerPool pool, long timeout, TimeUnit unit) throws InterruptedException {

@@ -2,7 +2,7 @@
 
 `docker/` is repository-level **development and test tooling**. It is deliberately outside `src/` because InfraNexum production deployments target standalone bare-metal or VM servers. The installer and production deployment model must not depend on Docker, Compose or Podman.
 
-The topology provides `secret-init -> postgres -> migrate -> server`, plus an explicit maintenance-only `rollback` service. PostgreSQL and the Server are health-checked, the backend network is private, runtime secrets live in a named volume and the Server is published only on loopback by default.
+The topology provides `secret-init -> postgres -> migrate -> server`, plus an explicit maintenance-only `rollback` service. PostgreSQL and the Server are health-checked, the backend network is private, runtime secrets live in a named volume, and both developer-facing ports are published on host loopback only by default: PostgreSQL on `127.0.0.1:5432` and Server HTTP on `127.0.0.1:8080`. Override them with `INFRANEXUM_POSTGRES_PUBLISHED_PORT` and `INFRANEXUM_SERVER_PUBLISHED_PORT`; no wildcard host binding is used.
 
 Server readiness includes the bounded Workers runtime. The developer smoke test requires both `/actuator/health/readiness` and the low-cardinality `infranexum.workers.ready` metric to be available before accepting the topology as healthy. Worker concurrency, lease/heartbeat timing, shutdown and retry settings can be overridden through the `INFRANEXUM_WORKERS_*` variables documented in `.env.example`.
 
@@ -26,6 +26,20 @@ Direct Compose equivalent from the repository root:
 
 ```powershell
 docker compose up --detach --build --wait server
+```
+
+Verify the effective host bindings:
+
+```powershell
+docker compose port postgres 5432
+docker compose port server 8080
+```
+
+Expected defaults:
+
+```text
+127.0.0.1:5432
+127.0.0.1:8080
 ```
 
 The canonical model remains `docker/compose.yaml`; the root `compose.yaml` only includes it.
