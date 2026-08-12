@@ -14,7 +14,7 @@ async function readBytes(relativePath) {
   return readFile(path.join(publicRoot, relativePath));
 }
 
-test('Web shell vendors Bootstrap 5 locally and loads only the adapted predecessor theme after it', async () => {
+test('Web shell vendors Bootstrap 5 locally and loads the InfraNexum theme after it', async () => {
   const [index, bootstrap, theme] = await Promise.all([
     read('index.html'),
     read('assets/vendor/bootstrap-5.3.6.min.css'),
@@ -29,49 +29,42 @@ test('Web shell vendors Bootstrap 5 locally and loads only the adapted predecess
   const themePosition = index.indexOf('/assets/infranexum-theme.css');
   assert.ok(bootstrapPosition >= 0, 'Bootstrap stylesheet must be loaded');
   assert.ok(themePosition > bootstrapPosition, 'InfraNexum theme must override Bootstrap after the framework stylesheet');
-  for (const legacySelector of ['class=\"masthead\"', 'class=\"status-card\"', 'class=\"eyebrow\"']) {
-    assert.ok(!index.includes(legacySelector), `legacy predecessor template selector must not be imported: ${legacySelector}`);
-  }
   assert.doesNotMatch(index, /\/assets\/bootstrap\.css/, 'legacy theme filename must not masquerade as Bootstrap');
-  assert.match(theme, /Only the theme layer is retained here/i);
+  assert.match(theme, /predecessor palette remains the visual baseline/i);
 });
 
-test('adapted theme preserves the complete visual token set from the archived predecessor theme', async () => {
+test('theme preserves the predecessor token set while extending it into a professional admin shell', async () => {
   const theme = await read('assets/infranexum-theme.css');
   const requiredTokens = [
-    '#003d8f', // masthead / primary
-    '#172033', // text
-    '#f5f7fb', // page
-    '#d8dfeb', // card border
-    '#e7ebf2', // divider
-    '#006f75', // eyebrow / accent
-    '#00a6a6', // focus
-    '#9b1c1c', // error
-    '#111827', // dark page
-    '#1f2937', // dark surface
-    '#445066', // dark border
-    '#edf2fa', // dark text
+    '#003d8f', '#172033', '#f5f7fb', '#d8dfeb', '#e7ebf2', '#006f75',
+    '#00a6a6', '#9b1c1c', '#111827', '#1f2937', '#445066', '#edf2fa',
   ];
-
   for (const token of requiredTokens) {
-    assert.match(theme, new RegExp(token, 'i'), `missing archived predecessor theme token ${token}`);
+    assert.match(theme, new RegExp(token, 'i'), `missing predecessor visual token ${token}`);
+  }
+  for (const selector of ['.inx-app-shell', '.inx-sidebar', '.inx-topbar', '.inx-hero', '.inx-kpi-grid', '.inx-dashboard-grid', '.inx-data-table']) {
+    assert.match(theme, new RegExp(selector.replace('.', '\\.')));
   }
   assert.match(theme, /font-family:\s*Inter,\s*ui-sans-serif,\s*system-ui/i);
-  assert.match(theme, /line-height:\s*1\.5/);
   assert.match(theme, /:focus-visible/);
-  assert.match(theme, /outline:\s*3px\s+solid\s+var\(--inx-focus\)/);
-  assert.match(theme, /prefers-color-scheme:\s*dark/);
-  assert.match(theme, /max-width:\s*36rem/);
+  assert.match(theme, /prefers-reduced-motion:\s*reduce/);
+  assert.match(theme, /data-bs-theme="dark"/);
 });
 
-test('InfraNexum markup uses Bootstrap responsive primitives while the adapted theme owns only visual styling', async () => {
+test('admin dashboard uses semantic regions, responsive Bootstrap primitives and no Bootstrap JavaScript dependency', async () => {
   const index = await read('index.html');
-  for (const token of ['navbar', 'navbar-brand', 'card', 'row', 'col-sm-4', 'col-sm-8']) {
+  for (const token of ['btn', 'badge', 'rounded-pill', 'table', 'table-responsive', 'align-middle']) {
     assert.match(index, new RegExp(`class="[^"]*\\b${token}\\b`));
   }
+  for (const marker of ['inx-sidebar', 'inx-topbar', 'inx-kpi-grid', 'inx-dashboard-grid', 'organization-workspace']) {
+    assert.match(index, new RegExp(marker));
+  }
+  assert.match(index, /<aside[^>]+aria-label="Primary navigation"/);
+  assert.match(index, /<main id="main"/);
+  assert.match(index, /aria-live="polite"/);
+  assert.match(index, /id="theme-toggle"/);
   assert.doesNotMatch(index, /bootstrap(?:\.bundle)?(?:\.min)?\.js/);
   assert.match(index, /class="skip-link"/);
-  assert.match(index, /aria-live="polite"/);
 });
 
 test('vendored Bootstrap license notice is shipped beside the framework asset', async () => {

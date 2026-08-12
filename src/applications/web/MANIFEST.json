@@ -12,10 +12,11 @@
   ],
   "dependencies": [],
   "source_baseline": [
-    "IAR-03 §3, §6",
-    "IAR-12 §1, §5, §7",
+    "IAR-03 \u00a73, \u00a76",
+    "IAR-12 \u00a71, \u00a75, \u00a77",
     "ADR-0003",
     "ADR-0020",
-    "PGM-02-E01"
+    "PGM-02-E01",
+    "PGM-03-E01"
   ]
 }

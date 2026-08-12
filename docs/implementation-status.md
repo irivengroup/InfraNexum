@@ -1,9 +1,9 @@
-# InfraNexum 2.0.0-alpha.0.57 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.58 — état d’implémentation
 
 
 
 
-## 2.0.0-alpha.0.57 — PGM-03-E01 Organization & Subdivision foundation
+## 2.0.0-alpha.0.58 — PGM-03-E01 Organization & Subdivision foundation
 
 **Statut : tranche verticale métier implémentée et validée hors runtime Docker/JDK25 cible ; validation Docker Desktop de la migration/API requise.**
 
@@ -15,7 +15,7 @@ La migration paire `0010-organization-foundation` fournit PostgreSQL et Oracle a
 
 L’API `/api/v1/iam/organizations` expose recherche, création, lecture, suspension/reprise, Subdivisions et scopes effectifs avec `X-Correlation-ID`, `Idempotency-Key`, ETag et enveloppes d’erreur stables. IAM n’étant pas encore livré, cette frontière est désactivée par défaut et sa composition refuse de démarrer hors `environment=local`. Le Docker PRO de développement l’active explicitement. Le Web appelle l’API en same-origin via HAProxy Web `/api`, affiche Organisations puis Subdivisions de l’Organisation sélectionnée, et conserve Bootstrap 5.3.6 + le thème visuel adapté du prédécesseur uniquement.
 
-Validations locales exécutées : smoke Java autonome Organisation/Subdivision/Scope/outbox **PASS** ; compilation stricte Java Domain/Application et JDBC `-Xlint:all -Werror` sous JDK local **PASS** ; contrats Compose **52/52** ; migrations **38/38** et CLI 0 violation ; Architecture **57/57** et CLI **PASS** ; Web **35/35**, couverture lignes **99,67 %**, branches **98,33 %**, fonctions **100 %**, process smoke **PASS** ; Eventing **10/10**, Persistence **12/12**, Capabilities **10/10**, Entitlements **10/10**, Audit **8/8**, Toolchains **25/25**, Archive Compatibility **12/12**. Le reactor Maven cible JDK25 et le runtime Docker réel de la migration/API restent à exécuter sur l’environnement cible.
+Validations locales exécutées : smoke Java autonome Organisation/Subdivision/Scope/outbox **PASS** ; compilation stricte Java Domain/Application et JDBC `-Xlint:all -Werror` sous JDK local **PASS** ; contrats Compose **52/52** ; migrations **38/38** et CLI 0 violation ; Architecture **57/57** et CLI **PASS** ; Web **38/38**, couverture lignes **99,67 %**, branches **98,33 %**, fonctions **100 %**, process smoke **PASS** ; Eventing **10/10**, Persistence **12/12**, Capabilities **10/10**, Entitlements **10/10**, Audit **8/8**, Toolchains **25/25**, Archive Compatibility **12/12**. Le reactor Maven cible JDK25 et le runtime Docker réel de la migration/API restent à exécuter sur l’environnement cible.
 
 La baseline `alpha.0.56` est désormais certifiée par exécution Docker Desktop réelle : smoke nominal, failover/rejoin PostgreSQL, failover Server, failover Web et readiness finale `UP` sont tous PASS.
 
@@ -417,3 +417,7 @@ Le runner `alpha.0.13` a confirmé Core Contracts et Core Events sous Java 25, y
 Le statut reste **NON TERMINÉ** jusqu’à la réexécution de `./mvnw verify` sous Java 25. Le runner doit confirmer Core Capabilities à >=98 % lignes et branches, puis poursuivre Entitlements, Audit, Persistence JDBC et Server. Le job PostgreSQL 17/18 doit également confirmer que les deux tests JDBC ciblés compilent et s’exécutent avec le store restauré.
 
 Docker Compose reste non applicable tant que le JAR Server Java 25 et le bootstrap d’installation neuve ne sont pas prouvés exécutables.
+
+## Web administration dashboard
+
+`alpha.0.58` remplace l’écran de bootstrap par un shell d’administration responsive : navigation latérale, topbar contextuelle, hero opérationnel, KPI véridiques, état du control plane, contexte de déploiement, workspace Organisations/Subdivisions, thème clair/sombre persistant et comportement `prefers-reduced-motion`. Bootstrap 5.3.6 reste embarqué localement et le thème visuel adapté reste la seule couche de personnalisation historique. Aucun indicateur non alimenté par une source réelle n’est présenté comme une mesure.

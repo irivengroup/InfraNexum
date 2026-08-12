@@ -1,51 +1,230 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#003d8f" />
     <title>InfraNexum — Infrastructure Control &amp; Governance Platform</title>
     <link rel="stylesheet" href="/assets/vendor/bootstrap-5.3.6.min.css" />
     <link rel="stylesheet" href="/assets/infranexum-theme.css" />
     <script type="module" src="/assets/bootstrap.mjs"></script>
   </head>
-  <body>
+  <body class="inx-app-body">
     <a class="skip-link" href="#main">Skip to content</a>
-    <header class="navbar inx-navbar" aria-label="InfraNexum product header">
-      <strong class="navbar-brand mb-0 text-white">InfraNexum</strong>
-      <span class="inx-subtitle">Infrastructure Control &amp; Governance Platform</span>
-    </header>
-    <main id="main" class="inx-main" tabindex="-1">
-      <section class="card inx-runtime-card" aria-labelledby="runtime-title">
-        <p class="inx-eyebrow">Web runtime</p>
-        <h1 id="runtime-title">Control plane bootstrap</h1>
-        <p id="runtime-message" role="status" aria-live="polite">Loading validated public configuration…</p>
-        <dl class="inx-runtime-list row g-0">
-          <dt class="col-sm-4">Version</dt>
-          <dd id="runtime-version" class="col-sm-8">—</dd>
-          <dt class="col-sm-4">Environment</dt>
-          <dd id="runtime-environment" class="col-sm-8">—</dd>
-          <dt class="col-sm-4">Server API</dt>
-          <dd id="runtime-api" class="col-sm-8">—</dd>
-        </dl>
-      </section>
-      <section id="organization-workspace" class="card inx-runtime-card mt-4" aria-labelledby="organization-title" hidden>
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-          <div><p class="inx-eyebrow">Organisation</p><h2 id="organization-title" class="h4 mb-0">Organisations</h2></div>
-          <span id="organization-status" class="badge text-bg-secondary" role="status" aria-live="polite">Loading…</span>
-        </div>
-        <div class="table-responsive mt-3"><table class="table table-hover align-middle"><caption class="visually-hidden">Organizations visible in the local development foundation</caption><thead><tr><th scope="col">Code</th><th scope="col">Name</th><th scope="col">Country</th><th scope="col">State</th><th scope="col">Version</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead><tbody id="organization-rows"></tbody></table></div>
-        <section id="subdivision-panel" class="border-top mt-4 pt-4" aria-labelledby="subdivision-title" hidden>
-          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-            <h3 id="subdivision-title" class="h5 mb-0">Subdivisions</h3>
-            <span id="subdivision-status" class="badge text-bg-secondary" role="status" aria-live="polite">—</span>
+
+    <div class="inx-app-shell">
+      <aside class="inx-sidebar" aria-label="Primary navigation">
+        <div class="inx-brand-block">
+          <div class="inx-brand-mark" aria-hidden="true">IN</div>
+          <div class="inx-brand-copy">
+            <strong>InfraNexum</strong>
+            <span>Control &amp; Governance</span>
           </div>
-          <div class="table-responsive mt-3"><table class="table table-sm table-hover align-middle"><caption class="visually-hidden">Subdivisions of the selected organization</caption><thead><tr><th scope="col">Code</th><th scope="col">Name</th><th scope="col">Type</th><th scope="col">State</th><th scope="col">Version</th></tr></thead><tbody id="subdivision-rows"></tbody></table></div>
-        </section>
-      </section>
-    </main>
-    <noscript>
-      <div class="container pb-4" role="alert">JavaScript is required to initialize the InfraNexum Web interface.</div>
-    </noscript>
+        </div>
+
+        <nav class="inx-nav" aria-label="Product areas">
+          <p class="inx-nav-label">Workspace</p>
+          <a class="inx-nav-link active" href="#overview" aria-current="page">
+            <span class="inx-nav-icon" aria-hidden="true">◫</span>
+            <span>Overview</span>
+          </a>
+          <a class="inx-nav-link" href="#organization-workspace">
+            <span class="inx-nav-icon" aria-hidden="true">◎</span>
+            <span>Organizations</span>
+          </a>
+          <p class="inx-nav-label mt-4">Platform</p>
+          <span class="inx-nav-link disabled" aria-disabled="true">
+            <span class="inx-nav-icon" aria-hidden="true">◇</span>
+            <span>Infrastructure</span>
+            <span class="inx-nav-soon">Soon</span>
+          </span>
+          <span class="inx-nav-link disabled" aria-disabled="true">
+            <span class="inx-nav-icon" aria-hidden="true">⌁</span>
+            <span>Discovery</span>
+            <span class="inx-nav-soon">Soon</span>
+          </span>
+          <span class="inx-nav-link disabled" aria-disabled="true">
+            <span class="inx-nav-icon" aria-hidden="true">⬡</span>
+            <span>Governance</span>
+            <span class="inx-nav-soon">Soon</span>
+          </span>
+        </nav>
+
+        <div class="inx-sidebar-footer">
+          <div class="inx-runtime-pill">
+            <span class="inx-status-dot" aria-hidden="true"></span>
+            <div>
+              <span class="inx-runtime-pill-label">Runtime</span>
+              <strong id="sidebar-runtime-state">Connecting…</strong>
+            </div>
+          </div>
+          <span id="sidebar-version" class="inx-sidebar-version">Version —</span>
+        </div>
+      </aside>
+
+      <div class="inx-content-shell">
+        <header class="inx-topbar" aria-label="InfraNexum product header">
+          <div>
+            <p class="inx-topbar-eyebrow">Infrastructure Control &amp; Governance Platform</p>
+            <h1 class="inx-topbar-title">Administration dashboard</h1>
+          </div>
+          <div class="inx-topbar-actions">
+            <span id="topbar-environment" class="inx-environment-chip">Environment —</span>
+            <button id="theme-toggle" class="btn inx-icon-button" type="button" aria-label="Switch color theme" aria-pressed="false">
+              <span class="inx-theme-light" aria-hidden="true">☀</span>
+              <span class="inx-theme-dark" aria-hidden="true">◐</span>
+            </button>
+            <div class="inx-user-avatar" aria-label="Local administrator session">AD</div>
+          </div>
+        </header>
+
+        <main id="main" class="inx-main" tabindex="-1">
+          <section id="overview" class="inx-hero" aria-labelledby="overview-title">
+            <div class="inx-hero-copy">
+              <p class="inx-eyebrow">Control plane</p>
+              <h2 id="overview-title">Operate infrastructure with clarity.</h2>
+              <p class="inx-hero-lead">A unified operational view for governance, topology, inventory and lifecycle decisions.</p>
+              <div class="inx-hero-actions">
+                <a class="btn btn-light inx-primary-action" href="#organization-workspace">Open organization workspace</a>
+                <span id="runtime-message" class="inx-inline-status" role="status" aria-live="polite">Loading validated public configuration…</span>
+              </div>
+            </div>
+            <div class="inx-hero-visual" aria-hidden="true">
+              <span class="inx-orbit orbit-a"></span>
+              <span class="inx-orbit orbit-b"></span>
+              <span class="inx-orbit orbit-c"></span>
+              <div class="inx-hero-node node-core">IN</div>
+              <div class="inx-hero-node node-a"></div>
+              <div class="inx-hero-node node-b"></div>
+              <div class="inx-hero-node node-c"></div>
+            </div>
+          </section>
+
+          <section class="inx-kpi-grid" aria-label="Platform overview">
+            <article class="inx-kpi-card">
+              <div class="inx-kpi-icon inx-kpi-blue" aria-hidden="true">◈</div>
+              <div>
+                <span class="inx-kpi-label">Runtime</span>
+                <strong id="dashboard-runtime" class="inx-kpi-value">Connecting</strong>
+                <span class="inx-kpi-meta">Web control plane</span>
+              </div>
+            </article>
+            <article class="inx-kpi-card">
+              <div class="inx-kpi-icon inx-kpi-teal" aria-hidden="true">◎</div>
+              <div>
+                <span class="inx-kpi-label">Organizations</span>
+                <strong id="dashboard-organization-count" class="inx-kpi-value">—</strong>
+                <span class="inx-kpi-meta">Authoritative scopes</span>
+              </div>
+            </article>
+            <article class="inx-kpi-card">
+              <div class="inx-kpi-icon inx-kpi-violet" aria-hidden="true">⬡</div>
+              <div>
+                <span class="inx-kpi-label">Foundation</span>
+                <strong id="dashboard-foundation" class="inx-kpi-value">Checking</strong>
+                <span class="inx-kpi-meta">Organization capability</span>
+              </div>
+            </article>
+            <article class="inx-kpi-card">
+              <div class="inx-kpi-icon inx-kpi-amber" aria-hidden="true">◇</div>
+              <div>
+                <span class="inx-kpi-label">Environment</span>
+                <strong id="dashboard-environment" class="inx-kpi-value">—</strong>
+                <span id="dashboard-version" class="inx-kpi-meta">Version —</span>
+              </div>
+            </article>
+          </section>
+
+          <section class="inx-dashboard-grid" aria-label="Control plane status">
+            <article class="inx-panel inx-panel-status">
+              <div class="inx-panel-heading">
+                <div>
+                  <p class="inx-eyebrow">Operational posture</p>
+                  <h2 class="inx-panel-title">Control plane status</h2>
+                </div>
+                <span class="inx-health-badge"><span class="inx-status-dot"></span> Live</span>
+              </div>
+              <div class="inx-status-list">
+                <div class="inx-status-row">
+                  <div><strong>Web runtime</strong><span>Static shell and runtime configuration</span></div>
+                  <span id="runtime-health-badge" class="badge rounded-pill text-bg-secondary">Checking</span>
+                </div>
+                <div class="inx-status-row">
+                  <div><strong>Server API</strong><span id="runtime-api">—</span></div>
+                  <span id="api-health-badge" class="badge rounded-pill text-bg-secondary">Configured</span>
+                </div>
+                <div class="inx-status-row">
+                  <div><strong>Organization foundation</strong><span>Authoritative organization hierarchy</span></div>
+                  <span id="foundation-health-badge" class="badge rounded-pill text-bg-secondary">Checking</span>
+                </div>
+              </div>
+            </article>
+
+            <article class="inx-panel inx-panel-runtime" aria-labelledby="runtime-title">
+              <div class="inx-panel-heading">
+                <div>
+                  <p class="inx-eyebrow">Runtime</p>
+                  <h2 id="runtime-title" class="inx-panel-title">Deployment context</h2>
+                </div>
+              </div>
+              <dl class="inx-runtime-list">
+                <div><dt>Version</dt><dd id="runtime-version">—</dd></div>
+                <div><dt>Environment</dt><dd id="runtime-environment">—</dd></div>
+                <div><dt>API entrypoint</dt><dd id="runtime-api-detail">—</dd></div>
+                <div><dt>Architecture</dt><dd id="runtime-architecture">—</dd></div>
+              </dl>
+            </article>
+          </section>
+
+          <section id="organization-workspace" class="inx-panel inx-organization-panel" aria-labelledby="organization-title" hidden>
+            <div class="inx-panel-heading inx-panel-heading-wrap">
+              <div>
+                <p class="inx-eyebrow">Governance workspace</p>
+                <h2 id="organization-title" class="inx-panel-title">Organizations &amp; subdivisions</h2>
+                <p class="inx-panel-description">Authoritative organizational boundaries used to scope infrastructure, ownership and governance.</p>
+              </div>
+              <span id="organization-status" class="badge rounded-pill text-bg-secondary" role="status" aria-live="polite">Loading…</span>
+            </div>
+
+            <div class="inx-table-shell">
+              <div class="table-responsive">
+                <table class="table inx-data-table align-middle mb-0">
+                  <caption class="visually-hidden">Organizations visible in the local development foundation</caption>
+                  <thead><tr><th scope="col">Code</th><th scope="col">Organization</th><th scope="col">Country</th><th scope="col">State</th><th scope="col">Version</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+                  <tbody id="organization-rows"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <section id="subdivision-panel" class="inx-subdivision-panel" aria-labelledby="subdivision-title" hidden>
+              <div class="inx-panel-heading inx-panel-heading-wrap">
+                <div>
+                  <p class="inx-eyebrow">Hierarchy</p>
+                  <h3 id="subdivision-title" class="inx-panel-title inx-panel-title-sm">Subdivisions</h3>
+                </div>
+                <span id="subdivision-status" class="badge rounded-pill text-bg-secondary" role="status" aria-live="polite">—</span>
+              </div>
+              <div class="inx-table-shell">
+                <div class="table-responsive">
+                  <table class="table inx-data-table align-middle mb-0">
+                    <caption class="visually-hidden">Subdivisions of the selected organization</caption>
+                    <thead><tr><th scope="col">Code</th><th scope="col">Subdivision</th><th scope="col">Type</th><th scope="col">State</th><th scope="col">Version</th></tr></thead>
+                    <tbody id="subdivision-rows"></tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          </section>
+
+          <footer class="inx-footer">
+            <span>InfraNexum — Infrastructure Control &amp; Governance Platform</span>
+            <span id="footer-version">Version —</span>
+          </footer>
+        </main>
+      </div>
+    </div>
+
+    <noscript><div class="container py-4" role="alert">JavaScript is required to initialize the InfraNexum Web interface.</div></noscript>
   </body>
 </html>

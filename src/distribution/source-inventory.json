@@ -563,6 +563,7 @@
     "tests/toolchains/test_checker.py",
     "tests/web/bootstrap.test.mjs",
     "tests/web/config.test.mjs",
+    "tests/web/dashboard.test.mjs",
     "tests/web/logger.test.mjs",
     "tests/web/main.test.mjs",
     "tests/web/organization-foundation.test.mjs",

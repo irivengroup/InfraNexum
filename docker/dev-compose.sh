@@ -86,7 +86,7 @@ smoke() {
   curl --fail --silent --show-error "http://127.0.0.1:$web_port/health/ready" | grep -q '"status":"UP"'
   curl --fail --silent --show-error "http://127.0.0.1:$web_port/runtime-config.json" > "$tmp"
   grep -Fq '"component":"web"' "$tmp"
-  grep -Fq '"version":"2.0.0-alpha.0.57"' "$tmp"
+  grep -Fq '"version":"2.0.0-alpha.0.58"' "$tmp"
   grep -Fq '"apiBaseUrl":"/api"' "$tmp"
   rm -f "$tmp"; trap - EXIT HUP INT TERM
   organization_headers=$(mktemp); organization_body=$(mktemp); trap 'rm -f "$organization_headers" "$organization_body"' EXIT HUP INT TERM

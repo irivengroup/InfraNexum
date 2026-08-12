@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	version     = "2.0.0-alpha.0.57"
+	version     = "2.0.0-alpha.0.58"
 	exitProcess = os.Exit
 )
 
