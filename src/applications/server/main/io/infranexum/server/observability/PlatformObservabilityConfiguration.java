@@ -2,6 +2,7 @@ package io.infranexum.server.observability;
 
 import io.infranexum.core.contracts.UuidV7Generator;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.tracing.Tracer;
 import java.security.SecureRandom;
 import java.time.Clock;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -25,7 +26,7 @@ public class PlatformObservabilityConfiguration {
     }
 
     @Bean
-    WorkerCorrelationBridge workerCorrelationBridge() {
-        return new WorkerCorrelationBridge();
+    WorkerCorrelationBridge workerCorrelationBridge(Tracer tracer) {
+        return new WorkerCorrelationBridge(tracer);
     }
 }

@@ -1,10 +1,10 @@
-# InfraNexum 2.0.0-alpha.0.42 — Durable Worker Correlation Propagation
+# InfraNexum 2.0.0-alpha.0.43 — OpenTelemetry Tracing Foundation
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
-`alpha.0.42` advances **PGM-12-E01** from HTTP-only correlation to durable asynchronous propagation. The Server captures the validated UUIDv7 correlation context when a background task is first scheduled, persists it independently of task parameters, restores it in `TaskExecutionContext`, and binds it to MDC only for the lifetime of the handler invocation. Idempotent replay preserves the correlation of the originally created task instead of overwriting causal history.
+`alpha.0.43` adds the OpenTelemetry tracing layer on top of the durable correlation boundary delivered in alpha.0.42. The Server uses Spring Boot's managed OpenTelemetry/Micrometer tracing integration, consumes and produces W3C Trace Context only, disables baggage, emits bounded Worker `CONSUMER` spans, and keeps OTLP export disabled until explicitly configured.
 
-Paired PostgreSQL/Oracle migration `0009-core-worker-correlation` adds a nullable UUIDv7-constrained `correlation_id` to the durable worker store. Existing tasks remain valid with `NULL`; no raw HTTP header, authorization context, credentials or arbitrary MDC map is persisted or propagated. Production deployment remains standalone bare-metal or VM; root Docker/Compose remains developer/test tooling. PGM-12-E01 is **not complete**: OpenTelemetry traces/export, systematic sensitive-data masking and dashboards remain pending.
+The existing paired PostgreSQL/Oracle migration `0009-core-worker-correlation` remains the durable causal link across process/node boundaries. OpenTelemetry trace export is a separate operational channel: it is disabled by default, bounded when enabled, and never receives task parameters or arbitrary MDC fields from InfraNexum instrumentation. Production deployment remains standalone bare-metal or VM; root Docker/Compose remains developer/test tooling. PGM-12-E01 is **not complete**: systematic sensitive-data masking, dashboards/runbooks and target-environment telemetry export certification remain pending.
 
 ## Source layout
 

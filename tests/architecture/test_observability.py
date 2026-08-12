@@ -74,9 +74,35 @@ class ObservabilityArchitectureTest(unittest.TestCase):
     def test_worker_correlation_scope_restores_mdc_instead_of_leaking_between_tasks(self) -> None:
         bridge = (OBSERVABILITY / "WorkerCorrelationBridge.java").read_text(encoding="utf-8")
         worker = (ROOT / "src/components/core/workers/main/io/infranexum/core/workers/TaskWorker.java").read_text(encoding="utf-8")
-        self.assertIn("return () -> restore(previous)", bridge)
+        self.assertIn("restore(previous)", bridge)
+        self.assertIn("traceScope.close()", bridge)
+        self.assertIn("createdSpan.end()", bridge)
         self.assertIn("try (scope)", worker)
         self.assertIn("MDC.remove(CorrelationContext.MDC_KEY)", bridge)
+
+    def test_opentelemetry_is_w3c_only_with_export_disabled_by_default(self) -> None:
+        application = APPLICATION.read_text(encoding="utf-8")
+        server_pom = (ROOT / "src/applications/server/pom.xml").read_text(encoding="utf-8")
+        compose = COMPOSE.read_text(encoding="utf-8")
+        self.assertIn("spring-boot-starter-opentelemetry", server_pom)
+        self.assertIn("type: W3C", application)
+        self.assertIn("baggage:\n      enabled: false", application)
+        self.assertIn("INFRANEXUM_OTEL_EXPORT_ENABLED:false", application)
+        self.assertIn("map-environment-variables: false", application)
+        self.assertIn("parent-based-trace-id-ratio", application)
+        self.assertIn("max-attribute-value-length", application)
+        self.assertIn("INFRANEXUM_OTEL_EXPORT_ENABLED", compose)
+        self.assertIn("INFRANEXUM_OTEL_SAMPLING_PROBABILITY", compose)
+
+    def test_worker_execution_has_bounded_consumer_span_without_task_payload_tags(self) -> None:
+        bridge = (OBSERVABILITY / "WorkerCorrelationBridge.java").read_text(encoding="utf-8")
+        self.assertIn('WORKER_SPAN_NAME = "infranexum.worker.execute"', bridge)
+        self.assertIn("Span.Kind.CONSUMER", bridge)
+        self.assertIn('TASK_TYPE_TAG = "infranexum.worker.task.type"', bridge)
+        self.assertIn('CORRELATION_TAG = "infranexum.correlation.id"', bridge)
+        self.assertIn("createdSpan.end()", bridge)
+        self.assertIn("traceScope.close()", bridge)
+        self.assertNotIn("context.parameters()", bridge)
 
 
 if __name__ == "__main__":

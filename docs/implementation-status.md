@@ -1,4 +1,13 @@
-# InfraNexum 2.0.0-alpha.0.42 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.43 — état d’implémentation
+
+## 2.0.0-alpha.0.43 — OpenTelemetry tracing foundation
+
+**Statut : tranche tracing PGM-12-E01 implémentée ; epic NON TERMINÉ.**
+
+Le Server intègre `spring-boot-starter-opentelemetry` sous la BOM Spring Boot 4.1.0. La propagation réseau est limitée à W3C Trace Context, le baggage Micrometer est désactivé et le mapping automatique des variables `OTEL_*` est coupé afin que le contrat `INFRANEXUM_OTEL_*` reste déterministe. L'export OTLP est désactivé par défaut ; lorsqu'il est activé, les files/batches, timeouts et limites de spans restent bornés.
+
+`WorkerCorrelationBridge` ouvre désormais un span `CONSUMER` à nom fixe autour de chaque handler durable et n'ajoute que le type de tâche validé et l'UUIDv7 de corrélation déjà persisté. Les paramètres de tâche, credentials, headers bruts et MDC arbitraire ne deviennent pas des attributs de span. Le contexte W3C parent n'est pas persisté dans `worker_task` dans cet incrément : après redémarrage ou changement de nœud, le lien durable reste l'UUIDv7 de corrélation. La politique globale de masquage, les dashboards/runbooks et la certification OTLP cible restent à fermer avant PGM-12-E01.
+
 
 ## 2.0.0-alpha.0.42 — durable Worker correlation propagation
 

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.micrometer.tracing.Tracer;
 import java.time.Clock;
 import org.junit.jupiter.api.Test;
 
@@ -14,7 +15,7 @@ class PlatformObservabilityConfigurationTest {
         Clock clock = Clock.systemUTC();
         var identifiers = configuration.correlationIdentifiers(clock);
         var filter = configuration.correlationIdFilter(identifiers, clock, new SimpleMeterRegistry());
-        var workerBridge = configuration.workerCorrelationBridge();
+        var workerBridge = configuration.workerCorrelationBridge(Tracer.NOOP);
 
         assertNotNull(identifiers.next());
         assertNotNull(workerBridge);

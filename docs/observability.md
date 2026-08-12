@@ -1,6 +1,6 @@
 # Platform observability — PGM-12-E01
 
-InfraNexum Server establishes one validated correlation context before every MVC or Actuator endpoint. The HTTP boundary is the first executable slice of roadmap epic **PGM-12-E01**. `alpha.0.42` extends that validated context across durable background-task boundaries; OpenTelemetry export, systematic masking policies and dashboards remain separate follow-up increments.
+InfraNexum Server establishes one validated correlation context before every MVC or Actuator endpoint. The HTTP boundary is the first executable slice of roadmap epic **PGM-12-E01**. `alpha.0.43` adds Spring Boot managed OpenTelemetry tracing on top of that durable correlation boundary. OTLP export remains disabled by default and requires explicit configuration; systematic masking policies and dashboards remain separate follow-up increments.
 
 ## HTTP correlation contract
 
@@ -36,10 +36,31 @@ Runtime overrides:
 INFRANEXUM_LOG_FORMAT=ecs
 INFRANEXUM_ENVIRONMENT=local
 INFRANEXUM_SERVER_INSTANCE_ID=server-local-1
-INFRANEXUM_VERSION=2.0.0-alpha.0.42
+INFRANEXUM_VERSION=2.0.0-alpha.0.43
 ```
 
 `INFRANEXUM_LOG_FORMAT` exists for controlled operational overrides; production standards should keep a machine-readable structured format.
+
+## OpenTelemetry tracing and controlled OTLP export
+
+The Server includes Spring Boot's managed OpenTelemetry tracing starter. Trace propagation is restricted to **W3C Trace Context** and Micrometer baggage propagation is disabled, so InfraNexum does not copy arbitrary baggage values into logs, spans or downstream calls. Spring Boot's OpenTelemetry SDK environment-variable mapping is also disabled; the supported runtime contract is the explicit `INFRANEXUM_OTEL_*` configuration surface.
+
+Product defaults are deliberately conservative:
+
+```text
+INFRANEXUM_OTEL_ENABLED=true
+INFRANEXUM_OTEL_EXPORT_ENABLED=false
+INFRANEXUM_OTEL_SAMPLING_PROBABILITY=0.1
+INFRANEXUM_OTEL_EXPORT_ENDPOINT=http://127.0.0.1:4318/v1/traces
+INFRANEXUM_OTEL_CONNECT_TIMEOUT=5s
+INFRANEXUM_OTEL_EXPORT_TIMEOUT=10s
+```
+
+Enabling tracing does not imply network export. OTLP export must be activated explicitly with `INFRANEXUM_OTEL_EXPORT_ENABLED=true` and a collector endpoint appropriate to the deployment. Credentials must not be embedded in the endpoint URI or committed to repository configuration. The configured SDK bounds trace attribute length/count, event/link counts, exporter queue size, batch size and export timeouts.
+
+Spring-managed HTTP observations provide trace/span identifiers in the logging context. InfraNexum additionally creates one fixed-name `CONSUMER` span around each durable Worker handler invocation. The Worker span is tagged only with the validated task type and, when present, the durable UUIDv7 `infranexum.correlation.id`; task parameters and arbitrary MDC state are never attached by this bridge. The span scope and the correlation MDC scope are both closed in `finally` paths before a pooled Worker thread can execute another task.
+
+The durable UUIDv7 correlation remains the restart/node-stable causal identifier. `alpha.0.43` does not persist a W3C `traceparent` into `worker_task`; a Worker execution that occurs after its originating trace context has disappeared therefore starts a new trace that remains discoverable through the durable correlation attribute. Persisted trace-parent continuation is intentionally deferred until its retention/privacy model is specified.
 
 ## Metrics
 
@@ -65,4 +86,4 @@ No request identifier, URI, user-controlled header value or secret is used as a 
 
 ## Remaining PGM-12-E01 scope
 
-This increment does **not** claim completion of PGM-12-E01. Remaining scope includes at least OpenTelemetry traces/export, systematic sensitive-data masking policy and tests, platform dashboards, retention/export configuration and target-environment validation.
+This increment does **not** claim completion of PGM-12-E01. Remaining scope includes persisted trace-parent continuation only if its retention/privacy model is approved, systematic sensitive-data masking policy and tests, platform dashboards/runbooks, retention/export configuration and target-environment OTLP validation.

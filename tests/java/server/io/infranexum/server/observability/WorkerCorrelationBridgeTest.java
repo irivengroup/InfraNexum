@@ -3,6 +3,10 @@ package io.infranexum.server.observability;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.infranexum.core.contracts.DomainIdentifier;
 import io.infranexum.core.contracts.UuidV7Generator;
@@ -16,6 +20,8 @@ import io.infranexum.core.workers.TaskScheduler;
 import io.infranexum.core.workers.TaskSubmission;
 import io.infranexum.core.workers.TaskType;
 import io.infranexum.core.workers.TaskWorker;
+import io.micrometer.tracing.Span;
+import io.micrometer.tracing.Tracer;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -25,6 +31,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 import org.slf4j.MDC;
 
 class WorkerCorrelationBridgeTest {
@@ -40,7 +47,19 @@ class WorkerCorrelationBridgeTest {
 
     @Test
     void capturesValidatedMdcDurablyAndRestoresItAroundWorkerExecution() {
-        WorkerCorrelationBridge bridge = new WorkerCorrelationBridge();
+        Tracer tracer = mock(Tracer.class);
+        Span.Builder spanBuilder = mock(Span.Builder.class);
+        Span span = mock(Span.class);
+        Tracer.SpanInScope spanInScope = mock(Tracer.SpanInScope.class);
+        when(tracer.spanBuilder()).thenReturn(spanBuilder);
+        when(spanBuilder.name("infranexum.worker.execute")).thenReturn(spanBuilder);
+        when(spanBuilder.kind(Span.Kind.CONSUMER)).thenReturn(spanBuilder);
+        when(spanBuilder.tag("infranexum.worker.task.type", TYPE.value())).thenReturn(spanBuilder);
+        when(spanBuilder.tag("infranexum.correlation.id", CORRELATION.toString())).thenReturn(spanBuilder);
+        when(spanBuilder.start()).thenReturn(span);
+        when(tracer.withSpan(span)).thenReturn(spanInScope);
+
+        WorkerCorrelationBridge bridge = new WorkerCorrelationBridge(tracer);
         InMemoryTaskStore store = new InMemoryTaskStore();
         AtomicReference<String> observedMdc = new AtomicReference<>();
         AtomicReference<DomainIdentifier> observedContext = new AtomicReference<>();
@@ -83,6 +102,14 @@ class WorkerCorrelationBridgeTest {
         assertEquals(CORRELATION.toString(), observedMdc.get());
         assertEquals(CORRELATION, observedContext.get());
         assertNull(MDC.get(CorrelationContext.MDC_KEY));
+
+        verify(spanBuilder).name("infranexum.worker.execute");
+        verify(spanBuilder).kind(Span.Kind.CONSUMER);
+        verify(spanBuilder).tag("infranexum.worker.task.type", TYPE.value());
+        verify(spanBuilder).tag("infranexum.correlation.id", CORRELATION.toString());
+        InOrder lifecycle = inOrder(spanInScope, span);
+        lifecycle.verify(spanInScope).close();
+        lifecycle.verify(span).end();
     }
 
     @Test

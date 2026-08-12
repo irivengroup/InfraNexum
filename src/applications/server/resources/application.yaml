@@ -7,7 +7,7 @@ server:
 spring:
   application:
     name: infranexum-server
-    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.42}
+    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.43}
   datasource:
     url: ${INFRANEXUM_DATABASE_URL:}
     username: ${INFRANEXUM_DATABASE_USERNAME:}
@@ -62,7 +62,7 @@ infranexum:
     mode: ${INFRANEXUM_SERVER_MODE:STANDALONE}
     region: ${INFRANEXUM_SERVER_REGION:local}
     site: ${INFRANEXUM_SERVER_SITE:local}
-    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.42}
+    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.43}
     architecture-baseline: ${INFRANEXUM_ARCHITECTURE_BASELINE:2.0.0-draft.21}
 
 logging:
@@ -71,11 +71,47 @@ logging:
       console: ${INFRANEXUM_LOG_FORMAT:ecs}
     ecs:
       service:
-        version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.42}
+        version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.43}
         environment: ${INFRANEXUM_ENVIRONMENT:local}
         node-name: ${INFRANEXUM_SERVER_INSTANCE_ID:server-local-1}
 
 management:
+  tracing:
+    baggage:
+      enabled: false
+    propagation:
+      type: W3C
+    sampling:
+      probability: ${INFRANEXUM_OTEL_SAMPLING_PROBABILITY:0.1}
+    export:
+      otlp:
+        enabled: ${INFRANEXUM_OTEL_EXPORT_ENABLED:false}
+  opentelemetry:
+    enabled: ${INFRANEXUM_OTEL_ENABLED:true}
+    map-environment-variables: false
+    resource-attributes:
+      service.namespace: infranexum
+      service.version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.43}
+      service.instance.id: ${INFRANEXUM_SERVER_INSTANCE_ID:server-local-1}
+      deployment.environment.name: ${INFRANEXUM_ENVIRONMENT:local}
+    tracing:
+      sampler: parent-based-trace-id-ratio
+      limits:
+        max-attributes: ${INFRANEXUM_OTEL_MAX_ATTRIBUTES:64}
+        max-attribute-value-length: ${INFRANEXUM_OTEL_MAX_ATTRIBUTE_VALUE_LENGTH:256}
+        max-events: ${INFRANEXUM_OTEL_MAX_EVENTS:64}
+        max-links: ${INFRANEXUM_OTEL_MAX_LINKS:32}
+      export:
+        max-queue-size: ${INFRANEXUM_OTEL_MAX_QUEUE_SIZE:2048}
+        max-batch-size: ${INFRANEXUM_OTEL_MAX_BATCH_SIZE:512}
+        schedule-delay: ${INFRANEXUM_OTEL_SCHEDULE_DELAY:5s}
+        timeout: ${INFRANEXUM_OTEL_BATCH_TIMEOUT:30s}
+        otlp:
+          endpoint: ${INFRANEXUM_OTEL_EXPORT_ENDPOINT:http://127.0.0.1:4318/v1/traces}
+          transport: http
+          compression: gzip
+          connect-timeout: ${INFRANEXUM_OTEL_CONNECT_TIMEOUT:5s}
+          timeout: ${INFRANEXUM_OTEL_EXPORT_TIMEOUT:10s}
   endpoints:
     web:
       exposure:
