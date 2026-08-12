@@ -19,6 +19,7 @@ final class WorkerValueObjectsTest {
     void taskTypeAndTaskIdentifierAreStrictAndComparable() {
         assertEquals("inventory.refresh", new TaskType(" inventory.refresh ").value());
         assertTrue(new TaskType("a").compareTo(new TaskType("b")) < 0);
+        assertThrows(IllegalArgumentException.class, () -> new TaskType(" "));
         assertThrows(IllegalArgumentException.class, () -> new TaskType("Inventory.Refresh"));
         assertThrows(IllegalArgumentException.class, () -> new TaskType("a..b"));
         assertThrows(IllegalArgumentException.class, () -> new TaskType("a".repeat(161)));
@@ -63,6 +64,17 @@ final class WorkerValueObjectsTest {
         assertEquals("worker", running.leaseOwner());
         assertThrows(IllegalArgumentException.class, () -> record(TaskStatus.PENDING, "worker", 1, START));
         assertThrows(IllegalArgumentException.class, () -> record(TaskStatus.RUNNING, "worker", 0, START));
+        assertThrows(IllegalArgumentException.class, () -> new TaskRecord(
+                id(2), TYPE, "key", Map.of(), RetrySafety.RETRY_SAFE, TaskStatus.PENDING, -1, START,
+                null, 0, null, null, false, null, START, START));
+        assertThrows(IllegalArgumentException.class, () -> new TaskRecord(
+                id(2), TYPE, "key", Map.of(), RetrySafety.RETRY_SAFE, TaskStatus.PENDING, 0, START,
+                null, -1, null, null, false, null, START, START));
+        assertThrows(IllegalArgumentException.class, () -> record(TaskStatus.RUNNING, " ", 1, START));
+        assertThrows(IllegalArgumentException.class, () -> record(TaskStatus.RUNNING, "w".repeat(161), 1, START));
+        assertThrows(IllegalArgumentException.class, () -> new TaskRecord(
+                id(2), TYPE, "key", Map.of(), RetrySafety.RETRY_SAFE, TaskStatus.PENDING, 0, START,
+                null, 0, null, null, false, "x".repeat(1_025), START, START));
     }
 
     @Test
@@ -71,6 +83,11 @@ final class WorkerValueObjectsTest {
         assertEquals(0, idle.claimed());
         assertThrows(IllegalArgumentException.class, () -> new WorkerIterationReport(1, 1, 1, 0, 0, 0));
         assertThrows(IllegalArgumentException.class, () -> new WorkerIterationReport(-1, 0, 0, 0, 0, 0));
+        assertThrows(IllegalArgumentException.class, () -> new WorkerIterationReport(0, -1, 0, 0, 0, 0));
+        assertThrows(IllegalArgumentException.class, () -> new WorkerIterationReport(0, 0, -1, 0, 0, 0));
+        assertThrows(IllegalArgumentException.class, () -> new WorkerIterationReport(0, 0, 0, -1, 0, 0));
+        assertThrows(IllegalArgumentException.class, () -> new WorkerIterationReport(0, 0, 0, 0, -1, 0));
+        assertThrows(IllegalArgumentException.class, () -> new WorkerIterationReport(0, 0, 0, 0, 0, -1));
 
         WorkerPoolConfiguration configuration = new WorkerPoolConfiguration(
                 2,
@@ -81,6 +98,8 @@ final class WorkerValueObjectsTest {
         assertEquals(2, configuration.concurrency());
         assertThrows(IllegalArgumentException.class, () -> new WorkerPoolConfiguration(
                 0, Duration.ofMillis(1), Duration.ofSeconds(1), Duration.ofMillis(100), Duration.ofSeconds(1)));
+        assertThrows(IllegalArgumentException.class, () -> new WorkerPoolConfiguration(
+                257, Duration.ofMillis(1), Duration.ofSeconds(1), Duration.ofMillis(100), Duration.ofSeconds(1)));
         assertThrows(IllegalArgumentException.class, () -> new WorkerPoolConfiguration(
                 1, Duration.ZERO, Duration.ofSeconds(1), Duration.ofMillis(100), Duration.ofSeconds(1)));
         assertThrows(IllegalArgumentException.class, () -> new WorkerPoolConfiguration(
@@ -111,6 +130,18 @@ final class WorkerValueObjectsTest {
                 WorkerPoolState.NEW, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0));
         assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
                 WorkerPoolState.NEW, 1, 0, 0, -1, 0, 0, 0, 0, 0, 0));
+        assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
+                WorkerPoolState.NEW, 1, 0, 0, 0, -1, 0, 0, 0, 0, 0));
+        assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
+                WorkerPoolState.NEW, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0));
+        assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
+                WorkerPoolState.NEW, 1, 0, 0, 0, 0, 0, -1, 0, 0, 0));
+        assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
+                WorkerPoolState.NEW, 1, 0, 0, 0, 0, 0, 0, -1, 0, 0));
+        assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
+                WorkerPoolState.NEW, 1, 0, 0, 0, 0, 0, 0, 0, -1, 0));
+        assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
+                WorkerPoolState.NEW, 1, 0, 0, 0, 0, 0, 0, 0, 0, -1));
         assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
                 WorkerPoolState.NEW, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0));
     }

@@ -7,7 +7,7 @@ server:
 spring:
   application:
     name: infranexum-server
-    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.46}
+    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.47}
   datasource:
     url: ${INFRANEXUM_DATABASE_URL:}
     username: ${INFRANEXUM_DATABASE_USERNAME:}
@@ -62,7 +62,7 @@ infranexum:
     mode: ${INFRANEXUM_SERVER_MODE:STANDALONE}
     region: ${INFRANEXUM_SERVER_REGION:local}
     site: ${INFRANEXUM_SERVER_SITE:local}
-    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.46}
+    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.47}
     architecture-baseline: ${INFRANEXUM_ARCHITECTURE_BASELINE:2.0.0-draft.21}
 
 logging:
@@ -78,11 +78,16 @@ logging:
         include-hashes: true
     ecs:
       service:
-        version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.46}
+        version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.47}
         environment: ${INFRANEXUM_ENVIRONMENT:local}
         node-name: ${INFRANEXUM_SERVER_INSTANCE_ID:server-local-1}
 
 management:
+  otlp:
+    metrics:
+      export:
+        enabled: ${INFRANEXUM_OTEL_METRICS_EXPORT_ENABLED:false}
+        url: ${INFRANEXUM_OTEL_METRICS_EXPORT_URL:http://127.0.0.1:4318/v1/metrics}
   tracing:
     baggage:
       enabled: false
@@ -98,7 +103,7 @@ management:
     map-environment-variables: false
     resource-attributes:
       service.namespace: infranexum
-      service.version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.46}
+      service.version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.47}
       service.instance.id: ${INFRANEXUM_SERVER_INSTANCE_ID:server-local-1}
       deployment.environment.name: ${INFRANEXUM_ENVIRONMENT:local}
     tracing:

@@ -2,6 +2,7 @@ package io.infranexum.core.workers;
 
 import static io.infranexum.core.workers.WorkerTestFixtures.START;
 import static io.infranexum.core.workers.WorkerTestFixtures.TYPE;
+import static io.infranexum.core.workers.WorkerTestFixtures.id;
 import static io.infranexum.core.workers.WorkerTestFixtures.submission;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -13,6 +14,7 @@ import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 /** Scheduling facade tests covering handler registration and idempotent replay. */
@@ -49,6 +51,31 @@ final class TaskSchedulerTest {
                 clock);
 
         assertThrows(IllegalArgumentException.class, () -> scheduler.schedule(submission("unknown")));
+    }
+
+    @Test
+    void schedulerPersistsCorrelationAndRejectsAnInvalidProviderContract() {
+        Clock clock = Clock.fixed(START, ZoneOffset.UTC);
+        InMemoryTaskStore store = new InMemoryTaskStore();
+        TaskHandler handler = handler(TYPE, RetrySafety.RETRY_SAFE);
+        var correlationId = id(99).value();
+        TaskScheduler correlated = new TaskScheduler(
+                store,
+                new TaskHandlerRegistry(List.of(handler)),
+                new UuidV7Generator(clock, new SecureRandom(new byte[] {5, 6, 7, 8})),
+                clock,
+                () -> Optional.of(correlationId));
+
+        TaskSubmissionResult result = correlated.schedule(submission("correlated"));
+        assertEquals(correlationId, correlated.find(result.taskId()).orElseThrow().correlationId());
+
+        TaskScheduler invalidProvider = new TaskScheduler(
+                new InMemoryTaskStore(),
+                new TaskHandlerRegistry(List.of(handler)),
+                new UuidV7Generator(clock, new SecureRandom(new byte[] {9, 10, 11, 12})),
+                clock,
+                () -> null);
+        assertThrows(NullPointerException.class, () -> invalidProvider.schedule(submission("null-provider")));
     }
 
     @Test

@@ -99,10 +99,12 @@ class ObservabilityArchitectureTest(unittest.TestCase):
         self.assertIn("type: W3C", application)
         self.assertIn("baggage:\n      enabled: false", application)
         self.assertIn("INFRANEXUM_OTEL_EXPORT_ENABLED:false", application)
+        self.assertIn("INFRANEXUM_OTEL_METRICS_EXPORT_ENABLED:false", application)
         self.assertIn("map-environment-variables: false", application)
         self.assertIn("parent-based-trace-id-ratio", application)
         self.assertIn("max-attribute-value-length", application)
         self.assertIn("INFRANEXUM_OTEL_EXPORT_ENABLED", compose)
+        self.assertIn("INFRANEXUM_OTEL_METRICS_EXPORT_ENABLED", compose)
         self.assertIn("INFRANEXUM_OTEL_SAMPLING_PROBABILITY", compose)
 
     def test_worker_execution_has_bounded_consumer_span_without_task_payload_tags(self) -> None:

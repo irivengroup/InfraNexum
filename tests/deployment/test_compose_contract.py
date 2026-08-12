@@ -240,6 +240,16 @@ class ComposeContractTest(unittest.TestCase):
         for path in ("tests", "validation", "docs", "tools", "requirements", "artifacts", ".git", ".github"):
             self.assertIn(path, ignored)
 
+    def test_patroni_entrypoint_repairs_pgdata_mode_before_exec(self) -> None:
+        entrypoint = (ROOT / "docker/patroni-entrypoint.sh").read_text(encoding="utf-8")
+        self.assertIn('chmod 0700 "$data_dir"', entrypoint)
+        self.assertIn('chown -R postgres:postgres /var/lib/postgresql/data', entrypoint)
+        self.assertLess(
+            entrypoint.index('chmod 0700 "$data_dir"'),
+            entrypoint.index('exec su-exec postgres'),
+        )
+
+
 
 if __name__ == "__main__":
     unittest.main()

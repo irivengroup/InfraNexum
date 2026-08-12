@@ -8,6 +8,7 @@ import java.lang.reflect.Parameter;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import io.infranexum.server.observability.SensitiveDataRedactor;
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -30,6 +31,7 @@ class ClockBeanQualificationTest {
                     "workerClock",
                     Clock.class,
                     () -> Clock.fixed(WORKER_NOW, ZoneOffset.UTC));
+            context.registerBean(SensitiveDataRedactor.class);
             context.registerBean(EntitlementExceptionHandler.class);
             context.refresh();
 

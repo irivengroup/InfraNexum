@@ -5,6 +5,11 @@ import org.junit.jupiter.api.Test;
 /** Executes the durable workers JDBC contract against the strict scripted driver. */
 class JdbcTaskStoreTest {
     @Test
+    void insertTaskSqlShapeContract() {
+        JdbcTaskStoreSmoke.provesInsertTaskSqlShape();
+    }
+
+    @Test
     void submissionReplayAndConflictContract() {
         JdbcTaskStoreSmoke.provesSubmissionReplayAndConflict();
     }

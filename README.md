@@ -1,8 +1,8 @@
-# InfraNexum 2.0.0-alpha.0.46 — PRO Docker HA etcd Healthcheck Repair
+# InfraNexum 2.0.0-alpha.0.47 — JDK25 & PRO HA Stabilization
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
-`alpha.0.46` repairs the first runtime defect observed on the PRO Docker HA topology: the official etcd 3.6.14 image is distroless, so its healthcheck must execute `/usr/local/bin/etcdctl` directly rather than through `CMD-SHELL`. The PRO topology introduced in `alpha.0.45` remains unchanged: three PostgreSQL 17.10 nodes managed by Patroni with a three-member etcd DCS, strict synchronous replication to at least one standby and a second replica, plus four `REGIONAL` Server nodes behind a readiness-aware HAProxy router.
+`alpha.0.47` closes five independent defects exposed by the first hosted JDK 25 and PRO HA runtime campaign: the durable Workers JDBC INSERT now keeps its target-column/value arity aligned after `correlation_id`; Core Workers regression tests cover the correlation and validation branches required by the unchanged 98% JaCoCo branch gate; the minimal Clock ownership Spring test now supplies the mandatory `SensitiveDataRedactor`; Patroni repairs PostgreSQL `PGDATA` ownership/mode to `0700` before bootstrap or rejoin; and Micrometer OTLP metrics export is opt-in instead of silently targeting localhost. The `alpha.0.46` shell-free etcd healthcheck repair is retained unchanged.
 
 Only router ports are published on `127.0.0.1`; individual etcd, PostgreSQL/Patroni and Server nodes stay on the private Compose bridge. `smoke` proves cluster health and replication invariants, while the deliberately disruptive `ha-smoke` verifies bounded PostgreSQL primary failover, writer recovery, Server readiness and rejoin without deleting volumes. The PRO Web cluster is intentionally deferred to a later increment. Production deployment remains standalone bare-metal or VM, and signed PRO activation remains a separate certification concern.
 

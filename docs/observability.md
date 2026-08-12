@@ -35,7 +35,7 @@ Runtime overrides:
 ```text
 INFRANEXUM_ENVIRONMENT=local
 INFRANEXUM_SERVER_INSTANCE_ID=server-local-1
-INFRANEXUM_VERSION=2.0.0-alpha.0.46
+INFRANEXUM_VERSION=2.0.0-alpha.0.47
 ```
 
 The console format is fixed to ECS so runtime configuration cannot bypass the structured-value redaction customizer. Every string value is sanitized immediately before JSON serialization; stack trace output is additionally bounded to 8192 characters and 32 throwable frames.
@@ -56,13 +56,15 @@ Product defaults are deliberately conservative:
 ```text
 INFRANEXUM_OTEL_ENABLED=true
 INFRANEXUM_OTEL_EXPORT_ENABLED=false
+INFRANEXUM_OTEL_METRICS_EXPORT_ENABLED=false
 INFRANEXUM_OTEL_SAMPLING_PROBABILITY=0.1
 INFRANEXUM_OTEL_EXPORT_ENDPOINT=http://127.0.0.1:4318/v1/traces
+INFRANEXUM_OTEL_METRICS_EXPORT_URL=http://127.0.0.1:4318/v1/metrics
 INFRANEXUM_OTEL_CONNECT_TIMEOUT=5s
 INFRANEXUM_OTEL_EXPORT_TIMEOUT=10s
 ```
 
-Enabling tracing does not imply network export. OTLP export must be activated explicitly with `INFRANEXUM_OTEL_EXPORT_ENABLED=true` and a collector endpoint appropriate to the deployment. Credentials must not be embedded in the endpoint URI or committed to repository configuration. The configured SDK bounds trace attribute length/count, event/link counts, exporter queue size, batch size and export timeouts.
+Enabling tracing does not imply network export. Trace OTLP export must be activated explicitly with `INFRANEXUM_OTEL_EXPORT_ENABLED=true`; metrics OTLP export is independently opt-in through `INFRANEXUM_OTEL_METRICS_EXPORT_ENABLED=true`. Both require a collector endpoint appropriate to the deployment. Credentials must not be embedded in the endpoint URI or committed to repository configuration. The configured SDK bounds trace attribute length/count, event/link counts, exporter queue size, batch size and export timeouts.
 
 Spring-managed HTTP observations provide trace/span identifiers in the logging context. InfraNexum additionally creates one fixed-name `CONSUMER` span around each durable Worker handler invocation. The Worker span is tagged only with the validated task type and, when present, the durable UUIDv7 `infranexum.correlation.id`; task parameters and arbitrary MDC state are never attached by this bridge. The span scope and the correlation MDC scope are both closed in `finally` paths before a pooled Worker thread can execute another task.
 

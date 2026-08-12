@@ -39,6 +39,7 @@ public final class JdbcTaskStoreSmoke {
     private JdbcTaskStoreSmoke() {}
 
     public static void main(String[] args) {
+        provesInsertTaskSqlShape();
         provesSubmissionReplayAndConflict();
         provesSubmissionRaceAndPersistenceFailures();
         provesClaimCheckpointRetryAndCancellation();
@@ -50,6 +51,34 @@ public final class JdbcTaskStoreSmoke {
         provesTransactionAndDataGuards();
         provesConfigurationGuards();
         System.out.println("java-jdbc-workers-smoke: PASS");
+    }
+
+    static void provesInsertTaskSqlShape() {
+        ScriptedDataSource dataSource = new ScriptedDataSource(
+                Step.query("/*inx:task-idempotency*/"),
+                Step.update("/*inx:task-insert*/", 1),
+                Step.batch("/*inx:task-parameter-insert*/", 1));
+        JdbcTaskStore store = new JdbcTaskStore(dataSource, JdbcDatabaseDialect.POSTGRESQL);
+        store.submit(TASK_ID, submission("sql-shape"), RetrySafety.RETRY_SAFE, NOW);
+        String sql = dataSource.observedSql().stream()
+                .filter(candidate -> candidate.contains("/*inx:task-insert*/"))
+                .findFirst()
+                .orElseThrow();
+        int columnsStart = sql.indexOf('(');
+        int columnsEnd = sql.indexOf(") VALUES");
+        int valuesStart = sql.indexOf('(', columnsEnd);
+        int valuesEnd = sql.lastIndexOf(')');
+        require(columnsStart >= 0 && columnsEnd > columnsStart, "worker_task INSERT columns were not parseable");
+        require(valuesStart > columnsEnd && valuesEnd > valuesStart, "worker_task INSERT values were not parseable");
+        require(
+                csvArity(sql.substring(columnsStart + 1, columnsEnd))
+                        == csvArity(sql.substring(valuesStart + 1, valuesEnd)),
+                "worker_task INSERT target columns and VALUES expressions diverged");
+        dataSource.assertExhausted();
+    }
+
+    private static int csvArity(String value) {
+        return value.split(",", -1).length;
     }
 
     static void provesSubmissionReplayAndConflict() {

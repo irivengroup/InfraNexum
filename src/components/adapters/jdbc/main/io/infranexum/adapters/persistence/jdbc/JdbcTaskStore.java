@@ -783,7 +783,7 @@ public final class JdbcTaskStore implements TaskStore {
                 + "requested_not_before, available_at, lease_owner, lease_version, lease_until, "
                 + "checkpoint_sequence, checkpoint_token, checkpoint_at, cancellation_requested, "
                 + "last_failure, created_at, updated_at) "
-                + "VALUES (?, ?, ?, ?, ?, 'PENDING', 0, ?, ?, NULL, 0, NULL, NULL, NULL, 'N', NULL, ?, ?)";
+                + "VALUES (?, ?, ?, ?, ?, 'PENDING', 0, ?, ?, NULL, 0, NULL, NULL, NULL, NULL, 'N', NULL, ?, ?)";
     }
 
     private String insertParameterSql() {

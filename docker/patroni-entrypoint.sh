@@ -17,8 +17,15 @@ replication_password=$(cat "$replication_password_file")
 # Runtime-generated secrets use base64 and therefore cannot break single-quoted YAML scalars.
 case "$db_password$replication_password" in *"'"*) echo 'Patroni secrets contain unsupported quote characters' >&2; exit 64;; esac
 
-mkdir -p /var/lib/postgresql/data/pgdata /var/run/postgresql
-chown -R postgres:postgres /var/lib/postgresql/data /var/run/postgresql
+data_dir=/var/lib/postgresql/data/pgdata
+socket_dir=/var/run/postgresql
+mkdir -p "$data_dir" "$socket_dir"
+chown -R postgres:postgres /var/lib/postgresql/data "$socket_dir"
+# PostgreSQL refuses PGDATA modes broader than 0750. Docker named volumes are
+# commonly created as 0755, so repair the exact data directory before Patroni
+# bootstraps or rejoins a member. This is safe for existing clusters and does
+# not remove or rewrite database files.
+chmod 0700 "$data_dir"
 config=/tmp/patroni.yml
 umask 077
 cat > "$config" <<EOF_CFG
@@ -63,7 +70,7 @@ bootstrap:
 postgresql:
   listen: 0.0.0.0:5432
   connect_address: ${PATRONI_NAME}:5432
-  data_dir: /var/lib/postgresql/data/pgdata
+  data_dir: ${data_dir}
   bin_dir: /usr/local/bin
   pgpass: /tmp/pgpass-${PATRONI_NAME}
   authentication:
@@ -74,7 +81,7 @@ postgresql:
       username: replicator
       password: '${replication_password}'
   parameters:
-    unix_socket_directories: /var/run/postgresql
+    unix_socket_directories: ${socket_dir}
 
 tags:
   nofailover: false

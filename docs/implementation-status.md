@@ -1,4 +1,15 @@
-# InfraNexum 2.0.0-alpha.0.46 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.47 — état d’implémentation
+
+
+## 2.0.0-alpha.0.47 — hosted JDK25 and PRO HA stabilization
+
+**Statut : corrections implémentées ; hosted JDK25/JaCoCo et runtime Docker Desktop PRO à revalider.**
+
+Le premier run JDK25 complet a isolé trois défauts de qualité Java : `JdbcTaskStore` déclarait dix-neuf colonnes dans l’INSERT `worker_task` mais seulement dix-huit expressions après l’ajout de `correlation_id`; le module Core Workers exécutait 50/50 tests mais ne couvrait que 96 % des branches JaCoCo pour un seuil contractuel de 98 %; et le contexte minimal de `ClockBeanQualificationTest` ne fournissait plus le `SensitiveDataRedactor` devenu dépendance obligatoire de `EntitlementExceptionHandler`. La correction aligne l’arité SQL avec un contrat de forme directement exécuté par le smoke JDBC, étend les scénarios de branches Workers sans exclusion ni réduction du seuil, et remet la fixture Spring en cohérence avec le constructeur réel.
+
+Le même run a montré qu’un `OtlpMeterRegistry` était créé par défaut et tentait d’exporter vers localhost malgré la politique d’export OTLP opt-in. `management.otlp.metrics.export.enabled` est désormais explicitement désactivé par défaut, indépendamment du tracing, avec un test Spring exigeant l’absence d’`OtlpMeterRegistry` dans le runtime nominal.
+
+Côté PRO HA, Patroni pouvait cloner correctement un standby puis PostgreSQL refusait de démarrer parce que le volume Docker fournissait `PGDATA` avec un mode trop permissif. L’entrypoint fixe désormais propriétaire et mode `0700` sur le répertoire de données avant bootstrap/rejoin, sans supprimer ni réécrire les fichiers du cluster. Un contrat Compose garantit que cette réparation précède l’exécution de Patroni.
 
 
 ## 2.0.0-alpha.0.46 — etcd distroless healthcheck repair
