@@ -1,7 +1,38 @@
-# InfraNexum 2.0.0-alpha.0.50 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.52 — état d’implémentation
 
 
-## 2.0.0-alpha.0.50 — PowerShell Compose native argument forwarding repair
+## 2.0.0-alpha.0.52 — PRO Web HA Compose schema repair
+
+**Statut : correction implémentée et validée statiquement ; runtime Docker Desktop à revalider.**
+
+Le runtime Docker Desktop de `alpha.0.51` a rejeté le modèle Compose avant toute opération (`down`, `build`, `up` ou `ps`) car les clés `interval`, `timeout`, `retries` et `start_period` du routeur `web` étaient placées au niveau du service au lieu d’être imbriquées sous `healthcheck`. `alpha.0.52` corrige exclusivement cette structure YAML : le test de readiness, ses paramètres de temporisation et la politique `restart` conservent leurs valeurs et leur sémantique.
+
+Un test de non-régression vérifie désormais simultanément que les quatre paramètres existent dans `services.web.healthcheck` et qu’aucun d’eux n’existe comme propriété directe de `services.web`. Le contrat Compose passe **46/46**. La documentation Docker Compose officielle modélise également ces paramètres sous `healthcheck`. Le runtime Docker Desktop exact reste **NON EXÉCUTÉ** dans l’environnement de génération et doit être revalidé sur Windows.
+
+
+## 2.0.0-alpha.0.51 — PRO Web HA developer topology
+
+**Statut : implémentation et contrats statiques/local Web réalisés ; runtime Docker Desktop PRO à valider.**
+
+Le banc Docker/Compose PRO complète désormais la séparation Server/Web : deux nœuds Web privés (`web-1`, `web-2`) exécutent le runtime Web sous un utilisateur non privilégié et sont servis par un HAProxy dédié publié uniquement sur `127.0.0.1:8081`. Le routeur Server reste sur `127.0.0.1:8080` et les nœuds Web reçoivent une configuration runtime explicite qui cible l’API Server sans publier leurs ports individuels. Le démarrage `up` attend désormais le routeur Web, ce qui entraîne et vérifie toute la chaîne etcd → Patroni/PostgreSQL → migrations → Server → Web.
+
+L’image Web utilise Node.js 24.18.1, conformément au catalogue de toolchains du dépôt, avec archives amd64/arm64 et SHA-256 épinglés. Le Dockerfile vérifie le checksum avant extraction, vérifie la version Node installée, n’embarque ni gestionnaire de paquets ni dépendance npm de production et exécute le runtime en UID/GID dédiés. Les probes utilisent `/health/ready`; le routeur Web n’accepte qu’un backend prêt.
+
+`smoke` vérifie désormais les 3 nœuds PostgreSQL/Patroni, les 4 nœuds Server, les 2 nœuds Web, les trois routeurs loopback, la readiness Web et le contrat `/runtime-config.json`. `ha-smoke` conserve le failover/rejoin PostgreSQL et ajoute une panne bornée d’un nœud Server puis d’un nœud Web, en exigeant que leurs routeurs respectifs restent disponibles et que les nœuds arrêtés rejoignent ensuite le cluster. Restore et rollback arrêtent également la couche Web avant toute opération incompatible sur les données.
+
+Validations locales de l’incrément : contrat Compose **45/45** ; runtime Web exécuté avec le Node local disponible : **27/27**, couverture lignes **99,65 %**, branches **98,28 %**, fonctions **100 %**, smoke process **PASS** ; Source Integrity **45/45**, couverture **100 %**, 0 violation ; Toolchains **25/25**, couverture **99 %**, 0 violation ; Archive Compatibility **12/12**, couverture **100 %**, 0 violation ; Architecture-as-Code CLI **PASS**, 0 violation ; tests fonctionnels Architecture fractionnés **52/52 PASS**. Le runner de couverture Architecture agrégé a dépassé 180 s : sa couverture n’est donc pas déclarée validée. L’exécution avec Node.js 24.18.1 exact et le runtime Docker Desktop restent **NON EXÉCUTÉS** dans l’environnement de génération ; le build Docker cible constitue la preuve d’installation/checksum du runtime Node épinglé sur la plateforme utilisateur.
+
+
+## 2.0.0-alpha.0.50 — PowerShell Compose stdout/stderr capture isolation
+
+**Statut : correction implémentée et testée statiquement ; runtime PowerShell/Docker Desktop à revalider.**
+
+Après la correction du forwarding natif, `docker compose run` pouvait encore écrire les messages de cycle de vie de son conteneur éphémère (`Creating`, `Created`) sur stderr. `Invoke-ComposeCapture` fusionnait alors stderr avec stdout ; une requête SQL scalaire retournant par exemple `0` devenait une chaîne multi-lignes impossible à convertir en `[int]`.
+
+Le wrapper lance désormais Docker via `System.Diagnostics.ProcessStartInfo`, redirige stdout et stderr indépendamment, retourne uniquement stdout au consommateur et conserve stderr comme diagnostic d’erreur. Le code de sortie natif reste contrôlé explicitement. Un test de non-régression injecte les messages `Creating/Created` et exige qu’ils ne puissent plus contaminer la valeur SQL capturée. Aucun invariant HA, secret, volume ou contrat de service n’est modifié.
+
+
+## 2.0.0-alpha.0.49 — PowerShell Compose native argument forwarding repair
 
 **Statut : correction implémentée et testée statiquement ; runtime PowerShell/Docker Desktop à revalider.**
 

@@ -6,7 +6,7 @@ repo_root=$(CDPATH= cd -- "$script_dir/.." && pwd)
 compose_file="$script_dir/compose.yaml"
 state_dir="$repo_root/.infranexum-dev/state"
 backup_dir="$state_dir/backups"
-cluster_services="etcd-1 etcd-2 etcd-3 postgres-1 postgres-2 postgres-3 postgres server-1 server-2 server-3 server-4 server"
+cluster_services="etcd-1 etcd-2 etcd-3 postgres-1 postgres-2 postgres-3 postgres server-1 server-2 server-3 server-4 server web-1 web-2 web"
 
 compose() {
   if [ -f "$script_dir/.env" ]; then docker compose --env-file "$script_dir/.env" -f "$compose_file" "$@"
@@ -61,8 +61,8 @@ backup() {
 smoke() {
   require_repo
   for service in $cluster_services; do assert_service_healthy "$service"; done
-  writer_port=$(published_port postgres 5432); read_port=$(published_port postgres 5433); server_port=$(published_port server 8080)
-  echo "Compose PRO bindings: writer=127.0.0.1:$writer_port replicas=127.0.0.1:$read_port server=127.0.0.1:$server_port"
+  writer_port=$(published_port postgres 5432); read_port=$(published_port postgres 5433); server_port=$(published_port server 8080); web_port=$(published_port web 8080)
+  echo "Compose PRO bindings: writer=127.0.0.1:$writer_port replicas=127.0.0.1:$read_port server=127.0.0.1:$server_port web=127.0.0.1:$web_port"
   streaming=$(db_scalar "SELECT count(*) FROM pg_stat_replication WHERE state='streaming'")
   test "$streaming" -ge 2 || { echo "Expected two streaming standbys; observed $streaming" >&2; exit 69; }
   synchronous=$(db_scalar "SELECT count(*) FROM pg_stat_replication WHERE state='streaming' AND sync_state IN ('sync','quorum')")
@@ -74,7 +74,13 @@ smoke() {
   curl --fail --silent --show-error --dump-header "$headers" --header "X-Correlation-ID: $correlation_id" "http://127.0.0.1:$server_port/api/v1/system/build" > "$tmp"
   grep -Eq '"instanceId":"server-pro-[1-4]"' "$tmp"; grep -Eiq "^X-Correlation-ID:[[:space:]]*$correlation_id[[:space:]]*$" "$headers"
   rm -f "$tmp" "$headers"; trap - EXIT HUP INT TERM
-  echo "compose-smoke: PASS (streaming=$streaming synchronous=$synchronous Server=4)"
+  curl --fail --silent --show-error "http://127.0.0.1:$web_port/health/ready" | grep -q '"status":"UP"'
+  curl --fail --silent --show-error "http://127.0.0.1:$web_port/runtime-config.json" > "$tmp"
+  grep -Fq '"component":"web"' "$tmp"
+  grep -Fq '"version":"2.0.0-alpha.0.52"' "$tmp"
+  grep -Fq "\"apiBaseUrl\":\"http://127.0.0.1:$server_port/api\"" "$tmp"
+  rm -f "$tmp"; trap - EXIT HUP INT TERM
+  echo "compose-smoke: PASS (streaming=$streaming synchronous=$synchronous Server=4 Web=2)"
 }
 
 patroni_primary() {
@@ -100,31 +106,49 @@ ha_smoke() {
   test "$attempts" -lt 30 || { echo "Former primary $primary did not rejoin healthy within 90 seconds" >&2; exit 69; }
   attempts=0; streaming=0; while [ "$attempts" -lt 30 ]; do sleep 3; streaming=$(db_scalar "SELECT count(*) FROM pg_stat_replication WHERE state='streaming'" 2>/dev/null || echo 0); test "$streaming" -ge 2 && break; attempts=$((attempts + 1)); done
   test "$streaming" -ge 2 || { echo "Cluster did not return to two streaming standbys; observed $streaming" >&2; exit 69; }
-  echo "compose-ha-smoke: PASS ($primary -> $replacement -> rejoined)"
+
+  server_port=$(published_port server 8080)
+  echo 'Stopping Server node server-1'; compose stop server-1
+  restore_server() { compose start server-1 >/dev/null 2>&1 || true; }; trap restore_server EXIT HUP INT TERM
+  curl --fail --silent --show-error "http://127.0.0.1:$server_port/actuator/health/readiness" | grep -q '"status":"UP"'
+  restore_server; trap - EXIT HUP INT TERM
+  attempts=0; while [ "$attempts" -lt 30 ]; do sleep 2; if (assert_service_healthy server-1) >/dev/null 2>&1; then break; fi; attempts=$((attempts + 1)); done
+  test "$attempts" -lt 30 || { echo 'Server node server-1 did not rejoin healthy within 60 seconds' >&2; exit 69; }
+
+  web_port=$(published_port web 8080)
+  echo 'Stopping Web node web-1'; compose stop web-1
+  restore_web() { compose start web-1 >/dev/null 2>&1 || true; }; trap restore_web EXIT HUP INT TERM
+  curl --fail --silent --show-error "http://127.0.0.1:$web_port/health/ready" | grep -q '"status":"UP"'
+  curl --fail --silent --show-error "http://127.0.0.1:$web_port/runtime-config.json" | grep -Fq '"component":"web"'
+  restore_web; trap - EXIT HUP INT TERM
+  attempts=0; while [ "$attempts" -lt 30 ]; do sleep 2; if (assert_service_healthy web-1) >/dev/null 2>&1; then break; fi; attempts=$((attempts + 1)); done
+  test "$attempts" -lt 30 || { echo 'Web node web-1 did not rejoin healthy within 60 seconds' >&2; exit 69; }
+
+  echo "compose-ha-smoke: PASS (PostgreSQL $primary -> $replacement -> rejoined; Server and Web node failover verified)"
 }
 
 restore() {
   require_repo; backup_file=${BACKUP_FILE:?BACKUP_FILE is required}; test "${CONFIRM_INFRANEXUM_RESTORE:-}" = YES || { echo 'Refusing restore; set CONFIRM_INFRANEXUM_RESTORE=YES' >&2; exit 64; }
   test -s "$backup_file" || { echo "Backup missing/empty: $backup_file" >&2; exit 66; }
   remote=/tmp/infranexum-dev-restore.dump
-  compose up --detach --wait postgres; compose --profile maintenance up --detach db-admin; compose stop server server-1 server-2 server-3 server-4 >/dev/null 2>&1 || true
+  compose up --detach --wait postgres; compose --profile maintenance up --detach db-admin; compose stop web web-1 web-2 server server-1 server-2 server-3 server-4 >/dev/null 2>&1 || true
   compose cp "$backup_file" "db-admin:$remote"
   compose exec -T db-admin sh -eu -c 'export PGPASSWORD="$(cat /run/infranexum-secrets/db-password)"; dropdb --if-exists --host=postgres --port=5432 --username=infranexum --maintenance-db=postgres infranexum; createdb --host=postgres --port=5432 --username=infranexum --maintenance-db=postgres --owner=infranexum infranexum; pg_restore --exit-on-error --no-owner --no-privileges --host=postgres --port=5432 --username=infranexum --dbname=infranexum /tmp/infranexum-dev-restore.dump'
-  compose exec -T db-admin rm -f "$remote"; compose stop db-admin; compose run --rm migrate; compose up --detach --wait server
+  compose exec -T db-admin rm -f "$remote"; compose stop db-admin; compose run --rm migrate; compose up --detach --wait web
 }
 
 command=${1:-help}; test "$#" -gt 0 && shift || true
 case "$command" in
   config) require_repo; compose config --quiet ;;
   build) require_repo; compose config --quiet; compose build --pull ;;
-  up) require_repo; compose config --quiet; compose up --detach --build --wait server ;;
+  up) require_repo; compose config --quiet; compose up --detach --build --wait web ;;
   down) require_repo; compose down --remove-orphans ;;
-  logs) require_repo; if [ "$#" -gt 0 ]; then compose logs --no-color --tail=200 "$@"; else compose logs --no-color --tail=200 server server-1 server-2 server-3 server-4 postgres postgres-1 postgres-2 postgres-3 migrate; fi ;;
+  logs) require_repo; if [ "$#" -gt 0 ]; then compose logs --no-color --tail=200 "$@"; else compose logs --no-color --tail=200 web web-1 web-2 server server-1 server-2 server-3 server-4 postgres postgres-1 postgres-2 postgres-3 migrate; fi ;;
   smoke) smoke ;;
   ha-smoke) ha_smoke ;;
   backup) backup ;;
   restore) restore ;;
-  rollback) require_repo; : "${MIGRATION_ID:?MIGRATION_ID is required}"; test "${CONFIRM_INFRANEXUM_ROLLBACK:-}" = YES || { echo 'Refusing rollback' >&2; exit 64; }; compose up --detach --wait postgres; backup_file=$(backup); echo "Pre-rollback backup: $backup_file"; compose stop server server-1 server-2 server-3 server-4 >/dev/null 2>&1 || true; compose --profile maintenance run --rm -e MIGRATION_ID="$MIGRATION_ID" -e CONFIRM_INFRANEXUM_ROLLBACK=YES rollback ;;
+  rollback) require_repo; : "${MIGRATION_ID:?MIGRATION_ID is required}"; test "${CONFIRM_INFRANEXUM_ROLLBACK:-}" = YES || { echo 'Refusing rollback' >&2; exit 64; }; compose up --detach --wait postgres; backup_file=$(backup); echo "Pre-rollback backup: $backup_file"; compose stop web web-1 web-2 server server-1 server-2 server-3 server-4 >/dev/null 2>&1 || true; compose --profile maintenance run --rm -e MIGRATION_ID="$MIGRATION_ID" -e CONFIRM_INFRANEXUM_ROLLBACK=YES rollback ;;
   reset) require_repo; test "${CONFIRM_INFRANEXUM_VOLUME_DELETE:-}" = YES || { echo 'Refusing volume deletion' >&2; exit 64; }; compose down --volumes --remove-orphans ;;
   help|-h|--help) echo 'Commands: config build up down logs smoke ha-smoke backup restore rollback reset' ;;
   *) echo "Unknown command: $command" >&2; exit 64 ;;

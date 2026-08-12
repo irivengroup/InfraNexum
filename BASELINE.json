@@ -1,7 +1,7 @@
 {
   "schema": "infranexum.source-baseline/v1",
   "product": "InfraNexum — Infrastructure Control & Governance Platform",
-  "implementation_version": "2.0.0-alpha.0.50",
+  "implementation_version": "2.0.0-alpha.0.52",
   "architecture_baseline": "2.0.0-draft.21",
   "roadmap_baseline": "1.0.0-draft.1",
   "architecture_archive_sha256": "372cf19929f8ea3b7586c3af3e7c5004e590cf746ff2d6d59d4d0b88912aea64",
@@ -51,7 +51,10 @@
     "Developer PRO HA etcd healthcheck repair alpha.0.46: official etcd 3.6.14 distroless members are probed with absolute /usr/local/bin/etcdctl exec-form healthchecks instead of CMD-SHELL, eliminating false unhealthy states caused by the image having no /bin/sh while retaining quorum-sensitive endpoint health semantics.",
     "Hosted JDK25 and PRO HA stabilization alpha.0.47: JdbcTaskStore worker INSERT arity is contract-tested after durable correlation, Core Workers coverage scenarios expand without lowering the 98% branch gate, Clock ownership test composition includes the mandatory sensitive-data redactor, Patroni repairs PGDATA to mode 0700 before bootstrap/rejoin, and OTLP metrics export is explicitly opt-in alongside tracing.",
     "PRO HA database bootstrap repair alpha.0.48: PostgreSQL role password setup no longer passes psql-only variable interpolation through --command; the secret is imported from the process environment with psql \\getenv and SQL is read from stdin, avoiding both server syntax errors and password exposure in command arguments. The bootstrap now waits boundedly for two streaming standbys and at least one synchronous/quorum standby, eliminating the normal startup race between Patroni/HAProxy health and replication readiness.",
-    "Developer PowerShell Compose forwarding repair alpha.0.49: dev-compose.ps1 no longer declares ValueFromRemainingArguments parameters on Docker wrapper functions, so native short switches such as -e, -T and -q remain in the automatic PowerShell $args vector and cannot collide with abbreviated common parameters; a dedicated Compose contract prevents reintroduction of parameter-bound native forwarding while all alpha.0.48 PRO HA bootstrap invariants remain unchanged."
+    "Developer PowerShell Compose forwarding repair alpha.0.49: dev-compose.ps1 no longer declares ValueFromRemainingArguments parameters on Docker wrapper functions, so native short switches such as -e, -T and -q remain in the automatic PowerShell $args vector and cannot collide with abbreviated common parameters; a dedicated Compose contract prevents reintroduction of parameter-bound native forwarding while all alpha.0.48 PRO HA bootstrap invariants remain unchanged.",
+    "Developer PowerShell Compose capture isolation alpha.0.50: Invoke-ComposeCapture launches Docker through ProcessStartInfo with stdout and stderr independently redirected, so Compose lifecycle progress cannot corrupt scalar stdout consumers; nonzero exits preserve diagnostics without reintroducing native option binding.",
+    "Developer PRO Web HA topology alpha.0.51: two non-root Web nodes run behind a readiness-aware HAProxy with a loopback-only stable router on port 8081, Node.js 24.18.1 checksum-verified amd64/arm64 image construction, Server readiness dependency, Web health/runtime-config smoke coverage, and bounded Server/Web single-node failover and rejoin checks; production Web UI certification remains future PGM-05/PGM-14 work.",
+    "Developer PRO Web HA Compose schema repair alpha.0.52: Web router healthcheck timing keys interval, timeout, retries and start_period are correctly nested below healthcheck instead of being invalid service-level properties; the Compose contract now fails if those keys escape the healthcheck mapping, preventing docker compose config/down/build/up/ps schema rejection."
   ],
   "roadmap_archive_sha256": "11db7d27bbc79f688cd1fda31a24aaf31b56a56db36b6487b64154c148ab54d3",
   "engineering_governance_sha256": "f24357051a5401f598c3d77bbe5814d3759a176095537659243658ba3ff109c7"

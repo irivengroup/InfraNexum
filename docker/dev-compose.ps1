@@ -12,7 +12,7 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = (Resolve-Path (Join-Path $ScriptDir '..')).Path
 $ComposeFile = Join-Path $ScriptDir 'compose.yaml'
 $BackupDir = Join-Path $RepoRoot '.infranexum-dev\state\backups'
-$ClusterServices = @('etcd-1','etcd-2','etcd-3','postgres-1','postgres-2','postgres-3','postgres','server-1','server-2','server-3','server-4','server')
+$ClusterServices = @('etcd-1','etcd-2','etcd-3','postgres-1','postgres-2','postgres-3','postgres','server-1','server-2','server-3','server-4','server','web-1','web-2','web')
 
 function Get-ComposeBaseArguments {
     $base = @('compose')
@@ -114,15 +114,17 @@ function New-DatabaseBackup {
 }
 function Invoke-Smoke {
     Assert-Repository; foreach ($service in $ClusterServices) { Assert-ComposeServiceHealthy $service }
-    $writer=Get-PublishedPort postgres 5432; $reader=Get-PublishedPort postgres 5433; $port=Get-PublishedPort server 8080
-    Write-Output "Compose PRO bindings: writer=127.0.0.1:$writer replicas=127.0.0.1:$reader server=127.0.0.1:$port"
+    $writer=Get-PublishedPort postgres 5432; $reader=Get-PublishedPort postgres 5433; $port=Get-PublishedPort server 8080; $webPort=Get-PublishedPort web 8080
+    Write-Output "Compose PRO bindings: writer=127.0.0.1:$writer replicas=127.0.0.1:$reader server=127.0.0.1:$port web=127.0.0.1:$webPort"
     $streaming=[int](Invoke-DatabaseScalar "SELECT count(*) FROM pg_stat_replication WHERE state='streaming'"); if ($streaming -lt 2) { throw "Expected two streaming standbys; observed $streaming" }
     $sync=[int](Invoke-DatabaseScalar "SELECT count(*) FROM pg_stat_replication WHERE state='streaming' AND sync_state IN ('sync','quorum')"); if ($sync -lt 1) { throw 'No synchronous PostgreSQL standby' }
     $ready=Invoke-RestMethod -Uri "http://127.0.0.1:$port/actuator/health/readiness" -TimeoutSec 10; if ($ready.status -ne 'UP') { throw 'Server router readiness is not UP' }
     $metric=Invoke-RestMethod -Uri "http://127.0.0.1:$port/actuator/metrics/infranexum.workers.ready" -TimeoutSec 10; if ($metric.name -ne 'infranexum.workers.ready') { throw 'Workers metric unavailable' }
     $cid='018bcfe5-6800-7001-8000-000000000001'; $response=Invoke-WebRequest -Uri "http://127.0.0.1:$port/api/v1/system/build" -Headers @{'X-Correlation-ID'=$cid} -TimeoutSec 10
     $build=$response.Content | ConvertFrom-Json; if ($build.instanceId -notmatch '^server-pro-[1-4]$') { throw "Unexpected routed instance $($build.instanceId)" }; if ($response.Headers['X-Correlation-ID'] -ne $cid) { throw 'Correlation was not propagated' }
-    Write-Output "compose-smoke: PASS (streaming=$streaming synchronous=$sync Server=4)"
+    $webReady=Invoke-RestMethod -Uri "http://127.0.0.1:$webPort/health/ready" -TimeoutSec 10; if ($webReady.status -ne 'UP') { throw 'Web router readiness is not UP' }
+    $runtime=Invoke-RestMethod -Uri "http://127.0.0.1:$webPort/runtime-config.json" -TimeoutSec 10; if ($runtime.component -ne 'web' -or $runtime.version -ne '2.0.0-alpha.0.52' -or $runtime.apiBaseUrl -ne "http://127.0.0.1:$port/api") { throw 'Web runtime configuration is inconsistent with Compose bindings' }
+    Write-Output "compose-smoke: PASS (streaming=$streaming synchronous=$sync Server=4 Web=2)"
 }
 function Get-PatroniPrimaryService {
     foreach ($service in @('postgres-1','postgres-2','postgres-3')) {
@@ -143,20 +145,42 @@ function Invoke-HaSmoke {
     if (-not $healthy) { throw "Former primary $primary did not rejoin within 90 seconds" }
     $deadline=[DateTime]::UtcNow.AddSeconds(90); $streaming=0
     do { Start-Sleep 3; try { $streaming=[int](Invoke-DatabaseScalar "SELECT count(*) FROM pg_stat_replication WHERE state='streaming'") } catch { $streaming=0 } } while ($streaming -lt 2 -and [DateTime]::UtcNow -lt $deadline)
-    if ($streaming -lt 2) { throw "Cluster did not return to two streaming standbys; observed $streaming" }; Write-Output 'compose-ha-smoke: PASS'
+    if ($streaming -lt 2) { throw "Cluster did not return to two streaming standbys; observed $streaming" }
+
+    $serverPort=Get-PublishedPort server 8080; Write-Output 'Stopping Server node server-1'; Invoke-Compose stop server-1
+    try {
+        $ready=Invoke-RestMethod -Uri "http://127.0.0.1:$serverPort/actuator/health/readiness" -TimeoutSec 10
+        if ($ready.status -ne 'UP') { throw 'Server router lost readiness after server-1 stopped' }
+    } finally { Invoke-Compose start server-1 }
+    $deadline=[DateTime]::UtcNow.AddSeconds(60); $serverHealthy=$false
+    do { Start-Sleep 2; try { Assert-ComposeServiceHealthy server-1; $serverHealthy=$true } catch { $serverHealthy=$false } } while (-not $serverHealthy -and [DateTime]::UtcNow -lt $deadline)
+    if (-not $serverHealthy) { throw 'Server node server-1 did not rejoin within 60 seconds' }
+
+    $webPort=Get-PublishedPort web 8080; Write-Output 'Stopping Web node web-1'; Invoke-Compose stop web-1
+    try {
+        $webReady=Invoke-RestMethod -Uri "http://127.0.0.1:$webPort/health/ready" -TimeoutSec 10
+        if ($webReady.status -ne 'UP') { throw 'Web router lost readiness after web-1 stopped' }
+        $runtime=Invoke-RestMethod -Uri "http://127.0.0.1:$webPort/runtime-config.json" -TimeoutSec 10
+        if ($runtime.component -ne 'web') { throw 'Web router stopped serving runtime configuration' }
+    } finally { Invoke-Compose start web-1 }
+    $deadline=[DateTime]::UtcNow.AddSeconds(60); $webHealthy=$false
+    do { Start-Sleep 2; try { Assert-ComposeServiceHealthy web-1; $webHealthy=$true } catch { $webHealthy=$false } } while (-not $webHealthy -and [DateTime]::UtcNow -lt $deadline)
+    if (-not $webHealthy) { throw 'Web node web-1 did not rejoin within 60 seconds' }
+
+    Write-Output "compose-ha-smoke: PASS (PostgreSQL $primary -> $replacement -> rejoined; Server and Web node failover verified)"
 }
 
 switch ($Command) {
  'config' { Assert-Repository; Invoke-Compose config --quiet }
  'build' { Assert-Repository; Invoke-Compose config --quiet; Invoke-Compose build --pull }
- 'up' { Assert-Repository; Invoke-Compose config --quiet; Invoke-Compose up --detach --build --wait server }
+ 'up' { Assert-Repository; Invoke-Compose config --quiet; Invoke-Compose up --detach --build --wait web }
  'down' { Assert-Repository; Invoke-Compose down --remove-orphans }
- 'logs' { Assert-Repository; if ($Services.Count) { Invoke-Compose logs --no-color --tail=200 @Services } else { Invoke-Compose logs --no-color --tail=200 server server-1 server-2 server-3 server-4 postgres postgres-1 postgres-2 postgres-3 migrate } }
+ 'logs' { Assert-Repository; if ($Services.Count) { Invoke-Compose logs --no-color --tail=200 @Services } else { Invoke-Compose logs --no-color --tail=200 web web-1 web-2 server server-1 server-2 server-3 server-4 postgres postgres-1 postgres-2 postgres-3 migrate } }
  'smoke' { Invoke-Smoke }
  'ha-smoke' { Invoke-HaSmoke }
  'backup' { New-DatabaseBackup }
- 'restore' { Assert-Repository; if ($env:CONFIRM_INFRANEXUM_RESTORE -ne 'YES') { throw 'Refusing restore; set CONFIRM_INFRANEXUM_RESTORE=YES' }; if (-not $env:BACKUP_FILE) { throw 'BACKUP_FILE is required' }; $backup=(Resolve-Path $env:BACKUP_FILE).Path; Invoke-Compose up --detach --wait postgres; Invoke-Compose --profile maintenance up --detach db-admin; try { Invoke-Compose stop server server-1 server-2 server-3 server-4 } catch {}; $remote='/tmp/infranexum-dev-restore.dump'; Invoke-Compose cp $backup "db-admin:$remote"; Invoke-Compose exec -T db-admin sh -eu -c 'export PGPASSWORD="$(cat /run/infranexum-secrets/db-password)"; dropdb --if-exists --host=postgres --port=5432 --username=infranexum --maintenance-db=postgres infranexum; createdb --host=postgres --port=5432 --username=infranexum --maintenance-db=postgres --owner=infranexum infranexum; pg_restore --exit-on-error --no-owner --no-privileges --host=postgres --port=5432 --username=infranexum --dbname=infranexum /tmp/infranexum-dev-restore.dump'; Invoke-Compose exec -T db-admin rm -f $remote; Invoke-Compose stop db-admin; Invoke-Compose run --rm migrate; Invoke-Compose up --detach --wait server }
- 'rollback' { Assert-Repository; if (-not $env:MIGRATION_ID -or $env:CONFIRM_INFRANEXUM_ROLLBACK -ne 'YES') { throw 'MIGRATION_ID and CONFIRM_INFRANEXUM_ROLLBACK=YES are required' }; Invoke-Compose up --detach --wait postgres; $backup=New-DatabaseBackup; Write-Output "Pre-rollback backup: $backup"; try { Invoke-Compose stop server server-1 server-2 server-3 server-4 } catch {}; Invoke-Compose --profile maintenance run --rm -e "MIGRATION_ID=$($env:MIGRATION_ID)" -e CONFIRM_INFRANEXUM_ROLLBACK=YES rollback }
+ 'restore' { Assert-Repository; if ($env:CONFIRM_INFRANEXUM_RESTORE -ne 'YES') { throw 'Refusing restore; set CONFIRM_INFRANEXUM_RESTORE=YES' }; if (-not $env:BACKUP_FILE) { throw 'BACKUP_FILE is required' }; $backup=(Resolve-Path $env:BACKUP_FILE).Path; Invoke-Compose up --detach --wait postgres; Invoke-Compose --profile maintenance up --detach db-admin; try { Invoke-Compose stop web web-1 web-2 server server-1 server-2 server-3 server-4 } catch {}; $remote='/tmp/infranexum-dev-restore.dump'; Invoke-Compose cp $backup "db-admin:$remote"; Invoke-Compose exec -T db-admin sh -eu -c 'export PGPASSWORD="$(cat /run/infranexum-secrets/db-password)"; dropdb --if-exists --host=postgres --port=5432 --username=infranexum --maintenance-db=postgres infranexum; createdb --host=postgres --port=5432 --username=infranexum --maintenance-db=postgres --owner=infranexum infranexum; pg_restore --exit-on-error --no-owner --no-privileges --host=postgres --port=5432 --username=infranexum --dbname=infranexum /tmp/infranexum-dev-restore.dump'; Invoke-Compose exec -T db-admin rm -f $remote; Invoke-Compose stop db-admin; Invoke-Compose run --rm migrate; Invoke-Compose up --detach --wait web }
+ 'rollback' { Assert-Repository; if (-not $env:MIGRATION_ID -or $env:CONFIRM_INFRANEXUM_ROLLBACK -ne 'YES') { throw 'MIGRATION_ID and CONFIRM_INFRANEXUM_ROLLBACK=YES are required' }; Invoke-Compose up --detach --wait postgres; $backup=New-DatabaseBackup; Write-Output "Pre-rollback backup: $backup"; try { Invoke-Compose stop web web-1 web-2 server server-1 server-2 server-3 server-4 } catch {}; Invoke-Compose --profile maintenance run --rm -e "MIGRATION_ID=$($env:MIGRATION_ID)" -e CONFIRM_INFRANEXUM_ROLLBACK=YES rollback }
  'reset' { Assert-Repository; if ($env:CONFIRM_INFRANEXUM_VOLUME_DELETE -ne 'YES') { throw 'Refusing volume deletion' }; Invoke-Compose down --volumes --remove-orphans }
  'help' { Write-Output 'Commands: config build up down logs smoke ha-smoke backup restore rollback reset' }
 }

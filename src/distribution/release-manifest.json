@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.50",
-  "profile": "pgm-12-e01-pro-ha-powershell-compose-stabilization",
+  "version": "2.0.0-alpha.0.52",
+  "profile": "pgm-14-e02-pro-web-ha-developer-topology",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -22,7 +22,7 @@
     },
     {
       "id": "infranexum-web",
-      "status": "runtime-source-27-tests-99.65-line-98.28-branch-100-function-coverage-and-process-smoke-passed-target-node24.18.1-pnpm11.17.0-pending"
+      "status": "runtime-source-27-tests-99.65-line-98.28-branch-100-function-coverage-and-process-smoke-passed-local-node-execution-two-node-pro-ha-docker-topology-node24.18.1-checksum-pinned-target-node24-and-docker-runtime-validation-pending"
     },
     {
       "id": "source-integrity-v1",
@@ -46,7 +46,7 @@
     },
     {
       "id": "deployment-boundary",
-      "status": "standalone-baremetal-vm-is-product-target-root-docker-compose-is-developer-test-tooling-loopback-only-short-syntax-postgres-server-ports-and-inspect-fallback-not-a-production-deployment-dependency"
+      "status": "standalone-baremetal-vm-is-product-target-root-docker-compose-is-developer-test-tooling-loopback-only-postgres-server-web-router-ports-raw-cluster-nodes-private-and-inspect-fallback-not-a-production-deployment-dependency"
     },
     {
       "id": "platform-observability-v1",
@@ -55,7 +55,7 @@
   ],
   "validation_reports": [],
   "validation_summary": {
-    "source_inventory_paths": 554,
+    "source_inventory_paths": 556,
     "source_integrity_tests": 45,
     "source_integrity_coverage_percent": 100,
     "source_integrity_violations": 0,
@@ -110,7 +110,7 @@
     "archive_compatibility_max_member_path": 142,
     "entitlements_module_tests_defined": 49,
     "audit_module_tests_defined": 21,
-    "architecture_coverage_status": "NON_EXECUTED_ALPHA047_TIMEOUT_180S_FUNCTIONAL_52_OF_52_PASS",
+    "architecture_coverage_status": "NON_EXECUTED_ALPHA051_AGGREGATED_COVERAGE_TIMEOUT_180S_FUNCTIONAL_52_OF_52_PASS_SPLIT",
     "architecture_functional_tests": 52,
     "jdbc_module_tests_defined": 53,
     "jdbc_postgresql_live_tests_defined": 18,
@@ -121,7 +121,7 @@
     "jdbc_explicit_source_branch_gaps_diagnostic": 0,
     "server_workers_runtime_tests_defined": 10,
     "server_workers_runtime_strict_harness": "EXECUTED_JAVA21_STUBBED_SPRING_DIAGNOSTIC",
-    "compose_contract_tests": 40,
+    "compose_contract_tests": 46,
     "server_clock_framework_autoconfiguration_regression": "DEFINED_REQUIRES_JDK25_MAVEN_EXECUTION",
     "server_workers_observability_regressions": "DEFINED_HEALTH_METRICS_LIVE_LOOP_REQUIRES_JDK25_MAVEN_EXECUTION",
     "server_observability_regressions": "DEFINED_HTTP_DURABLE_WORKER_CORRELATION_MDC_TRACING_AND_SENSITIVE_STRUCTURED_LOG_REDACTION_REQUIRES_JDK25_MAVEN_EXECUTION",
@@ -141,23 +141,42 @@
     "architecture_check_alpha049": "EXECUTED_PASS_ZERO_VIOLATIONS",
     "architecture_test_alpha049": "EXECUTED_TIMEOUT_BEFORE_COMPLETION_NO_ASSERTION_FAILURE_OBSERVED",
     "toolchain_alpha049": "EXECUTED_25_OF_25_99_PERCENT",
-    "powershell_runtime_alpha049": "NON_EXECUTED_LOCAL_POWERSHELL_UNAVAILABLE"
+    "powershell_runtime_alpha049": "NON_EXECUTED_LOCAL_POWERSHELL_UNAVAILABLE",
+    "powershell_runtime_alpha050": "NON_EXECUTED_LOCAL_POWERSHELL_UNAVAILABLE_USER_DOCKER_DESKTOP_REVALIDATION_REQUIRED",
+    "compose_contract_alpha051": "EXECUTED_45_OF_45",
+    "web_local_runtime_alpha051": "EXECUTED_27_OF_27_LINE_99_65_BRANCH_98_28_FUNCTION_100_AND_PROCESS_SMOKE_PASS_LOCAL_NODE_VERSION",
+    "web_target_node24_alpha051": "NON_EXECUTED_LOCAL_EXACT_NODE24_18_1_BINARY_UNAVAILABLE_DOCKER_BUILD_VALIDATION_REQUIRED",
+    "docker_runtime_alpha051": "EXECUTED_USER_DOCKER_DESKTOP_COMPOSE_SCHEMA_REJECTED_WEB_HEALTHCHECK_TIMING_KEYS_AT_SERVICE_LEVEL",
+    "source_integrity_alpha051": "EXECUTED_45_OF_45_100_PERCENT_AND_ZERO_VIOLATIONS",
+    "toolchain_alpha051": "EXECUTED_25_OF_25_99_PERCENT_AND_ZERO_VIOLATIONS",
+    "archive_compatibility_alpha051": "EXECUTED_12_OF_12_100_PERCENT_AND_ZERO_VIOLATIONS",
+    "architecture_check_alpha051": "EXECUTED_PASS_ZERO_VIOLATIONS",
+    "architecture_functional_alpha051": "EXECUTED_52_OF_52_SPLIT_BY_TEST_FILE",
+    "architecture_coverage_alpha051": "NON_EXECUTED_AGGREGATED_RUNNER_TIMEOUT_180S",
+    "compose_contract_alpha052": "EXECUTED_46_OF_46_INCLUDING_WEB_HEALTHCHECK_NESTING_REGRESSION",
+    "docker_runtime_alpha052": "NON_EXECUTED_LOCAL_NO_DOCKER_ENGINE_USER_DOCKER_DESKTOP_REVALIDATION_REQUIRED",
+    "web_local_runtime_alpha052": "EXECUTED_27_OF_27_LINE_99_65_BRANCH_98_28_FUNCTION_100_AND_PROCESS_SMOKE_PASS_LOCAL_NODE22_16_0_TARGET_NODE24_18_1_PENDING_DOCKER",
+    "source_integrity_alpha052": "EXECUTED_45_OF_45_STAGED_SNAPSHOT_557_CHECKSUMS_AND_ZERO_VIOLATIONS",
+    "toolchain_alpha052": "EXECUTED_25_OF_25_AND_ZERO_VIOLATIONS",
+    "architecture_check_alpha052": "EXECUTED_PASS_ZERO_VIOLATIONS",
+    "archive_compatibility_unit_alpha052": "EXECUTED_12_OF_12",
+    "archive_compatibility_alpha052": "EXECUTED_FINAL_ARCHIVE_ZERO_VIOLATIONS"
   },
   "source_layout": "All production solution spaces are contained below src/; Java, Go and Web tests are repository-level under tests/; canonical relative paths are limited to 120 characters and path components to 80 characters.",
   "source_integrity": {
     "canonical_inventory": "source-inventory.json",
     "git_blob_checksums": "source-files.sha256",
-    "tracked_files": 556,
-    "source_recorded_files": 555,
+    "tracked_files": 558,
+    "source_recorded_files": 557,
     "staged_snapshot_required": true,
     "pre_commit_hook": ".githooks/pre-commit"
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.50",
-    "archive_entries": 556,
+    "prefix": "infranexum-2.0.0-alpha.0.52",
+    "archive_entries": 558,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
-    "source_recorded_files": 555
+    "source_recorded_files": 557
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.50-validation-evidence.zip"
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.52-validation-evidence.zip"
 }

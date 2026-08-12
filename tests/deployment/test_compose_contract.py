@@ -17,6 +17,7 @@ ROOT_COMPOSE = ROOT / "compose.yaml"
 ETCD = ("etcd-1", "etcd-2", "etcd-3")
 PG = ("postgres-1", "postgres-2", "postgres-3")
 SERVER = ("server-1", "server-2", "server-3", "server-4")
+WEB = ("web-1", "web-2")
 
 
 class ComposeContractTest(unittest.TestCase):
@@ -29,12 +30,13 @@ class ComposeContractTest(unittest.TestCase):
         cls.services = cls.doc["services"]
 
     def test_exact_pro_service_set(self) -> None:
-        expected = {"secret-init", *ETCD, *PG, "postgres", "db-bootstrap", "migrate", *SERVER, "server", "db-admin", "rollback"}
+        expected = {"secret-init", *ETCD, *PG, "postgres", "db-bootstrap", "migrate", *SERVER, "server", *WEB, "web", "db-admin", "rollback"}
         self.assertEqual(expected, set(self.services))
 
-    def test_three_postgres_and_four_server_nodes(self) -> None:
+    def test_three_postgres_four_server_and_two_web_nodes(self) -> None:
         self.assertTrue(all(name in self.services for name in PG))
         self.assertTrue(all(name in self.services for name in SERVER))
+        self.assertTrue(all(name in self.services for name in WEB))
 
     def test_all_server_nodes_are_pro_high_availability_regional(self) -> None:
         for index, name in enumerate(SERVER, 1):
@@ -47,9 +49,16 @@ class ComposeContractTest(unittest.TestCase):
             self.assertEqual("local", env["INFRANEXUM_SERVER_SITE"])
             self.assertEqual(f"server-pro-{index}", env["INFRANEXUM_SERVER_INSTANCE_ID"])
 
-    def test_web_cluster_is_deferred(self) -> None:
-        self.assertFalse(any(name == "web" or name.startswith("web-") for name in self.services))
-        self.assertIn("Web cluster is intentionally deferred", (DOCKER / "README.md").read_text(encoding="utf-8"))
+    def test_web_cluster_is_two_private_nodes_behind_loopback_router(self) -> None:
+        for name in WEB:
+            service = self.services[name]
+            self.assertEqual("infranexum/web:${INFRANEXUM_VERSION:-2.0.0-alpha.0.52}", service["image"])
+            self.assertEqual("service_healthy", service["depends_on"]["server"]["condition"])
+            self.assertNotIn("ports", service)
+            self.assertEqual("local", service["environment"]["INFRANEXUM_WEB_ENVIRONMENT"])
+            self.assertEqual("http://127.0.0.1:${INFRANEXUM_SERVER_PUBLISHED_PORT:-8080}/api", service["environment"]["INFRANEXUM_WEB_API_BASE_URL"])
+        self.assertEqual(["127.0.0.1:${INFRANEXUM_WEB_PUBLISHED_PORT:-8081}:8080"], self.services["web"]["ports"])
+        self.assertNotIn("Web cluster is intentionally deferred", (DOCKER / "README.md").read_text(encoding="utf-8"))
 
     def test_etcd_is_three_member_pinned_cluster(self) -> None:
         for name in ETCD:
@@ -193,7 +202,7 @@ class ComposeContractTest(unittest.TestCase):
         self.assertEqual(expected, set(self.doc["volumes"]))
 
     def test_raw_cluster_nodes_are_not_host_published(self) -> None:
-        for name in (*ETCD, *PG, *SERVER, "secret-init", "db-bootstrap", "migrate", "db-admin", "rollback"):
+        for name in (*ETCD, *PG, *SERVER, *WEB, "secret-init", "db-bootstrap", "migrate", "db-admin", "rollback"):
             self.assertNotIn("ports", self.services[name], name)
 
     def test_only_stable_routers_publish_loopback_ports(self) -> None:
@@ -223,6 +232,23 @@ class ComposeContractTest(unittest.TestCase):
         for name in SERVER:
             self.assertIn(name, cfg)
 
+    def test_web_haproxy_routes_two_readiness_healthy_nodes(self) -> None:
+        cfg = (DOCKER / "haproxy-web.cfg").read_text(encoding="utf-8")
+        self.assertEqual("haproxy:3.2.21-alpine", self.services["web"]["image"])
+        self.assertIn("balance roundrobin", cfg)
+        self.assertIn("/health/ready", cfg)
+        for name in WEB:
+            self.assertIn(name, cfg)
+
+    def test_web_runtime_image_is_pinned_verified_and_non_root(self) -> None:
+        dockerfile = (DOCKER / "web.Dockerfile").read_text(encoding="utf-8")
+        self.assertIn("ARG NODE_VERSION=24.18.1", dockerfile)
+        self.assertIn("d6c664df3f3f61458e8c277585571328522d705166723a7c7823a9253a4d15a0", dockerfile)
+        self.assertIn("7201e3a09dc825bac57867c81913e2b8f0ef87d04cb9082af4cda82f6ff3d88c", dockerfile)
+        self.assertIn("sha256sum --check --strict", dockerfile)
+        self.assertIn("USER 10002:10002", dockerfile)
+        self.assertIn('CMD ["node", "runtime/main.mjs"]', dockerfile)
+
     def test_server_nodes_wait_for_migrations(self) -> None:
         for name in SERVER:
             deps = self.services[name]["depends_on"]
@@ -236,6 +262,21 @@ class ComposeContractTest(unittest.TestCase):
     def test_server_router_waits_for_all_four_nodes(self) -> None:
         for name in SERVER:
             self.assertEqual("service_healthy", self.services["server"]["depends_on"][name]["condition"])
+
+    def test_web_router_waits_for_both_nodes(self) -> None:
+        for name in WEB:
+            self.assertEqual("service_healthy", self.services["web"]["depends_on"][name]["condition"])
+
+    def test_web_router_healthcheck_options_are_nested_under_healthcheck(self) -> None:
+        """Regression: Compose must not see healthcheck timing keys as service properties."""
+        web = self.services["web"]
+        healthcheck = web["healthcheck"]
+        self.assertEqual("5s", healthcheck["interval"])
+        self.assertEqual("5s", healthcheck["timeout"])
+        self.assertEqual(20, healthcheck["retries"])
+        self.assertEqual("5s", healthcheck["start_period"])
+        for key in ("interval", "timeout", "retries", "start_period"):
+            self.assertNotIn(key, web)
 
     def test_entitlements_bypass_is_explicit_topology_harness_only(self) -> None:
         for name in SERVER:
@@ -264,8 +305,10 @@ class ComposeContractTest(unittest.TestCase):
             self.assertIn("pg_stat_replication", text)
             self.assertIn("sync_state", text)
             self.assertIn("infranexum.workers.ready", text)
-            for name in (*ETCD, *PG, "postgres", *SERVER, "server"):
+            for name in (*ETCD, *PG, "postgres", *SERVER, "server", *WEB, "web"):
                 self.assertIn(name, text)
+            self.assertIn("runtime-config.json", text)
+            self.assertIn("Web=2", text)
 
     def test_ha_smoke_is_bounded_and_rejoins_primary(self) -> None:
         sh = (DOCKER / "dev-compose.sh").read_text(encoding="utf-8")
@@ -284,6 +327,14 @@ class ComposeContractTest(unittest.TestCase):
         block = sh.split("ha_smoke() {", 1)[1].split("\nrestore() {", 1)[0]
         self.assertNotIn("--volumes", block)
         self.assertNotIn("volume rm", block)
+
+    def test_ha_smoke_verifies_server_and_web_node_failover(self) -> None:
+        for path in (DOCKER / "dev-compose.sh", DOCKER / "dev-compose.ps1"):
+            text = path.read_text(encoding="utf-8")
+            self.assertIn("Stopping Server node server-1", text)
+            self.assertIn("Stopping Web node web-1", text)
+            self.assertIn("runtime-config.json", text)
+            self.assertIn("Server and Web node failover verified", text)
 
     def test_backup_restore_and_rollback_are_cluster_aware(self) -> None:
         sh = (DOCKER / "dev-compose.sh").read_text(encoding="utf-8")
@@ -340,7 +391,9 @@ class ComposeContractTest(unittest.TestCase):
         self.assertIn("INFRANEXUM_POSTGRES_PUBLISHED_PORT=5432", env)
         self.assertIn("INFRANEXUM_POSTGRES_READ_PUBLISHED_PORT=5433", env)
         self.assertIn("INFRANEXUM_SERVER_PUBLISHED_PORT=8080", env)
+        self.assertIn("INFRANEXUM_WEB_PUBLISHED_PORT=8081", env)
         self.assertNotIn("SERVER_1_PUBLISHED_PORT", env)
+        self.assertNotIn("WEB_1_PUBLISHED_PORT", env)
 
     def test_root_compose_loader_remains_canonical(self) -> None:
         loader = yaml.safe_load(ROOT_COMPOSE.read_text(encoding="utf-8"))
@@ -353,7 +406,7 @@ class ComposeContractTest(unittest.TestCase):
             self.assertEqual(0, result.returncode, f"{name}: {result.stderr}")
 
     def test_required_docker_files_exist_and_are_executable_where_applicable(self) -> None:
-        for name in ("patroni-postgres.Dockerfile", "haproxy-postgres.cfg", "haproxy-server.cfg"):
+        for name in ("patroni-postgres.Dockerfile", "web.Dockerfile", "haproxy-postgres.cfg", "haproxy-server.cfg", "haproxy-web.cfg"):
             self.assertTrue((DOCKER / name).is_file(), name)
         for name in ("dev-compose.sh", "init-secrets.sh", "bootstrap-postgresql-ha.sh", "migrate-postgresql.sh", "rollback-postgresql.sh", "patroni-entrypoint.sh", "server-entrypoint.sh"):
             self.assertTrue((DOCKER / name).stat().st_mode & 0o111, name)

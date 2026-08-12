@@ -2,9 +2,9 @@
 
 `docker/` is repository-level **development and test tooling**. It is deliberately outside `src/` because InfraNexum production deployments target standalone bare-metal or VM servers. The installer and production deployment model must not depend on Docker, Compose or Podman.
 
-The default topology models the **PRO `single_cluster` reference shape**: three PostgreSQL 17 nodes managed by Patroni with a three-member etcd DCS, one required synchronous standby plus a second replica, and four InfraNexum Server nodes behind HAProxy. PostgreSQL writes are routed only to the current Patroni primary; a second loopback endpoint exposes healthy replicas for diagnostics. The **Web cluster is intentionally deferred** to a later increment.
+The default topology models the **PRO `single_cluster` reference shape**: three PostgreSQL 17 nodes managed by Patroni with a three-member etcd DCS, one required synchronous standby plus a second replica, four InfraNexum Server nodes behind HAProxy, and two InfraNexum Web nodes behind a dedicated HAProxy router. PostgreSQL writes are routed only to the current Patroni primary; a second loopback endpoint exposes healthy replicas for diagnostics. Web nodes wait for the Server router before becoming eligible and expose only immutable assets plus runtime/health contracts.
 
-Only stable routers are published to the workstation: PostgreSQL writer `127.0.0.1:5432`, PostgreSQL replicas `127.0.0.1:5433`, and Server HTTP `127.0.0.1:8080`. etcd, Patroni REST, raw PostgreSQL and individual Server ports remain private to the Compose bridge. The smoke resolves effective Docker bindings and rejects any non-loopback exposure.
+Only stable routers are published to the workstation: PostgreSQL writer `127.0.0.1:5432`, PostgreSQL replicas `127.0.0.1:5433`, Server HTTP `127.0.0.1:8080`, and Web HTTP `127.0.0.1:8081`. etcd, Patroni REST, raw PostgreSQL and individual Server ports remain private to the Compose bridge. The smoke resolves effective Docker bindings and rejects any non-loopback exposure.
 
 This is an **HA topology harness**, not an activation bypass for production. Server nodes run with `PRO` + `HIGH_AVAILABILITY`, while Entitlements enforcement is disabled only inside this developer topology so HA can be exercised without embedding customer activation material. Signed activation remains separately mandatory for production.
 
@@ -13,6 +13,7 @@ Server readiness includes the bounded Workers runtime. The developer smoke test 
 ## Dockerfiles
 
 - `server.Dockerfile`: reproducible Java 25 build and non-root Server runtime.
+- `web.Dockerfile`: checksum-verified Node.js 24.18.1 amd64/arm64 runtime, non-root Web process and immutable application payload.
 - `postgres-tools.Dockerfile`: pinned PostgreSQL tooling image containing secret initialization, HA bootstrap, migration and rollback scripts.
 - `patroni-postgres.Dockerfile`: PostgreSQL 17.10 + Patroni 4.1.4 HA node for the PRO developer topology.
 
@@ -31,7 +32,7 @@ Server readiness includes the bounded Workers runtime. The developer smoke test 
 Direct Compose equivalent from the repository root:
 
 ```powershell
-docker compose up --detach --build --wait server
+docker compose up --detach --build --wait web
 ```
 
 Verify the effective host bindings:
@@ -40,6 +41,7 @@ Verify the effective host bindings:
 docker compose port postgres 5432
 docker compose port postgres 5433
 docker compose port server 8080
+docker compose port web 8080
 ```
 
 Expected defaults:
@@ -48,6 +50,7 @@ Expected defaults:
 127.0.0.1:5432
 127.0.0.1:5433
 127.0.0.1:8080
+127.0.0.1:8081
 ```
 
 The canonical model remains `docker/compose.yaml`; the root `compose.yaml` only includes it.
@@ -128,7 +131,7 @@ Then inspect replication state through the stable writer endpoint if needed:
 
 ## PRO HA validation
 
-`smoke` requires the three etcd members, the three Patroni/PostgreSQL nodes, both routers and all four Server nodes to be healthy. It also requires two streaming standbys and at least one synchronous/quorum standby.
+`smoke` requires the three etcd members, the three Patroni/PostgreSQL nodes, both database/Server routers, all four Server nodes, both Web nodes and the Web router to be healthy. It also requires two streaming standbys, at least one synchronous/quorum standby, Server readiness/worker metrics, Web readiness, and a runtime configuration whose API URL matches the effective loopback Server binding.
 
 `ha-smoke` is deliberately disruptive but bounded: it identifies and stops the Patroni primary, requires election of a different primary, validates the stable writer and Server readiness, restarts the former primary, then requires the cluster to return to two streaming standbys. It never deletes volumes.
 
