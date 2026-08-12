@@ -109,3 +109,14 @@ CONFIRM_INFRANEXUM_VOLUME_DELETE=YES make compose-reset
 ## PostgreSQL control-script portability
 
 Migration and rollback control files contain `psql` meta-commands such as `\set`, `\gset` and `\if`. They are emitted with `printf`, never `echo`: POSIX permits `echo` implementations to interpret backslash escapes differently, and Alpine/BusyBox behavior can otherwise corrupt the generated control file before `psql` reads it.
+
+## HTTP correlation and structured logs
+
+The Server defaults to ECS JSON console logs. Override only when an engineering workflow explicitly requires another Spring Boot structured format:
+
+```powershell
+$env:INFRANEXUM_LOG_FORMAT='ecs'
+$env:INFRANEXUM_ENVIRONMENT='local'
+```
+
+Every HTTP response carries `X-Correlation-ID`. A caller may supply a canonical lowercase UUIDv7; malformed or non-v7 values receive HTTP 400 and are not reflected. `dev-compose.* smoke` validates both propagation and the fail-closed rejection path.

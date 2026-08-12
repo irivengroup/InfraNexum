@@ -244,6 +244,18 @@ class ComposeContractTest(unittest.TestCase):
         self.assertIn("docker/", source_layout)
         self.assertIn("bare-metal or VM", source_layout)
 
+    def test_smoke_covers_http_correlation_contract(self) -> None:
+        shell = (ROOT / "docker/dev-compose.sh").read_text(encoding="utf-8")
+        powershell = (ROOT / "docker/dev-compose.ps1").read_text(encoding="utf-8")
+        compose = (ROOT / "docker/compose.yaml").read_text(encoding="utf-8")
+        for text in (shell, powershell):
+            self.assertIn("X-Correlation-ID", text)
+            self.assertIn("INFRANEXUM_INVALID_CORRELATION_ID", text)
+            self.assertIn("018bcfe5-6800-7001-8000-000000000001", text)
+        self.assertIn("INFRANEXUM_LOG_FORMAT", compose)
+        self.assertIn("INFRANEXUM_ENVIRONMENT", compose)
+
+
 
 if __name__ == "__main__":
     unittest.main()

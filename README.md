@@ -1,10 +1,10 @@
-# InfraNexum 2.0.0-alpha.0.37 — Workers Operational Readiness & Metrics
+# InfraNexum 2.0.0-alpha.0.38 — HTTP Correlation & Structured Logging Foundation
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
-`alpha.0.37` completes the operational-readiness layer for **PGM-02-E07 Core Workers**. `TaskWorkerPool` now exposes a secret-free cumulative snapshot with configured/live worker capacity, active executions, task outcomes and fatal loop failures. Server readiness is fail-closed when an enabled worker pool is missing, partially dead or no longer running, and Micrometer publishes fixed-cardinality Workers gauges/counters through the Actuator metrics endpoint. A worker-loop failure that would previously disappear inside an `ExecutorService` `Future` is now observable through readiness and metrics without introducing an unbounded infrastructure retry loop.
+`alpha.0.38` opens roadmap epic **PGM-12-E01** with a platform-wide HTTP observability boundary. Every Server request now carries one canonical UUIDv7 correlation identifier, returned in `X-Correlation-ID` and bound to structured logging MDC. Caller-supplied malformed or non-v7 identifiers are rejected with a non-reflective HTTP 400 problem response instead of being silently replaced. Console logging defaults to Spring Boot ECS JSON, and fixed-cardinality Micrometer counters expose generated and rejected correlation identifiers.
 
-The successful Docker/JDK 25 bootstrap achieved by `alpha.0.35` and the managed Spring scheduler delivered in `alpha.0.36` remain unchanged. Production deployment remains standalone bare-metal or VM; root Docker/Compose remains developer/test tooling.
+The operational Workers readiness delivered in `alpha.0.37`, managed Spring scheduler in `alpha.0.36`, and successful Docker/JDK 25 Server bootstrap remain preserved. Production deployment remains standalone bare-metal or VM; root Docker/Compose remains developer/test tooling. PGM-12-E01 is **not complete**: OpenTelemetry export, asynchronous/background context propagation, systematic masking and dashboards remain future increments.
 
 ## Source layout
 

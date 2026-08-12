@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import io.infranexum.core.entitlements.EntitlementAccessException;
 import io.infranexum.core.entitlements.EntitlementErrorCodes;
 import io.infranexum.core.entitlements.EntitlementRuntimeUnavailableException;
+import io.infranexum.core.contracts.DomainIdentifier;
+import io.infranexum.server.observability.CorrelationContext;
 import java.time.Clock;
 import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
@@ -20,7 +22,8 @@ class EntitlementExceptionHandlerTest {
     @Test
     void translatesAccessDenialsToCanonicalProblemJson() {
         var request = new MockHttpServletRequest("POST", "/api/v1/objects");
-        request.addHeader("X-Correlation-ID", " trace-123 ");
+        CorrelationContext.bind(
+                request, DomainIdentifier.parse("018bcfe5-6800-7001-8000-000000000001"));
         var response = handler.handleAccess(new EntitlementAccessException(
                 EntitlementErrorCodes.LITE_CONVERSION_REQUIRED, "read only"), request);
 
@@ -28,7 +31,7 @@ class EntitlementExceptionHandlerTest {
         assertEquals(MediaType.APPLICATION_PROBLEM_JSON, response.getHeaders().getContentType());
         assertEquals("INFRANEXUM_LITE_CONVERSION_REQUIRED", response.getBody().code());
         assertEquals("/api/v1/objects", response.getBody().instance());
-        assertEquals("trace-123", response.getBody().trace_id());
+        assertEquals("018bcfe5-6800-7001-8000-000000000001", response.getBody().trace_id());
         assertEquals(ActivationTestFixtures.NOW, response.getBody().occurred_at());
     }
 

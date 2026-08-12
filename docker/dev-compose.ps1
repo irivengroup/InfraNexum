@@ -53,8 +53,31 @@ function Invoke-Smoke {
     if ($readiness.status -ne 'UP') { throw 'Server readiness is not UP' }
     $workersMetric = Invoke-RestMethod -Method Get -Uri "http://127.0.0.1:$port/actuator/metrics/infranexum.workers.ready" -TimeoutSec 10
     if ($workersMetric.name -ne 'infranexum.workers.ready') { throw 'Workers readiness metric is unavailable' }
-    $build = Invoke-RestMethod -Method Get -Uri "http://127.0.0.1:$port/api/v1/system/build" -TimeoutSec 10
+    $correlationId = '018bcfe5-6800-7001-8000-000000000001'
+    $buildResponse = Invoke-WebRequest -Method Get -Uri "http://127.0.0.1:$port/api/v1/system/build" `
+        -Headers @{ 'X-Correlation-ID' = $correlationId } -TimeoutSec 10
+    $build = $buildResponse.Content | ConvertFrom-Json
     if ($build.product -ne 'InfraNexum') { throw 'Unexpected build endpoint product' }
+    if ($buildResponse.Headers['X-Correlation-ID'] -ne $correlationId) { throw 'Correlation header was not propagated' }
+
+    $invalidBody = [System.IO.Path]::GetTempFileName()
+    $invalidHeaders = [System.IO.Path]::GetTempFileName()
+    try {
+        $status = & curl.exe --silent --show-error --output $invalidBody --dump-header $invalidHeaders `
+            --write-out '%{http_code}' --header 'X-Correlation-ID: invalid-secret-value' `
+            "http://127.0.0.1:$port/api/v1/system/build"
+        if ($LASTEXITCODE -ne 0) { throw "curl.exe correlation rejection probe failed with exit code $LASTEXITCODE" }
+        if ($status -ne '400') { throw "Invalid correlation identifier returned HTTP $status instead of 400" }
+        $problem = Get-Content -LiteralPath $invalidBody -Raw
+        if ($problem -notmatch 'INFRANEXUM_INVALID_CORRELATION_ID') { throw 'Invalid correlation problem code is missing' }
+        if ($problem -match 'invalid-secret-value') { throw 'Rejected correlation value was reflected in the response' }
+        $headerText = Get-Content -LiteralPath $invalidHeaders -Raw
+        if ($headerText -notmatch '(?im)^X-Correlation-ID:\s*[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\s*$') {
+            throw 'Server-generated UUIDv7 correlation header is missing from the rejection response'
+        }
+    } finally {
+        Remove-Item -LiteralPath $invalidBody, $invalidHeaders -Force -ErrorAction SilentlyContinue
+    }
     Write-Output 'compose-smoke: PASS'
 }
 

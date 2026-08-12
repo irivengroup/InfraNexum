@@ -58,14 +58,28 @@ smoke() {
   readiness=$(mktemp)
   workers_metric=$(mktemp)
   build=$(mktemp)
-  trap 'rm -f "$readiness" "$workers_metric" "$build"' EXIT HUP INT TERM
+  headers=$(mktemp)
+  invalid_body=$(mktemp)
+  invalid_headers=$(mktemp)
+  trap 'rm -f "$readiness" "$workers_metric" "$build" "$headers" "$invalid_body" "$invalid_headers"' EXIT HUP INT TERM
   curl --fail --silent --show-error "http://127.0.0.1:$port/actuator/health/readiness" > "$readiness"
   grep -q '"status":"UP"' "$readiness"
   curl --fail --silent --show-error "http://127.0.0.1:$port/actuator/metrics/infranexum.workers.ready" > "$workers_metric"
   grep -q '"name":"infranexum.workers.ready"' "$workers_metric"
-  curl --fail --silent --show-error "http://127.0.0.1:$port/api/v1/system/build" > "$build"
+  correlation_id="018bcfe5-6800-7001-8000-000000000001"
+  curl --fail --silent --show-error --dump-header "$headers" \
+    --header "X-Correlation-ID: $correlation_id" \
+    "http://127.0.0.1:$port/api/v1/system/build" > "$build"
   grep -q '"product":"InfraNexum"' "$build"
-  rm -f "$readiness" "$workers_metric" "$build"
+  grep -Eiq "^X-Correlation-ID:[[:space:]]*$correlation_id[[:space:]]*$" "$headers"
+  invalid_status=$(curl --silent --show-error --output "$invalid_body" --dump-header "$invalid_headers" \
+    --write-out '%{http_code}' --header 'X-Correlation-ID: invalid-secret-value' \
+    "http://127.0.0.1:$port/api/v1/system/build")
+  test "$invalid_status" = "400"
+  grep -q 'INFRANEXUM_INVALID_CORRELATION_ID' "$invalid_body"
+  ! grep -q 'invalid-secret-value' "$invalid_body"
+  grep -Eiq '^X-Correlation-ID:[[:space:]]*[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}[[:space:]]*$' "$invalid_headers"
+  rm -f "$readiness" "$workers_metric" "$build" "$headers" "$invalid_body" "$invalid_headers"
   trap - EXIT HUP INT TERM
   echo "compose-smoke: PASS"
 }

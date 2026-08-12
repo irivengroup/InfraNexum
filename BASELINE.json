@@ -1,7 +1,7 @@
 {
   "schema": "infranexum.source-baseline/v1",
   "product": "InfraNexum — Infrastructure Control & Governance Platform",
-  "implementation_version": "2.0.0-alpha.0.37",
+  "implementation_version": "2.0.0-alpha.0.38",
   "architecture_baseline": "2.0.0-draft.21",
   "roadmap_baseline": "1.0.0-draft.1",
   "architecture_archive_sha256": "372cf19929f8ea3b7586c3af3e7c5004e590cf746ff2d6d59d4d0b88912aea64",
@@ -41,7 +41,8 @@
     "Entitlements temporal precision repair alpha.0.33: PostgreSQL developer bootstrap stores installation created_at at UTC whole-second precision; migration 0008 safely normalizes only unsigned installation metadata, fails closed for fractional signed/HMAC-protected entitlement data, enforces temporal precision in PostgreSQL/Oracle, and JDBC rejects malformed persisted timestamps with column context.",
     "Spring Clock ownership repair alpha.0.34: Entitlements and Workers keep separate UTC Clock beans, every entitlement Clock injection point is explicitly qualified, and a Spring context regression proves the entitlement exception handler resolves the correct clock when both bounded contexts are enabled.",
     "Spring framework Clock arbitration repair alpha.0.35: a canonical UTC platformClock is the sole @Primary Clock for type-only framework integrations such as Spring Modulith Moments, while Entitlements and Workers retain explicit bounded-context qualifiers; architecture and Spring-context regressions prevent ambiguous or accidental primary Clock ownership.",
-    "PGM-02-E07 operational readiness alpha.0.37: TaskWorkerPool secret-free snapshot, truthful live-loop/fatal-failure detection, fail-closed Server readiness, fixed-cardinality Micrometer metrics and Docker smoke verification of Workers readiness."
+    "PGM-02-E07 operational readiness alpha.0.37: TaskWorkerPool secret-free snapshot, truthful live-loop/fatal-failure detection, fail-closed Server readiness, fixed-cardinality Micrometer metrics and Docker smoke verification of Workers readiness.",
+    "PGM-12-E01 observability foundation alpha.0.38: every Server HTTP dispatch receives a canonical UUIDv7 correlation context, malformed caller identifiers fail closed without reflection, MDC carries correlation_id into Spring Boot ECS structured logs, fixed-cardinality correlation counters are exposed, and Docker smoke verifies propagation/rejection; OpenTelemetry, async/background propagation, systematic masking and dashboards remain pending."
   ],
   "roadmap_archive_sha256": "11db7d27bbc79f688cd1fda31a24aaf31b56a56db36b6487b64154c148ab54d3",
   "engineering_governance_sha256": "f24357051a5401f598c3d77bbe5814d3759a176095537659243658ba3ff109c7"

@@ -1,4 +1,13 @@
-# InfraNexum 2.0.0-alpha.0.37 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.38 — état d’implémentation
+
+
+## 2.0.0-alpha.0.38 — PGM-12-E01 HTTP correlation and structured logging foundation
+
+**Statut : première tranche PGM-12-E01 implémentée localement ; epic NON TERMINÉ.**
+
+Le Server établit désormais un contexte de corrélation HTTP avant MVC et Actuator. `X-Correlation-ID` est absent ou un UUIDv7 canonique : en l’absence du header, InfraNexum génère un UUIDv7 ; une valeur malformée, non-v7 ou non canonique est rejetée en HTTP 400 sans réflexion de la valeur reçue. L’identifiant validé est renvoyé sur la réponse et lié au MDC `correlation_id` avec restauration systématique en `finally`, ce qui évite les fuites entre threads servlet réutilisés. `EntitlementExceptionHandler` consomme ce contexte validé au lieu de relire l’entrée brute.
+
+Les logs console utilisent par défaut le format structuré ECS natif de Spring Boot et exposent les métadonnées service/version/environnement/nœud. Deux compteurs Micrometer à cardinalité fixe suivent les corrélations générées et rejetées. Les smokes Compose vérifient la propagation d’un UUIDv7 valide, le rejet 400 d’une valeur invalide, l’absence de réflexion de cette valeur et la génération d’un nouvel UUIDv7 serveur. OpenTelemetry, propagation asynchrone/background, politique de masquage systématique et dashboards restent à implémenter avant fermeture de PGM-12-E01.
 
 ## 2.0.0-alpha.0.37 — Workers operational readiness and metrics
 

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum Platform Entitlements API
-  version: 2.0.0-alpha.0.37
+  version: 2.0.0-alpha.0.38
 tags:
   - name: Platform / Entitlements / Evaluation
     description: Read-only evaluation and activation lifecycle status.
@@ -16,10 +16,14 @@ paths:
         - Platform / Entitlements / Evaluation
       operationId: getPlatformEvaluationStatus
       summary: Read the authoritative evaluation and activation lifecycle status
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
       responses:
         '200':
           description: Current secret-free lifecycle decision.
           headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
             Cache-Control:
               description: Prevents caching of lifecycle decisions.
               schema:
@@ -29,13 +33,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/src/components/schemas/EvaluationStatus'
+        '400':
+          description: The supplied X-Correlation-ID is not a canonical UUIDv7 identifier.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         '503':
           description: Entitlement runtime is unavailable or failed closed.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
           content:
             application/problem+json:
               schema:
                 $ref: '#/src/components/schemas/Problem'
 components:
+  parameters:
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: false
+      description: Optional caller correlation identifier. Must be canonical lowercase RFC 9562 UUIDv7.
+      schema:
+        type: string
+        pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+  headers:
+    CorrelationId:
+      description: Canonical UUIDv7 used to correlate the request with structured Server logs.
+      schema:
+        type: string
+        pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
   schemas:
     EvaluationStatus:
       type: object

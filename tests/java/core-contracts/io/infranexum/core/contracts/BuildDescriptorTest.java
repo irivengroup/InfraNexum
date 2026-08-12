@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 class BuildDescriptorTest {
     @Test
     void normalizesAndExposesValidIdentity() {
-        var descriptor = new BuildDescriptor(" InfraNexum ", "2.0.0-alpha.0.37", "2.0.0-draft.21", ComponentKind.SERVER);
+        var descriptor = new BuildDescriptor(" InfraNexum ", "2.0.0-alpha.0.38", "2.0.0-draft.21", ComponentKind.SERVER);
         assertEquals("InfraNexum", descriptor.product());
         assertEquals(ComponentKind.SERVER, descriptor.component());
     }
@@ -17,7 +17,7 @@ class BuildDescriptorTest {
     @Test
     void rejectsBlankProduct() {
         assertThrows(ConfigurationException.class,
-                () -> new BuildDescriptor(" ", "2.0.0-alpha.0.37", "2.0.0-draft.21", ComponentKind.SERVER));
+                () -> new BuildDescriptor(" ", "2.0.0-alpha.0.38", "2.0.0-draft.21", ComponentKind.SERVER));
     }
 
     @Test
@@ -29,12 +29,12 @@ class BuildDescriptorTest {
     @Test
     void rejectsBlankBaseline() {
         assertThrows(ConfigurationException.class,
-                () -> new BuildDescriptor("InfraNexum", "2.0.0-alpha.0.37", "", ComponentKind.SERVER));
+                () -> new BuildDescriptor("InfraNexum", "2.0.0-alpha.0.38", "", ComponentKind.SERVER));
     }
 
     @Test
     void rejectsMissingComponent() {
         assertThrows(NullPointerException.class,
-                () -> new BuildDescriptor("InfraNexum", "2.0.0-alpha.0.37", "2.0.0-draft.21", null));
+                () -> new BuildDescriptor("InfraNexum", "2.0.0-alpha.0.38", "2.0.0-draft.21", null));
     }
 }

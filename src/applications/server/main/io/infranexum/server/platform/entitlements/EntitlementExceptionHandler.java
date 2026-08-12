@@ -2,6 +2,7 @@ package io.infranexum.server.platform.entitlements;
 
 import io.infranexum.core.entitlements.EntitlementAccessException;
 import io.infranexum.core.entitlements.EntitlementRuntimeUnavailableException;
+import io.infranexum.server.observability.CorrelationContext;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.time.Clock;
@@ -22,7 +23,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
         matchIfMissing = true)
 @RestControllerAdvice
 public final class EntitlementExceptionHandler {
-    private static final String CORRELATION_HEADER = "X-Correlation-ID";
     private final Clock clock;
 
     public EntitlementExceptionHandler(@Qualifier("entitlementClock") Clock clock) {
@@ -61,7 +61,7 @@ public final class EntitlementExceptionHandler {
             String code,
             HttpServletRequest request) {
         Objects.requireNonNull(request, "request");
-        String traceId = normalizeHeader(request.getHeader(CORRELATION_HEADER));
+        String traceId = CorrelationContext.traceId(request);
         var body = new EntitlementProblem(
                 URI.create(type),
                 title,
@@ -74,14 +74,6 @@ public final class EntitlementExceptionHandler {
         return ResponseEntity.status(status)
                 .contentType(MediaType.APPLICATION_PROBLEM_JSON)
                 .body(body);
-    }
-
-    private static String normalizeHeader(String value) {
-        if (value == null) {
-            return null;
-        }
-        String normalized = value.strip();
-        return normalized.isEmpty() ? null : normalized;
     }
 
     /** Canonical entitlement problem with controlled InfraNexum extensions. */
