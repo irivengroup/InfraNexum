@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.39",
-  "profile": "docker-loopback-port-publication-and-smoke-diagnostics",
+  "version": "2.0.0-alpha.0.40",
+  "profile": "docker-desktop-port-resolution-and-powershell-smoke-repair",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -46,7 +46,7 @@
     },
     {
       "id": "deployment-boundary",
-      "status": "standalone-baremetal-vm-is-product-target-root-docker-compose-is-developer-test-tooling-loopback-only-postgres-server-ports-explicitly-published-and-not-a-production-deployment-dependency"
+      "status": "standalone-baremetal-vm-is-product-target-root-docker-compose-is-developer-test-tooling-loopback-only-short-syntax-postgres-server-ports-and-inspect-fallback-not-a-production-deployment-dependency"
     },
     {
       "id": "platform-observability-v1",
@@ -110,7 +110,7 @@
     "archive_compatibility_max_member_path": 142,
     "entitlements_module_tests_defined": 49,
     "audit_module_tests_defined": 21,
-    "architecture_coverage_status": "NON_EXECUTED_ALPHA039_DOCKER_TOOLING_SCOPE_PREVIOUS_INSTRUMENTED_WRAPPER_TIMEOUT_UNRESOLVED",
+    "architecture_coverage_status": "NON_EXECUTED_ALPHA040_DOCKER_TOOLING_SCOPE_PREVIOUS_INSTRUMENTED_WRAPPER_TIMEOUT_UNRESOLVED",
     "architecture_functional_tests": 47,
     "jdbc_module_tests_defined": 52,
     "jdbc_postgresql_live_tests_defined": 18,
@@ -121,11 +121,11 @@
     "jdbc_explicit_source_branch_gaps_diagnostic": 0,
     "server_workers_runtime_tests_defined": 10,
     "server_workers_runtime_strict_harness": "EXECUTED_JAVA21_STUBBED_SPRING_DIAGNOSTIC",
-    "compose_contract_tests": 27,
+    "compose_contract_tests": 29,
     "server_clock_framework_autoconfiguration_regression": "DEFINED_REQUIRES_JDK25_MAVEN_EXECUTION",
     "server_workers_observability_regressions": "DEFINED_HEALTH_METRICS_LIVE_LOOP_REQUIRES_JDK25_MAVEN_EXECUTION",
     "server_observability_regressions": "DEFINED_CORRELATION_FILTER_MDC_FAIL_CLOSED_REJECTION_REQUIRES_JDK25_MAVEN_EXECUTION",
-    "docker_runtime_alpha039": "NON_EXECUTED_LOCAL_NO_DOCKER_ENGINE"
+    "docker_runtime_alpha040": "NON_EXECUTED_LOCAL_NO_DOCKER_ENGINE_USER_DOCKER_DESKTOP_VALIDATION_REQUIRED"
   },
   "source_layout": "All production solution spaces are contained below src/; Java, Go and Web tests are repository-level under tests/; canonical relative paths are limited to 120 characters and path components to 80 characters.",
   "source_integrity": {
@@ -137,11 +137,11 @@
     "pre_commit_hook": ".githooks/pre-commit"
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.39",
+    "prefix": "infranexum-2.0.0-alpha.0.40",
     "archive_entries": 535,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
     "source_recorded_files": 534
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.39-validation-evidence.zip"
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.40-validation-evidence.zip"
 }

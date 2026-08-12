@@ -46,9 +46,34 @@ function Get-PublishedPort {
         [Parameter(Mandatory = $true)][string]$Service,
         [Parameter(Mandatory = $true)][int]$ContainerPort
     )
-    $binding = ((Invoke-ComposeCapture port $Service $ContainerPort) | Out-String).Trim()
-    if (-not $binding) { throw "Compose does not publish $Service container port $ContainerPort to the host" }
-    if ($binding -notmatch ':(?<port>[0-9]+)$') { throw "Unexpected Compose port binding for $Service/$ContainerPort: $binding" }
+
+    $binding = $null
+    try {
+        $binding = ((Invoke-ComposeCapture port $Service $ContainerPort) | Out-String).Trim()
+    } catch {
+        Write-Warning "docker compose port failed for ${Service}/${ContainerPort}; falling back to docker inspect. $($_.Exception.Message)"
+    }
+
+    if (-not $binding) {
+        $containerId = ((Invoke-ComposeCapture ps -q $Service) | Out-String).Trim()
+        if (-not $containerId) { throw "Compose service '$Service' has no container to inspect" }
+
+        $portKey = "${ContainerPort}/tcp"
+        $portsJson = (& docker inspect --format '{{json .NetworkSettings.Ports}}' $containerId 2>&1 | Out-String).Trim()
+        if ($LASTEXITCODE -ne 0) { throw "docker inspect failed for service '$Service': $portsJson" }
+        $ports = $portsJson | ConvertFrom-Json
+        $property = $ports.PSObject.Properties[$portKey]
+        if ($null -eq $property -or $null -eq $property.Value) {
+            throw "Compose does not publish $Service container port ${ContainerPort} to the host"
+        }
+        $hostBinding = @($property.Value)[0]
+        if ($null -eq $hostBinding) { throw "Compose does not publish $Service container port ${ContainerPort} to the host" }
+        $binding = "$($hostBinding.HostIp):$($hostBinding.HostPort)"
+    }
+
+    if ($binding -notmatch '^127\.0\.0\.1:(?<port>[0-9]+)$') {
+        throw "Unexpected Compose port binding for ${Service}/${ContainerPort}: $binding"
+    }
     return [int]$Matches['port']
 }
 

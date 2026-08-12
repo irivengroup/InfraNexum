@@ -18,19 +18,36 @@ compose() {
 published_port() {
   service=$1
   container_port=$2
-  binding=$(compose port "$service" "$container_port") || {
-    echo "Unable to resolve published port for $service/$container_port" >&2
-    exit 69
-  }
+  binding=''
+  if ! binding=$(compose port "$service" "$container_port" 2>/dev/null); then
+    echo "docker compose port failed for $service/$container_port; falling back to docker inspect" >&2
+  fi
+  if [ -z "$binding" ]; then
+    container_id=$(compose ps -q "$service")
+    test -n "$container_id" || {
+      echo "Compose service '$service' has no container to inspect" >&2
+      exit 69
+    }
+    inspect_format="{{with (index .NetworkSettings.Ports \"${container_port}/tcp\")}}{{(index . 0).HostIp}}:{{(index . 0).HostPort}}{{end}}"
+    binding=$(docker inspect --format "$inspect_format" "$container_id") || {
+      echo "Unable to inspect published port for $service/$container_port" >&2
+      exit 69
+    }
+  fi
   test -n "$binding" || {
     echo "Compose does not publish $service container port $container_port to the host" >&2
     exit 69
   }
+  case "$binding" in
+    127.0.0.1:[0-9]*) ;;
+    *) echo "Unexpected Compose port binding for $service/$container_port: $binding" >&2; exit 69 ;;
+  esac
   port=${binding##*:}
   case "$port" in
     ''|*[!0-9]*) echo "Unexpected Compose port binding for $service/$container_port: $binding" >&2; exit 69 ;;
   esac
-  printf '%s\n' "$port"
+  printf '%s
+' "$port"
 }
 
 assert_service_running() {

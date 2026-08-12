@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import pathlib
+import re
 import subprocess
 import tempfile
 import unittest
@@ -104,19 +105,17 @@ class ComposeContractTest(unittest.TestCase):
             self.assertEqual(value, environment[name])
 
     def test_server_and_postgres_are_published_on_loopback_only_by_default(self) -> None:
-        server_port = self.services["server"]["ports"][0]
-        self.assertEqual("http", server_port["name"])
-        self.assertEqual(8080, server_port["target"])
-        self.assertEqual("${INFRANEXUM_SERVER_PUBLISHED_PORT:-8080}", server_port["published"])
-        self.assertEqual("127.0.0.1", server_port["host_ip"])
-        self.assertEqual("tcp", server_port["protocol"])
-
-        postgres_port = self.services["postgres"]["ports"][0]
-        self.assertEqual("postgres", postgres_port["name"])
-        self.assertEqual(5432, postgres_port["target"])
-        self.assertEqual("${INFRANEXUM_POSTGRES_PUBLISHED_PORT:-5432}", postgres_port["published"])
-        self.assertEqual("127.0.0.1", postgres_port["host_ip"])
-        self.assertEqual("tcp", postgres_port["protocol"])
+        self.assertEqual(
+            "127.0.0.1:${INFRANEXUM_SERVER_PUBLISHED_PORT:-8080}:8080",
+            self.services["server"]["ports"][0],
+        )
+        self.assertEqual(
+            "127.0.0.1:${INFRANEXUM_POSTGRES_PUBLISHED_PORT:-5432}:5432",
+            self.services["postgres"]["ports"][0],
+        )
+        compose_text = COMPOSE.read_text(encoding="utf-8")
+        self.assertNotIn("host_ip:", compose_text)
+        self.assertNotIn("published:", compose_text)
 
     def test_rollback_remains_maintenance_only_and_fail_closed(self) -> None:
         self.assertEqual(["maintenance"], self.services["rollback"]["profiles"])
@@ -260,6 +259,24 @@ class ComposeContractTest(unittest.TestCase):
         self.assertNotIn("$env:INFRANEXUM_SERVER_PUBLISHED_PORT) { $env:INFRANEXUM_SERVER_PUBLISHED_PORT", powershell)
         self.assertIn("INFRANEXUM_POSTGRES_PUBLISHED_PORT=5432", env_example)
         self.assertIn("INFRANEXUM_SERVER_PUBLISHED_PORT=8080", env_example)
+
+    def test_powershell_smoke_has_no_ambiguous_variable_colon_interpolation(self) -> None:
+        """PowerShell parses `$name:` as a scoped-variable expression unless the name is delimited."""
+        powershell = (DOCKER / "dev-compose.ps1").read_text(encoding="utf-8")
+        ambiguous = re.compile(r"\$(?!env:)[A-Za-z_][A-Za-z0-9_]*:")
+        self.assertIsNone(ambiguous.search(powershell))
+        self.assertIn("${Service}/${ContainerPort}: $binding", powershell)
+
+    def test_smoke_falls_back_to_container_inspect_when_compose_port_fails(self) -> None:
+        """Docker Desktop/Compose port rendering defects must not make smoke diagnostics unusable."""
+        shell = (DOCKER / "dev-compose.sh").read_text(encoding="utf-8")
+        powershell = (DOCKER / "dev-compose.ps1").read_text(encoding="utf-8")
+        self.assertIn("falling back to docker inspect", shell)
+        self.assertIn("docker inspect --format", shell)
+        self.assertIn("falling back to docker inspect", powershell)
+        self.assertIn("docker inspect --format", powershell)
+        for script in (shell, powershell):
+            self.assertIn("127.0.0.1", script)
 
     def test_smoke_fails_with_compose_diagnostics_when_server_is_not_running(self) -> None:
         """A stopped/restarting Server must yield topology diagnostics before HTTP probing."""

@@ -1,12 +1,16 @@
-# InfraNexum 2.0.0-alpha.0.39 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.40 — état d’implémentation
 
-## 2.0.0-alpha.0.39 — Docker loopback port publication and smoke diagnostics
+## 2.0.0-alpha.0.40 — Docker Desktop port rendering and PowerShell smoke repair
 
 **Statut : correction implémentée ; validation Docker Desktop cible requise.**
 
-Le runtime Compose de développement publie désormais explicitement PostgreSQL et le Server sur la loopback hôte avec des bindings nommés : `${INFRANEXUM_POSTGRES_PUBLISHED_PORT:-5432} -> 5432/tcp` et `${INFRANEXUM_SERVER_PUBLISHED_PORT:-8080} -> 8080/tcp`. Aucun binding wildcard n’est autorisé par défaut. Le smoke PowerShell/POSIX ne suppose plus un port hôte : il résout les bindings effectifs via `docker compose port`, ce qui respecte notamment `docker/.env`. Avant toute requête HTTP, il vérifie que `postgres` et `server` sont réellement `running`; en cas d’échec il produit `compose ps` et les derniers logs du service au lieu d’une erreur de connexion opaque. Le smoke Java Workers découvert pendant la certification a également été stabilisé : il attend désormais la publication observable du compteur `succeeded` après la fin du handler, au lieu de courir contre la transition terminale du worker.
+Le binding long Compose introduit en alpha.0.39 a exposé sous Docker Desktop/Compose Windows un défaut runtime où `docker compose port` retournait `invalid IP:0`. Les publications développeur utilisent désormais la syntaxe courte explicite `127.0.0.1:HOST:CONTAINER` pour PostgreSQL et le Server. Le smoke conserve une vérification du binding réellement appliqué ; si `docker compose port` échoue, il utilise `docker inspect` sur le conteneur du service puis refuse tout `HostIp` autre que `127.0.0.1`. Le lanceur PowerShell corrige également l’interpolation invalide `$ContainerPort:` en `${ContainerPort}:` et un test statique interdit désormais toute nouvelle interpolation `$name:` ambiguë hors variables de scope `$env:`.
 
+## 2.0.0-alpha.0.39 — Docker loopback port publication and smoke diagnostics
 
+**Statut : supersédé par alpha.0.40 pour compatibilité Docker Desktop/PowerShell.**
+
+Le runtime Compose de développement a introduit la publication explicite de PostgreSQL et du Server sur la loopback hôte et le diagnostic préalable de l’état des services. Le binding long utilisé dans cet incrément s’est toutefois révélé incompatible avec `docker compose port` dans le runtime Docker Desktop observé (`invalid IP:0`) et le script PowerShell contenait une interpolation `$ContainerPort:` non parseable. Ces deux défauts sont fermés en alpha.0.40.
 
 ## 2.0.0-alpha.0.38 — PGM-12-E01 HTTP correlation and structured logging foundation
 
