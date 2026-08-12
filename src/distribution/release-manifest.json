@@ -2,7 +2,7 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.40",
+  "version": "2.0.0-alpha.0.41",
   "profile": "docker-desktop-port-resolution-and-powershell-smoke-repair",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
@@ -137,11 +137,11 @@
     "pre_commit_hook": ".githooks/pre-commit"
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.40",
+    "prefix": "infranexum-2.0.0-alpha.0.41",
     "archive_entries": 535,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
     "source_recorded_files": 534
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.40-validation-evidence.zip"
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.41-validation-evidence.zip"
 }

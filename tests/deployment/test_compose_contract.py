@@ -28,7 +28,26 @@ class ComposeContractTest(unittest.TestCase):
         self.assertFalse((ROOT / "src/deployment/docker").exists())
         self.assertEqual({"secret-init", "postgres", "migrate", "server", "rollback"}, set(self.services))
         self.assertEqual({"postgres-data", "runtime-secrets", "integrity-proof"}, set(self.document["volumes"]))
-        self.assertTrue(self.document["networks"]["backend"]["internal"])
+        backend = self.document["networks"]["backend"]
+        self.assertEqual("bridge", backend["driver"])
+        self.assertFalse(backend["internal"], "published developer ports require a non-internal bridge")
+
+
+    def test_developer_port_publication_is_compatible_with_backend_network(self) -> None:
+        """An internal Docker network discards host publishing on affected engines.
+
+        The developer topology therefore uses a normal bridge while restricting every
+        host-published port to IPv4 loopback. Production deployment does not use Compose.
+        """
+        backend = self.document["networks"]["backend"]
+        self.assertFalse(backend.get("internal", False))
+        for service_name in ("postgres", "server"):
+            ports = self.services[service_name].get("ports", [])
+            self.assertTrue(ports, f"{service_name} must publish its developer port")
+            for binding in ports:
+                self.assertTrue(str(binding).startswith("127.0.0.1:"), binding)
+        for service_name in ("secret-init", "migrate", "rollback"):
+            self.assertNotIn("ports", self.services[service_name])
 
     def test_server_starts_only_after_initialization_database_health_and_migrations(self) -> None:
         dependencies = self.services["server"]["depends_on"]

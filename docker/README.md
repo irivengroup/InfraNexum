@@ -2,7 +2,7 @@
 
 `docker/` is repository-level **development and test tooling**. It is deliberately outside `src/` because InfraNexum production deployments target standalone bare-metal or VM servers. The installer and production deployment model must not depend on Docker, Compose or Podman.
 
-The topology provides `secret-init -> postgres -> migrate -> server`, plus an explicit maintenance-only `rollback` service. PostgreSQL and the Server are health-checked, the backend network is private, runtime secrets live in a named volume, and both developer-facing ports are published on host loopback only by default using the Compose short binding syntax: PostgreSQL on `127.0.0.1:5432` and Server HTTP on `127.0.0.1:8080`. Override them with `INFRANEXUM_POSTGRES_PUBLISHED_PORT` and `INFRANEXUM_SERVER_PUBLISHED_PORT`; no wildcard host binding is used. The smoke resolves Docker's effective bindings and falls back to `docker inspect` if `docker compose port` cannot render the binding.
+The topology provides `secret-init -> postgres -> migrate -> server`, plus an explicit maintenance-only `rollback` service. PostgreSQL and the Server are health-checked, the developer backend uses a regular Docker bridge (not `internal: true`, because Docker internal networks can suppress host port publishing), runtime secrets live in a named volume, and both developer-facing ports are published on host loopback only by default using the Compose short binding syntax: PostgreSQL on `127.0.0.1:5432` and Server HTTP on `127.0.0.1:8080`. Override them with `INFRANEXUM_POSTGRES_PUBLISHED_PORT` and `INFRANEXUM_SERVER_PUBLISHED_PORT`; no wildcard host binding is used. The smoke resolves Docker's effective bindings and falls back to `docker inspect` if `docker compose port` cannot render the binding.
 
 Server readiness includes the bounded Workers runtime. The developer smoke test requires both `/actuator/health/readiness` and the low-cardinality `infranexum.workers.ready` metric to be available before accepting the topology as healthy. Worker concurrency, lease/heartbeat timing, shutdown and retry settings can be overridden through the `INFRANEXUM_WORKERS_*` variables documented in `.env.example`.
 
@@ -134,3 +134,8 @@ $env:INFRANEXUM_ENVIRONMENT='local'
 ```
 
 Every HTTP response carries `X-Correlation-ID`. A caller may supply a canonical lowercase UUIDv7; malformed or non-v7 values receive HTTP 400 and are not reflected. `dev-compose.* smoke` validates both propagation and the fail-closed rejection path.
+
+
+### Developer network boundary
+
+The Compose network is intentionally **not** marked `internal`. Docker internal bridge networks can make published host ports ineffective; that contradicts this developer topology, which must expose PostgreSQL and Server to the local workstation. Ingress remains restricted to `127.0.0.1` for both published ports. This is development/test tooling only; production standalone bare-metal/VM deployment does not rely on this Compose network.

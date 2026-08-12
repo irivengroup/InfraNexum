@@ -1,4 +1,4 @@
-# InfraNexum 2.0.0-alpha.0.40 — HTTP Correlation & Structured Logging Foundation
+# InfraNexum 2.0.0-alpha.0.41 — HTTP Correlation & Structured Logging Foundation
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 

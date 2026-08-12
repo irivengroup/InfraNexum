@@ -27,7 +27,7 @@ Runtime overrides:
 INFRANEXUM_LOG_FORMAT=ecs
 INFRANEXUM_ENVIRONMENT=local
 INFRANEXUM_SERVER_INSTANCE_ID=server-local-1
-INFRANEXUM_VERSION=2.0.0-alpha.0.40
+INFRANEXUM_VERSION=2.0.0-alpha.0.41
 ```
 
 `INFRANEXUM_LOG_FORMAT` exists for controlled operational overrides; production standards should keep a machine-readable structured format.

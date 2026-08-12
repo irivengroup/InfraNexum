@@ -321,7 +321,12 @@ class ToolchainCheckerTest(unittest.TestCase):
         shutil.copy2(SOURCE / "Makefile", makefile_path)
         compose_path = self.root / "docker/compose.yaml"
         compose = compose_path.read_text(encoding="utf-8")
-        compose_path.write_text(compose.replace("internal: true", "internal: false", 1), encoding="utf-8")
+        compose_path.write_text(compose.replace("internal: false", "internal: true", 1), encoding="utf-8")
+        self.assertIn("CHECK-TOOLCHAIN-043", self.ids())
+
+        shutil.copy2(SOURCE / "docker/compose.yaml", compose_path)
+        compose = compose_path.read_text(encoding="utf-8")
+        compose_path.write_text(compose.replace("127.0.0.1:${INFRANEXUM_SERVER_PUBLISHED_PORT:-8080}:8080", "8080:8080", 1), encoding="utf-8")
         self.assertIn("CHECK-TOOLCHAIN-043", self.ids())
 
     def test_ci_targeted_reactor_test_tolerates_upstream_modules_without_matches(self) -> None:

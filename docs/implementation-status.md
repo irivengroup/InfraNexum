@@ -1,6 +1,11 @@
-# InfraNexum 2.0.0-alpha.0.40 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.41 — état d’implémentation
 
-## 2.0.0-alpha.0.40 — Docker Desktop port rendering and PowerShell smoke repair
+## 2.0.0-alpha.0.41 — Docker Desktop host-port publication
+
+Le réseau Compose de développement n’est plus `internal: true`. Les runs Docker Desktop ont démontré que les conteneurs restaient `Healthy` mais que les publications hôte disparaissaient (`5432/tcp` et `8080/tcp` seulement) et que `docker compose port` échouait. Le réseau `backend` est désormais un bridge non interne, tandis que les deux publications restent strictement liées à `127.0.0.1`. Les services techniques `secret-init`, `migrate` et `rollback` ne publient aucun port. Cette décision concerne uniquement l’outillage Docker de développement/test ; le déploiement produit reste standalone bare metal/VM.
+
+
+## 2.0.0-alpha.0.41 — Docker Desktop port rendering and PowerShell smoke repair
 
 **Statut : correction implémentée ; validation Docker Desktop cible requise.**
 

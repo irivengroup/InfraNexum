@@ -456,7 +456,9 @@ class ToolchainChecker:
             or compose_text is None
             or "service_healthy" not in compose_text
             or "service_completed_successfully" not in compose_text
-            or "internal: true" not in compose_text
+            or "internal: false" not in compose_text
+            or "127.0.0.1:${INFRANEXUM_POSTGRES_PUBLISHED_PORT:-5432}:5432" not in compose_text
+            or "127.0.0.1:${INFRANEXUM_SERVER_PUBLISHED_PORT:-8080}:8080" not in compose_text
             or "docker/server.Dockerfile" not in compose_text
             or "docker/postgres-tools.Dockerfile" not in compose_text
         ):
