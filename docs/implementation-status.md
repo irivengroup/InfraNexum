@@ -1,13 +1,37 @@
-# InfraNexum 2.0.0-alpha.0.52 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.54 — état d’implémentation
+
+
+
+## 2.0.0-alpha.0.54 — PRO HA writer convergence and predecessor Web theme adaptation
+
+**Statut : correction HA et baseline Web implémentées ; revalidation Docker Desktop/PowerShell cible requise.**
+
+La validation réelle de `alpha.0.53` sous Docker Desktop/PowerShell a confirmé le smoke PRO complet : `streaming=2`, `synchronous=1`, `Server=4`, `Web=2`. Le scénario `ha-smoke` a ensuite arrêté `postgres-1` et obtenu une élection Patroni, mais la première requête SQL via le routeur writer HAProxy a échoué transitoirement avec `server closed the connection unexpectedly`. Le bloc `finally` a correctement redémarré l’ancien primaire, mais le test traitait à tort ce délai de convergence HAProxy comme un échec définitif.
+
+`alpha.0.54` distingue désormais explicitement l’élection Patroni de la disponibilité du writer HAProxy. Après l’élection d’un primaire différent, le smoke HA effectue uniquement un `SELECT 1` idempotent, toutes les deux secondes, pendant au plus 60 secondes. Il conserve le dernier diagnostic et échoue explicitement si le writer ne converge pas. Aucune mutation SQL n’est rejouée, aucun seuil de réplication n’est abaissé et les contrôles ultérieurs Server/Web restent obligatoires. Une non-régression exécutable simule exactement deux fermetures de connexion HAProxy avant une troisième tentative réussie et exige la poursuite des bascules Server et Web.
+
+Le Web reprend uniquement le thème visuel retrouvé dans l’archive source précédente : le fichier historique `src/applications/web/public/assets/bootstrap.css` (1 804 octets, SHA-256 `07b9b698d639a8bd9b2ce758e51754be4d33ca03cb5a692cc566319f3cc9f1a9`). Malgré son nom, ce fichier n’était pas le framework Bootstrap mais la couche de thème historique à palette IONOS. `alpha.0.54` en conserve exclusivement la palette, la typographie, les surfaces, le focus, le mode sombre et le breakpoint mobile dans `infranexum-theme.css`, chargé après Bootstrap 5.x vendored localement. Aucun template HTML, runtime JavaScript ni composant métier du produit prédécesseur n’est importé. Le shell reste sans CDN, responsive et accessible.
+
+## 2.0.0-alpha.0.53 — PRO HA replication-observability privilege repair
+
+**Statut : correction implémentée et testée hors moteur Docker ; runtime Docker Desktop à revalider.**
+
+Le runtime Docker Desktop de `alpha.0.52` atteint les quatre bindings PRO attendus puis `smoke`/`ha-smoke` échouent avec `Expected two streaming standbys; observed 0`. Le cluster avait pourtant déjà franchi `db-bootstrap`, qui exige deux standbys `streaming` et un standby `sync`/`quorum` avec la connexion superutilisateur. La divergence provenait du smoke : ses requêtes `pg_stat_replication` étaient exécutées avec le rôle applicatif `infranexum`. PostgreSQL restreint les détails des vues statistiques dynamiques pour les sessions appartenant à d’autres rôles ; les colonnes protégées peuvent être nulles pour un utilisateur ordinaire, ce qui rend un filtre `state='streaming'` impropre à un diagnostic HA effectué avec le compte applicatif.
+
+Les wrappers POSIX et PowerShell séparent désormais explicitement les requêtes applicatives des diagnostics administratifs. `db_scalar`/`Invoke-DatabaseScalar` conservent le rôle `infranexum`; `admin_db_scalar`/`Invoke-DatabaseAdminScalar` utilisent le compte bootstrap `postgres` uniquement pour lire l’état de réplication via le writer privé. Aucun `GRANT pg_monitor` ni `GRANT pg_read_all_stats` n’est ajouté au rôle applicatif : le principe de moindre privilège reste inchangé. Le test de reprise après failover utilise le même chemin administrateur pour attendre le retour à deux standbys.
+
+La non-régression comprend un contrat statique sur les deux wrappers et un smoke POSIX exécutable dont le faux PostgreSQL reproduit exactement la visibilité observée : le rôle applicatif retourne `0` pour `pg_stat_replication`, tandis que le chemin administrateur retourne `2` standbys et `1` synchrone ; le smoke doit alors réussir sans élargir les privilèges applicatifs.
+
+Validations locales de l’incrément : contrat Compose **48/48** ; Source Integrity **45/45** et 0 violation sur snapshot Git staged avec checksums ; Architecture fonctionnelle **52/52** et Architecture-as-Code **PASS** ; Toolchains **25/25** et 0 violation ; migrations **34/34** et 0 violation ; runtime Web local **27/27**, couverture lignes **99,65 %**, branches **98,28 %**, fonctions **100 %**, process smoke **PASS** ; Agent avec Go local 1.23.2 : `vet` et tests race **PASS**, couverture **98,4 %**. Le toolchain cible Go 1.26.5 n’a pas pu être téléchargé dans l’environnement isolé ; PowerShell et Docker Desktop ne sont pas disponibles localement et restent à revalider sur Windows.
 
 
 ## 2.0.0-alpha.0.52 — PRO Web HA Compose schema repair
 
-**Statut : correction implémentée et validée statiquement ; runtime Docker Desktop à revalider.**
+**Statut : schéma Compose corrigé ; runtime Docker Desktop exécuté jusqu’au smoke, qui a exposé le défaut de visibilité statistique corrigé en alpha.0.53.**
 
-Le runtime Docker Desktop de `alpha.0.51` a rejeté le modèle Compose avant toute opération (`down`, `build`, `up` ou `ps`) car les clés `interval`, `timeout`, `retries` et `start_period` du routeur `web` étaient placées au niveau du service au lieu d’être imbriquées sous `healthcheck`. `alpha.0.52` corrige exclusivement cette structure YAML : le test de readiness, ses paramètres de temporisation et la politique `restart` conservent leurs valeurs et leur sémantique.
+Le runtime Docker Desktop de `alpha.0.51` rejetait le modèle Compose avant toute opération car les clés `interval`, `timeout`, `retries` et `start_period` du routeur `web` étaient placées au niveau du service au lieu d’être imbriquées sous `healthcheck`. `alpha.0.52` a corrigé cette structure sans modifier la sémantique de readiness ni la politique de redémarrage. Un contrat dédié vérifie que ces quatre propriétés restent sous `services.web.healthcheck`.
 
-Un test de non-régression vérifie désormais simultanément que les quatre paramètres existent dans `services.web.healthcheck` et qu’aucun d’eux n’existe comme propriété directe de `services.web`. Le contrat Compose passe **46/46**. La documentation Docker Compose officielle modélise également ces paramètres sous `healthcheck`. Le runtime Docker Desktop exact reste **NON EXÉCUTÉ** dans l’environnement de génération et doit être revalidé sur Windows.
+Sur Windows/Docker Desktop, `alpha.0.52` a ensuite atteint une topologie entièrement déclarée saine et les quatre bindings loopback attendus, mais `smoke`/`ha-smoke` ont échoué sur la lecture de `pg_stat_replication` avec le rôle applicatif. Cette preuve runtime est conservée comme diagnostic historique et mène directement à la correction `alpha.0.53`.
 
 
 ## 2.0.0-alpha.0.51 — PRO Web HA developer topology

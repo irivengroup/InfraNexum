@@ -52,7 +52,7 @@ class ComposeContractTest(unittest.TestCase):
     def test_web_cluster_is_two_private_nodes_behind_loopback_router(self) -> None:
         for name in WEB:
             service = self.services[name]
-            self.assertEqual("infranexum/web:${INFRANEXUM_VERSION:-2.0.0-alpha.0.52}", service["image"])
+            self.assertEqual("infranexum/web:${INFRANEXUM_VERSION:-2.0.0-alpha.0.54}", service["image"])
             self.assertEqual("service_healthy", service["depends_on"]["server"]["condition"])
             self.assertNotIn("ports", service)
             self.assertEqual("local", service["environment"]["INFRANEXUM_WEB_ENVIRONMENT"])
@@ -309,6 +309,269 @@ class ComposeContractTest(unittest.TestCase):
                 self.assertIn(name, text)
             self.assertIn("runtime-config.json", text)
             self.assertIn("Web=2", text)
+
+    def test_replication_smoke_uses_privileged_diagnostic_connection_without_elevating_application_role(self) -> None:
+        """Regression: pg_stat_replication detail must not be filtered by application-role visibility."""
+        sh = (DOCKER / "dev-compose.sh").read_text(encoding="utf-8")
+        ps = (DOCKER / "dev-compose.ps1").read_text(encoding="utf-8")
+        bootstrap = (DOCKER / "bootstrap-postgresql-ha.sh").read_text(encoding="utf-8")
+
+        self.assertIn("db_scalar()", sh)
+        self.assertIn("--username=infranexum --dbname=infranexum", sh)
+        self.assertIn("admin_db_scalar()", sh)
+        self.assertIn("--username=postgres --dbname=postgres", sh)
+        self.assertIn('streaming=$(admin_db_scalar "SELECT count(*) FROM pg_stat_replication', sh)
+        self.assertIn('synchronous=$(admin_db_scalar "SELECT count(*) FROM pg_stat_replication', sh)
+        self.assertNotIn('streaming=$(db_scalar "SELECT count(*) FROM pg_stat_replication', sh)
+
+        self.assertIn("function Invoke-DatabaseScalar", ps)
+        self.assertIn("--username=infranexum --dbname=infranexum", ps)
+        self.assertIn("function Invoke-DatabaseAdminScalar", ps)
+        self.assertIn("--username=postgres --dbname=postgres", ps)
+        self.assertIn('[int](Invoke-DatabaseAdminScalar "SELECT count(*) FROM pg_stat_replication', ps)
+        self.assertNotIn('[int](Invoke-DatabaseScalar "SELECT count(*) FROM pg_stat_replication', ps)
+
+        # Least privilege is preserved: the fix must not grant broad monitoring roles
+        # to the application identity merely to make a developer smoke test pass.
+        for role in ("pg_monitor", "pg_read_all_stats"):
+            self.assertNotIn(f"GRANT {role.upper()}", bootstrap.upper())
+
+    def test_posix_smoke_observes_replication_with_admin_role_when_application_stats_are_filtered(self) -> None:
+        """Execute smoke with PostgreSQL-style statistics filtering for the application role."""
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temp = pathlib.Path(temporary_directory)
+            bin_dir = temp / "bin"
+            bin_dir.mkdir()
+
+            docker = bin_dir / "docker"
+            docker.write_text(textwrap.dedent(r'''#!/bin/sh
+set -eu
+if [ "${1:-}" = compose ]; then
+  shift
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --env-file|-f) shift 2 ;;
+      *) break ;;
+    esac
+  done
+  command=${1:-}; [ "$#" -gt 0 ] && shift || true
+  case "$command" in
+    version) exit 0 ;;
+    ps)
+      if [ "${1:-}" = --status ]; then
+        printf '%s\n' etcd-1 etcd-2 etcd-3 postgres-1 postgres-2 postgres-3 postgres server-1 server-2 server-3 server-4 server web-1 web-2 web
+        exit 0
+      fi
+      if [ "${1:-}" = -q ]; then printf 'cid-%s\n' "$2"; exit 0; fi
+      exit 0 ;;
+    port)
+      case "$1:$2" in
+        postgres:5432) echo '127.0.0.1:5432' ;;
+        postgres:5433) echo '127.0.0.1:5433' ;;
+        server:8080) echo '127.0.0.1:8080' ;;
+        web:8080) echo '127.0.0.1:8081' ;;
+        *) exit 1 ;;
+      esac
+      exit 0 ;;
+    run)
+      all="$*"
+      case "$all" in
+        *pg_stat_replication*)
+          case "$all" in
+            *--username=postgres*)
+              case "$all" in *sync_state*) echo 1 ;; *) echo 2 ;; esac
+              exit 0 ;;
+            *--username=infranexum*) echo 0; exit 0 ;;
+          esac ;;
+      esac
+      echo "unexpected compose run: $all" >&2
+      exit 70 ;;
+  esac
+fi
+if [ "${1:-}" = inspect ]; then
+  case "$*" in *State.Health*) echo healthy; exit 0 ;; esac
+fi
+echo "unexpected docker invocation: $*" >&2
+exit 70
+'''), encoding="utf-8")
+            docker.chmod(0o755)
+
+            curl = bin_dir / "curl"
+            curl.write_text(textwrap.dedent(r'''#!/bin/sh
+set -eu
+dump=''
+correlation=''
+url=''
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --dump-header) dump=$2; shift 2 ;;
+    --header) correlation=${2#X-Correlation-ID: }; shift 2 ;;
+    --fail|--silent|--show-error) shift ;;
+    *) url=$1; shift ;;
+  esac
+done
+case "$url" in
+  */actuator/health/readiness) printf '%s' '{"status":"UP"}' ;;
+  */actuator/metrics/infranexum.workers.ready) printf '%s' '{"name":"infranexum.workers.ready"}' ;;
+  */api/v1/system/build)
+    [ -z "$dump" ] || printf 'HTTP/1.1 200 OK\r\nX-Correlation-ID: %s\r\n\r\n' "$correlation" > "$dump"
+    printf '%s' '{"instanceId":"server-pro-2"}' ;;
+  */health/ready) printf '%s' '{"status":"UP"}' ;;
+  */runtime-config.json) printf '%s' '{"component":"web","version":"2.0.0-alpha.0.54","apiBaseUrl":"http://127.0.0.1:8080/api"}' ;;
+  *) echo "unexpected curl URL: $url" >&2; exit 70 ;;
+esac
+'''), encoding="utf-8")
+            curl.chmod(0o755)
+
+            environment = os.environ.copy()
+            environment["PATH"] = f"{bin_dir}{os.pathsep}{environment.get('PATH', '')}"
+            result = subprocess.run(
+                ["sh", str(DOCKER / "dev-compose.sh"), "smoke"],
+                cwd=ROOT,
+                env=environment,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertIn("compose-smoke: PASS (streaming=2 synchronous=1 Server=4 Web=2)", result.stdout)
+
+    def test_ha_smoke_waits_for_haproxy_writer_after_patroni_election(self) -> None:
+        # Regression: Patroni leadership may precede HAProxy writer convergence.
+        sh = (DOCKER / "dev-compose.sh").read_text(encoding="utf-8")
+        ps = (DOCKER / "dev-compose.ps1").read_text(encoding="utf-8")
+        self.assertIn("wait_writer_ready()", sh)
+        self.assertIn("wait_writer_ready", sh.split("ha_smoke() {", 1)[1])
+        self.assertNotIn('test "$(db_scalar \'SELECT 1\')" = 1', sh)
+        self.assertIn("function Wait-DatabaseWriterReady", ps)
+        self.assertIn("Wait-DatabaseWriterReady -TimeoutSeconds 60 -PollSeconds 2", ps)
+        self.assertNotIn("if ((Invoke-DatabaseScalar 'SELECT 1') -ne '1')", ps)
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temp = pathlib.Path(temporary_directory)
+            bin_dir = temp / "bin"
+            state_dir = temp / "state"
+            bin_dir.mkdir()
+            state_dir.mkdir()
+            attempts_file = state_dir / "writer-attempts"
+            attempts_file.write_text("0", encoding="utf-8")
+
+            docker = bin_dir / "docker"
+            docker.write_text(textwrap.dedent(r'''#!/bin/sh
+set -eu
+state=${INFRANEXUM_TEST_STATE:?}
+if [ "${1:-}" = compose ]; then
+  shift
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --env-file|-f) shift 2 ;;
+      *) break ;;
+    esac
+  done
+  command=${1:-}; [ "$#" -gt 0 ] && shift || true
+  case "$command" in
+    version) exit 0 ;;
+    ps)
+      if [ "${1:-}" = --status ]; then
+        printf '%s\n' etcd-1 etcd-2 etcd-3 postgres-1 postgres-2 postgres-3 postgres server-1 server-2 server-3 server-4 server web-1 web-2 web
+        exit 0
+      fi
+      if [ "${1:-}" = -q ]; then printf 'cid-%s\n' "$2"; exit 0; fi
+      exit 0 ;;
+    port)
+      case "$1:$2" in
+        postgres:5432) echo '127.0.0.1:5432' ;;
+        postgres:5433) echo '127.0.0.1:5433' ;;
+        server:8080) echo '127.0.0.1:8080' ;;
+        web:8080) echo '127.0.0.1:8081' ;;
+        *) exit 1 ;;
+      esac
+      exit 0 ;;
+    exec)
+      service=$2
+      case "$*" in
+        */primary*)
+          if [ -f "$state/failover" ]; then [ "$service" = postgres-2 ] && echo 200 || echo 503
+          else [ "$service" = postgres-1 ] && echo 200 || echo 503
+          fi
+          exit 0 ;;
+      esac
+      exit 0 ;;
+    stop)
+      [ "${1:-}" != postgres-1 ] || : > "$state/failover"
+      exit 0 ;;
+    start) exit 0 ;;
+    run)
+      all="$*"
+      case "$all" in
+        *pg_stat_replication*)
+          case "$all" in *sync_state*) echo 1 ;; *) echo 2 ;; esac
+          exit 0 ;;
+        *"SELECT 1"*)
+          count=$(cat "$state/writer-attempts")
+          count=$((count + 1)); printf '%s' "$count" > "$state/writer-attempts"
+          if [ "$count" -lt 3 ]; then
+            echo 'psql: error: connection to server at "postgres", port 5432 failed: server closed the connection unexpectedly' >&2
+            exit 2
+          fi
+          echo 1
+          exit 0 ;;
+      esac
+      echo "unexpected compose run: $all" >&2
+      exit 70 ;;
+  esac
+fi
+if [ "${1:-}" = inspect ]; then
+  case "$*" in *State.Health*) echo healthy; exit 0 ;; esac
+fi
+echo "unexpected docker invocation: $*" >&2
+exit 70
+'''), encoding="utf-8")
+            docker.chmod(0o755)
+
+            curl = bin_dir / "curl"
+            curl.write_text(textwrap.dedent(r'''#!/bin/sh
+set -eu
+dump=''; correlation=''; url=''
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --dump-header) dump=$2; shift 2 ;;
+    --header) correlation=${2#X-Correlation-ID: }; shift 2 ;;
+    --fail|--silent|--show-error) shift ;;
+    *) url=$1; shift ;;
+  esac
+done
+case "$url" in
+  */actuator/health/readiness) printf '%s' '{"status":"UP"}' ;;
+  */actuator/metrics/infranexum.workers.ready) printf '%s' '{"name":"infranexum.workers.ready"}' ;;
+  */api/v1/system/build)
+    [ -z "$dump" ] || printf 'HTTP/1.1 200 OK\r\nX-Correlation-ID: %s\r\n\r\n' "$correlation" > "$dump"
+    printf '%s' '{"instanceId":"server-pro-2"}' ;;
+  */health/ready) printf '%s' '{"status":"UP"}' ;;
+  */runtime-config.json) printf '%s' '{"component":"web","version":"2.0.0-alpha.0.54","apiBaseUrl":"http://127.0.0.1:8080/api"}' ;;
+  *) echo "unexpected curl URL: $url" >&2; exit 70 ;;
+esac
+'''), encoding="utf-8")
+            curl.chmod(0o755)
+
+            sleep = bin_dir / "sleep"
+            sleep.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            sleep.chmod(0o755)
+
+            environment = os.environ.copy()
+            environment["PATH"] = f"{bin_dir}{os.pathsep}{environment.get('PATH', '')}"
+            environment["INFRANEXUM_TEST_STATE"] = str(state_dir)
+            result = subprocess.run(
+                ["sh", str(DOCKER / "dev-compose.sh"), "ha-smoke"],
+                cwd=ROOT,
+                env=environment,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual("3", attempts_file.read_text(encoding="utf-8"))
+            self.assertIn("compose-ha-smoke: PASS", result.stdout)
 
     def test_ha_smoke_is_bounded_and_rejoins_primary(self) -> None:
         sh = (DOCKER / "dev-compose.sh").read_text(encoding="utf-8")

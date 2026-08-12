@@ -47,6 +47,15 @@ db_scalar() {
     'export PGPASSWORD="$(cat /run/infranexum-secrets/db-password)"; exec psql --no-psqlrc --tuples-only --no-align --host=postgres --port=5432 --username=infranexum --dbname=infranexum --command "$1"' sh "$sql"
 }
 
+admin_db_scalar() {
+  sql=$1
+  # Replication state is privileged monitoring data. Keep the application role
+  # least-privileged and use the bootstrap superuser only inside this developer
+  # topology diagnostic path.
+  compose run --rm --no-deps --entrypoint /bin/sh migrate -eu -c \
+    'export PGPASSWORD="$(cat /run/infranexum-secrets/db-password)"; exec psql --no-psqlrc --tuples-only --no-align --host=postgres --port=5432 --username=postgres --dbname=postgres --command "$1"' sh "$sql"
+}
+
 backup() {
   require_repo; mkdir -p "$backup_dir"
   backup_file="$backup_dir/infranexum-$(date -u +%Y%m%dT%H%M%SZ).dump"; remote=/tmp/infranexum-dev-backup.dump
@@ -63,9 +72,9 @@ smoke() {
   for service in $cluster_services; do assert_service_healthy "$service"; done
   writer_port=$(published_port postgres 5432); read_port=$(published_port postgres 5433); server_port=$(published_port server 8080); web_port=$(published_port web 8080)
   echo "Compose PRO bindings: writer=127.0.0.1:$writer_port replicas=127.0.0.1:$read_port server=127.0.0.1:$server_port web=127.0.0.1:$web_port"
-  streaming=$(db_scalar "SELECT count(*) FROM pg_stat_replication WHERE state='streaming'")
+  streaming=$(admin_db_scalar "SELECT count(*) FROM pg_stat_replication WHERE state='streaming'")
   test "$streaming" -ge 2 || { echo "Expected two streaming standbys; observed $streaming" >&2; exit 69; }
-  synchronous=$(db_scalar "SELECT count(*) FROM pg_stat_replication WHERE state='streaming' AND sync_state IN ('sync','quorum')")
+  synchronous=$(admin_db_scalar "SELECT count(*) FROM pg_stat_replication WHERE state='streaming' AND sync_state IN ('sync','quorum')")
   test "$synchronous" -ge 1 || { echo 'No synchronous PostgreSQL standby' >&2; exit 69; }
   curl --fail --silent --show-error "http://127.0.0.1:$server_port/actuator/health/readiness" | grep -q '"status":"UP"'
   curl --fail --silent --show-error "http://127.0.0.1:$server_port/actuator/metrics/infranexum.workers.ready" | grep -q '"name":"infranexum.workers.ready"'
@@ -77,7 +86,7 @@ smoke() {
   curl --fail --silent --show-error "http://127.0.0.1:$web_port/health/ready" | grep -q '"status":"UP"'
   curl --fail --silent --show-error "http://127.0.0.1:$web_port/runtime-config.json" > "$tmp"
   grep -Fq '"component":"web"' "$tmp"
-  grep -Fq '"version":"2.0.0-alpha.0.52"' "$tmp"
+  grep -Fq '"version":"2.0.0-alpha.0.54"' "$tmp"
   grep -Fq "\"apiBaseUrl\":\"http://127.0.0.1:$server_port/api\"" "$tmp"
   rm -f "$tmp"; trap - EXIT HUP INT TERM
   echo "compose-smoke: PASS (streaming=$streaming synchronous=$synchronous Server=4 Web=2)"
@@ -91,6 +100,29 @@ patroni_primary() {
   return 1
 }
 
+wait_writer_ready() {
+  # Patroni may publish the new leader before HAProxy has completed its writer
+  # health-check rise cycle. Retry only the idempotent SELECT 1 readiness probe.
+  writer_attempts=0
+  writer_last_diagnostic='no writer probe completed'
+  writer_error_file=$(mktemp)
+  while [ "$writer_attempts" -lt 30 ]; do
+    : > "$writer_error_file"
+    if writer_value=$(db_scalar 'SELECT 1' 2>"$writer_error_file"); then
+      if [ "$writer_value" = 1 ]; then rm -f "$writer_error_file"; return 0; fi
+      writer_last_diagnostic="unexpected scalar result: $writer_value"
+    else
+      writer_last_diagnostic=$(tr '\r\n' '  ' < "$writer_error_file" | sed 's/[[:space:]][[:space:]]*/ /g; s/^ //; s/ $//')
+      test -n "$writer_last_diagnostic" || writer_last_diagnostic='writer probe failed without diagnostic output'
+    fi
+    writer_attempts=$((writer_attempts + 1))
+    test "$writer_attempts" -ge 30 || sleep 2
+  done
+  rm -f "$writer_error_file"
+  echo "Writer endpoint did not recover within 60 seconds. Last diagnostic: $writer_last_diagnostic" >&2
+  return 69
+}
+
 ha_smoke() {
   require_repo; smoke
   primary=$(patroni_primary) || { echo 'Unable to identify Patroni primary' >&2; exit 69; }
@@ -99,12 +131,12 @@ ha_smoke() {
   replacement=''; attempts=0
   while [ "$attempts" -lt 30 ]; do sleep 2; replacement=$(patroni_primary || true); test -n "$replacement" && break; attempts=$((attempts + 1)); done
   test -n "$replacement" && test "$replacement" != "$primary" || { echo 'No replacement primary within 60 seconds' >&2; exit 69; }
-  test "$(db_scalar 'SELECT 1')" = 1 || { echo 'Writer endpoint did not recover' >&2; exit 69; }
+  wait_writer_ready
   server_port=$(published_port server 8080); curl --fail --silent --show-error "http://127.0.0.1:$server_port/actuator/health/readiness" | grep -q '"status":"UP"'
   restore_primary; trap - EXIT HUP INT TERM
   attempts=0; while [ "$attempts" -lt 30 ]; do sleep 3; if (assert_service_healthy "$primary") >/dev/null 2>&1; then break; fi; attempts=$((attempts + 1)); done
   test "$attempts" -lt 30 || { echo "Former primary $primary did not rejoin healthy within 90 seconds" >&2; exit 69; }
-  attempts=0; streaming=0; while [ "$attempts" -lt 30 ]; do sleep 3; streaming=$(db_scalar "SELECT count(*) FROM pg_stat_replication WHERE state='streaming'" 2>/dev/null || echo 0); test "$streaming" -ge 2 && break; attempts=$((attempts + 1)); done
+  attempts=0; streaming=0; while [ "$attempts" -lt 30 ]; do sleep 3; streaming=$(admin_db_scalar "SELECT count(*) FROM pg_stat_replication WHERE state='streaming'" 2>/dev/null || echo 0); test "$streaming" -ge 2 && break; attempts=$((attempts + 1)); done
   test "$streaming" -ge 2 || { echo "Cluster did not return to two streaming standbys; observed $streaming" >&2; exit 69; }
 
   server_port=$(published_port server 8080)

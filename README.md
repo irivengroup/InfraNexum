@@ -1,10 +1,12 @@
-# InfraNexum 2.0.0-alpha.0.52 — PowerShell Compose Argument Forwarding Repair
+# InfraNexum 2.0.0-alpha.0.54 — PRO HA Writer Convergence & Legacy Web Theme Adaptation
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
-`alpha.0.49` fixes the Windows PowerShell `smoke`/`ha-smoke` failure where Docker Compose short options such as `-e` were interpreted as abbreviated PowerShell common parameters (`-ErrorAction` / `-ErrorVariable`) before reaching Docker. The Compose execution wrappers now forward native arguments through PowerShell's automatic `$args` vector, keeping Docker options opaque to PowerShell parameter binding. The fix applies uniformly to current and future native short switches, including `-e`, `-T` and `-q`, while preserving all `alpha.0.48` PRO PostgreSQL bootstrap and HA invariants.
+`alpha.0.54` closes the remaining PRO Docker HA smoke race observed after Patroni elects a replacement primary. Patroni leadership and the HAProxy writer endpoint are distinct convergence conditions: the new leader can be known before HAProxy has completed its health-check rise cycle. `ha-smoke` now waits up to 60 seconds for the writer router using only the idempotent `SELECT 1` readiness probe, preserves the last connection diagnostic, and fails closed if the writer never becomes usable. The test still requires a different Patroni primary and does not weaken any replication, Server or Web availability invariant.
 
-Only router ports are published on `127.0.0.1`; individual etcd, PostgreSQL/Patroni and Server nodes stay on the private Compose bridge. `smoke` proves cluster health and replication invariants, while the deliberately disruptive `ha-smoke` verifies bounded PostgreSQL primary failover, writer recovery, Server readiness and rejoin without deleting volumes. The PRO Web cluster is intentionally deferred to a later increment. Production deployment remains standalone bare-metal or VM, and signed PRO activation remains a separate certification concern.
+The Web shell adopts only the visual theme recovered from the predecessor source archive. The source theme was the 1,804-byte `src/applications/web/public/assets/bootstrap.css` blob (SHA-256 `07b9b698d639a8bd9b2ce758e51754be4d33ca03cb5a692cc566319f3cc9f1a9`); despite its historical filename, it contains theme rules rather than the Bootstrap framework. `alpha.0.54` keeps only that visual layer—palette, typography, surfaces, focus, dark mode and mobile breakpoint—under `infranexum-theme.css`. A locally vendored Bootstrap 5.x stylesheet is loaded first, and the adapted theme overrides it second. No predecessor HTML, JavaScript, runtime or business component is imported. No CDN is required.
+
+The PRO developer topology remains three etcd members, three Patroni/PostgreSQL nodes, four Server nodes and two Web nodes behind loopback-only HAProxy routers. Production deployment remains standalone bare metal or VM; Docker/Compose remains development and test tooling only.
 
 ## Source layout
 
@@ -49,7 +51,7 @@ Windows / VS Code PowerShell can start the same topology with:
 Direct Compose commands from the repository root are:
 
 ```sh
-docker compose up --detach --build --wait server
+docker compose up --detach --build --wait web
 docker compose logs migrate
 ```
 

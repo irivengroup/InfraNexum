@@ -5,27 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
     <title>InfraNexum — Infrastructure Control &amp; Governance Platform</title>
-    <link rel="stylesheet" href="/assets/bootstrap.css" />
+    <link rel="stylesheet" href="/assets/vendor/bootstrap-5.3.6.min.css" />
+    <link rel="stylesheet" href="/assets/infranexum-theme.css" />
     <script type="module" src="/assets/bootstrap.mjs"></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
-    <header class="masthead">
-      <strong>InfraNexum</strong>
-      <span>Infrastructure Control &amp; Governance Platform</span>
+    <header class="navbar inx-navbar" aria-label="InfraNexum product header">
+      <strong class="navbar-brand mb-0 text-white">InfraNexum</strong>
+      <span class="inx-subtitle">Infrastructure Control &amp; Governance Platform</span>
     </header>
-    <main id="main" tabindex="-1">
-      <section class="status-card" aria-labelledby="runtime-title">
-        <p class="eyebrow">Web runtime</p>
+    <main id="main" class="inx-main" tabindex="-1">
+      <section class="card inx-runtime-card" aria-labelledby="runtime-title">
+        <p class="inx-eyebrow">Web runtime</p>
         <h1 id="runtime-title">Control plane bootstrap</h1>
         <p id="runtime-message" role="status" aria-live="polite">Loading validated public configuration…</p>
-        <dl>
-          <div><dt>Version</dt><dd id="runtime-version">—</dd></div>
-          <div><dt>Environment</dt><dd id="runtime-environment">—</dd></div>
-          <div><dt>Server API</dt><dd id="runtime-api">—</dd></div>
+        <dl class="inx-runtime-list row g-0">
+          <dt class="col-sm-4">Version</dt>
+          <dd id="runtime-version" class="col-sm-8">—</dd>
+          <dt class="col-sm-4">Environment</dt>
+          <dd id="runtime-environment" class="col-sm-8">—</dd>
+          <dt class="col-sm-4">Server API</dt>
+          <dd id="runtime-api" class="col-sm-8">—</dd>
         </dl>
       </section>
     </main>
-    <noscript>JavaScript is required to initialize the InfraNexum Web interface.</noscript>
+    <noscript>
+      <div class="container pb-4" role="alert">JavaScript is required to initialize the InfraNexum Web interface.</div>
+    </noscript>
   </body>
 </html>

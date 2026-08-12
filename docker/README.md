@@ -133,6 +133,8 @@ Then inspect replication state through the stable writer endpoint if needed:
 
 `smoke` requires the three etcd members, the three Patroni/PostgreSQL nodes, both database/Server routers, all four Server nodes, both Web nodes and the Web router to be healthy. It also requires two streaming standbys, at least one synchronous/quorum standby, Server readiness/worker metrics, Web readiness, and a runtime configuration whose API URL matches the effective loopback Server binding.
 
+Replication statistics are intentionally queried through the bootstrap `postgres` identity, because PostgreSQL restricts detailed dynamic-statistics fields for sessions owned by other roles. Ordinary connectivity and application queries continue to use `infranexum`; the application role is **not** granted `pg_monitor` or `pg_read_all_stats` merely for the developer smoke test.
+
 `ha-smoke` is deliberately disruptive but bounded: it identifies and stops the Patroni primary, requires election of a different primary, validates the stable writer and Server readiness, restarts the former primary, then requires the cluster to return to two streaming standbys. It never deletes volumes.
 
 ## Backup, restore and rollback
