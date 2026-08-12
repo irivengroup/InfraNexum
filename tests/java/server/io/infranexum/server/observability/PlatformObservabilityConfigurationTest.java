@@ -13,6 +13,7 @@ class PlatformObservabilityConfigurationTest {
     void createsPlatformOwnedCorrelationGeneratorAndFilter() {
         PlatformObservabilityConfiguration configuration = new PlatformObservabilityConfiguration();
         Clock clock = Clock.systemUTC();
+        assertNotNull(configuration.sensitiveDataRedactor());
         var identifiers = configuration.correlationIdentifiers(clock);
         var filter = configuration.correlationIdFilter(identifiers, clock, new SimpleMeterRegistry());
         var workerBridge = configuration.workerCorrelationBridge(Tracer.NOOP);

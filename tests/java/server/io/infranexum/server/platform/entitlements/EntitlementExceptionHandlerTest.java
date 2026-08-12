@@ -8,6 +8,7 @@ import io.infranexum.core.entitlements.EntitlementErrorCodes;
 import io.infranexum.core.entitlements.EntitlementRuntimeUnavailableException;
 import io.infranexum.core.contracts.DomainIdentifier;
 import io.infranexum.server.observability.CorrelationContext;
+import io.infranexum.server.observability.SensitiveDataRedactor;
 import java.time.Clock;
 import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 
 class EntitlementExceptionHandlerTest {
     private final EntitlementExceptionHandler handler = new EntitlementExceptionHandler(
-            Clock.fixed(ActivationTestFixtures.NOW, ZoneOffset.UTC));
+            Clock.fixed(ActivationTestFixtures.NOW, ZoneOffset.UTC), new SensitiveDataRedactor());
 
     @Test
     void translatesAccessDenialsToCanonicalProblemJson() {
@@ -33,6 +34,16 @@ class EntitlementExceptionHandlerTest {
         assertEquals("/api/v1/objects", response.getBody().instance());
         assertEquals("018bcfe5-6800-7001-8000-000000000001", response.getBody().trace_id());
         assertEquals(ActivationTestFixtures.NOW, response.getBody().occurred_at());
+    }
+
+    @Test
+    void redactsSecretsFromProblemDetailsBeforeReturningThem() {
+        var request = new MockHttpServletRequest("POST", "/api/v1/objects");
+        var response = handler.handleAccess(new EntitlementAccessException(
+                EntitlementErrorCodes.LITE_CONVERSION_REQUIRED,
+                "denied password=never-return-this Authorization: Bearer never-return-token"), request);
+
+        assertEquals("denied password=[REDACTED] Authorization: [REDACTED]", response.getBody().detail());
     }
 
     @Test

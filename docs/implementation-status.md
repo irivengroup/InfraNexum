@@ -1,4 +1,13 @@
-# InfraNexum 2.0.0-alpha.0.43 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.44 — état d’implémentation
+
+
+## 2.0.0-alpha.0.44 — Sensitive observability redaction
+
+**Statut : politique de masquage systématique implémentée ; epic PGM-12-E01 NON TERMINÉ.**
+
+Le Server applique désormais une politique centrale `SensitiveDataRedactor` au dernier point précédant la sérialisation des logs structurés ECS. Le customizer Spring Boot traite chaque valeur `String`, y compris message, MDC et stack trace, masque complètement les champs dont le chemin est credential-bearing et neutralise les encodages courants de mots de passe, secrets, tokens, Authorization/Cookie, user-info URI, JWT et blocs de clé privée. Le format ECS est désormais imposé afin qu’une variable d’environnement ne puisse pas contourner le customizer, et la taille/profondeur des stack traces structurées est bornée.
+
+Les réponses RFC Problem Entitlements passent par la même politique avant émission HTTP. Les spans manuels restent limités à deux attributs allowlistés (`infranexum.worker.task.type`, `infranexum.correlation.id`) ; les paramètres de tâches, headers et secrets ne sont pas admis comme attributs. Un smoke Java pur-JDK injecte volontairement plusieurs formes de secrets et doit prouver leur disparition tout en conservant les identifiants opérationnels sûrs. Les dashboards/runbooks et la certification OTLP cible restent à fermer.
 
 ## 2.0.0-alpha.0.43 — OpenTelemetry tracing foundation
 

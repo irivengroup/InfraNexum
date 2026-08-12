@@ -1,10 +1,10 @@
-# InfraNexum 2.0.0-alpha.0.43 — OpenTelemetry Tracing Foundation
+# InfraNexum 2.0.0-alpha.0.44 — Sensitive Observability Redaction
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
-`alpha.0.43` adds the OpenTelemetry tracing layer on top of the durable correlation boundary delivered in alpha.0.42. The Server uses Spring Boot's managed OpenTelemetry/Micrometer tracing integration, consumes and produces W3C Trace Context only, disables baggage, emits bounded Worker `CONSUMER` spans, and keeps OTLP export disabled until explicitly configured.
+`alpha.0.44` hardens the observability boundary with deterministic sensitive-data redaction. Every built-in ECS structured-log string value is processed immediately before JSON serialization, including messages, MDC values and stack traces; credential-bearing field paths are replaced wholesale and common inline password/token/cookie/authorization/URI-userinfo/JWT/private-key encodings are redacted. Entitlement RFC Problem details pass through the same policy before leaving the Server.
 
-The existing paired PostgreSQL/Oracle migration `0009-core-worker-correlation` remains the durable causal link across process/node boundaries. OpenTelemetry trace export is a separate operational channel: it is disabled by default, bounded when enabled, and never receives task parameters or arbitrary MDC fields from InfraNexum instrumentation. Production deployment remains standalone bare-metal or VM; root Docker/Compose remains developer/test tooling. PGM-12-E01 is **not complete**: systematic sensitive-data masking, dashboards/runbooks and target-environment telemetry export certification remain pending.
+The ECS formatter is now fixed rather than runtime-switchable, stack traces are bounded, and manual span attributes remain strictly allowlisted to validated task type and UUIDv7 correlation metadata. OpenTelemetry/OTLP remains disabled for export by default. Production deployment remains standalone bare-metal or VM; root Docker/Compose remains developer/test tooling. PGM-12-E01 is **not complete**: dashboards/runbooks and target-environment telemetry export certification remain pending.
 
 ## Source layout
 

@@ -323,7 +323,7 @@ class ComposeContractTest(unittest.TestCase):
             self.assertIn("X-Correlation-ID", text)
             self.assertIn("INFRANEXUM_INVALID_CORRELATION_ID", text)
             self.assertIn("018bcfe5-6800-7001-8000-000000000001", text)
-        self.assertIn("INFRANEXUM_LOG_FORMAT", compose)
+        self.assertNotIn("INFRANEXUM_LOG_FORMAT", compose)
         self.assertIn("INFRANEXUM_ENVIRONMENT", compose)
 
 

@@ -1,6 +1,6 @@
 # Platform observability — PGM-12-E01
 
-InfraNexum Server establishes one validated correlation context before every MVC or Actuator endpoint. The HTTP boundary is the first executable slice of roadmap epic **PGM-12-E01**. `alpha.0.43` adds Spring Boot managed OpenTelemetry tracing on top of that durable correlation boundary. OTLP export remains disabled by default and requires explicit configuration; systematic masking policies and dashboards remain separate follow-up increments.
+InfraNexum Server establishes one validated correlation context before every MVC or Actuator endpoint. The HTTP boundary is the first executable slice of roadmap epic **PGM-12-E01**. `alpha.0.44` adds a mandatory sensitive-data redaction boundary on top of the correlation and OpenTelemetry layers. OTLP export remains disabled by default and requires explicit configuration; dashboards/runbooks remain a separate follow-up increment.
 
 ## HTTP correlation contract
 
@@ -33,13 +33,19 @@ Console logs default to Spring Boot Elastic Common Schema (ECS) JSON using `logg
 Runtime overrides:
 
 ```text
-INFRANEXUM_LOG_FORMAT=ecs
 INFRANEXUM_ENVIRONMENT=local
 INFRANEXUM_SERVER_INSTANCE_ID=server-local-1
-INFRANEXUM_VERSION=2.0.0-alpha.0.43
+INFRANEXUM_VERSION=2.0.0-alpha.0.44
 ```
 
-`INFRANEXUM_LOG_FORMAT` exists for controlled operational overrides; production standards should keep a machine-readable structured format.
+The console format is fixed to ECS so runtime configuration cannot bypass the structured-value redaction customizer. Every string value is sanitized immediately before JSON serialization; stack trace output is additionally bounded to 8192 characters and 32 throwable frames.
+
+
+### Sensitive-data redaction policy
+
+`SensitiveDataStructuredLoggingCustomizer` installs one Spring Boot `JsonWriter.ValueProcessor` over the built-in ECS formatter. The processor delegates to the pure-JDK `SensitiveDataRedactor` for every string member, so messages, MDC values, structured fields and stack traces share one deterministic policy. Credential-bearing paths such as `password`, `client_secret`, `access_token`, `authorization`, `cookie`, `api_key`, `credential` and private-key fields are replaced wholesale with `[REDACTED]`. Arbitrary diagnostic text is scanned for common inline key/value credentials, Basic/Bearer authorization, Cookie headers, URI user-info passwords, JWTs and PEM private-key blocks.
+
+The policy does not attempt to classify arbitrary business data and therefore must not be used as permission to log payloads. InfraNexum instrumentation continues to forbid task parameters, HTTP headers, security context and arbitrary MDC fields in spans. RFC Problem details emitted by Entitlements are passed through the same redactor before the response is serialized.
 
 ## OpenTelemetry tracing and controlled OTLP export
 
@@ -86,4 +92,4 @@ No request identifier, URI, user-controlled header value or secret is used as a 
 
 ## Remaining PGM-12-E01 scope
 
-This increment does **not** claim completion of PGM-12-E01. Remaining scope includes persisted trace-parent continuation only if its retention/privacy model is approved, systematic sensitive-data masking policy and tests, platform dashboards/runbooks, retention/export configuration and target-environment OTLP validation.
+This increment does **not** claim completion of PGM-12-E01. Remaining scope includes persisted trace-parent continuation only if its retention/privacy model is approved, platform dashboards/runbooks, retention/export configuration and target-environment OTLP validation.

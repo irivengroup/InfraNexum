@@ -12,6 +12,11 @@ import org.springframework.context.annotation.Configuration;
 /** HTTP observability composition shared by every Server endpoint, including Actuator probes. */
 @Configuration(proxyBeanMethods = false)
 public class PlatformObservabilityConfiguration {
+    @Bean
+    SensitiveDataRedactor sensitiveDataRedactor() {
+        return new SensitiveDataRedactor();
+    }
+
     @Bean("correlationIdentifiers")
     UuidV7Generator correlationIdentifiers(@Qualifier("platformClock") Clock clock) {
         return new UuidV7Generator(clock, new SecureRandom());

@@ -130,7 +130,6 @@ Migration and rollback control files contain `psql` meta-commands such as `\set`
 The Server defaults to ECS JSON console logs. Override only when an engineering workflow explicitly requires another Spring Boot structured format:
 
 ```powershell
-$env:INFRANEXUM_LOG_FORMAT='ecs'
 $env:INFRANEXUM_ENVIRONMENT='local'
 ```
 
@@ -140,3 +139,7 @@ Every HTTP response carries `X-Correlation-ID`. A caller may supply a canonical 
 ### Developer network boundary
 
 The Compose network is intentionally **not** marked `internal`. Docker internal bridge networks can make published host ports ineffective; that contradicts this developer topology, which must expose PostgreSQL and Server to the local workstation. Ingress remains restricted to `127.0.0.1` for both published ports. This is development/test tooling only; production standalone bare-metal/VM deployment does not rely on this Compose network.
+
+### Structured logging safety
+
+The Server console format is fixed to ECS. `INFRANEXUM_LOG_FORMAT` is intentionally not supported because changing the formatter could bypass the mandatory `SensitiveDataStructuredLoggingCustomizer` redaction boundary.

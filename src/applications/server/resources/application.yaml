@@ -7,7 +7,7 @@ server:
 spring:
   application:
     name: infranexum-server
-    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.43}
+    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.44}
   datasource:
     url: ${INFRANEXUM_DATABASE_URL:}
     username: ${INFRANEXUM_DATABASE_USERNAME:}
@@ -62,16 +62,23 @@ infranexum:
     mode: ${INFRANEXUM_SERVER_MODE:STANDALONE}
     region: ${INFRANEXUM_SERVER_REGION:local}
     site: ${INFRANEXUM_SERVER_SITE:local}
-    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.43}
+    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.44}
     architecture-baseline: ${INFRANEXUM_ARCHITECTURE_BASELINE:2.0.0-draft.21}
 
 logging:
   structured:
     format:
-      console: ${INFRANEXUM_LOG_FORMAT:ecs}
+      console: ecs
+    json:
+      customizer: io.infranexum.server.observability.SensitiveDataStructuredLoggingCustomizer
+      stacktrace:
+        max-length: 8192
+        max-throwable-depth: 32
+        include-common-frames: false
+        include-hashes: true
     ecs:
       service:
-        version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.43}
+        version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.44}
         environment: ${INFRANEXUM_ENVIRONMENT:local}
         node-name: ${INFRANEXUM_SERVER_INSTANCE_ID:server-local-1}
 
@@ -91,7 +98,7 @@ management:
     map-environment-variables: false
     resource-attributes:
       service.namespace: infranexum
-      service.version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.43}
+      service.version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.44}
       service.instance.id: ${INFRANEXUM_SERVER_INSTANCE_ID:server-local-1}
       deployment.environment.name: ${INFRANEXUM_ENVIRONMENT:local}
     tracing:

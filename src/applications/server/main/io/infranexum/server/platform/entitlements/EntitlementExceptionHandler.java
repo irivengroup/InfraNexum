@@ -3,6 +3,7 @@ package io.infranexum.server.platform.entitlements;
 import io.infranexum.core.entitlements.EntitlementAccessException;
 import io.infranexum.core.entitlements.EntitlementRuntimeUnavailableException;
 import io.infranexum.server.observability.CorrelationContext;
+import io.infranexum.server.observability.SensitiveDataRedactor;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.time.Clock;
@@ -24,9 +25,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public final class EntitlementExceptionHandler {
     private final Clock clock;
+    private final SensitiveDataRedactor redactor;
 
-    public EntitlementExceptionHandler(@Qualifier("entitlementClock") Clock clock) {
+    public EntitlementExceptionHandler(
+            @Qualifier("entitlementClock") Clock clock, SensitiveDataRedactor redactor) {
         this.clock = Objects.requireNonNull(clock, "clock");
+        this.redactor = Objects.requireNonNull(redactor, "redactor");
     }
 
     @ExceptionHandler(EntitlementAccessException.class)
@@ -66,7 +70,7 @@ public final class EntitlementExceptionHandler {
                 URI.create(type),
                 title,
                 status.value(),
-                detail,
+                redactor.redact("problem.detail", detail),
                 request.getRequestURI(),
                 code,
                 clock.instant(),
