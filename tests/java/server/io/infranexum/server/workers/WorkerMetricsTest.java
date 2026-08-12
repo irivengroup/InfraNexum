@@ -24,12 +24,17 @@ class WorkerMetricsTest {
         assertEquals(1.0d, gauge(registry, "infranexum.workers.enabled"));
         assertEquals(0.0d, gauge(registry, "infranexum.workers.ready"));
         assertEquals(1.0d, gauge(registry, "infranexum.workers.capacity"));
+        assertEquals(0.0d, gauge(registry, "infranexum.workers.store.ready"));
+        assertEquals(0.0d, gauge(registry, "infranexum.workers.store.ready.loops"));
         assertNotNull(registry.find("infranexum.workers.tasks.claimed").functionCounter());
+        assertNotNull(registry.find("infranexum.workers.store.unavailable.failures").functionCounter());
 
         pool.start();
         awaitReadyMetric(registry, 5, TimeUnit.SECONDS);
         assertEquals(1.0d, gauge(registry, "infranexum.workers.ready"));
         assertEquals(1.0d, gauge(registry, "infranexum.workers.live"));
+        assertEquals(1.0d, gauge(registry, "infranexum.workers.store.ready"));
+        assertEquals(1.0d, gauge(registry, "infranexum.workers.store.ready.loops"));
         pool.close();
         assertEquals(0.0d, gauge(registry, "infranexum.workers.ready"));
         registry.close();
@@ -48,6 +53,8 @@ class WorkerMetricsTest {
         assertEquals(1.0d, gauge(registry, "infranexum.workers.ready"));
         assertEquals(0.0d, gauge(registry, "infranexum.workers.capacity"));
         assertEquals(0.0d, gauge(registry, "infranexum.workers.live"));
+        assertEquals(1.0d, gauge(registry, "infranexum.workers.store.ready"));
+        assertEquals(0.0d, gauge(registry, "infranexum.workers.store.ready.loops"));
         registry.close();
     }
 

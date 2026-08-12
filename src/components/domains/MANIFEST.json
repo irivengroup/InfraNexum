@@ -2,18 +2,18 @@
   "schema": "infranexum.component-manifest/v1",
   "id": "components.domains",
   "kind": "component-group",
-  "owner": "team.data-rsot",
-  "lifecycle": "planned",
+  "owner": "team.identity-organization",
+  "lifecycle": "active",
   "languages": [
     "java"
   ],
   "dependencies": [
-    "components.core.contracts"
+    "components.core.contracts",
+    "components.core.events"
   ],
   "source_baseline": [
-    "IAR-01 §4-5",
-    "ADR-0003",
-    "ADR-0004",
-    "PGM-01-E01"
+    "IAR-04 Organisation",
+    "CDC-ORGANIZATION",
+    "PGM-03-E01"
   ]
 }

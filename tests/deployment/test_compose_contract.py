@@ -52,11 +52,11 @@ class ComposeContractTest(unittest.TestCase):
     def test_web_cluster_is_two_private_nodes_behind_loopback_router(self) -> None:
         for name in WEB:
             service = self.services[name]
-            self.assertEqual("infranexum/web:${INFRANEXUM_VERSION:-2.0.0-alpha.0.54}", service["image"])
+            self.assertEqual("infranexum/web:${INFRANEXUM_VERSION:-2.0.0-alpha.0.57}", service["image"])
             self.assertEqual("service_healthy", service["depends_on"]["server"]["condition"])
             self.assertNotIn("ports", service)
             self.assertEqual("local", service["environment"]["INFRANEXUM_WEB_ENVIRONMENT"])
-            self.assertEqual("http://127.0.0.1:${INFRANEXUM_SERVER_PUBLISHED_PORT:-8080}/api", service["environment"]["INFRANEXUM_WEB_API_BASE_URL"])
+            self.assertEqual("/api", service["environment"]["INFRANEXUM_WEB_API_BASE_URL"])
         self.assertEqual(["127.0.0.1:${INFRANEXUM_WEB_PUBLISHED_PORT:-8081}:8080"], self.services["web"]["ports"])
         self.assertNotIn("Web cluster is intentionally deferred", (DOCKER / "README.md").read_text(encoding="utf-8"))
 
@@ -299,6 +299,20 @@ class ComposeContractTest(unittest.TestCase):
         self.assertEqual(["maintenance"], self.services["db-admin"]["profiles"])
         self.assertEqual(["maintenance"], self.services["rollback"]["profiles"])
 
+    def test_web_ingress_routes_api_same_origin_through_server_router(self) -> None:
+        haproxy = (DOCKER / "haproxy-web.cfg").read_text(encoding="utf-8")
+        self.assertIn("acl api_request path_beg /api/", haproxy)
+        self.assertIn("use_backend infranexum-server-router if api_request", haproxy)
+        self.assertIn("server server-router server:8080 check", haproxy)
+        for name in WEB:
+            self.assertEqual("/api", self.services[name]["environment"]["INFRANEXUM_WEB_API_BASE_URL"])
+        for name in SERVER:
+            self.assertEqual(
+                "true",
+                str(self.services[name]["environment"]["INFRANEXUM_ORGANIZATION_API_ENABLED"]).lower(),
+            )
+            self.assertEqual("${INFRANEXUM_ENVIRONMENT:-local}", self.services[name]["environment"]["INFRANEXUM_ENVIRONMENT"])
+
     def test_smoke_requires_cluster_health_replication_and_worker_metric(self) -> None:
         for path in (DOCKER / "dev-compose.sh", DOCKER / "dev-compose.ps1"):
             text = path.read_text(encoding="utf-8")
@@ -416,8 +430,11 @@ case "$url" in
   */api/v1/system/build)
     [ -z "$dump" ] || printf 'HTTP/1.1 200 OK\r\nX-Correlation-ID: %s\r\n\r\n' "$correlation" > "$dump"
     printf '%s' '{"instanceId":"server-pro-2"}' ;;
+  */api/v1/iam/organizations?limit=1)
+    [ -z "$dump" ] || printf 'HTTP/1.1 200 OK\r\nX-Correlation-ID: %s\r\n\r\n' "$correlation" > "$dump"
+    printf '%s' '[]' ;;
   */health/ready) printf '%s' '{"status":"UP"}' ;;
-  */runtime-config.json) printf '%s' '{"component":"web","version":"2.0.0-alpha.0.54","apiBaseUrl":"http://127.0.0.1:8080/api"}' ;;
+  */runtime-config.json) printf '%s' '{"component":"web","version":"2.0.0-alpha.0.57","apiBaseUrl":"/api"}' ;;
   *) echo "unexpected curl URL: $url" >&2; exit 70 ;;
 esac
 '''), encoding="utf-8")
@@ -434,17 +451,28 @@ esac
                 check=False,
             )
             self.assertEqual(0, result.returncode, result.stderr)
-            self.assertIn("compose-smoke: PASS (streaming=2 synchronous=1 Server=4 Web=2)", result.stdout)
+            self.assertIn("compose-smoke: PASS (streaming=2 synchronous=1 Server=4 Web=2 OrganizationAPI=UP)", result.stdout)
 
     def test_ha_smoke_waits_for_haproxy_writer_after_patroni_election(self) -> None:
         # Regression: Patroni leadership may precede HAProxy writer convergence.
         sh = (DOCKER / "dev-compose.sh").read_text(encoding="utf-8")
         ps = (DOCKER / "dev-compose.ps1").read_text(encoding="utf-8")
         self.assertIn("wait_writer_ready()", sh)
+        self.assertIn("wait_http_marker()", sh)
+        self.assertIn("wait_server_router_ready()", sh)
+        self.assertIn("wait_web_router_ready()", sh)
         self.assertIn("wait_writer_ready", sh.split("ha_smoke() {", 1)[1])
+        self.assertGreaterEqual(sh.split("ha_smoke() {", 1)[1].count('wait_server_router_ready "$server_port"'), 2)
+        self.assertIn('wait_web_router_ready "$web_port"', sh.split("ha_smoke() {", 1)[1])
         self.assertNotIn('test "$(db_scalar \'SELECT 1\')" = 1', sh)
         self.assertIn("function Wait-DatabaseWriterReady", ps)
         self.assertIn("Wait-DatabaseWriterReady -TimeoutSeconds 60 -PollSeconds 2", ps)
+        self.assertIn("function Wait-HttpJsonEndpoint", ps)
+        self.assertIn("function Wait-ServerRouterReady", ps)
+        self.assertIn("function Wait-WebRouterReady", ps)
+        self.assertIn("Wait-ServerRouterReady -Port $port -TimeoutSeconds 60 -PollSeconds 2", ps)
+        self.assertIn("Wait-ServerRouterReady -Port $serverPort -TimeoutSeconds 60 -PollSeconds 2", ps)
+        self.assertIn("Wait-WebRouterReady -Port $webPort -TimeoutSeconds 60 -PollSeconds 2", ps)
         self.assertNotIn("if ((Invoke-DatabaseScalar 'SELECT 1') -ne '1')", ps)
 
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -455,6 +483,8 @@ esac
             state_dir.mkdir()
             attempts_file = state_dir / "writer-attempts"
             attempts_file.write_text("0", encoding="utf-8")
+            server_attempts_file = state_dir / "server-attempts"
+            server_attempts_file.write_text("0", encoding="utf-8")
 
             docker = bin_dir / "docker"
             docker.write_text(textwrap.dedent(r'''#!/bin/sh
@@ -532,6 +562,7 @@ exit 70
             curl = bin_dir / "curl"
             curl.write_text(textwrap.dedent(r'''#!/bin/sh
 set -eu
+state=${INFRANEXUM_TEST_STATE:?}
 dump=''; correlation=''; url=''
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -542,13 +573,26 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 case "$url" in
+  *127.0.0.1:8080/actuator/health/readiness)
+    if [ -f "$state/failover" ]; then
+      count=$(cat "$state/server-attempts")
+      count=$((count + 1)); printf '%s' "$count" > "$state/server-attempts"
+      if [ "$count" -lt 3 ]; then
+        echo 'curl: (22) The requested URL returned error: 503' >&2
+        exit 22
+      fi
+    fi
+    printf '%s' '{"status":"UP"}' ;;
   */actuator/health/readiness) printf '%s' '{"status":"UP"}' ;;
   */actuator/metrics/infranexum.workers.ready) printf '%s' '{"name":"infranexum.workers.ready"}' ;;
   */api/v1/system/build)
     [ -z "$dump" ] || printf 'HTTP/1.1 200 OK\r\nX-Correlation-ID: %s\r\n\r\n' "$correlation" > "$dump"
     printf '%s' '{"instanceId":"server-pro-2"}' ;;
+  */api/v1/iam/organizations?limit=1)
+    [ -z "$dump" ] || printf 'HTTP/1.1 200 OK\r\nX-Correlation-ID: %s\r\n\r\n' "$correlation" > "$dump"
+    printf '%s' '[]' ;;
   */health/ready) printf '%s' '{"status":"UP"}' ;;
-  */runtime-config.json) printf '%s' '{"component":"web","version":"2.0.0-alpha.0.54","apiBaseUrl":"http://127.0.0.1:8080/api"}' ;;
+  */runtime-config.json) printf '%s' '{"component":"web","version":"2.0.0-alpha.0.57","apiBaseUrl":"/api"}' ;;
   *) echo "unexpected curl URL: $url" >&2; exit 70 ;;
 esac
 '''), encoding="utf-8")
@@ -571,7 +615,21 @@ esac
             )
             self.assertEqual(0, result.returncode, result.stderr)
             self.assertEqual("3", attempts_file.read_text(encoding="utf-8"))
+            self.assertGreaterEqual(int(server_attempts_file.read_text(encoding="utf-8")), 3)
             self.assertIn("compose-ha-smoke: PASS", result.stdout)
+
+    def test_ha_smoke_http_router_retries_are_bounded_and_idempotent(self) -> None:
+        sh = (DOCKER / "dev-compose.sh").read_text(encoding="utf-8")
+        ps = (DOCKER / "dev-compose.ps1").read_text(encoding="utf-8")
+        self.assertIn('while [ "$http_attempts" -lt 30 ]', sh)
+        self.assertIn("HTTP probe failed without diagnostic output", sh)
+        self.assertIn("did not recover within 60 seconds. Last diagnostic:", sh)
+        self.assertIn("Invoke-RestMethod -Uri $Uri", ps)
+        self.assertIn("AddSeconds($TimeoutSeconds)", ps)
+        self.assertIn("did not recover within $TimeoutSeconds seconds. Last diagnostic:", ps)
+        http_helper = ps.split("function Wait-HttpJsonEndpoint", 1)[1].split("function Wait-ServerRouterReady", 1)[0]
+        self.assertNotIn("Invoke-WebRequest", http_helper)
+        self.assertNotIn("-Method Post", http_helper)
 
     def test_ha_smoke_is_bounded_and_rejoins_primary(self) -> None:
         sh = (DOCKER / "dev-compose.sh").read_text(encoding="utf-8")
@@ -667,6 +725,16 @@ esac
         for name in ("dev-compose.sh", "init-secrets.sh", "bootstrap-postgresql-ha.sh", "migrate-postgresql.sh", "rollback-postgresql.sh", "patroni-entrypoint.sh", "server-entrypoint.sh"):
             result = subprocess.run(["sh", "-n", str(DOCKER / name)], capture_output=True, text=True, check=False)
             self.assertEqual(0, result.returncode, f"{name}: {result.stderr}")
+
+
+    def test_migration_runner_covers_all_four_digit_catalogue_ids(self) -> None:
+        script = (DOCKER / "migrate-postgresql.sh").read_text(encoding="utf-8")
+        self.assertIn(
+            '"$migration_root"/[0-9][0-9][0-9][0-9]-*',
+            script,
+        )
+        self.assertNotIn('"$migration_root"/000*', script)
+        self.assertTrue((ROOT / "src/distribution/migrations/0010-organization-foundation").is_dir())
 
     def test_required_docker_files_exist_and_are_executable_where_applicable(self) -> None:
         for name in ("patroni-postgres.Dockerfile", "web.Dockerfile", "haproxy-postgres.cfg", "haproxy-server.cfg", "haproxy-web.cfg"):

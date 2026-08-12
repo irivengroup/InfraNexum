@@ -1,0 +1,11 @@
+schema: infranexum.migration-verification/v1
+checks:
+- id: organization-code-unique
+  postgresql: "SELECT COUNT(*) = COUNT(DISTINCT code) FROM infranexum_org.organization"
+  oracle: "SELECT CASE WHEN COUNT(*) = COUNT(DISTINCT CODE) THEN 1 ELSE 0 END FROM INFRANEXUM_ORG_ORGANIZATION"
+- id: subdivision-code-unique-per-organization
+  postgresql: "SELECT COUNT(*) = COUNT(DISTINCT organization_id::text || ':' || code) FROM infranexum_org.subdivision"
+  oracle: "SELECT CASE WHEN COUNT(*) = COUNT(DISTINCT ORGANIZATION_ID || ':' || CODE) THEN 1 ELSE 0 END FROM INFRANEXUM_ORG_SUBDIVISION"
+- id: temporal-scope-periods-valid
+  postgresql: "SELECT COUNT(*) = 0 FROM infranexum_org.temporal_scope WHERE valid_to IS NOT NULL AND valid_to <= valid_from"
+  oracle: "SELECT CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END FROM INFRANEXUM_ORG_TEMP_SCOPE WHERE VALID_TO IS NOT NULL AND VALID_TO <= VALID_FROM"

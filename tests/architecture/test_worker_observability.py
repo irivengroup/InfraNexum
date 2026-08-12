@@ -19,6 +19,9 @@ class WorkerObservabilityArchitectureTest(unittest.TestCase):
         self.assertIn("fatalLoopFailures.increment()", pool)
         self.assertIn("public WorkerPoolSnapshot snapshot()", pool)
         self.assertIn("liveWorkers == configuredConcurrency", snapshot)
+        self.assertIn("storeReadyWorkers == configuredConcurrency", snapshot)
+        self.assertIn("catch (TaskStoreUnavailableException unavailable)", pool)
+        self.assertIn("storeUnavailableFailures.increment()", pool)
         self.assertIn("fatalLoopFailures == 0", snapshot)
 
     def test_workers_are_explicit_readiness_members(self) -> None:
@@ -26,6 +29,8 @@ class WorkerObservabilityArchitectureTest(unittest.TestCase):
         health = (SERVER / "WorkerHealthIndicator.java").read_text(encoding="utf-8")
         self.assertIn("include: readinessState,workers", application)
         self.assertIn("snapshot.ready() ? Health.up() : Health.down()", health)
+        self.assertIn('withDetail("storeReadyWorkers"', health)
+        self.assertIn('withDetail("storeUnavailableFailures"', health)
         self.assertIn('withDetail("fatalLoopFailures"', health)
 
     def test_worker_metrics_are_fixed_cardinality_and_exposed(self) -> None:
@@ -37,6 +42,9 @@ class WorkerObservabilityArchitectureTest(unittest.TestCase):
             "infranexum.workers.ready",
             "infranexum.workers.capacity",
             "infranexum.workers.live",
+            "infranexum.workers.store.ready",
+            "infranexum.workers.store.ready.loops",
+            "infranexum.workers.store.unavailable.failures",
             "infranexum.workers.active",
             "infranexum.workers.tasks.claimed",
             "infranexum.workers.loop.failures",

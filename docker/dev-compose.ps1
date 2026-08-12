@@ -131,8 +131,12 @@ function Invoke-Smoke {
     $cid='018bcfe5-6800-7001-8000-000000000001'; $response=Invoke-WebRequest -Uri "http://127.0.0.1:$port/api/v1/system/build" -Headers @{'X-Correlation-ID'=$cid} -TimeoutSec 10
     $build=$response.Content | ConvertFrom-Json; if ($build.instanceId -notmatch '^server-pro-[1-4]$') { throw "Unexpected routed instance $($build.instanceId)" }; if ($response.Headers['X-Correlation-ID'] -ne $cid) { throw 'Correlation was not propagated' }
     $webReady=Invoke-RestMethod -Uri "http://127.0.0.1:$webPort/health/ready" -TimeoutSec 10; if ($webReady.status -ne 'UP') { throw 'Web router readiness is not UP' }
-    $runtime=Invoke-RestMethod -Uri "http://127.0.0.1:$webPort/runtime-config.json" -TimeoutSec 10; if ($runtime.component -ne 'web' -or $runtime.version -ne '2.0.0-alpha.0.54' -or $runtime.apiBaseUrl -ne "http://127.0.0.1:$port/api") { throw 'Web runtime configuration is inconsistent with Compose bindings' }
-    Write-Output "compose-smoke: PASS (streaming=$streaming synchronous=$sync Server=4 Web=2)"
+    $runtime=Invoke-RestMethod -Uri "http://127.0.0.1:$webPort/runtime-config.json" -TimeoutSec 10; if ($runtime.component -ne 'web' -or $runtime.version -ne '2.0.0-alpha.0.57' -or $runtime.apiBaseUrl -ne '/api') { throw 'Web runtime configuration is inconsistent with Compose bindings' }
+    $organizationResponse=Invoke-WebRequest -Uri "http://127.0.0.1:$webPort/api/v1/iam/organizations?limit=1" -Headers @{'X-Correlation-ID'=$cid} -TimeoutSec 10
+    if ($organizationResponse.StatusCode -ne 200) { throw 'Organization API same-origin route is unavailable' }
+    if ($organizationResponse.Headers['X-Correlation-ID'] -ne $cid) { throw 'Organization API correlation was not propagated through Web ingress' }
+    try { [void]($organizationResponse.Content | ConvertFrom-Json) } catch { throw 'Organization API returned invalid JSON' }
+    Write-Output "compose-smoke: PASS (streaming=$streaming synchronous=$sync Server=4 Web=2 OrganizationAPI=UP)"
 }
 function Get-PatroniPrimaryService {
     foreach ($service in @('postgres-1','postgres-2','postgres-3')) {
@@ -161,6 +165,47 @@ function Wait-DatabaseWriterReady {
     } while ([DateTime]::UtcNow -lt $deadline)
     throw "Writer endpoint did not recover within $TimeoutSeconds seconds. Last diagnostic: $lastDiagnostic"
 }
+function Wait-HttpJsonEndpoint {
+    param(
+        [Parameter(Mandatory = $true)][string]$Uri,
+        [Parameter(Mandatory = $true)][string]$Label,
+        [Parameter(Mandatory = $true)][scriptblock]$Accept,
+        [ValidateRange(1, 300)][int]$TimeoutSeconds = 60,
+        [ValidateRange(1, 30)][int]$PollSeconds = 2
+    )
+    # HAProxy backend membership converges asynchronously after an upstream
+    # dependency or node changes state. Retry only idempotent HTTP GET probes,
+    # keep the wait bounded, and preserve the final 5xx/transport diagnostic.
+    $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    $lastDiagnostic = 'no HTTP probe completed'
+    do {
+        try {
+            $response = Invoke-RestMethod -Uri $Uri -TimeoutSec 10
+            if (& $Accept $response) { return $response }
+            $lastDiagnostic = "endpoint returned an unexpected payload: $($response | ConvertTo-Json -Compress -Depth 5)"
+        } catch {
+            $lastDiagnostic = $_.Exception.Message
+        }
+        if ([DateTime]::UtcNow -lt $deadline) { Start-Sleep -Seconds $PollSeconds }
+    } while ([DateTime]::UtcNow -lt $deadline)
+    throw "$Label did not recover within $TimeoutSeconds seconds. Last diagnostic: $lastDiagnostic"
+}
+function Wait-ServerRouterReady {
+    param(
+        [Parameter(Mandatory = $true)][int]$Port,
+        [ValidateRange(1, 300)][int]$TimeoutSeconds = 60,
+        [ValidateRange(1, 30)][int]$PollSeconds = 2
+    )
+    [void](Wait-HttpJsonEndpoint -Uri "http://127.0.0.1:$Port/actuator/health/readiness" -Label 'Server router readiness' -TimeoutSeconds $TimeoutSeconds -PollSeconds $PollSeconds -Accept { param($response) $response.status -eq 'UP' })
+}
+function Wait-WebRouterReady {
+    param(
+        [Parameter(Mandatory = $true)][int]$Port,
+        [ValidateRange(1, 300)][int]$TimeoutSeconds = 60,
+        [ValidateRange(1, 30)][int]$PollSeconds = 2
+    )
+    [void](Wait-HttpJsonEndpoint -Uri "http://127.0.0.1:$Port/health/ready" -Label 'Web router readiness' -TimeoutSeconds $TimeoutSeconds -PollSeconds $PollSeconds -Accept { param($response) $response.status -eq 'UP' })
+}
 function Invoke-HaSmoke {
     Assert-Repository; Invoke-Smoke; $primary=Get-PatroniPrimaryService; Write-Output "Stopping current Patroni primary: $primary"; Invoke-Compose stop $primary
     try {
@@ -168,7 +213,7 @@ function Invoke-HaSmoke {
         do { Start-Sleep 2; try { $replacement=Get-PatroniPrimaryService } catch { $replacement=$null } } while (-not $replacement -and [DateTime]::UtcNow -lt $deadline)
         if (-not $replacement -or $replacement -eq $primary) { throw 'No replacement primary within 60 seconds' }
         Wait-DatabaseWriterReady -TimeoutSeconds 60 -PollSeconds 2
-        $port=Get-PublishedPort server 8080; if ((Invoke-RestMethod -Uri "http://127.0.0.1:$port/actuator/health/readiness" -TimeoutSec 10).status -ne 'UP') { throw 'Server readiness lost during failover' }
+        $port=Get-PublishedPort server 8080; Wait-ServerRouterReady -Port $port -TimeoutSeconds 60 -PollSeconds 2
     } finally { Invoke-Compose start $primary }
     $deadline=[DateTime]::UtcNow.AddSeconds(90); $healthy=$false
     do { Start-Sleep 3; try { Assert-ComposeServiceHealthy $primary; $healthy=$true } catch { $healthy=$false } } while (-not $healthy -and [DateTime]::UtcNow -lt $deadline)
@@ -179,8 +224,7 @@ function Invoke-HaSmoke {
 
     $serverPort=Get-PublishedPort server 8080; Write-Output 'Stopping Server node server-1'; Invoke-Compose stop server-1
     try {
-        $ready=Invoke-RestMethod -Uri "http://127.0.0.1:$serverPort/actuator/health/readiness" -TimeoutSec 10
-        if ($ready.status -ne 'UP') { throw 'Server router lost readiness after server-1 stopped' }
+        Wait-ServerRouterReady -Port $serverPort -TimeoutSeconds 60 -PollSeconds 2
     } finally { Invoke-Compose start server-1 }
     $deadline=[DateTime]::UtcNow.AddSeconds(60); $serverHealthy=$false
     do { Start-Sleep 2; try { Assert-ComposeServiceHealthy server-1; $serverHealthy=$true } catch { $serverHealthy=$false } } while (-not $serverHealthy -and [DateTime]::UtcNow -lt $deadline)
@@ -188,10 +232,8 @@ function Invoke-HaSmoke {
 
     $webPort=Get-PublishedPort web 8080; Write-Output 'Stopping Web node web-1'; Invoke-Compose stop web-1
     try {
-        $webReady=Invoke-RestMethod -Uri "http://127.0.0.1:$webPort/health/ready" -TimeoutSec 10
-        if ($webReady.status -ne 'UP') { throw 'Web router lost readiness after web-1 stopped' }
-        $runtime=Invoke-RestMethod -Uri "http://127.0.0.1:$webPort/runtime-config.json" -TimeoutSec 10
-        if ($runtime.component -ne 'web') { throw 'Web router stopped serving runtime configuration' }
+        Wait-WebRouterReady -Port $webPort -TimeoutSeconds 60 -PollSeconds 2
+        [void](Wait-HttpJsonEndpoint -Uri "http://127.0.0.1:$webPort/runtime-config.json" -Label 'Web runtime configuration' -TimeoutSeconds 60 -PollSeconds 2 -Accept { param($response) $response.component -eq 'web' })
     } finally { Invoke-Compose start web-1 }
     $deadline=[DateTime]::UtcNow.AddSeconds(60); $webHealthy=$false
     do { Start-Sleep 2; try { Assert-ComposeServiceHealthy web-1; $webHealthy=$true } catch { $webHealthy=$false } } while (-not $webHealthy -and [DateTime]::UtcNow -lt $deadline)

@@ -1,13 +1,13 @@
 name: infranexum-dev
 
 x-postgres-tools: &postgres-tools
-  image: infranexum/postgres-tools:${INFRANEXUM_VERSION:-2.0.0-alpha.0.54}
+  image: infranexum/postgres-tools:${INFRANEXUM_VERSION:-2.0.0-alpha.0.57}
   build:
     context: ..
     dockerfile: docker/postgres-tools.Dockerfile
 
 x-patroni-node: &patroni-node
-  image: infranexum/patroni-postgres:${INFRANEXUM_VERSION:-2.0.0-alpha.0.54}
+  image: infranexum/patroni-postgres:${INFRANEXUM_VERSION:-2.0.0-alpha.0.57}
   build:
     context: ..
     dockerfile: docker/patroni-postgres.Dockerfile
@@ -36,7 +36,7 @@ x-patroni-node: &patroni-node
   stop_grace_period: 45s
 
 x-server-environment: &server-environment
-  INFRANEXUM_VERSION: ${INFRANEXUM_VERSION:-2.0.0-alpha.0.54}
+  INFRANEXUM_VERSION: ${INFRANEXUM_VERSION:-2.0.0-alpha.0.57}
   INFRANEXUM_SERVER_ADDRESS: 0.0.0.0
   INFRANEXUM_SERVER_PORT: "8080"
   INFRANEXUM_SERVER_MODE: REGIONAL
@@ -55,6 +55,7 @@ x-server-environment: &server-environment
   INFRANEXUM_ALLOCATION_TIER: STANDARD
   INFRANEXUM_TOPOLOGY: HIGH_AVAILABILITY
   INFRANEXUM_ROLES: SERVER
+  INFRANEXUM_ORGANIZATION_API_ENABLED: "true"
   INFRANEXUM_ACTIVATION_STATE: ACTIVE
   INFRANEXUM_PERSISTENCE_MODE: POSTGRESQL
   INFRANEXUM_PERSISTENCE_ISOLATION: READ_COMMITTED
@@ -78,7 +79,7 @@ x-server-environment: &server-environment
   INFRANEXUM_WORKERS_JITTER_RATIO: ${INFRANEXUM_WORKERS_JITTER_RATIO:-0.2}
 
 x-server-node: &server-node
-  image: infranexum/server:${INFRANEXUM_VERSION:-2.0.0-alpha.0.54}
+  image: infranexum/server:${INFRANEXUM_VERSION:-2.0.0-alpha.0.57}
   build:
     context: ..
     dockerfile: docker/server.Dockerfile
@@ -102,13 +103,14 @@ x-server-node: &server-node
 x-web-environment: &web-environment
   INFRANEXUM_WEB_LISTEN_ADDRESS: 0.0.0.0:8080
   INFRANEXUM_WEB_ENVIRONMENT: local
-  INFRANEXUM_WEB_API_BASE_URL: http://127.0.0.1:${INFRANEXUM_SERVER_PUBLISHED_PORT:-8080}/api
+  INFRANEXUM_WEB_API_BASE_URL: /api
+  INFRANEXUM_WEB_ORGANIZATION_FOUNDATION_ENABLED: "true"
   INFRANEXUM_WEB_STATIC_ROOT: ./public
   INFRANEXUM_WEB_SHUTDOWN_TIMEOUT_MS: ${INFRANEXUM_WEB_SHUTDOWN_TIMEOUT_MS:-20000}
   INFRANEXUM_ARCHITECTURE_BASELINE: 2.0.0-draft.21
 
 x-web-node: &web-node
-  image: infranexum/web:${INFRANEXUM_VERSION:-2.0.0-alpha.0.54}
+  image: infranexum/web:${INFRANEXUM_VERSION:-2.0.0-alpha.0.57}
   build:
     context: ..
     dockerfile: docker/web.Dockerfile
@@ -240,7 +242,7 @@ services:
       PGPORT: "5432"
       PGDATABASE: infranexum
       PGUSER: infranexum
-      INFRANEXUM_VERSION: ${INFRANEXUM_VERSION:-2.0.0-alpha.0.54}
+      INFRANEXUM_VERSION: ${INFRANEXUM_VERSION:-2.0.0-alpha.0.57}
       INFRANEXUM_DATABASE_PASSWORD_FILE: /run/infranexum-secrets/db-password
       INFRANEXUM_MIGRATION_ROOT: /opt/infranexum/migrations
     depends_on:

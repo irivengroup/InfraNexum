@@ -11,6 +11,7 @@ import io.infranexum.core.workers.TaskLeaseLostException;
 import io.infranexum.core.workers.TaskRecord;
 import io.infranexum.core.workers.TaskStatus;
 import io.infranexum.core.workers.TaskStore;
+import io.infranexum.core.workers.TaskStoreUnavailableException;
 import io.infranexum.core.workers.TaskSubmission;
 import io.infranexum.core.workers.TaskSubmissionResult;
 import io.infranexum.core.workers.TaskType;
@@ -19,6 +20,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLRecoverableException;
+import java.sql.SQLTransientConnectionException;
 import java.sql.Savepoint;
 import java.time.DateTimeException;
 import java.time.Duration;
@@ -737,13 +740,40 @@ public final class JdbcTaskStore implements TaskStore {
             } catch (SQLException | RuntimeException failure) {
                 rollback(connection, failure);
                 if (failure instanceof SQLException sqlFailure) {
-                    throw new JdbcPersistenceException(operation, sqlFailure);
+                    throw persistenceFailure(operation, sqlFailure);
                 }
                 throw failure;
             }
         } catch (SQLException failure) {
-            throw new JdbcPersistenceException(operation, failure);
+            throw persistenceFailure(operation, failure);
         }
+    }
+
+    private static RuntimeException persistenceFailure(String operation, SQLException failure) {
+        if (isTransientConnectivityFailure(failure)) {
+            return new TaskStoreUnavailableException(failure);
+        }
+        return new JdbcPersistenceException(operation, failure);
+    }
+
+    private static boolean isTransientConnectivityFailure(Throwable failure) {
+        for (Throwable current = failure; current != null; current = current.getCause()) {
+            if (current instanceof SQLTransientConnectionException || current instanceof SQLRecoverableException) {
+                return true;
+            }
+            if (current instanceof SQLException sqlFailure) {
+                for (SQLException candidate = sqlFailure; candidate != null; candidate = candidate.getNextException()) {
+                    String state = candidate.getSQLState();
+                    if (state != null && (state.startsWith("08")
+                            || state.equals("57P01")
+                            || state.equals("57P02")
+                            || state.equals("57P03"))) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private static void restoreSavepoint(

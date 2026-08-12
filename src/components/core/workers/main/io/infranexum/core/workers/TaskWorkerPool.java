@@ -35,12 +35,14 @@ public final class TaskWorkerPool implements AutoCloseable {
     private final AtomicReference<WorkerPoolState> state = new AtomicReference<>(WorkerPoolState.NEW);
     private final AtomicReference<ShutdownReport> shutdownReport = new AtomicReference<>();
     private final AtomicInteger liveWorkers = new AtomicInteger();
+    private final AtomicInteger storeReadyWorkers = new AtomicInteger();
     private final LongAdder claimed = new LongAdder();
     private final LongAdder succeeded = new LongAdder();
     private final LongAdder retried = new LongAdder();
     private final LongAdder failed = new LongAdder();
     private final LongAdder cancelled = new LongAdder();
     private final LongAdder abandoned = new LongAdder();
+    private final LongAdder storeUnavailableFailures = new LongAdder();
     private final LongAdder fatalLoopFailures = new LongAdder();
 
     public TaskWorkerPool(
@@ -115,6 +117,7 @@ public final class TaskWorkerPool implements AutoCloseable {
                 state.get(),
                 configuration.concurrency(),
                 liveWorkers.get(),
+                storeReadyWorkers.get(),
                 activeExecutions(),
                 claimed.sum(),
                 succeeded.sum(),
@@ -122,6 +125,7 @@ public final class TaskWorkerPool implements AutoCloseable {
                 failed.sum(),
                 cancelled.sum(),
                 abandoned.sum(),
+                storeUnavailableFailures.sum(),
                 fatalLoopFailures.sum());
     }
 
@@ -193,34 +197,61 @@ public final class TaskWorkerPool implements AutoCloseable {
 
     private void runLoop(TaskWorker worker) {
         liveWorkers.incrementAndGet();
+        boolean storeReady = false;
         try {
             while (!stopRequested.get()) {
-                WorkerIterationReport report = worker.runOnce();
+                WorkerIterationReport report;
+                try {
+                    report = worker.runOnce();
+                    if (!storeReady) {
+                        storeReadyWorkers.incrementAndGet();
+                        storeReady = true;
+                    }
+                } catch (TaskStoreUnavailableException unavailable) {
+                    storeUnavailableFailures.increment();
+                    if (storeReady) {
+                        storeReadyWorkers.decrementAndGet();
+                        storeReady = false;
+                    }
+                    if (!pauseAfterIdleOrStoreFailure()) {
+                        break;
+                    }
+                    continue;
+                }
                 record(report);
                 if (stopRequested.get()) {
                     break;
                 }
-                if (report.claimed() == 0) {
-                    try {
-                        TimeUnit.NANOSECONDS.sleep(configuration.pollInterval().toNanos());
-                    } catch (InterruptedException interrupted) {
-                        if (stopRequested.get()) {
-                            Thread.currentThread().interrupt();
-                            break;
-                        }
-                    }
-                }
-                if (Thread.currentThread().isInterrupted() && !stopRequested.get()) {
-                    Thread.interrupted();
+                if (report.claimed() == 0 && !pauseAfterIdleOrStoreFailure()) {
+                    break;
                 }
             }
         } catch (RuntimeException failure) {
-            // ExecutorService otherwise hides loop termination inside its Future. Record the
-            // failure so readiness becomes fail-closed instead of reporting a partially dead pool.
+            // ExecutorService otherwise hides loop termination inside its Future. Only unexpected
+            // runtime failures are fatal; a TaskStoreUnavailableException is handled above as a
+            // recoverable infrastructure condition and never reaches this branch.
             fatalLoopFailures.increment();
             throw failure;
         } finally {
+            if (storeReady) {
+                storeReadyWorkers.decrementAndGet();
+            }
             liveWorkers.decrementAndGet();
+        }
+    }
+
+    private boolean pauseAfterIdleOrStoreFailure() {
+        try {
+            TimeUnit.NANOSECONDS.sleep(configuration.pollInterval().toNanos());
+            return true;
+        } catch (InterruptedException interrupted) {
+            if (stopRequested.get()) {
+                Thread.currentThread().interrupt();
+                return false;
+            }
+            // Catching InterruptedException clears an unrelated interrupt; keep the long-lived
+            // worker loop available unless shutdown owns the interruption.
+            return true;
         }
     }
 

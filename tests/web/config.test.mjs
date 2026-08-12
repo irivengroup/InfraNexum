@@ -5,7 +5,7 @@ import test from 'node:test';
 
 import { WebRuntimeConfiguration } from '../../src/applications/web/runtime/config.mjs';
 
-const options = { version: '2.0.0-alpha.0.54', baseDirectory: os.tmpdir() };
+const options = { version: '2.0.0-alpha.0.57', baseDirectory: os.tmpdir() };
 
 test('configuration applies safe defaults and exposes only public values', () => {
   const configuration = WebRuntimeConfiguration.fromEnvironment({}, options);
@@ -25,6 +25,7 @@ test('configuration applies safe defaults and exposes only public values', () =>
     architectureBaseline: '2.0.0-draft.21',
     environment: 'production',
     apiBaseUrl: '/api',
+    organizationFoundationEnabled: false,
   });
   assert.equal(Object.isFrozen(configuration), true);
   assert.equal(Object.isFrozen(configuration.publicConfiguration()), true);

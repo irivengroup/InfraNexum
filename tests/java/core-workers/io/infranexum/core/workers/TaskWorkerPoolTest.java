@@ -131,6 +131,30 @@ final class TaskWorkerPoolTest {
     }
 
     @Test
+    void transientTaskStoreOutageDoesNotKillWorkersAndReadinessRecovers() throws Exception {
+        TaskHandlerRegistry registry = new TaskHandlerRegistry(List.of());
+        WorkerPoolConfiguration configuration = new WorkerPoolConfiguration(
+                1, Duration.ofMillis(5), Duration.ofSeconds(1), Duration.ofMillis(100), Duration.ofSeconds(1));
+        TaskWorkerPool pool = new TaskWorkerPool(
+                new RecoveringClaimStore(3),
+                registry,
+                RETRY,
+                Clock.systemUTC(),
+                "recovering",
+                configuration);
+
+        pool.start();
+        assertTrue(awaitReady(pool, 5, TimeUnit.SECONDS));
+        WorkerPoolSnapshot snapshot = pool.snapshot();
+        assertEquals(1, snapshot.liveWorkers());
+        assertEquals(1, snapshot.storeReadyWorkers());
+        assertTrue(snapshot.storeUnavailableFailures() >= 3);
+        assertEquals(0, snapshot.fatalLoopFailures());
+        assertTrue(snapshot.ready());
+        assertTrue(pool.shutdown().terminated());
+    }
+
+    @Test
     void shutdownBeforeStartIsGracefulAndIdempotent() {
         TaskHandler handler = handler(RetrySafety.RETRY_SAFE, context -> {});
         TaskWorkerPool pool = new TaskWorkerPool(
@@ -211,6 +235,36 @@ final class TaskWorkerPoolTest {
             Thread.sleep(5);
         }
         return pool.snapshot().fatalLoopFailures() > 0;
+    }
+
+    private static final class RecoveringClaimStore implements TaskStore {
+        private final AtomicInteger failuresRemaining;
+
+        private RecoveringClaimStore(int failures) {
+            failuresRemaining = new AtomicInteger(failures);
+        }
+
+        @Override
+        public TaskSubmissionResult submit(TaskId proposedId, TaskSubmission submission, RetrySafety retrySafety, Instant submittedAt) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<TaskRecord> claimBatch(String workerId, int limit, Instant now, Duration leaseDuration, RetryPolicy retryPolicy) {
+            if (failuresRemaining.getAndUpdate(value -> Math.max(0, value - 1)) > 0) {
+                throw new TaskStoreUnavailableException(new java.sql.SQLException("writer failover", "08006"));
+            }
+            return List.of();
+        }
+
+        @Override public void renewLease(TaskId taskId, String workerId, long leaseVersion, Instant now, Duration leaseDuration) { throw new UnsupportedOperationException(); }
+        @Override public TaskCheckpoint saveCheckpoint(TaskId taskId, String workerId, long leaseVersion, String token, Instant now, Duration leaseDuration) { throw new UnsupportedOperationException(); }
+        @Override public void markSucceeded(TaskId taskId, String workerId, long leaseVersion, Instant completedAt) { throw new UnsupportedOperationException(); }
+        @Override public TaskStatus markFailed(TaskId taskId, String workerId, long leaseVersion, Instant failedAt, RetryPolicy retryPolicy, Throwable failure) { throw new UnsupportedOperationException(); }
+        @Override public void markTerminalFailure(TaskId taskId, String workerId, long leaseVersion, Instant failedAt, Throwable failure) { throw new UnsupportedOperationException(); }
+        @Override public void markCancelled(TaskId taskId, String workerId, long leaseVersion, Instant cancelledAt) { throw new UnsupportedOperationException(); }
+        @Override public CancellationOutcome requestCancellation(TaskId taskId, Instant requestedAt) { throw new UnsupportedOperationException(); }
+        @Override public Optional<TaskRecord> find(TaskId taskId) { return Optional.empty(); }
     }
 
     private static final class FailingClaimStore implements TaskStore {

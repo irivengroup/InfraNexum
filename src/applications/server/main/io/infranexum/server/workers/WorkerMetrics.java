@@ -36,6 +36,12 @@ public final class WorkerMetrics implements MeterBinder {
         Gauge.builder("infranexum.workers.live", this, WorkerMetrics::liveValue)
                 .description("Currently alive worker loops")
                 .register(registry);
+        Gauge.builder("infranexum.workers.store.ready", this, WorkerMetrics::storeReadyValue)
+                .description("Whether every worker loop currently has a working task-store path")
+                .register(registry);
+        Gauge.builder("infranexum.workers.store.ready.loops", this, WorkerMetrics::storeReadyLoopsValue)
+                .description("Worker loops with a currently working task-store path")
+                .register(registry);
         Gauge.builder("infranexum.workers.active", this, WorkerMetrics::activeValue)
                 .description("Currently active task executions")
                 .register(registry);
@@ -45,6 +51,10 @@ public final class WorkerMetrics implements MeterBinder {
         functionCounter(registry, "infranexum.workers.tasks.failed", WorkerPoolSnapshot::failed);
         functionCounter(registry, "infranexum.workers.tasks.cancelled", WorkerPoolSnapshot::cancelled);
         functionCounter(registry, "infranexum.workers.tasks.abandoned", WorkerPoolSnapshot::abandoned);
+        functionCounter(
+                registry,
+                "infranexum.workers.store.unavailable.failures",
+                WorkerPoolSnapshot::storeUnavailableFailures);
         FunctionCounter.builder(
                         "infranexum.workers.loop.failures",
                         this,
@@ -84,6 +94,21 @@ public final class WorkerMetrics implements MeterBinder {
     private double liveValue() {
         WorkerPoolSnapshot snapshot = snapshot();
         return snapshot == null ? 0.0d : snapshot.liveWorkers();
+    }
+
+    private double storeReadyValue() {
+        if (!properties.enabled()) {
+            return 1.0d;
+        }
+        WorkerPoolSnapshot snapshot = snapshot();
+        return snapshot != null && snapshot.storeReadyWorkers() == snapshot.configuredConcurrency()
+                ? 1.0d
+                : 0.0d;
+    }
+
+    private double storeReadyLoopsValue() {
+        WorkerPoolSnapshot snapshot = snapshot();
+        return snapshot == null ? 0.0d : snapshot.storeReadyWorkers();
     }
 
     private double activeValue() {

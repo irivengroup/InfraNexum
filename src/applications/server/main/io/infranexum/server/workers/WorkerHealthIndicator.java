@@ -37,7 +37,9 @@ public final class WorkerHealthIndicator implements HealthIndicator {
                 .withDetail("state", snapshot.state().name())
                 .withDetail("configuredConcurrency", snapshot.configuredConcurrency())
                 .withDetail("liveWorkers", snapshot.liveWorkers())
+                .withDetail("storeReadyWorkers", snapshot.storeReadyWorkers())
                 .withDetail("activeExecutions", snapshot.activeExecutions())
+                .withDetail("storeUnavailableFailures", snapshot.storeUnavailableFailures())
                 .withDetail("fatalLoopFailures", snapshot.fatalLoopFailures())
                 .build();
     }

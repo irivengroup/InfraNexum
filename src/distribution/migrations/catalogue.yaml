@@ -1,5 +1,5 @@
 schema: infranexum.migration-catalogue/v1
-version: 1.8.0
+version: 1.9.0
 entries:
 - id: '0001'
   path: 0001-core-schema-history/migration.yaml
@@ -19,3 +19,5 @@ entries:
   path: 0008-core-entitlement-time-precision/migration.yaml
 - id: '0009'
   path: 0009-core-worker-correlation/migration.yaml
+- id: '0010'
+  path: 0010-organization-foundation/migration.yaml

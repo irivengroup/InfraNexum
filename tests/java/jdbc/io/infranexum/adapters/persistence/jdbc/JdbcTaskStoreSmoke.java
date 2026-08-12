@@ -9,6 +9,7 @@ import io.infranexum.core.workers.TaskCheckpoint;
 import io.infranexum.core.workers.TaskId;
 import io.infranexum.core.workers.TaskLeaseLostException;
 import io.infranexum.core.workers.TaskStatus;
+import io.infranexum.core.workers.TaskStoreUnavailableException;
 import io.infranexum.core.workers.TaskSubmission;
 import io.infranexum.core.workers.TaskType;
 import java.io.PrintWriter;
@@ -18,6 +19,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Savepoint;
 import java.sql.SQLException;
+import java.sql.SQLTransientConnectionException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
@@ -740,14 +742,24 @@ public final class JdbcTaskStoreSmoke {
         ScriptedDataSource commitFailureSource = new ScriptedDataSource(
                 Step.query("/*inx:task-cancel-state*/"))
                 .failCommitWith(new SQLException("commit failed", "08006"));
-        expect(JdbcPersistenceException.class, () -> new JdbcTaskStore(
+        expect(TaskStoreUnavailableException.class, () -> new JdbcTaskStore(
                 commitFailureSource, JdbcDatabaseDialect.POSTGRESQL).requestCancellation(TASK_ID, NOW));
         commitFailureSource.assertExhausted();
 
         ScriptedDataSource connectionFailureSource = new ScriptedDataSource()
                 .failConnectionWith(new SQLException("database unavailable", "08001"));
-        expect(JdbcPersistenceException.class, () -> new JdbcTaskStore(
+        expect(TaskStoreUnavailableException.class, () -> new JdbcTaskStore(
                 connectionFailureSource, JdbcDatabaseDialect.POSTGRESQL).find(TASK_ID));
+
+        ScriptedDataSource adminShutdownSource = new ScriptedDataSource()
+                .failConnectionWith(new SQLException("admin shutdown", "57P01"));
+        expect(TaskStoreUnavailableException.class, () -> new JdbcTaskStore(
+                adminShutdownSource, JdbcDatabaseDialect.POSTGRESQL).find(TASK_ID));
+
+        ScriptedDataSource transientConnectionSource = new ScriptedDataSource()
+                .failConnectionWith(new SQLTransientConnectionException("pool temporarily unavailable"));
+        expect(TaskStoreUnavailableException.class, () -> new JdbcTaskStore(
+                transientConnectionSource, JdbcDatabaseDialect.POSTGRESQL).find(TASK_ID));
     }
 
     private static TaskSubmission submission(String value) {

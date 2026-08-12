@@ -32,6 +32,7 @@ public final class WorkersSmoke {
         verifyCooperativeCancellation();
         verifyLeaseExpiryFencing();
         verifyBoundedPoolAndHeartbeat();
+        verifyTransientStoreOutageRecovery();
         verifyTruthfulForcedShutdown();
     }
 
@@ -215,6 +216,8 @@ public final class WorkersSmoke {
         assert snapshot.ready();
         assert snapshot.configuredConcurrency() == 2;
         assert snapshot.liveWorkers() == 2;
+        assert snapshot.storeReadyWorkers() == 2;
+        assert snapshot.storeUnavailableFailures() == 0;
         assert snapshot.claimed() == 4;
         assert snapshot.succeeded() == 4;
         assert snapshot.fatalLoopFailures() == 0;
@@ -223,6 +226,38 @@ public final class WorkersSmoke {
         assert report.terminated();
         assert maximum.get() <= 2;
         assert store.find(longTask.taskId()).orElseThrow().status() == TaskStatus.SUCCEEDED;
+    }
+
+    private static void verifyTransientStoreOutageRecovery() throws Exception {
+        FlappingClaimStore store = new FlappingClaimStore();
+        TaskWorkerPool pool = new TaskWorkerPool(
+                store,
+                new TaskHandlerRegistry(List.of()),
+                RETRY,
+                Clock.systemUTC(),
+                "store-recovery-smoke",
+                new WorkerPoolConfiguration(
+                        1, Duration.ofMillis(10), Duration.ofSeconds(1), Duration.ofMillis(100), Duration.ofSeconds(1)));
+        pool.start();
+        assert awaitReady(pool, 5, TimeUnit.SECONDS);
+        assert pool.snapshot().storeReadyWorkers() == 1;
+
+        store.failNextClaims(4);
+        assert awaitStoreUnavailable(pool, 5, TimeUnit.SECONDS);
+        WorkerPoolSnapshot degraded = pool.snapshot();
+        assert !degraded.ready();
+        assert degraded.liveWorkers() == 1;
+        assert degraded.storeReadyWorkers() == 0;
+        assert degraded.storeUnavailableFailures() >= 1;
+        assert degraded.fatalLoopFailures() == 0;
+
+        assert awaitReady(pool, 5, TimeUnit.SECONDS);
+        WorkerPoolSnapshot recovered = pool.snapshot();
+        assert recovered.liveWorkers() == 1;
+        assert recovered.storeReadyWorkers() == 1;
+        assert recovered.storeUnavailableFailures() >= 4;
+        assert recovered.fatalLoopFailures() == 0;
+        assert pool.shutdown().terminated();
     }
 
     private static void verifyTruthfulForcedShutdown() throws Exception {
@@ -277,6 +312,20 @@ public final class WorkersSmoke {
             Thread.sleep(5);
         }
         return pool.snapshot().succeeded() >= expected;
+    }
+
+    private static boolean awaitStoreUnavailable(
+            TaskWorkerPool pool, long timeout, TimeUnit unit) throws InterruptedException {
+        long deadline = System.nanoTime() + unit.toNanos(timeout);
+        while (System.nanoTime() < deadline) {
+            WorkerPoolSnapshot snapshot = pool.snapshot();
+            if (snapshot.storeUnavailableFailures() > 0 && snapshot.storeReadyWorkers() == 0) {
+                return true;
+            }
+            Thread.sleep(5);
+        }
+        WorkerPoolSnapshot snapshot = pool.snapshot();
+        return snapshot.storeUnavailableFailures() > 0 && snapshot.storeReadyWorkers() == 0;
     }
 
     private static boolean awaitReady(TaskWorkerPool pool, long timeout, TimeUnit unit) throws InterruptedException {
@@ -334,6 +383,38 @@ public final class WorkersSmoke {
     @FunctionalInterface
     private interface HandlerBody {
         void execute(TaskExecutionContext context) throws Exception;
+    }
+
+    private static final class FlappingClaimStore implements TaskStore {
+        private final AtomicInteger failuresRemaining = new AtomicInteger();
+
+        void failNextClaims(int count) {
+            failuresRemaining.set(count);
+        }
+
+        @Override
+        public TaskSubmissionResult submit(
+                TaskId proposedId, TaskSubmission submission, RetrySafety retrySafety, Instant submittedAt) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<TaskRecord> claimBatch(
+                String workerId, int limit, Instant now, Duration leaseDuration, RetryPolicy retryPolicy) {
+            if (failuresRemaining.getAndUpdate(value -> Math.max(0, value - 1)) > 0) {
+                throw new TaskStoreUnavailableException(new java.sql.SQLException("writer failover", "08006"));
+            }
+            return List.of();
+        }
+
+        @Override public void renewLease(TaskId taskId, String workerId, long leaseVersion, Instant now, Duration leaseDuration) { throw new UnsupportedOperationException(); }
+        @Override public TaskCheckpoint saveCheckpoint(TaskId taskId, String workerId, long leaseVersion, String token, Instant now, Duration leaseDuration) { throw new UnsupportedOperationException(); }
+        @Override public void markSucceeded(TaskId taskId, String workerId, long leaseVersion, Instant completedAt) { throw new UnsupportedOperationException(); }
+        @Override public TaskStatus markFailed(TaskId taskId, String workerId, long leaseVersion, Instant failedAt, RetryPolicy retryPolicy, Throwable failure) { throw new UnsupportedOperationException(); }
+        @Override public void markTerminalFailure(TaskId taskId, String workerId, long leaseVersion, Instant failedAt, Throwable failure) { throw new UnsupportedOperationException(); }
+        @Override public void markCancelled(TaskId taskId, String workerId, long leaseVersion, Instant cancelledAt) { throw new UnsupportedOperationException(); }
+        @Override public CancellationOutcome requestCancellation(TaskId taskId, Instant requestedAt) { throw new UnsupportedOperationException(); }
+        @Override public Optional<TaskRecord> find(TaskId taskId) { return Optional.empty(); }
     }
 
     private static final class FixedRetryPolicy implements RetryPolicy {

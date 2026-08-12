@@ -109,41 +109,47 @@ final class WorkerValueObjectsTest {
     }
 
     @Test
-    void workerPoolSnapshotIsStrictAndReadinessRequiresCompleteLiveCapacity() {
+    void workerPoolSnapshotIsStrictAndReadinessRequiresCompleteLiveAndStoreCapacity() {
         WorkerPoolSnapshot ready = new WorkerPoolSnapshot(
-                WorkerPoolState.RUNNING, 2, 2, 1, 5, 2, 1, 1, 0, 1, 0);
+                WorkerPoolState.RUNNING, 2, 2, 2, 1, 5, 2, 1, 1, 0, 1, 0, 0);
         assertTrue(ready.ready());
         assertFalse(new WorkerPoolSnapshot(
-                WorkerPoolState.RUNNING, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0).ready());
+                WorkerPoolState.RUNNING, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0).ready());
         assertFalse(new WorkerPoolSnapshot(
-                WorkerPoolState.STOPPING, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0).ready());
+                WorkerPoolState.RUNNING, 2, 2, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0).ready());
         assertFalse(new WorkerPoolSnapshot(
-                WorkerPoolState.RUNNING, 2, 2, 0, 0, 0, 0, 0, 0, 0, 1).ready());
+                WorkerPoolState.STOPPING, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0).ready());
+        assertFalse(new WorkerPoolSnapshot(
+                WorkerPoolState.RUNNING, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1).ready());
 
         assertThrows(NullPointerException.class, () -> new WorkerPoolSnapshot(
-                null, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+                null, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
         assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
-                WorkerPoolState.NEW, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+                WorkerPoolState.NEW, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
         assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
-                WorkerPoolState.NEW, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0));
+                WorkerPoolState.NEW, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
         assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
-                WorkerPoolState.NEW, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0));
+                WorkerPoolState.NEW, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0));
         assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
-                WorkerPoolState.NEW, 1, 0, 0, -1, 0, 0, 0, 0, 0, 0));
+                WorkerPoolState.NEW, 1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0));
         assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
-                WorkerPoolState.NEW, 1, 0, 0, 0, -1, 0, 0, 0, 0, 0));
+                WorkerPoolState.NEW, 1, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0));
         assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
-                WorkerPoolState.NEW, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0));
+                WorkerPoolState.NEW, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0));
         assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
-                WorkerPoolState.NEW, 1, 0, 0, 0, 0, 0, -1, 0, 0, 0));
+                WorkerPoolState.NEW, 1, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0));
         assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
-                WorkerPoolState.NEW, 1, 0, 0, 0, 0, 0, 0, -1, 0, 0));
+                WorkerPoolState.NEW, 1, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0));
         assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
-                WorkerPoolState.NEW, 1, 0, 0, 0, 0, 0, 0, 0, -1, 0));
+                WorkerPoolState.NEW, 1, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0));
         assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
-                WorkerPoolState.NEW, 1, 0, 0, 0, 0, 0, 0, 0, 0, -1));
+                WorkerPoolState.NEW, 1, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0));
         assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
-                WorkerPoolState.NEW, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0));
+                WorkerPoolState.NEW, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0));
+        assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
+                WorkerPoolState.NEW, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1));
+        assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
+                WorkerPoolState.NEW, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0));
     }
 
     @Test

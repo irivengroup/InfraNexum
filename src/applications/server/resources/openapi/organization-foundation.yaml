@@ -1,0 +1,437 @@
+openapi: 3.1.0
+info:
+  title: InfraNexum Organization Foundation API
+  version: 2.0.0-alpha.0.57
+  description: >-
+    Authoritative Organization/Subdivision/temporal-scope foundation. In this increment the HTTP
+    adapter is deliberately pre-IAM and the Server refuses to enable it outside environment=local.
+tags:
+  - name: IAM / Organization / Organizations
+  - name: IAM / Organization / Subdivisions
+  - name: IAM / Organization / Temporal scopes
+x-tagGroups:
+  - name: IAM
+    tags:
+      - IAM / Organization / Organizations
+      - IAM / Organization / Subdivisions
+      - IAM / Organization / Temporal scopes
+x-infranexum-pre-iam-local-only: true
+paths:
+  /api/v1/iam/organizations:
+    parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+    get:
+      tags: [IAM / Organization / Organizations]
+      operationId: searchOrganizations
+      summary: Search organizations through a bounded server-side query
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema: {type: string, maxLength: 255}
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [PROVISIONING, ACTIVE, SUSPENDED, ARCHIVING, ARCHIVED, DELETION_PENDING, DELETED]
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Stable bounded organization list.
+          headers:
+            X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Organization'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '500': {$ref: '#/components/responses/InternalFailure'}
+    post:
+      tags: [IAM / Organization / Organizations]
+      operationId: createOrganization
+      summary: Create and activate an organization atomically
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateOrganization'}
+      responses:
+        '201':
+          description: Organization created and activated.
+          headers:
+            X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}
+            ETag: {$ref: '#/components/headers/VersionEtag'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Organization'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '500': {$ref: '#/components/responses/InternalFailure'}
+  /api/v1/iam/organizations/{organizationId}:
+    parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/OrganizationId'
+    get:
+      tags: [IAM / Organization / Organizations]
+      operationId: getOrganization
+      summary: Read one organization by UUIDv7
+      responses:
+        '200':
+          description: Organization aggregate projection.
+          headers:
+            X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}
+            ETag: {$ref: '#/components/headers/VersionEtag'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Organization'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalFailure'}
+  /api/v1/iam/organizations/{organizationId}/suspend:
+    parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/OrganizationId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+    post:
+      tags: [IAM / Organization / Organizations]
+      operationId: suspendOrganization
+      summary: Suspend an active organization using optimistic versioning
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/Transition'}
+      responses:
+        '200':
+          description: Organization suspended.
+          headers:
+            X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}
+            ETag: {$ref: '#/components/headers/VersionEtag'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Organization'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '500': {$ref: '#/components/responses/InternalFailure'}
+  /api/v1/iam/organizations/{organizationId}/resume:
+    parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/OrganizationId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+    post:
+      tags: [IAM / Organization / Organizations]
+      operationId: resumeOrganization
+      summary: Reactivate a suspended organization using optimistic versioning
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/Transition'}
+      responses:
+        '200':
+          description: Organization active again.
+          headers:
+            X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}
+            ETag: {$ref: '#/components/headers/VersionEtag'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Organization'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '500': {$ref: '#/components/responses/InternalFailure'}
+  /api/v1/iam/organizations/{organizationId}/subdivisions:
+    parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/OrganizationId'
+    get:
+      tags: [IAM / Organization / Subdivisions]
+      operationId: listSubdivisions
+      summary: List non-deleted subdivisions inside one organization scope
+      parameters:
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Stable bounded subdivision list.
+          headers:
+            X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Subdivision'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalFailure'}
+    post:
+      tags: [IAM / Organization / Subdivisions]
+      operationId: createSubdivision
+      summary: Create an active subdivision inside one organization
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateSubdivision'}
+      responses:
+        '201':
+          description: Subdivision created.
+          headers:
+            X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}
+            ETag: {$ref: '#/components/headers/VersionEtag'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Subdivision'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '500': {$ref: '#/components/responses/InternalFailure'}
+  /api/v1/iam/organizations/{organizationId}/scopes:
+    parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/OrganizationId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+    post:
+      tags: [IAM / Organization / Temporal scopes]
+      operationId: createTemporalScope
+      summary: Create a typed effective-dated governance scope
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateTemporalScope'}
+      responses:
+        '201':
+          description: Temporal scope created.
+          headers:
+            X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TemporalScope'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '500': {$ref: '#/components/responses/InternalFailure'}
+  /api/v1/iam/organizations/{organizationId}/scopes/effective:
+    parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/OrganizationId'
+    get:
+      tags: [IAM / Organization / Temporal scopes]
+      operationId: effectiveOrganizationScopes
+      summary: Resolve effective scopes at an instant using half-open validity intervals
+      parameters:
+        - name: at
+          in: query
+          required: false
+          schema: {type: string, format: date-time}
+      responses:
+        '200':
+          description: Effective scopes ordered deterministically by type, start time and UUID.
+          headers:
+            X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/TemporalScope'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '500': {$ref: '#/components/responses/InternalFailure'}
+components:
+  parameters:
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: false
+      description: Optional caller correlation identifier. Must be canonical lowercase RFC 9562 UUIDv7.
+      schema:
+        type: string
+        pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 128
+        pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$'
+    OrganizationId:
+      name: organizationId
+      in: path
+      required: true
+      schema: {$ref: '#/components/schemas/UuidV7'}
+    Offset:
+      name: offset
+      in: query
+      required: false
+      schema: {type: integer, minimum: 0, default: 0}
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema: {type: integer, minimum: 1, maximum: 200, default: 50}
+  headers:
+    CorrelationId:
+      description: Canonical UUIDv7 used to correlate the request, outbox event and structured Server logs.
+      schema: {$ref: '#/components/schemas/UuidV7'}
+    VersionEtag:
+      description: Quoted optimistic aggregate version.
+      schema: {type: string, pattern: '^"[0-9]+"$'}
+  responses:
+    BadRequest:
+      description: Invalid identifier, body, query parameter, correlation identifier or idempotency key.
+      headers:
+        X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+    NotFound:
+      description: The resource is absent from the requested organization scope.
+      headers:
+        X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+    Conflict:
+      description: Lifecycle, optimistic version, uniqueness, idempotency or quota conflict.
+      headers:
+        X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+    InternalFailure:
+      description: Transaction failed closed; persistence details are not exposed.
+      headers:
+        X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Error'}
+  schemas:
+    UuidV7:
+      type: string
+      format: uuid
+      pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+    CreateOrganization:
+      type: object
+      additionalProperties: false
+      required: [code, displayName, legalName, countryCode, defaultLanguage, timezone, currency]
+      properties:
+        code: {type: string, pattern: '^[A-Z0-9][A-Z0-9-]{2,31}$'}
+        displayName: {type: string, minLength: 2, maxLength: 160}
+        legalName: {type: string, minLength: 2, maxLength: 255}
+        countryCode: {type: string, pattern: '^[A-Z]{2}$'}
+        defaultLanguage: {type: string, maxLength: 35, examples: [fr-FR]}
+        timezone: {type: string, maxLength: 80, examples: [Europe/Paris]}
+        currency: {type: string, pattern: '^[A-Z]{3}$'}
+        parentOrganizationId:
+          anyOf: [{$ref: '#/components/schemas/UuidV7'}, {type: 'null'}]
+    Transition:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        version: {type: integer, format: int64, minimum: 0}
+        reason: {type: [string, 'null'], maxLength: 512}
+    Organization:
+      type: object
+      additionalProperties: false
+      required: [id, code, displayName, legalName, countryCode, defaultLanguage, timezone, currency, status, version, createdAt, updatedAt]
+      properties:
+        id: {$ref: '#/components/schemas/UuidV7'}
+        code: {type: string}
+        displayName: {type: string}
+        legalName: {type: string}
+        countryCode: {type: string}
+        defaultLanguage: {type: string}
+        timezone: {type: string}
+        currency: {type: string}
+        parentOrganizationId:
+          anyOf: [{$ref: '#/components/schemas/UuidV7'}, {type: 'null'}]
+        status:
+          type: string
+          enum: [provisioning, active, suspended, archiving, archived, deletion_pending, deleted]
+        version: {type: integer, format: int64, minimum: 0}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    CreateSubdivision:
+      type: object
+      additionalProperties: false
+      required: [code, displayName, type]
+      properties:
+        code: {type: string, pattern: '^[A-Z0-9][A-Z0-9-]{2,31}$'}
+        displayName: {type: string, minLength: 2, maxLength: 160}
+        description: {type: [string, 'null'], maxLength: 4000}
+        type:
+          type: string
+          enum: [department, site, function, project, cost_center]
+        parentSubdivisionId:
+          anyOf: [{$ref: '#/components/schemas/UuidV7'}, {type: 'null'}]
+    Subdivision:
+      type: object
+      additionalProperties: false
+      required: [id, organizationId, code, displayName, type, status, version, createdAt, updatedAt]
+      properties:
+        id: {$ref: '#/components/schemas/UuidV7'}
+        organizationId: {$ref: '#/components/schemas/UuidV7'}
+        code: {type: string}
+        displayName: {type: string}
+        description: {type: [string, 'null']}
+        type:
+          type: string
+          enum: [department, site, function, project, cost_center]
+        status:
+          type: string
+          enum: [draft, active, inactive, archived, deleted]
+        parentSubdivisionId:
+          anyOf: [{$ref: '#/components/schemas/UuidV7'}, {type: 'null'}]
+        version: {type: integer, format: int64, minimum: 0}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    CreateTemporalScope:
+      type: object
+      additionalProperties: false
+      required: [type, validFrom]
+      properties:
+        subdivisionId:
+          anyOf: [{$ref: '#/components/schemas/UuidV7'}, {type: 'null'}]
+        type:
+          type: string
+          enum: [legal, geographic, operational, administrative, data]
+        validFrom: {type: string, format: date-time}
+        validTo: {type: [string, 'null'], format: date-time}
+    TemporalScope:
+      type: object
+      additionalProperties: false
+      required: [id, organizationId, type, validFrom, version]
+      properties:
+        id: {$ref: '#/components/schemas/UuidV7'}
+        organizationId: {$ref: '#/components/schemas/UuidV7'}
+        subdivisionId:
+          anyOf: [{$ref: '#/components/schemas/UuidV7'}, {type: 'null'}]
+        type:
+          type: string
+          enum: [legal, geographic, operational, administrative, data]
+        validFrom: {type: string, format: date-time}
+        validTo: {type: [string, 'null'], format: date-time}
+        version: {type: integer, format: int64, minimum: 0}
+    Error:
+      type: object
+      additionalProperties: false
+      required: [code, message, correlation_id, details, timestamp]
+      properties:
+        code: {type: string}
+        message: {type: string}
+        correlation_id:
+          anyOf: [{$ref: '#/components/schemas/UuidV7'}, {type: string, const: unavailable}]
+        details: {type: object, additionalProperties: true}
+        timestamp: {type: string, format: date-time}

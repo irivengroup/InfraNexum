@@ -1,6 +1,30 @@
-# InfraNexum 2.0.0-alpha.0.54 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.57 — état d’implémentation
 
 
+
+
+## 2.0.0-alpha.0.57 — PGM-03-E01 Organization & Subdivision foundation
+
+**Statut : tranche verticale métier implémentée et validée hors runtime Docker/JDK25 cible ; validation Docker Desktop de la migration/API requise.**
+
+Le premier bounded context métier autoritatif est désormais matérialisé sous `src/components/domains/organization`. L’agrégat Organisation utilise un UUIDv7, un code normalisé globalement unique, une version optimiste et le cycle de vie strict `PROVISIONING → ACTIVE ↔ SUSPENDED → ARCHIVING → ARCHIVED → DELETION_PENDING → DELETED`. Les quotas proviennent exclusivement du catalogue de capacités (`organization.organizations.max`, `organization.subdivisions.max`, `organization.hierarchy_depth.max`) ; le code métier ne dérive pas de limites par profil. La hiérarchie d’organisations est réservée au profil qui l’autorise et les Subdivisions sont refusées fail-closed lorsque le profil actif ne les expose pas.
+
+Les Subdivisions utilisent un code unique dans leur Organisation, une relation parent composite confinée à la même Organisation, une profondeur de hiérarchie bornée et une suppression logique. Les scopes temporels couvrent les dimensions `LEGAL`, `GEOGRAPHIC`, `OPERATIONAL`, `ADMINISTRATIVE` et `DATA` sur des intervalles semi-ouverts. Les commandes de création et les transitions Organisation sont idempotentes ; l’idempotency key est liée à une empreinte canonique du payload et à l’identité de ressource. Chaque mutation autoritative émet un événement transactionnel/outbox dont le type respecte le contrat Core versionné (`organization.lifecycle.*.v1`, `organization.subdivision.created.v1`, `organization.scope.created.v1`).
+
+La migration paire `0010-organization-foundation` fournit PostgreSQL et Oracle avec parité logique : contraintes UUIDv7, états, unicité, clés étrangères composites de confinement Organisation, période temporelle, idempotence et rollback. Les adaptateurs JDBC traduisent les collisions uniques en conflits métier stables et excluent les objets supprimés logiquement des quotas.
+
+L’API `/api/v1/iam/organizations` expose recherche, création, lecture, suspension/reprise, Subdivisions et scopes effectifs avec `X-Correlation-ID`, `Idempotency-Key`, ETag et enveloppes d’erreur stables. IAM n’étant pas encore livré, cette frontière est désactivée par défaut et sa composition refuse de démarrer hors `environment=local`. Le Docker PRO de développement l’active explicitement. Le Web appelle l’API en same-origin via HAProxy Web `/api`, affiche Organisations puis Subdivisions de l’Organisation sélectionnée, et conserve Bootstrap 5.3.6 + le thème visuel adapté du prédécesseur uniquement.
+
+Validations locales exécutées : smoke Java autonome Organisation/Subdivision/Scope/outbox **PASS** ; compilation stricte Java Domain/Application et JDBC `-Xlint:all -Werror` sous JDK local **PASS** ; contrats Compose **52/52** ; migrations **38/38** et CLI 0 violation ; Architecture **57/57** et CLI **PASS** ; Web **35/35**, couverture lignes **99,67 %**, branches **98,33 %**, fonctions **100 %**, process smoke **PASS** ; Eventing **10/10**, Persistence **12/12**, Capabilities **10/10**, Entitlements **10/10**, Audit **8/8**, Toolchains **25/25**, Archive Compatibility **12/12**. Le reactor Maven cible JDK25 et le runtime Docker réel de la migration/API restent à exécuter sur l’environnement cible.
+
+La baseline `alpha.0.56` est désormais certifiée par exécution Docker Desktop réelle : smoke nominal, failover/rejoin PostgreSQL, failover Server, failover Web et readiness finale `UP` sont tous PASS.
+
+
+## 2.0.0-alpha.0.55 — bounded HAProxy Server/Web reconvergence
+
+Le runtime Docker Desktop de `alpha.0.54` confirme le nominal PRO : `compose-smoke: PASS (streaming=2 synchronous=1 Server=4 Web=2)`. Le `ha-smoke` franchit également l’arrêt du primaire Patroni, l’élection du primaire de remplacement et la reconvergence du writer PostgreSQL. Il échoue ensuite sur une fenêtre transitoire HAProxy Server : `GET /actuator/health/readiness` retourne `503 No server is available to handle this request` avant que les nœuds Server, eux-mêmes dépendants de la base, soient à nouveau admis dans le backend.
+
+`alpha.0.55` introduit une attente HTTP générique bornée à 60 secondes, avec polling toutes les 2 secondes et conservation du dernier diagnostic. Elle ne rejoue que des requêtes GET idempotentes de readiness/configuration. Le scénario HA l’emploie après le basculement PostgreSQL, après le retrait contrôlé d’un nœud Server et après le retrait contrôlé d’un nœud Web. Une non-régression exécutable reproduit deux réponses HTTP 503 après le failover DB avant convergence, puis exige que le scénario poursuive les bascules Server et Web. Aucun seuil HA, privilège, quota ou invariant de réplication n’est abaissé.
 
 ## 2.0.0-alpha.0.54 — PRO HA writer convergence and predecessor Web theme adaptation
 

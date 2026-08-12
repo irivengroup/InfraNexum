@@ -18,6 +18,7 @@ export class WebRuntimeConfiguration {
   #shutdownTimeoutMs;
   #version;
   #architectureBaseline;
+  #organizationFoundationEnabled;
 
   constructor({
     listenHost,
@@ -28,6 +29,7 @@ export class WebRuntimeConfiguration {
     shutdownTimeoutMs,
     version,
     architectureBaseline,
+    organizationFoundationEnabled,
   }) {
     this.#listenHost = listenHost;
     this.#listenPort = listenPort;
@@ -37,6 +39,7 @@ export class WebRuntimeConfiguration {
     this.#shutdownTimeoutMs = shutdownTimeoutMs;
     this.#version = version;
     this.#architectureBaseline = architectureBaseline;
+    this.#organizationFoundationEnabled = organizationFoundationEnabled;
     Object.freeze(this);
   }
 
@@ -84,6 +87,15 @@ export class WebRuntimeConfiguration {
       throw new Error('INFRANEXUM_ARCHITECTURE_BASELINE is invalid');
     }
 
+    const organizationFoundationEnabled = readBoolean(
+      environment,
+      'INFRANEXUM_WEB_ORGANIZATION_FOUNDATION_ENABLED',
+      false,
+    );
+    if (organizationFoundationEnabled && runtimeEnvironment === 'production') {
+      throw new Error('Organization foundation UI is pre-IAM and cannot be enabled in production');
+    }
+
     return new WebRuntimeConfiguration({
       listenHost,
       listenPort,
@@ -93,6 +105,7 @@ export class WebRuntimeConfiguration {
       shutdownTimeoutMs,
       version,
       architectureBaseline,
+      organizationFoundationEnabled,
     });
   }
 
@@ -104,6 +117,7 @@ export class WebRuntimeConfiguration {
   get shutdownTimeoutMs() { return this.#shutdownTimeoutMs; }
   get version() { return this.#version; }
   get architectureBaseline() { return this.#architectureBaseline; }
+  get organizationFoundationEnabled() { return this.#organizationFoundationEnabled; }
 
   publicConfiguration() {
     return Object.freeze({
@@ -114,6 +128,7 @@ export class WebRuntimeConfiguration {
       architectureBaseline: this.#architectureBaseline,
       environment: this.#environment,
       apiBaseUrl: this.#apiBaseUrl,
+      organizationFoundationEnabled: this.#organizationFoundationEnabled,
     });
   }
 }
@@ -172,8 +187,25 @@ function validateApiBaseUrl(value, runtimeEnvironment) {
     throw new Error('INFRANEXUM_WEB_API_BASE_URL must not contain credentials, query, or fragment');
   }
   const loopback = ['localhost', '127.0.0.1', '::1'].includes(parsed.hostname);
-  if (parsed.protocol !== 'https:' && !(parsed.protocol === 'http:' && loopback && runtimeEnvironment !== 'production')) {
+  if (
+    parsed.protocol !== 'https:'
+    && !(parsed.protocol === 'http:' && loopback && runtimeEnvironment !== 'production')
+  ) {
     throw new Error('INFRANEXUM_WEB_API_BASE_URL requires HTTPS outside non-production loopback');
   }
   return parsed.toString().replace(/\/$/, '');
+}
+
+function readBoolean(environment, name, fallback) {
+  const raw = environment[name];
+  if (raw === undefined || raw === null || raw === '') {
+    return fallback;
+  }
+  if (raw === 'true') {
+    return true;
+  }
+  if (raw === 'false') {
+    return false;
+  }
+  throw new Error(`${name} must be true or false`);
 }

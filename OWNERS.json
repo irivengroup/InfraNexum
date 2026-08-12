@@ -56,6 +56,16 @@
         "database migrations",
         "PostgreSQL and Oracle parity"
       ]
+    },
+    {
+      "id": "team.identity-organization",
+      "name": "Identity & Organisation",
+      "responsibilities": [
+        "organization",
+        "subdivisions",
+        "governance scopes",
+        "identity and access"
+      ]
     }
   ]
 }

@@ -45,6 +45,8 @@ class WorkerHealthIndicatorTest {
 
         pool.start();
         assertEquals("UP", awaitStatus(indicator, "UP", 5, TimeUnit.SECONDS));
+        assertEquals(1, indicator.health().getDetails().get("storeReadyWorkers"));
+        assertEquals(0L, indicator.health().getDetails().get("storeUnavailableFailures"));
         pool.close();
         assertEquals("DOWN", indicator.health().getStatus().getCode());
     }

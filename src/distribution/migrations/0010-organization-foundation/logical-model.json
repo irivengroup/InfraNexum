@@ -1,0 +1,25 @@
+{
+  "schema": "infranexum.logical-schema/v1",
+  "objects": [
+    {
+      "kind": "table",
+      "logical_name": "organization.organization",
+      "invariant": "UUIDv7 aggregate root with globally unique immutable code and optimistic version"
+    },
+    {
+      "kind": "table",
+      "logical_name": "organization.subdivision",
+      "invariant": "organization-local unique code and same-organization acyclic parent relation"
+    },
+    {
+      "kind": "table",
+      "logical_name": "organization.temporal_scope",
+      "invariant": "typed effective-dated governance scope with half-open validity interval"
+    },
+    {
+      "kind": "table",
+      "logical_name": "organization.command_dedup",
+      "invariant": "idempotency key binds one payload hash to one resource identity"
+    }
+  ]
+}

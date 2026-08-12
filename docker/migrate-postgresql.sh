@@ -40,7 +40,7 @@ extract_checksum() {
   ' "$manifest"
 }
 
-for migration_dir in "$migration_root"/000*; do
+for migration_dir in "$migration_root"/[0-9][0-9][0-9][0-9]-*; do
   [ -d "$migration_dir" ] || continue
   manifest="$migration_dir/migration.yaml"
   sql_file="$migration_dir/postgresql.sql"

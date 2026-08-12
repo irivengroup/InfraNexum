@@ -1,0 +1,24 @@
+schema: infranexum.migration/v1
+id: '0010'
+name: organization-foundation
+owner_context: organization
+dependencies:
+- 0009
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 10
+preconditions:
+- core-schema-history-exists
+postconditions:
+- organization-subdivision-temporal-scope-tables-exist
+recovery: restore-from-pre-migration-backup-if-organization-foundation-fails
+rollback: drops-organization-foundation-schema-objects
+checksums:
+  postgresql.sql: 9716b78f94976dbeeb56e05b45a83114426acd41698431cd9dae7bc4a4042f90
+  oracle.sql: 8c0c5b22daa2d1e69a02b098156cac6e73c7ec0f53abbbfeed2b0660db462716
+  rollback/postgresql.sql: 0ea50d1824f99b2840857e626457cc9dd978bb84f02cd58d8585a003ff39f37b
+  rollback/oracle.sql: 2e9a68a82c40a8959ab53205b05f9f4ee2498a90888d2a2fd7ed5306a4d85321
+  logical-model.json: 33a662f78fc861a56451c8e589d6d79ed509395d618e480df5c9f192a083f589
+  verify.sql.yaml: bb200928c7f5d404f8e510f08b3858c9f84d71f7e6e16a82b6f089d3da7f623c
