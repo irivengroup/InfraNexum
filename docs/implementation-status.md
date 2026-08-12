@@ -1,4 +1,17 @@
-# InfraNexum 2.0.0-alpha.0.48 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.49 — état d’implémentation
+
+
+## 2.0.0-alpha.0.49 — PowerShell Compose native argument forwarding repair
+
+**Statut : correction implémentée et testée statiquement ; runtime PowerShell/Docker Desktop à revalider.**
+
+Le runtime Docker Desktop `alpha.0.48` atteint les bindings PRO attendus (`127.0.0.1:5432`, `127.0.0.1:5433`, `127.0.0.1:8080`) et le wrapper vérifie tous les services du cluster avant d’échouer au premier appel SQL. La cause est l’advanced-function parameter binding de `Invoke-ComposeCapture`: l’option native Docker `-e` est résolue par PowerShell comme abréviation ambiguë des paramètres communs `-ErrorAction` et `-ErrorVariable`, donc Docker ne reçoit jamais l’argument. `ha-smoke` échoue au même endroit parce qu’il commence par exécuter `smoke`.
+
+`Invoke-Compose` et `Invoke-ComposeCapture` utilisent désormais exclusivement le vecteur automatique `$args`, sans bloc `param` ni `ValueFromRemainingArguments`. Les options natives restent ainsi opaques au binder PowerShell et sont transmises telles quelles au CLI Docker. Cette correction couvre également les options courtes déjà utilisées ailleurs (`-T`, `-q`) et les futurs switches natifs, sans modifier la topologie, les secrets, les volumes ou les invariants HA.
+
+Un test de non-régression interdit la réintroduction d’un paramètre de forwarding sur ces wrappers et exige l’utilisation de `@args`, tout en conservant explicitement les chemins `-e` de requête SQL et de rollback. La suite de contrat Compose passe désormais **40/40** tests hors moteur Docker. L’exécution cible PowerShell/Docker Desktop reste obligatoire avant de considérer `smoke` et `ha-smoke` validés.
+
+Validations locales de l’incrément : Compose **40/40**, Source Integrity **45/45** avec couverture **100 %** et 0 violation, Archive Compatibility **12/12** avec couverture **100 %**, Toolchains **25/25** avec couverture **99 %**, Architecture-as-Code CLI **PASS** avec 0 violation. La suite de tests Architecture a été interrompue par timeout avant son résultat final sans assertion en échec observée ; elle n’est donc pas déclarée validée. PowerShell et Docker ne sont pas disponibles dans l’environnement de génération.
 
 
 ## 2.0.0-alpha.0.48 — PRO HA database bootstrap repair

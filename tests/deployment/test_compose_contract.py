@@ -298,6 +298,18 @@ class ComposeContractTest(unittest.TestCase):
         self.assertIn("CONFIRM_INFRANEXUM_VOLUME_DELETE", sh)
         self.assertIn("compose down --volumes --remove-orphans", sh)
 
+    def test_powershell_compose_wrappers_keep_native_switches_out_of_parameter_binding(self) -> None:
+        """Regression: native ``-e`` must not bind to PowerShell common parameters."""
+        ps = (DOCKER / "dev-compose.ps1").read_text(encoding="utf-8")
+        invoke_block = ps.split("function Invoke-Compose {", 1)[1].split("function Invoke-ComposeCapture {", 1)[0]
+        capture_block = ps.split("function Invoke-ComposeCapture {", 1)[1].split("function Assert-Repository {", 1)[0]
+        for block in (invoke_block, capture_block):
+            self.assertNotIn("param(", block)
+            self.assertIn("@args", block)
+            self.assertNotIn("@Arguments", block)
+        self.assertIn('run --rm --no-deps -e "INFRANEXUM_SQL=$Sql"', ps)
+        self.assertIn('-e "MIGRATION_ID=$($env:MIGRATION_ID)" -e CONFIRM_INFRANEXUM_ROLLBACK=YES', ps)
+
     def test_powershell_sql_uses_environment_transport_not_nested_escaping(self) -> None:
         ps = (DOCKER / "dev-compose.ps1").read_text(encoding="utf-8")
         block = ps.split("function Invoke-DatabaseScalar", 1)[1].split("function New-DatabaseBackup", 1)[0]

@@ -22,13 +22,15 @@ function Get-ComposeBaseArguments {
     return $base
 }
 function Invoke-Compose {
-    param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Arguments)
-    $base = @(Get-ComposeBaseArguments); & docker @base @Arguments
+    # Native Docker/Compose switches must remain opaque to PowerShell parameter binding.
+    # Using the automatic $args array prevents tokens such as -e from being resolved
+    # as abbreviated PowerShell common parameters (for example -ErrorAction).
+    $base = @(Get-ComposeBaseArguments); & docker @base @args
     if ($LASTEXITCODE -ne 0) { throw "docker compose failed with exit code $LASTEXITCODE" }
 }
 function Invoke-ComposeCapture {
-    param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Arguments)
-    $base = @(Get-ComposeBaseArguments); $output = & docker @base @Arguments 2>&1
+    # Keep native short options in the automatic argument vector for the same reason.
+    $base = @(Get-ComposeBaseArguments); $output = & docker @base @args 2>&1
     if ($LASTEXITCODE -ne 0) { throw "docker compose failed with exit code ${LASTEXITCODE}: $(($output | Out-String).Trim())" }
     return $output
 }

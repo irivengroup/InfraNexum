@@ -1,8 +1,8 @@
-# InfraNexum 2.0.0-alpha.0.48 — PRO HA Database Bootstrap Repair
+# InfraNexum 2.0.0-alpha.0.49 — PowerShell Compose Argument Forwarding Repair
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
-`alpha.0.48` fixes the `db-bootstrap` failure observed after a healthy three-node Patroni startup. Role password SQL is now processed by `psql` from stdin so `:'db_password'` interpolation is resolved client-side, with the secret imported through `\getenv` rather than exposed in command arguments. The bootstrap also waits boundedly for the complete PRO invariant (two streaming standbys and at least one synchronous/quorum standby) instead of racing Patroni/HAProxy readiness. All `alpha.0.47` JDK25, PGDATA and observability repairs are retained unchanged.
+`alpha.0.49` fixes the Windows PowerShell `smoke`/`ha-smoke` failure where Docker Compose short options such as `-e` were interpreted as abbreviated PowerShell common parameters (`-ErrorAction` / `-ErrorVariable`) before reaching Docker. The Compose execution wrappers now forward native arguments through PowerShell's automatic `$args` vector, keeping Docker options opaque to PowerShell parameter binding. The fix applies uniformly to current and future native short switches, including `-e`, `-T` and `-q`, while preserving all `alpha.0.48` PRO PostgreSQL bootstrap and HA invariants.
 
 Only router ports are published on `127.0.0.1`; individual etcd, PostgreSQL/Patroni and Server nodes stay on the private Compose bridge. `smoke` proves cluster health and replication invariants, while the deliberately disruptive `ha-smoke` verifies bounded PostgreSQL primary failover, writer recovery, Server readiness and rejoin without deleting volumes. The PRO Web cluster is intentionally deferred to a later increment. Production deployment remains standalone bare-metal or VM, and signed PRO activation remains a separate certification concern.
 
