@@ -305,10 +305,24 @@ class ComposeContractTest(unittest.TestCase):
         capture_block = ps.split("function Invoke-ComposeCapture {", 1)[1].split("function Assert-Repository {", 1)[0]
         for block in (invoke_block, capture_block):
             self.assertNotIn("param(", block)
-            self.assertIn("@args", block)
             self.assertNotIn("@Arguments", block)
+        self.assertIn("@args", invoke_block)
+        self.assertIn("@($args)", capture_block)
+        self.assertIn("ArgumentList.Add", capture_block)
         self.assertIn('run --rm --no-deps -e "INFRANEXUM_SQL=$Sql"', ps)
         self.assertIn('-e "MIGRATION_ID=$($env:MIGRATION_ID)" -e CONFIRM_INFRANEXUM_ROLLBACK=YES', ps)
+
+    def test_powershell_capture_keeps_compose_progress_off_stdout(self) -> None:
+        """Regression: Compose lifecycle stderr must not corrupt SQL scalar stdout."""
+        ps = (DOCKER / "dev-compose.ps1").read_text(encoding="utf-8")
+        block = ps.split("function Invoke-ComposeCapture {", 1)[1].split("function Assert-Repository {", 1)[0]
+        self.assertIn("RedirectStandardOutput = $true", block)
+        self.assertIn("RedirectStandardError = $true", block)
+        self.assertIn("ReadToEndAsync()", block)
+        self.assertIn("$process.ExitCode", block)
+        self.assertIn("Write-Verbose $stderr.Trim()", block)
+        self.assertIn('$stdout -split "`r?`n"', block)
+        self.assertNotIn("2>&1", block)
 
     def test_powershell_sql_uses_environment_transport_not_nested_escaping(self) -> None:
         ps = (DOCKER / "dev-compose.ps1").read_text(encoding="utf-8")

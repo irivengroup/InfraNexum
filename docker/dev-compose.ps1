@@ -29,10 +29,45 @@ function Invoke-Compose {
     if ($LASTEXITCODE -ne 0) { throw "docker compose failed with exit code $LASTEXITCODE" }
 }
 function Invoke-ComposeCapture {
-    # Keep native short options in the automatic argument vector for the same reason.
-    $base = @(Get-ComposeBaseArguments); $output = & docker @base @args 2>&1
-    if ($LASTEXITCODE -ne 0) { throw "docker compose failed with exit code ${LASTEXITCODE}: $(($output | Out-String).Trim())" }
-    return $output
+    # Capture stdout and stderr independently. Docker Compose writes lifecycle
+    # progress (for example, ephemeral container Creating/Created messages) to
+    # stderr even when the command succeeds. Mixing the streams corrupts scalar
+    # stdout consumers such as Invoke-DatabaseScalar. ProcessStartInfo also keeps
+    # native short switches opaque to PowerShell parameter binding.
+    $base = @(Get-ComposeBaseArguments)
+    $nativeArguments = @($base) + @($args)
+    $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+    $startInfo.FileName = 'docker'
+    $startInfo.UseShellExecute = $false
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    foreach ($argument in $nativeArguments) {
+        [void]$startInfo.ArgumentList.Add([string]$argument)
+    }
+
+    $process = [System.Diagnostics.Process]::new()
+    $process.StartInfo = $startInfo
+    try {
+        if (-not $process.Start()) { throw 'Unable to start Docker CLI' }
+        # Read both redirected streams asynchronously to avoid pipe deadlocks.
+        $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+        $stderrTask = $process.StandardError.ReadToEndAsync()
+        $process.WaitForExit()
+        $stdout = $stdoutTask.GetAwaiter().GetResult()
+        $stderr = $stderrTask.GetAwaiter().GetResult()
+
+        if ($process.ExitCode -ne 0) {
+            $details = @($stderr.Trim(), $stdout.Trim()) | Where-Object { $_ }
+            throw "docker compose failed with exit code $($process.ExitCode): $($details -join [Environment]::NewLine)"
+        }
+        if (-not [string]::IsNullOrWhiteSpace($stderr)) {
+            Write-Verbose $stderr.Trim()
+        }
+        # Preserve native-command line semantics for callers that enumerate output.
+        return @($stdout -split "`r?`n" | Where-Object { $_ -ne '' })
+    } finally {
+        $process.Dispose()
+    }
 }
 function Assert-Repository {
     if (-not (Get-Command docker -ErrorAction SilentlyContinue)) { throw 'Docker CLI is required' }

@@ -1,7 +1,7 @@
-# InfraNexum 2.0.0-alpha.0.49 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.50 — état d’implémentation
 
 
-## 2.0.0-alpha.0.49 — PowerShell Compose native argument forwarding repair
+## 2.0.0-alpha.0.50 — PowerShell Compose native argument forwarding repair
 
 **Statut : correction implémentée et testée statiquement ; runtime PowerShell/Docker Desktop à revalider.**
 

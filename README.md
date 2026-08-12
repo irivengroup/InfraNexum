@@ -1,4 +1,4 @@
-# InfraNexum 2.0.0-alpha.0.49 — PowerShell Compose Argument Forwarding Repair
+# InfraNexum 2.0.0-alpha.0.50 — PowerShell Compose Argument Forwarding Repair
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
