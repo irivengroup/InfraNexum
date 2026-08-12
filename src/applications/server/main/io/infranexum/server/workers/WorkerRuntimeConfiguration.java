@@ -6,6 +6,8 @@ import io.infranexum.core.contracts.UuidV7Generator;
 import io.infranexum.core.events.RetryPolicy;
 import io.infranexum.core.workers.InMemoryTaskStore;
 import io.infranexum.core.workers.TaskHandler;
+import io.infranexum.core.workers.TaskCorrelationProvider;
+import io.infranexum.core.workers.TaskExecutionScopeFactory;
 import io.infranexum.core.workers.TaskHandlerRegistry;
 import io.infranexum.core.workers.TaskScheduler;
 import io.infranexum.core.workers.TaskStore;
@@ -93,8 +95,9 @@ public class WorkerRuntimeConfiguration {
             TaskStore store,
             TaskHandlerRegistry registry,
             @Qualifier("workerIdentifiers") UuidV7Generator identifiers,
-            @Qualifier("workerClock") Clock clock) {
-        return new TaskScheduler(store, registry, identifiers, clock);
+            @Qualifier("workerClock") Clock clock,
+            TaskCorrelationProvider correlationProvider) {
+        return new TaskScheduler(store, registry, identifiers, clock, correlationProvider);
     }
 
     @Bean(initMethod = "start", destroyMethod = "close")
@@ -104,13 +107,15 @@ public class WorkerRuntimeConfiguration {
             @Qualifier("workerRetryPolicy") RetryPolicy retryPolicy,
             @Qualifier("workerClock") Clock clock,
             ServerRuntimeProperties server,
-            WorkerRuntimeProperties properties) {
+            WorkerRuntimeProperties properties,
+            TaskExecutionScopeFactory executionScopeFactory) {
         return new TaskWorkerPool(
                 store,
                 registry,
                 retryPolicy,
                 clock,
                 server.instanceId(),
-                properties.poolConfiguration());
+                properties.poolConfiguration(),
+                executionScopeFactory);
     }
 }

@@ -1,0 +1,16 @@
+{
+  "schema": "infranexum.logical-schema/v1",
+  "objects": [
+    {
+      "kind": "table-column",
+      "logical_name": "core.worker_task.correlation_id",
+      "table": "core.worker_task",
+      "column": {
+        "name": "correlation_id",
+        "type": "uuid",
+        "nullable": true
+      },
+      "invariant": "when present, correlation_id is an RFC 9562 UUID version 7 identifier"
+    }
+  ]
+}

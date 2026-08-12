@@ -1,0 +1,24 @@
+schema: infranexum.migration/v1
+id: '0009'
+name: core-worker-correlation
+owner_context: core
+dependencies:
+- '0006'
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 5
+preconditions:
+- core-worker-task-table-exists
+postconditions:
+- worker-task-correlation-is-null-or-uuidv7
+recovery: restore-from-pre-migration-backup-if-correlation-schema-change-fails
+rollback: drops-worker-correlation-column-and-constraint
+checksums:
+  postgresql.sql: c0674b9546e82b0a263d1ff7bcf90a528b11b4592d8629e9c609fa1960532bdc
+  oracle.sql: 2557b191db865df43555798fd47c3509e7b843c2a73183fa6be38e2fda7632fb
+  rollback/postgresql.sql: 18c8e099bc7f7040e650ac4650a8e4c6c63466d990aefe9d64d7f81410f36cae
+  rollback/oracle.sql: 54a39b83650a8ebeae0d220c59caf705a8aefb33b13d23ea6ab0cf8c4784f867
+  logical-model.json: 8518eb4c29d8a4a8d781244209f5995310a5f3f646c7b7c9d64b2f3e2686acff
+  verify.sql.yaml: 8327079f08bc97b43f2c6d0bcf02d60d47d6aa4e9bb895e0abd186b47b9be739

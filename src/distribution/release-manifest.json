@@ -2,7 +2,7 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.41",
+  "version": "2.0.0-alpha.0.42",
   "profile": "docker-desktop-port-resolution-and-powershell-smoke-repair",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
@@ -14,7 +14,7 @@
     },
     {
       "id": "infranexum-server",
-      "status": "source-server-bootstrap-workers-readiness-http-uuidv7-correlation-ecs-structured-logging-fixed-cardinality-correlation-metrics-hosted-jdk25-server-verify-pending"
+      "status": "source-server-bootstrap-workers-readiness-http-and-durable-worker-uuidv7-correlation-ecs-structured-logging-fixed-cardinality-metrics-hosted-jdk25-server-verify-pending"
     },
     {
       "id": "infranexum-agent",
@@ -30,15 +30,15 @@
     },
     {
       "id": "core-workers-v1",
-      "status": "bounded-runtime-idempotency-retry-safety-lease-fencing-heartbeat-checkpoint-cancellation-truthful-shutdown-secret-free-operational-snapshot-live-loop-and-fatal-failure-observability-hosted-jdk25-jacoco-proof-pending"
+      "status": "bounded-runtime-idempotency-retry-safety-lease-fencing-heartbeat-checkpoint-cancellation-truthful-shutdown-durable-correlation-context-and-secret-free-observability-hosted-jdk25-jacoco-proof-pending"
     },
     {
       "id": "adapter-persistence-jdbc-workers-v1",
-      "status": "postgresql-oracle-jdbc-persistence-workers-entitlements-revocations-dialect-json-binding-invalid-domain-identifiers-translated-to-contextual-sql-errors-hosted-jdk25-jacoco-proof-pending"
+      "status": "postgresql-oracle-jdbc-workers-with-durable-nullable-uuidv7-correlation-entitlements-revocations-json-binding-and-contextual-domain-errors-hosted-jdk25-jacoco-proof-pending"
     },
     {
-      "id": "migration-catalogue-0001-0008",
-      "status": "paired-static-checksum-logical-model-verification-postgresql17-18-live-ci-oracle19c-26ai-with-uuidv7-installation-identity-and-whole-second-entitlement-temporal-invariants"
+      "id": "migration-catalogue-0001-0009",
+      "status": "paired-static-checksum-logical-model-verification-postgresql17-18-live-ci-oracle19c-26ai-with-worker-uuidv7-correlation-installation-uuidv7-and-entitlement-temporal-invariants"
     },
     {
       "id": "ci-foundation",
@@ -50,17 +50,17 @@
     },
     {
       "id": "platform-observability-v1",
-      "status": "pgm-12-e01-http-correlation-uuidv7-mdc-ecs-structured-logging-generated-rejected-metrics-opentelemetry-async-propagation-masking-dashboards-pending"
+      "status": "pgm-12-e01-http-and-durable-worker-uuidv7-correlation-mdc-ecs-structured-logging-fixed-cardinality-metrics-opentelemetry-masking-dashboards-pending"
     }
   ],
   "validation_reports": [],
   "validation_summary": {
-    "source_inventory_paths": 533,
+    "source_inventory_paths": 544,
     "source_integrity_tests": 45,
     "source_integrity_coverage_percent": 100,
     "source_integrity_violations": 0,
     "python_tests": 216,
-    "architecture_tests": 47,
+    "architecture_tests": 49,
     "architecture_violations": 0,
     "toolchain_tests": 25,
     "toolchain_coverage_percent": 99,
@@ -96,12 +96,12 @@
     "repository_syntax_counts": {
       "python": 54,
       "json": 46,
-      "yaml": 24,
+      "yaml": 26,
       "xml": 9,
       "javascript": 13,
       "go": 8,
       "shell": 5,
-      "java": 296
+      "java": 300
     },
     "archive_compatibility_tests": 12,
     "archive_compatibility_coverage_percent": 100,
@@ -110,22 +110,22 @@
     "archive_compatibility_max_member_path": 142,
     "entitlements_module_tests_defined": 49,
     "audit_module_tests_defined": 21,
-    "architecture_coverage_status": "NON_EXECUTED_ALPHA040_DOCKER_TOOLING_SCOPE_PREVIOUS_INSTRUMENTED_WRAPPER_TIMEOUT_UNRESOLVED",
-    "architecture_functional_tests": 47,
+    "architecture_coverage_status": "NON_EXECUTED_ALPHA042_INSTRUMENTED_WRAPPER_TIMEOUT_AFTER_FUNCTIONAL_49_OF_49_PASS",
+    "architecture_functional_tests": 49,
     "jdbc_module_tests_defined": 52,
     "jdbc_postgresql_live_tests_defined": 18,
-    "server_module_tests_defined": 64,
+    "server_module_tests_defined": 66,
     "server_capability_configuration_contract_local": "EXECUTED_JAVA21_STRICT_HARNESS",
-    "agent_target_toolchain_status": "NON_EXECUTED_LOCAL_GO_1_23_2_TARGET_GO_1_26_5",
+    "agent_target_toolchain_status": "NON_EXECUTED_LOCAL_GO_1_23_2_TARGET_GO_1_26_5_LOCAL_VET_RACE_TEST_BUILD_PASS",
     "jdbc_deterministic_harness_tests_executed": 33,
     "jdbc_explicit_source_branch_gaps_diagnostic": 0,
     "server_workers_runtime_tests_defined": 10,
     "server_workers_runtime_strict_harness": "EXECUTED_JAVA21_STUBBED_SPRING_DIAGNOSTIC",
-    "compose_contract_tests": 29,
+    "compose_contract_tests": 30,
     "server_clock_framework_autoconfiguration_regression": "DEFINED_REQUIRES_JDK25_MAVEN_EXECUTION",
     "server_workers_observability_regressions": "DEFINED_HEALTH_METRICS_LIVE_LOOP_REQUIRES_JDK25_MAVEN_EXECUTION",
-    "server_observability_regressions": "DEFINED_CORRELATION_FILTER_MDC_FAIL_CLOSED_REJECTION_REQUIRES_JDK25_MAVEN_EXECUTION",
-    "docker_runtime_alpha040": "NON_EXECUTED_LOCAL_NO_DOCKER_ENGINE_USER_DOCKER_DESKTOP_VALIDATION_REQUIRED"
+    "server_observability_regressions": "DEFINED_HTTP_AND_DURABLE_WORKER_CORRELATION_MDC_SCOPE_REQUIRES_JDK25_MAVEN_EXECUTION",
+    "docker_runtime_alpha042": "NON_EXECUTED_LOCAL_NO_DOCKER_ENGINE_USER_DOCKER_DESKTOP_VALIDATION_REQUIRED"
   },
   "source_layout": "All production solution spaces are contained below src/; Java, Go and Web tests are repository-level under tests/; canonical relative paths are limited to 120 characters and path components to 80 characters.",
   "source_integrity": {
@@ -137,11 +137,11 @@
     "pre_commit_hook": ".githooks/pre-commit"
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.41",
-    "archive_entries": 535,
+    "prefix": "infranexum-2.0.0-alpha.0.42",
+    "archive_entries": 546,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
-    "source_recorded_files": 534
+    "source_recorded_files": 545
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.41-validation-evidence.zip"
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.42-validation-evidence.zip"
 }

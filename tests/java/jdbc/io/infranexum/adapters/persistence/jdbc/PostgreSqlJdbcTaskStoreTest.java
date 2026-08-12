@@ -63,14 +63,17 @@ class PostgreSqlJdbcTaskStoreTest {
     @Test
     void submitIsIdempotentAndRejectsSemanticDrift() {
         TaskId firstId = taskId(1);
+        DomainIdentifier correlation = taskId(900).value();
         TaskSubmission submission = submission("idem-a", "alpha", NOW);
-        var first = store.submit(firstId, submission, RetrySafety.RETRY_SAFE, NOW);
-        var replay = store.submit(taskId(2), submission, RetrySafety.RETRY_SAFE, NOW.plusMillis(1));
+        var first = store.submit(firstId, submission, RetrySafety.RETRY_SAFE, correlation, NOW);
+        var replay = store.submit(
+                taskId(2), submission, RetrySafety.RETRY_SAFE, taskId(901).value(), NOW.plusMillis(1));
 
         assertTrue(first.created());
         assertFalse(replay.created());
         assertEquals(firstId, replay.taskId());
         assertEquals(Map.of("payload", "alpha"), store.find(firstId).orElseThrow().parameters());
+        assertEquals(correlation, store.find(firstId).orElseThrow().correlationId());
         assertThrows(IdempotencyConflictException.class, () -> store.submit(
                 taskId(3), submission("idem-a", "changed", NOW), RetrySafety.RETRY_SAFE, NOW));
     }

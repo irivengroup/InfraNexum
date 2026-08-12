@@ -73,6 +73,7 @@ docker compose logs migrate
 
 Migration `0007-core-installation-uuidv7` repairs the alpha.0.31 UUIDv4 installation identity only while it has no entitlement/activation dependents, then enforces UUIDv7 at the database boundary.
 Migration `0008-core-entitlement-time-precision` then repairs the alpha.0.32 fractional `created_at` metadata and enforces whole-second Entitlements timestamps. The bootstrap itself uses `date_trunc('second', CURRENT_TIMESTAMP)` so new developer databases are correct before Server startup.
+Migration `0009-core-worker-correlation` adds nullable UUIDv7-constrained `worker_task.correlation_id` metadata so a validated request correlation can survive durable scheduling, restart and worker execution without persisting raw HTTP or security context.
 .\docker\dev-compose.ps1 down
 ```
 

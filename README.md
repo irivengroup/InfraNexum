@@ -1,10 +1,10 @@
-# InfraNexum 2.0.0-alpha.0.41 — HTTP Correlation & Structured Logging Foundation
+# InfraNexum 2.0.0-alpha.0.42 — Durable Worker Correlation Propagation
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
-`alpha.0.39` preserves the **PGM-12-E01** HTTP observability foundation from `alpha.0.38` and hardens the Docker Desktop developer runtime by making host port publication explicit and verifiable. Every Server request now carries one canonical UUIDv7 correlation identifier, returned in `X-Correlation-ID` and bound to structured logging MDC. Caller-supplied malformed or non-v7 identifiers are rejected with a non-reflective HTTP 400 problem response instead of being silently replaced. Console logging defaults to Spring Boot ECS JSON, and fixed-cardinality Micrometer counters expose generated and rejected correlation identifiers.
+`alpha.0.42` advances **PGM-12-E01** from HTTP-only correlation to durable asynchronous propagation. The Server captures the validated UUIDv7 correlation context when a background task is first scheduled, persists it independently of task parameters, restores it in `TaskExecutionContext`, and binds it to MDC only for the lifetime of the handler invocation. Idempotent replay preserves the correlation of the originally created task instead of overwriting causal history.
 
-The operational Workers readiness delivered in `alpha.0.37`, managed Spring scheduler in `alpha.0.36`, and successful Docker/JDK 25 Server bootstrap remain preserved. Production deployment remains standalone bare-metal or VM; root Docker/Compose remains developer/test tooling. PGM-12-E01 is **not complete**: OpenTelemetry export, asynchronous/background context propagation, systematic masking and dashboards remain future increments.
+Paired PostgreSQL/Oracle migration `0009-core-worker-correlation` adds a nullable UUIDv7-constrained `correlation_id` to the durable worker store. Existing tasks remain valid with `NULL`; no raw HTTP header, authorization context, credentials or arbitrary MDC map is persisted or propagated. Production deployment remains standalone bare-metal or VM; root Docker/Compose remains developer/test tooling. PGM-12-E01 is **not complete**: OpenTelemetry traces/export, systematic sensitive-data masking and dashboards remain pending.
 
 ## Source layout
 

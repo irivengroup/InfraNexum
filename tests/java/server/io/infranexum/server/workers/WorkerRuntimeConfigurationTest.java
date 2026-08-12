@@ -8,7 +8,9 @@ import io.infranexum.adapters.persistence.jdbc.JdbcTaskStore;
 import io.infranexum.core.contracts.RuntimeMode;
 import io.infranexum.core.workers.InMemoryTaskStore;
 import io.infranexum.core.workers.RetrySafety;
+import io.infranexum.core.workers.TaskCorrelationProvider;
 import io.infranexum.core.workers.TaskExecutionContext;
+import io.infranexum.core.workers.TaskExecutionScopeFactory;
 import io.infranexum.core.workers.TaskHandler;
 import io.infranexum.core.workers.TaskScheduler;
 import io.infranexum.core.workers.TaskStore;
@@ -49,7 +51,7 @@ class WorkerRuntimeConfigurationTest {
         Clock clock = configuration.workerClock();
         var identifiers = configuration.workerIdentifiers(clock);
         TaskScheduler scheduler = configuration.workerTaskScheduler(
-                new InMemoryTaskStore(), registry, identifiers, clock);
+                new InMemoryTaskStore(), registry, identifiers, clock, TaskCorrelationProvider.none());
 
         assertEquals(1, registry.size());
         assertNotNull(scheduler);
@@ -67,7 +69,8 @@ class WorkerRuntimeConfigurationTest {
                 configuration.workerRetryPolicy(properties),
                 clock,
                 server(),
-                properties);
+                properties,
+                TaskExecutionScopeFactory.noop());
 
         assertEquals(WorkerPoolState.NEW, pool.state());
         pool.start();
@@ -86,7 +89,7 @@ class WorkerRuntimeConfigurationTest {
                 RuntimeMode.STANDALONE,
                 "local",
                 "local",
-                "2.0.0-alpha.0.41",
+                "2.0.0-alpha.0.42",
                 "2.0.0-draft.21");
     }
 

@@ -1,5 +1,6 @@
 package io.infranexum.adapters.persistence.jdbc;
 
+import io.infranexum.core.contracts.DomainIdentifier;
 import io.infranexum.core.events.RetryPolicy;
 import io.infranexum.core.workers.CancellationOutcome;
 import io.infranexum.core.workers.IdempotencyConflictException;
@@ -68,6 +69,16 @@ public final class JdbcTaskStore implements TaskStore {
             TaskSubmission submission,
             RetrySafety retrySafety,
             Instant submittedAt) {
+        return submit(proposedId, submission, retrySafety, null, submittedAt);
+    }
+
+    @Override
+    public TaskSubmissionResult submit(
+            TaskId proposedId,
+            TaskSubmission submission,
+            RetrySafety retrySafety,
+            DomainIdentifier correlationId,
+            Instant submittedAt) {
         Objects.requireNonNull(proposedId, "proposedId");
         Objects.requireNonNull(submission, "submission");
         Objects.requireNonNull(retrySafety, "retrySafety");
@@ -81,7 +92,7 @@ public final class JdbcTaskStore implements TaskStore {
 
             Savepoint savepoint = connection.setSavepoint();
             try {
-                insertTask(connection, proposedId, submission, retrySafety, submittedAt);
+                insertTask(connection, proposedId, submission, retrySafety, correlationId, submittedAt);
                 insertParameters(connection, proposedId, submission.parameters());
                 connection.releaseSavepoint(savepoint);
                 return new TaskSubmissionResult(proposedId, true);
@@ -360,16 +371,18 @@ public final class JdbcTaskStore implements TaskStore {
             TaskId taskId,
             TaskSubmission submission,
             RetrySafety retrySafety,
+            DomainIdentifier correlationId,
             Instant submittedAt) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(insertTaskSql())) {
             dialect.bindIdentifier(statement, 1, taskId.value());
             statement.setString(2, submission.type().value());
             statement.setString(3, submission.idempotencyKey());
             statement.setString(4, retrySafety.name());
-            JdbcTemporal.bindInstant(statement, 5, submission.notBefore());
+            dialect.bindNullableIdentifier(statement, 5, correlationId);
             JdbcTemporal.bindInstant(statement, 6, submission.notBefore());
-            JdbcTemporal.bindInstant(statement, 7, submittedAt);
+            JdbcTemporal.bindInstant(statement, 7, submission.notBefore());
             JdbcTemporal.bindInstant(statement, 8, submittedAt);
+            JdbcTemporal.bindInstant(statement, 9, submittedAt);
             requireSingleUpdate(statement.executeUpdate(), "insert task");
         }
     }
@@ -570,6 +583,9 @@ public final class JdbcTaskStore implements TaskStore {
                 new TaskId(dialect.readIdentifier(resultSet, "task_id")),
                 new TaskType(resultSet.getString("task_type")),
                 resultSet.getString("idempotency_key"),
+                resultSet.getObject("correlation_id") == null
+                        ? null
+                        : dialect.readIdentifier(resultSet, "correlation_id"),
                 RetrySafety.valueOf(resultSet.getString("retry_safety")),
                 TaskStatus.valueOf(resultSet.getString("status")),
                 resultSet.getInt("attempts"),
@@ -763,11 +779,11 @@ public final class JdbcTaskStore implements TaskStore {
 
     private String insertTaskSql() {
         return "/*inx:task-insert*/ INSERT INTO " + taskTable() + " ("
-                + "task_id, task_type, idempotency_key, retry_safety, status, attempts, "
+                + "task_id, task_type, idempotency_key, retry_safety, correlation_id, status, attempts, "
                 + "requested_not_before, available_at, lease_owner, lease_version, lease_until, "
                 + "checkpoint_sequence, checkpoint_token, checkpoint_at, cancellation_requested, "
                 + "last_failure, created_at, updated_at) "
-                + "VALUES (?, ?, ?, ?, 'PENDING', 0, ?, ?, NULL, 0, NULL, NULL, NULL, NULL, 'N', NULL, ?, ?)";
+                + "VALUES (?, ?, ?, ?, ?, 'PENDING', 0, ?, ?, NULL, 0, NULL, NULL, NULL, 'N', NULL, ?, ?)";
     }
 
     private String insertParameterSql() {
@@ -871,7 +887,7 @@ public final class JdbcTaskStore implements TaskStore {
     }
 
     private String selectTasksSql(int count) {
-        return "/*inx:task-read*/ SELECT task_id, task_type, idempotency_key, retry_safety, status, attempts, "
+        return "/*inx:task-read*/ SELECT task_id, task_type, idempotency_key, correlation_id, retry_safety, status, attempts, "
                 + "available_at, lease_owner, lease_version, lease_until, checkpoint_sequence, checkpoint_token, "
                 + "checkpoint_at, cancellation_requested, last_failure, created_at, updated_at FROM "
                 + taskTable() + " WHERE task_id IN (" + placeholders(count) + ")";
@@ -980,6 +996,7 @@ public final class JdbcTaskStore implements TaskStore {
             TaskId taskId,
             TaskType type,
             String idempotencyKey,
+            DomainIdentifier correlationId,
             RetrySafety retrySafety,
             TaskStatus status,
             int attempts,
@@ -997,6 +1014,7 @@ public final class JdbcTaskStore implements TaskStore {
                     taskId,
                     type,
                     idempotencyKey,
+                    correlationId,
                     parameters,
                     retrySafety,
                     status,

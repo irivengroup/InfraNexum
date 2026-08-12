@@ -1,0 +1,5 @@
+schema: infranexum.migration-verification/v1
+checks:
+- id: worker-correlation-is-null-or-uuidv7
+  postgresql: "SELECT COUNT(*) = 0 FROM infranexum_core.worker_task WHERE correlation_id IS NOT NULL AND (SUBSTRING(correlation_id::TEXT FROM 15 FOR 1) <> '7' OR SUBSTRING(correlation_id::TEXT FROM 20 FOR 1) NOT IN ('8','9','a','b'))"
+  oracle: "SELECT CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END FROM INFRANEXUM_CORE_WORKER_TASK WHERE CORRELATION_ID IS NOT NULL AND NOT REGEXP_LIKE(CORRELATION_ID, '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$')"

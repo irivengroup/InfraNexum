@@ -1,5 +1,6 @@
 package io.infranexum.core.workers;
 
+import io.infranexum.core.contracts.DomainIdentifier;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -12,6 +13,7 @@ public record TaskRecord(
         TaskId taskId,
         TaskType type,
         String idempotencyKey,
+        DomainIdentifier correlationId,
         Map<String, String> parameters,
         RetrySafety retrySafety,
         TaskStatus status,
@@ -53,6 +55,29 @@ public record TaskRecord(
         }
         Objects.requireNonNull(createdAt, "createdAt");
         Objects.requireNonNull(updatedAt, "updatedAt");
+    }
+
+
+    /** Backward-compatible constructor for task records created without correlation metadata. */
+    public TaskRecord(
+            TaskId taskId,
+            TaskType type,
+            String idempotencyKey,
+            Map<String, String> parameters,
+            RetrySafety retrySafety,
+            TaskStatus status,
+            int attempts,
+            Instant availableAt,
+            String leaseOwner,
+            long leaseVersion,
+            Instant leaseUntil,
+            TaskCheckpoint checkpoint,
+            boolean cancellationRequested,
+            String lastFailure,
+            Instant createdAt,
+            Instant updatedAt) {
+        this(taskId, type, idempotencyKey, null, parameters, retrySafety, status, attempts, availableAt,
+                leaseOwner, leaseVersion, leaseUntil, checkpoint, cancellationRequested, lastFailure, createdAt, updatedAt);
     }
 
     public Optional<TaskCheckpoint> optionalCheckpoint() {

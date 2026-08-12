@@ -17,6 +17,7 @@ public final class TaskWorker {
     private final String workerId;
     private final Duration leaseDuration;
     private final BooleanSupplier shutdownRequested;
+    private final TaskExecutionScopeFactory executionScopeFactory;
     private final AtomicReference<ActiveExecution> active = new AtomicReference<>();
 
     public TaskWorker(
@@ -27,6 +28,19 @@ public final class TaskWorker {
             String workerId,
             Duration leaseDuration,
             BooleanSupplier shutdownRequested) {
+        this(store, registry, retryPolicy, clock, workerId, leaseDuration, shutdownRequested,
+                TaskExecutionScopeFactory.noop());
+    }
+
+    public TaskWorker(
+            TaskStore store,
+            TaskHandlerRegistry registry,
+            RetryPolicy retryPolicy,
+            Clock clock,
+            String workerId,
+            Duration leaseDuration,
+            BooleanSupplier shutdownRequested,
+            TaskExecutionScopeFactory executionScopeFactory) {
         this.store = Objects.requireNonNull(store, "store");
         this.registry = Objects.requireNonNull(registry, "registry");
         this.retryPolicy = Objects.requireNonNull(retryPolicy, "retryPolicy");
@@ -34,6 +48,7 @@ public final class TaskWorker {
         this.workerId = requireText(workerId, "workerId", 160);
         this.leaseDuration = requirePositive(leaseDuration, "leaseDuration");
         this.shutdownRequested = Objects.requireNonNull(shutdownRequested, "shutdownRequested");
+        this.executionScopeFactory = Objects.requireNonNull(executionScopeFactory, "executionScopeFactory");
     }
 
     public synchronized WorkerIterationReport runOnce() {
@@ -60,7 +75,11 @@ public final class TaskWorker {
                         new IllegalStateException("task handler is no longer registered: " + task.type()));
                 return new WorkerIterationReport(1, 0, 0, 1, 0, 0);
             }
-            handler.execute(context);
+            TaskExecutionScopeFactory.TaskExecutionScope scope =
+                    TaskExecutionScopeFactory.TaskExecutionScope.require(executionScopeFactory.open(context));
+            try (scope) {
+                handler.execute(context);
+            }
             if (context.leaseLost()) {
                 return abandonedReport();
             }

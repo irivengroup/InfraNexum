@@ -1,5 +1,6 @@
 package io.infranexum.core.workers;
 
+import io.infranexum.core.contracts.DomainIdentifier;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -17,6 +18,7 @@ public final class TaskExecutionContext {
     private final TaskId taskId;
     private final TaskType taskType;
     private final Map<String, String> parameters;
+    private final DomainIdentifier correlationId;
     private final String workerId;
     private final long leaseVersion;
     private final AtomicReference<TaskCheckpoint> checkpoint;
@@ -34,6 +36,7 @@ public final class TaskExecutionContext {
         this.taskId = claimed.taskId();
         this.taskType = claimed.type();
         this.parameters = claimed.parameters();
+        this.correlationId = claimed.correlationId();
         this.workerId = claimed.leaseOwner();
         this.leaseVersion = claimed.leaseVersion();
         this.checkpoint = new AtomicReference<>(claimed.checkpoint());
@@ -50,6 +53,11 @@ public final class TaskExecutionContext {
 
     public Map<String, String> parameters() {
         return parameters;
+    }
+
+    /** Returns the durable correlation identifier captured when the task was first created. */
+    public Optional<DomainIdentifier> correlationId() {
+        return Optional.ofNullable(correlationId);
     }
 
     public Optional<TaskCheckpoint> checkpoint() {

@@ -14,8 +14,10 @@ class PlatformObservabilityConfigurationTest {
         Clock clock = Clock.systemUTC();
         var identifiers = configuration.correlationIdentifiers(clock);
         var filter = configuration.correlationIdFilter(identifiers, clock, new SimpleMeterRegistry());
+        var workerBridge = configuration.workerCorrelationBridge();
 
         assertNotNull(identifiers.next());
+        assertNotNull(workerBridge);
         assertEquals(org.springframework.core.Ordered.HIGHEST_PRECEDENCE + 10, filter.getOrder());
     }
 }

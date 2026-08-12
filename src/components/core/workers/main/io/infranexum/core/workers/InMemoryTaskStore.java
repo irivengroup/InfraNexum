@@ -1,5 +1,6 @@
 package io.infranexum.core.workers;
 
+import io.infranexum.core.contracts.DomainIdentifier;
 import io.infranexum.core.events.RetryPolicy;
 import java.time.DateTimeException;
 import java.time.Duration;
@@ -47,6 +48,16 @@ public final class InMemoryTaskStore implements TaskStore {
             TaskSubmission submission,
             RetrySafety retrySafety,
             Instant submittedAt) {
+        return submit(proposedId, submission, retrySafety, null, submittedAt);
+    }
+
+    @Override
+    public TaskSubmissionResult submit(
+            TaskId proposedId,
+            TaskSubmission submission,
+            RetrySafety retrySafety,
+            DomainIdentifier correlationId,
+            Instant submittedAt) {
         Objects.requireNonNull(proposedId, "proposedId");
         Objects.requireNonNull(submission, "submission");
         Objects.requireNonNull(retrySafety, "retrySafety");
@@ -70,7 +81,7 @@ public final class InMemoryTaskStore implements TaskStore {
             if (tasks.containsKey(proposedId)) {
                 throw new IllegalArgumentException("task identifier already exists: " + proposedId);
             }
-            MutableTask task = MutableTask.create(proposedId, submission, retrySafety, submittedAt);
+            MutableTask task = MutableTask.create(proposedId, submission, retrySafety, correlationId, submittedAt);
             tasks.put(proposedId, task);
             idempotency.put(scope, proposedId);
             return new TaskSubmissionResult(proposedId, true);
@@ -370,6 +381,7 @@ public final class InMemoryTaskStore implements TaskStore {
         private final String idempotencyKey;
         private final Map<String, String> parameters;
         private final RetrySafety retrySafety;
+        private final DomainIdentifier correlationId;
         private final Instant requestedNotBefore;
         private final Instant createdAt;
         private TaskStatus status;
@@ -387,12 +399,14 @@ public final class InMemoryTaskStore implements TaskStore {
                 TaskId taskId,
                 TaskSubmission submission,
                 RetrySafety retrySafety,
+                DomainIdentifier correlationId,
                 Instant submittedAt) {
             this.taskId = taskId;
             this.type = submission.type();
             this.idempotencyKey = submission.idempotencyKey();
             this.parameters = submission.parameters();
             this.retrySafety = retrySafety;
+            this.correlationId = correlationId;
             this.requestedNotBefore = submission.notBefore();
             this.createdAt = submittedAt;
             this.status = TaskStatus.PENDING;
@@ -404,8 +418,9 @@ public final class InMemoryTaskStore implements TaskStore {
                 TaskId taskId,
                 TaskSubmission submission,
                 RetrySafety retrySafety,
+                DomainIdentifier correlationId,
                 Instant submittedAt) {
-            return new MutableTask(taskId, submission, retrySafety, submittedAt);
+            return new MutableTask(taskId, submission, retrySafety, correlationId, submittedAt);
         }
 
         boolean matches(TaskSubmission submission, RetrySafety safety) {
@@ -428,6 +443,7 @@ public final class InMemoryTaskStore implements TaskStore {
                     taskId,
                     type,
                     idempotencyKey,
+                    correlationId,
                     parameters,
                     retrySafety,
                     status,

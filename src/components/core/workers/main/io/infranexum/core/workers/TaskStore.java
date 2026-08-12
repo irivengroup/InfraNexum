@@ -1,5 +1,6 @@
 package io.infranexum.core.workers;
 
+import io.infranexum.core.contracts.DomainIdentifier;
 import io.infranexum.core.events.RetryPolicy;
 import java.time.Duration;
 import java.time.Instant;
@@ -13,6 +14,19 @@ public interface TaskStore {
             TaskSubmission submission,
             RetrySafety retrySafety,
             Instant submittedAt);
+
+    /**
+     * Submits a task with durable correlation metadata. Legacy stores may ignore correlation until
+     * they implement the extended contract; InfraNexum stores override this method.
+     */
+    default TaskSubmissionResult submit(
+            TaskId proposedId,
+            TaskSubmission submission,
+            RetrySafety retrySafety,
+            DomainIdentifier correlationId,
+            Instant submittedAt) {
+        return submit(proposedId, submission, retrySafety, submittedAt);
+    }
 
     List<TaskRecord> claimBatch(
             String workerId,

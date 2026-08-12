@@ -1,6 +1,6 @@
 # Platform observability — PGM-12-E01
 
-InfraNexum Server establishes one validated correlation context before every MVC or Actuator endpoint. This is the first executable slice of roadmap epic **PGM-12-E01**; OpenTelemetry export, cross-thread propagation, masking policies and dashboards remain separate follow-up increments.
+InfraNexum Server establishes one validated correlation context before every MVC or Actuator endpoint. The HTTP boundary is the first executable slice of roadmap epic **PGM-12-E01**. `alpha.0.42` extends that validated context across durable background-task boundaries; OpenTelemetry export, systematic masking policies and dashboards remain separate follow-up increments.
 
 ## HTTP correlation contract
 
@@ -17,6 +17,15 @@ For accepted requests, the canonical identifier is:
 
 `EntitlementExceptionHandler` consumes this validated request context and never re-reads the raw inbound header.
 
+
+## Durable background-task propagation
+
+When application code schedules a Core Worker task on a thread carrying a validated `correlation_id`, the Server `TaskCorrelationProvider` captures only that canonical UUIDv7. The value is stored as first-class nullable `worker_task.correlation_id` metadata by PostgreSQL/Oracle migration `0009`; it is not hidden inside task parameters. Tasks created outside a correlated request remain valid with no correlation identifier.
+
+The task's original correlation is immutable under semantic idempotency replay. A later submission using the same task type/idempotency key returns the existing task identifier and does not replace the correlation that caused the original task creation. This preserves causal history across retries, process restarts and execution on another Server node.
+
+Immediately before a handler executes, `WorkerCorrelationBridge` binds the persisted UUIDv7 to MDC key `correlation_id`. The prior worker-thread value is restored in a bounded scope after the handler returns or throws, preventing cross-task leakage. `TaskExecutionContext.correlationId()` exposes the same durable identifier to application code that must create correlated audit/event records. Raw request headers, authorization/security context and unrelated MDC fields are deliberately not propagated. Invalid internal MDC correlation state fails closed at scheduling instead of being silently discarded.
+
 ## Structured logging
 
 Console logs default to Spring Boot Elastic Common Schema (ECS) JSON using `logging.structured.format.console=ecs`. Spring Boot includes MDC key/value pairs in its structured JSON output, so the request `correlation_id` becomes a first-class structured field rather than a string-prefix convention.
@@ -27,7 +36,7 @@ Runtime overrides:
 INFRANEXUM_LOG_FORMAT=ecs
 INFRANEXUM_ENVIRONMENT=local
 INFRANEXUM_SERVER_INSTANCE_ID=server-local-1
-INFRANEXUM_VERSION=2.0.0-alpha.0.41
+INFRANEXUM_VERSION=2.0.0-alpha.0.42
 ```
 
 `INFRANEXUM_LOG_FORMAT` exists for controlled operational overrides; production standards should keep a machine-readable structured format.
@@ -56,4 +65,4 @@ No request identifier, URI, user-controlled header value or secret is used as a 
 
 ## Remaining PGM-12-E01 scope
 
-This increment does **not** claim completion of PGM-12-E01. Remaining scope includes at least OpenTelemetry traces/export, context propagation across asynchronous/background execution boundaries, systematic sensitive-data masking policy and tests, platform dashboards, retention/export configuration and target-environment validation.
+This increment does **not** claim completion of PGM-12-E01. Remaining scope includes at least OpenTelemetry traces/export, systematic sensitive-data masking policy and tests, platform dashboards, retention/export configuration and target-environment validation.

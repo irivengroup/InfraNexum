@@ -525,8 +525,10 @@ public final class JdbcTaskStoreSmoke {
                 "missing task was reported as present");
         missing.assertExhausted();
 
+        DomainIdentifier correlation = newTaskId(999).value();
         Map<String, Object> presentRow = taskRowWithId(
                 TASK_ID.value().value(), "PENDING", null, 1L, "N", "prior", null);
+        presentRow.put("correlation_id", correlation.value());
         ScriptedDataSource present = new ScriptedDataSource(
                 Step.query("/*inx:task-read*/", presentRow),
                 Step.query("/*inx:task-parameters*/", row(
@@ -536,6 +538,8 @@ public final class JdbcTaskStoreSmoke {
         var found = new JdbcTaskStore(present, JdbcDatabaseDialect.POSTGRESQL).find(TASK_ID);
         require(found.isPresent() && found.orElseThrow().optionalFailure().orElseThrow().equals("prior"),
                 "persisted task was not reconstructed");
+        require(found.orElseThrow().correlationId().equals(correlation),
+                "persisted task correlation was not reconstructed");
         present.assertExhausted();
 
         Map<String, Object> checkpointed = taskRowWithId(

@@ -55,6 +55,29 @@ class ObservabilityArchitectureTest(unittest.TestCase):
         self.assertIn("7[0-9a-f]{3}-[89ab]", openapi)
 
 
+    def test_worker_correlation_crosses_only_durable_validated_boundary(self) -> None:
+        bridge = (OBSERVABILITY / "WorkerCorrelationBridge.java").read_text(encoding="utf-8")
+        scheduler = (ROOT / "src/components/core/workers/main/io/infranexum/core/workers/TaskScheduler.java").read_text(encoding="utf-8")
+        record = (ROOT / "src/components/core/workers/main/io/infranexum/core/workers/TaskRecord.java").read_text(encoding="utf-8")
+        jdbc = (ROOT / "src/components/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/JdbcTaskStore.java").read_text(encoding="utf-8")
+        migration = (ROOT / "src/distribution/migrations/0009-core-worker-correlation/postgresql.sql").read_text(encoding="utf-8")
+        self.assertIn("implements TaskCorrelationProvider, TaskExecutionScopeFactory", bridge)
+        self.assertIn("MDC.get(CorrelationContext.MDC_KEY)", bridge)
+        self.assertIn("context.correlationId()", bridge)
+        self.assertIn("correlationProvider.current()", scheduler)
+        self.assertIn("DomainIdentifier correlationId", record)
+        self.assertIn("correlation_id", jdbc)
+        self.assertIn("ck_inx_worker_correlation_v7", migration)
+        self.assertNotIn("Authorization", bridge)
+        self.assertNotIn("SecurityContext", bridge)
+
+    def test_worker_correlation_scope_restores_mdc_instead_of_leaking_between_tasks(self) -> None:
+        bridge = (OBSERVABILITY / "WorkerCorrelationBridge.java").read_text(encoding="utf-8")
+        worker = (ROOT / "src/components/core/workers/main/io/infranexum/core/workers/TaskWorker.java").read_text(encoding="utf-8")
+        self.assertIn("return () -> restore(previous)", bridge)
+        self.assertIn("try (scope)", worker)
+        self.assertIn("MDC.remove(CorrelationContext.MDC_KEY)", bridge)
+
 
 if __name__ == "__main__":
     unittest.main()

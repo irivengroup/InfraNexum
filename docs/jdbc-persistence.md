@@ -57,6 +57,8 @@ La migration `0007-core-installation-uuidv7` impose également le contrat `Domai
 
 La migration `0008-core-entitlement-time-precision` aligne ensuite la persistance sur les invariants temporels de Core Entitlements. PostgreSQL peut tronquer uniquement `core_installation_identity.created_at` à la seconde entière, car cette métadonnée n’est ni signée ni couverte par le proof HMAC. Toute donnée Entitlements consommée contenant des fractions de seconde provoque un échec fail-closed ; Oracle applique cette politique à toutes les valeurs legacy. Les lectures JDBC vérifient également la précision seconde entière avant de reconstruire les objets du domaine.
 
+La migration `0009-core-worker-correlation` ajoute enfin `worker_task.correlation_id` comme métadonnée nullable contrainte à un UUIDv7 canonique. La corrélation de la création initiale est conservée lors d’un replay idempotent ; elle traverse donc les redémarrages et changements de nœud sans être cachée dans les paramètres métier de la tâche. Les tâches historiques restent compatibles avec `NULL`.
+
 ## Configuration Server
 
 ```yaml
@@ -81,7 +83,7 @@ make postgresql-test-schema
 make java-module-verify
 ```
 
-Les deux jobs JaCoCo Java de la CI démarrent PostgreSQL 17, appliquent les migrations `0001` à `0006` via le target canonique `postgresql-test-schema`, puis exécutent les tests live. Les contrats PostgreSQL ne sont donc pas autorisés à disparaître du calcul de couverture par absence de DSN. La matrice d’intégration PostgreSQL 17/18 réutilise le même target de migration et vérifie l’atomicité métier/outbox, le rollback, l’inbox, la déduplication, les claims concurrents, les retries, l’ownership des leases, les transitions du `JdbcTaskStore`, la persistance Entitlements et les revocations.
+Les deux jobs JaCoCo Java de la CI démarrent PostgreSQL 17, appliquent le catalogue de migrations `0001` à `0009` via le target canonique `postgresql-test-schema`, puis exécutent les tests live. Les contrats PostgreSQL ne sont donc pas autorisés à disparaître du calcul de couverture par absence de DSN. La matrice d’intégration PostgreSQL 17/18 réutilise le même target de migration et vérifie l’atomicité métier/outbox, le rollback, l’inbox, la déduplication, les claims concurrents, les retries, l’ownership des leases, les transitions du `JdbcTaskStore`, la persistance Entitlements et les revocations.
 
 `JdbcInfrastructureCoverageTest` couvre en complément, sans base externe, les branches de dialecte PostgreSQL/Oracle, mapping JDBC, conversions temporelles, erreurs SQL et corruption du proof store. Les tests live restent l’autorité pour la sémantique transactionnelle du moteur réel ; ils ne sont plus le seul moyen d’atteindre les branches d’infrastructure.
 

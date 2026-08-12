@@ -1,4 +1,13 @@
-# InfraNexum 2.0.0-alpha.0.41 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.42 — état d’implémentation
+
+## 2.0.0-alpha.0.42 — durable Worker correlation propagation
+
+**Statut : tranche asynchrone PGM-12-E01 implémentée ; epic NON TERMINÉ.**
+
+Le `TaskScheduler` Server capture désormais le UUIDv7 validé présent dans le contexte de corrélation et le transmet au TaskStore comme métadonnée durable. La migration paire `0009-core-worker-correlation` ajoute `correlation_id` nullable à `worker_task` avec contrainte UUIDv7 PostgreSQL/Oracle ; les tâches historiques restent compatibles avec `NULL`. Le replay idempotent conserve la corrélation de la création initiale.
+
+`TaskExecutionContext` expose la corrélation persistée. `WorkerCorrelationBridge` la lie au MDC uniquement pendant l'exécution du handler puis restaure systématiquement l'état précédent du thread Worker. Aucun header brut, SecurityContext, credential ni map MDC arbitraire n'est propagé. Les smokes Core Workers et JDBC couvrent la persistance/restitution ; un test Server JUnit couvre le pont MDC réel et reste à confirmer sous le reactor JDK 25. OpenTelemetry, politique globale de masquage et dashboards restent à implémenter.
+
 
 ## 2.0.0-alpha.0.41 — Docker Desktop host-port publication
 

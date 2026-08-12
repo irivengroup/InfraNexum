@@ -10,9 +10,11 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -26,6 +28,7 @@ public final class WorkersSmoke {
 
     public static void main(String[] args) throws Exception {
         verifyIdempotencyCheckpointRetryAndAtMostOnce();
+        verifyDurableCorrelationPropagation();
         verifyCooperativeCancellation();
         verifyLeaseExpiryFencing();
         verifyBoundedPoolAndHeartbeat();
@@ -68,6 +71,51 @@ public final class WorkersSmoke {
         WorkerIterationReport unsafe = unsafeWorker.runOnce();
         assert unsafe.failed() == 1;
         assert store.find(id(3)).orElseThrow().status() == TaskStatus.FAILED;
+    }
+
+
+    private static void verifyDurableCorrelationPropagation() {
+        MutableClock clock = new MutableClock(START);
+        InMemoryTaskStore store = new InMemoryTaskStore();
+        DomainIdentifier correlation = id(90).value();
+        AtomicReference<DomainIdentifier> observed = new AtomicReference<>();
+        AtomicBoolean scopeOpen = new AtomicBoolean();
+        AtomicBoolean scopeClosed = new AtomicBoolean();
+        TaskHandler handler = handler(RetrySafety.RETRY_SAFE, context -> {
+            assert scopeOpen.get();
+            observed.set(context.correlationId().orElseThrow());
+        });
+        TaskHandlerRegistry registry = new TaskHandlerRegistry(List.of(handler));
+        TaskScheduler scheduler = new TaskScheduler(
+                store, registry, new UuidV7Generator(clock, new java.security.SecureRandom()), clock,
+                () -> Optional.of(correlation));
+        TaskSubmission submission = new TaskSubmission(TYPE, "correlated", Map.of(), START);
+        TaskSubmissionResult created = scheduler.schedule(submission);
+        assert store.find(created.taskId()).orElseThrow().correlationId().equals(correlation);
+
+        DomainIdentifier replayCorrelation = id(91).value();
+        TaskScheduler replayScheduler = new TaskScheduler(
+                store, registry, new UuidV7Generator(clock, new java.security.SecureRandom()), clock,
+                () -> Optional.of(replayCorrelation));
+        TaskSubmissionResult replay = replayScheduler.schedule(submission);
+        assert !replay.created();
+        assert replay.taskId().equals(created.taskId());
+        assert store.find(created.taskId()).orElseThrow().correlationId().equals(correlation);
+
+        TaskExecutionScopeFactory scopeFactory = context -> {
+            assert context.correlationId().orElseThrow().equals(correlation);
+            scopeOpen.set(true);
+            return () -> {
+                scopeOpen.set(false);
+                scopeClosed.set(true);
+            };
+        };
+        TaskWorker worker = new TaskWorker(
+                store, registry, RETRY, clock, "correlation-worker", Duration.ofSeconds(2), () -> false, scopeFactory);
+        assert worker.runOnce().succeeded() == 1;
+        assert observed.get().equals(correlation);
+        assert scopeClosed.get();
+        assert !scopeOpen.get();
     }
 
     private static void verifyCooperativeCancellation() throws Exception {

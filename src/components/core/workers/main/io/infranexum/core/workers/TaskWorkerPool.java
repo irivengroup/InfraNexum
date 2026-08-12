@@ -50,9 +50,21 @@ public final class TaskWorkerPool implements AutoCloseable {
             Clock clock,
             String runtimeId,
             WorkerPoolConfiguration configuration) {
+        this(store, registry, retryPolicy, clock, runtimeId, configuration, TaskExecutionScopeFactory.noop());
+    }
+
+    public TaskWorkerPool(
+            TaskStore store,
+            TaskHandlerRegistry registry,
+            RetryPolicy retryPolicy,
+            Clock clock,
+            String runtimeId,
+            WorkerPoolConfiguration configuration,
+            TaskExecutionScopeFactory executionScopeFactory) {
         Objects.requireNonNull(store, "store");
         Objects.requireNonNull(registry, "registry");
         Objects.requireNonNull(retryPolicy, "retryPolicy");
+        Objects.requireNonNull(executionScopeFactory, "executionScopeFactory");
         this.clock = Objects.requireNonNull(clock, "clock");
         this.configuration = Objects.requireNonNull(configuration, "configuration");
         String normalizedRuntimeId = requireText(runtimeId, "runtimeId", 120);
@@ -69,7 +81,8 @@ public final class TaskWorkerPool implements AutoCloseable {
                     clock,
                     normalizedRuntimeId + "-" + index,
                     configuration.leaseDuration(),
-                    stopRequested::get));
+                    stopRequested::get,
+                    executionScopeFactory));
         }
         this.workers = List.copyOf(configured);
     }

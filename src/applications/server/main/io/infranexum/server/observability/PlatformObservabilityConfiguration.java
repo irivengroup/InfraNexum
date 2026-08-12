@@ -23,4 +23,9 @@ public class PlatformObservabilityConfiguration {
             MeterRegistry registry) {
         return new CorrelationIdFilter(identifiers, clock, registry);
     }
+
+    @Bean
+    WorkerCorrelationBridge workerCorrelationBridge() {
+        return new WorkerCorrelationBridge();
+    }
 }

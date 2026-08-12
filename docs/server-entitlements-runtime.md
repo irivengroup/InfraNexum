@@ -22,7 +22,7 @@ The startup guard deliberately uses `WebServerFactoryCustomizer`, not a post-sta
 - POST, PUT, PATCH and DELETE below `/api/**` pass through the entitlement mutation guard.
 - Access refusal returns HTTP 403 with `application/problem+json`.
 - Missing or unavailable authority returns HTTP 503 with `application/problem+json`.
-- The correlation header `X-Correlation-ID` is reflected only after whitespace normalization.
+- The optional `X-Correlation-ID` is accepted only as canonical lowercase UUIDv7; malformed/non-v7 values fail closed with HTTP 400 and are never reflected.
 - The evaluation status endpoint uses `Cache-Control: no-store`.
 
 ## Refresh and failure policy
