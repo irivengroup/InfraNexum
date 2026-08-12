@@ -131,7 +131,7 @@ function Invoke-Smoke {
     $cid='018bcfe5-6800-7001-8000-000000000001'; $response=Invoke-WebRequest -Uri "http://127.0.0.1:$port/api/v1/system/build" -Headers @{'X-Correlation-ID'=$cid} -TimeoutSec 10
     $build=$response.Content | ConvertFrom-Json; if ($build.instanceId -notmatch '^server-pro-[1-4]$') { throw "Unexpected routed instance $($build.instanceId)" }; if ($response.Headers['X-Correlation-ID'] -ne $cid) { throw 'Correlation was not propagated' }
     $webReady=Invoke-RestMethod -Uri "http://127.0.0.1:$webPort/health/ready" -TimeoutSec 10; if ($webReady.status -ne 'UP') { throw 'Web router readiness is not UP' }
-    $runtime=Invoke-RestMethod -Uri "http://127.0.0.1:$webPort/runtime-config.json" -TimeoutSec 10; if ($runtime.component -ne 'web' -or $runtime.version -ne '2.0.0-alpha.0.58' -or $runtime.apiBaseUrl -ne '/api') { throw 'Web runtime configuration is inconsistent with Compose bindings' }
+    $runtime=Invoke-RestMethod -Uri "http://127.0.0.1:$webPort/runtime-config.json" -TimeoutSec 10; if ($runtime.component -ne 'web' -or $runtime.version -ne '2.0.0-alpha.0.60' -or $runtime.apiBaseUrl -ne '/api') { throw 'Web runtime configuration is inconsistent with Compose bindings' }
     $organizationResponse=Invoke-WebRequest -Uri "http://127.0.0.1:$webPort/api/v1/iam/organizations?limit=1" -Headers @{'X-Correlation-ID'=$cid} -TimeoutSec 10
     if ($organizationResponse.StatusCode -ne 200) { throw 'Organization API same-origin route is unavailable' }
     if ($organizationResponse.Headers['X-Correlation-ID'] -ne $cid) { throw 'Organization API correlation was not propagated through Web ingress' }

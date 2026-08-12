@@ -1,9 +1,9 @@
 {
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
-  "positioning": "InfraNexum \u2014 Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.58",
-  "profile": "pro-ha-organization-foundation-admin-dashboard",
+  "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
+  "version": "2.0.0-alpha.0.60",
+  "profile": "pro-ha-organization-foundation-operational-admin-dashboard",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -22,7 +22,7 @@
     },
     {
       "id": "infranexum-web",
-      "status": "runtime-source-38-tests-99.67-line-98.33-branch-100-function-coverage-process-smoke-passed-local-node22-bootstrap5.3.6-professional-admin-dashboard-adapted-visual-theme-same-origin-organization-ui-persistent-accessible-light-dark-target-node24.18.1-docker-runtime-validation-pending"
+      "status": "runtime-source-60-tests-99.67-line-98.33-branch-100-function-coverage-process-smoke-passed-local-node22-bootstrap5.3.6-professional-admin-dashboard-de-en-es-fr-it-i18n-routing-command-palette-structured-browser-preferences-observed-notifications-real-capability-quota-insights-same-origin-api-target-node24.18.1-docker-runtime-validation-pending"
     },
     {
       "id": "source-integrity-v1",
@@ -58,12 +58,12 @@
     },
     {
       "id": "web-admin-dashboard-v1",
-      "status": "professional-responsive-admin-shell-sidebar-topbar-hero-truthful-kpis-control-plane-posture-organization-workspace-light-dark-preference-reduced-motion-bootstrap5.3.6-no-bootstrap-js"
+      "status": "professional-responsive-admin-shell-sidebar-topbar-hero-truthful-kpis-live-platform-capability-quota-insights-observed-notification-center-structured-local-preferences-i18n-de-en-es-fr-it-command-palette-organization-workspace-light-dark-bootstrap5.3.6-no-bootstrap-js"
     }
   ],
   "validation_reports": [],
   "validation_summary": {
-    "source_inventory_paths": 609,
+    "source_inventory_paths": 619,
     "source_integrity_tests": 45,
     "source_integrity_coverage_percent": 100,
     "source_integrity_violations": 0,
@@ -97,7 +97,7 @@
     "jdbc_workers_junit_tests_defined": 11,
     "jdbc_workers_postgresql_live_tests_defined": 5,
     "agent_local_coverage_percent": 98.4,
-    "web_tests": 38,
+    "web_tests": 61,
     "web_line_coverage_percent": 99.67,
     "web_branch_coverage_percent": 98.33,
     "web_function_coverage_percent": 100,
@@ -257,19 +257,19 @@
   "source_integrity": {
     "canonical_inventory": "source-inventory.json",
     "git_blob_checksums": "source-files.sha256",
-    "tracked_files": 611,
-    "source_recorded_files": 610,
+    "tracked_files": 615,
+    "source_recorded_files": 614,
     "staged_snapshot_required": true,
     "pre_commit_hook": ".githooks/pre-commit"
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.58",
-    "archive_entries": 611,
+    "prefix": "infranexum-2.0.0-alpha.0.60",
+    "archive_entries": 621,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
-    "source_recorded_files": 610
+    "source_recorded_files": 620
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.58-validation-evidence.zip",
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.60-validation-evidence.zip",
   "runtime_validation": {
     "web_local_runtime_alpha058": "EXECUTED_38_OF_38_LINE_99_67_BRANCH_98_33_FUNCTION_100_PROCESS_SMOKE_PASS_LOCAL_NODE22_BOOTSTRAP5_3_6_PROFESSIONAL_ADMIN_DASHBOARD_THEME_TOGGLE_TRUTHFUL_KPI_SAME_ORIGIN_ORGANIZATION_UI",
     "architecture_functional_alpha058": "EXECUTED_57_OF_57",
@@ -286,6 +286,34 @@
     "dashboard_browser_render_alpha058": "NON_EXECUTED_LOCAL_BROWSER_NAVIGATION_BLOCKED_BY_CONTAINER_ADMIN_POLICY_STATIC_AND_RUNTIME_TESTS_PASS",
     "docker_runtime_alpha058": "NON_EXECUTED_LOCAL_NO_DOCKER_ENGINE_USER_DOCKER_DESKTOP_DASHBOARD_RUNTIME_VALIDATION_REQUIRED",
     "archive_compatibility_alpha058": "EXECUTED_CANDIDATE_ZERO_VIOLATIONS",
-    "archive_post_extract_alpha058": "EXECUTED_610_OF_610_CHECKSUMS_COMPOSE52_ARCHITECTURE57_WEB38_AND_PROCESS_SMOKE_PASS"
+    "archive_post_extract_alpha058": "EXECUTED_610_OF_610_CHECKSUMS_COMPOSE52_ARCHITECTURE57_WEB38_AND_PROCESS_SMOKE_PASS",
+    "web_local_runtime_alpha059": "EXECUTED_49_OF_49_LINE_99_67_BRANCH_98_33_FUNCTION_100_PROCESS_SMOKE_PASS_LOCAL_NODE22_BOOTSTRAP5_3_6_DE_EN_ES_FR_IT_I18N_ROUTING_BREADCRUMBS_COMMAND_PALETTE",
+    "web_i18n_alpha059": "EXECUTED_BROWSER_PREFERENCE_DETECTION_EN_FALLBACK_PERSISTED_EXPLICIT_SELECTION_DYNAMIC_TRANSLATION_DE_EN_ES_FR_IT_PASS",
+    "web_navigation_alpha059": "EXECUTED_ROUTE_FAIL_CLOSED_ORGANIZATION_CAPABILITY_LOCALIZED_ACCENT_INSENSITIVE_COMMAND_SEARCH_KEYBOARD_CONTRACT_PASS",
+    "docker_runtime_alpha059": "NON_EXECUTED_LOCAL_NO_DOCKER_ENGINE_USER_DOCKER_DESKTOP_WEB_RUNTIME_VISUAL_VALIDATION_REQUIRED",
+    "agent_local_runtime_alpha059": "EXECUTED_GO1_23_2_VET_RACE_TEST_BUILD_PASS_COVERAGE_98_4_GOTOOLCHAIN_LOCAL",
+    "archive_compatibility_alpha059": "EXECUTED_CANDIDATE_ZERO_VIOLATIONS",
+    "archive_post_extract_alpha059": "EXECUTED_614_OF_614_CHECKSUMS_COMPOSE52_ARCHITECTURE57_WEB49_AND_PROCESS_SMOKE_PASS",
+    "web_local_runtime_alpha060": "EXECUTED_61_OF_61_LINE_99_67_BRANCH_98_33_FUNCTION_100_PROCESS_SMOKE_PASS_LOCAL_NODE22_BOOTSTRAP5_3_6_STRUCTURED_LOCAL_PREFERENCES_OBSERVED_NOTIFICATIONS_REAL_CAPABILITY_QUOTA_INSIGHTS_STABLE_LANGUAGE_LISTBOX",
+    "web_preferences_alpha060": "EXECUTED_SCHEMA_V1_DENSITY_NAVIGATION_REFRESH_PERSISTENCE_CORRUPT_STORAGE_FAIL_SAFE_PASS",
+    "web_notifications_alpha060": "EXECUTED_OBSERVED_SESSION_FACTS_DEDUPLICATION_UNREAD_COUNT_LOCALIZATION_NO_SYNTHETIC_BACKEND_ALERTS_PASS",
+    "web_platform_insights_alpha060": "EXECUTED_REAL_PLATFORM_CAPABILITIES_AND_QUOTAS_FETCH_STRICT_VALIDATION_FAIL_CLOSED_RENDERING_AUTO_REFRESH_PASS",
+    "docker_runtime_alpha060": "NON_EXECUTED_LOCAL_NO_DOCKER_ENGINE_USER_DOCKER_DESKTOP_WEB_RUNTIME_VISUAL_VALIDATION_REQUIRED",
+    "web_language_switcher_alpha060": "EXECUTED_NATIVE_SELECT_REMOVED_STABLE_LISTBOX_REMAINS_OPEN_ACROSS_BACKGROUND_TRANSLATION_REFRESH_EXPLICIT_SELECTION_ESCAPE_OUTSIDE_POINTER_ONLY_CLOSE_KEYBOARD_NAVIGATION_PASS",
+    "web_runtime_alpha059_language_selector": "EXECUTED_USER_BROWSER_NATIVE_SELECT_PREMATURE_CLOSE_OBSERVED_REQUIRES_STABLE_INTERACTION_CONTROL",
+    "compose_contract_alpha060": "EXECUTED_52_OF_52",
+    "source_integrity_alpha060": "EXECUTED_45_OF_45_STAGED_SNAPSHOT_620_CHECKSUMS_ZERO_VIOLATIONS",
+    "architecture_functional_alpha060": "EXECUTED_57_OF_57",
+    "architecture_check_alpha060": "EXECUTED_PASS_ZERO_VIOLATIONS",
+    "toolchain_alpha060": "EXECUTED_25_OF_25_ZERO_VIOLATIONS",
+    "migration_alpha060": "EXECUTED_38_OF_38_ZERO_VIOLATIONS",
+    "eventing_alpha060": "EXECUTED_10_OF_10_ZERO_VIOLATIONS",
+    "persistence_alpha060": "EXECUTED_12_OF_12_ZERO_VIOLATIONS",
+    "capabilities_alpha060": "EXECUTED_10_OF_10_ZERO_VIOLATIONS",
+    "entitlements_alpha060": "EXECUTED_10_OF_10_ZERO_VIOLATIONS",
+    "audit_alpha060": "EXECUTED_8_OF_8_ZERO_VIOLATIONS",
+    "agent_local_runtime_alpha060": "EXECUTED_GO1_23_2_VET_RACE_TEST_BUILD_PASS_COVERAGE_98_4_GOTOOLCHAIN_LOCAL",
+    "archive_compatibility_alpha060": "EXECUTED_CANDIDATE_ZERO_VIOLATIONS",
+    "archive_post_extract_alpha060": "EXECUTED_620_OF_620_CHECKSUMS_COMPOSE52_ARCHITECTURE57_AND_CLI_PASS_WEB61_LINE99_67_BRANCH98_33_FUNCTION100_PROCESS_SMOKE_PASS_STABLE_LANGUAGE_LISTBOX_REGRESSION_INCLUDED"
   }
 }

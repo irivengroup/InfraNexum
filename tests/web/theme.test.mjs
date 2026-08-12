@@ -42,7 +42,7 @@ test('theme preserves the predecessor token set while extending it into a profes
   for (const token of requiredTokens) {
     assert.match(theme, new RegExp(token, 'i'), `missing predecessor visual token ${token}`);
   }
-  for (const selector of ['.inx-app-shell', '.inx-sidebar', '.inx-topbar', '.inx-hero', '.inx-kpi-grid', '.inx-dashboard-grid', '.inx-data-table']) {
+  for (const selector of ['.inx-app-shell', '.inx-sidebar', '.inx-topbar', '.inx-hero', '.inx-kpi-grid', '.inx-dashboard-grid', '.inx-data-table', '.inx-platform-section', '.inx-side-dialog', '.inx-language-switcher', '.inx-language-menu']) {
     assert.match(theme, new RegExp(selector.replace('.', '\\.')));
   }
   assert.match(theme, /font-family:\s*Inter,\s*ui-sans-serif,\s*system-ui/i);
@@ -63,6 +63,15 @@ test('admin dashboard uses semantic regions, responsive Bootstrap primitives and
   assert.match(index, /<main id="main"/);
   assert.match(index, /aria-live="polite"/);
   assert.match(index, /id="theme-toggle"/);
+  assert.match(index, /id="command-palette"/);
+  assert.match(index, /id="language-trigger"/);
+  assert.match(index, /id="language-menu"/);
+  assert.doesNotMatch(index, /id="language-select"/, "native select must not be used for the persistent language switcher");
+  assert.match(index, /id="notification-center"/);
+  assert.match(index, /id="preferences-dialog"/);
+  assert.match(index, /id="platform-insights-title"/);
+  assert.match(index, /data-route="overview"/);
+  assert.match(index, /data-route="organizations"/);
   assert.doesNotMatch(index, /bootstrap(?:\.bundle)?(?:\.min)?\.js/);
   assert.match(index, /class="skip-link"/);
 });
@@ -72,4 +81,17 @@ test('vendored Bootstrap license notice is shipped beside the framework asset', 
   assert.match(license, /The MIT License \(MIT\)/);
   assert.match(license, /The Bootstrap Authors/);
   assert.match(license, /included in\s+all copies or substantial portions/);
+});
+
+
+test('admin shell ships five-locale i18n and keyboard command palette without external dependencies', async () => {
+  const [i18n, shell, index] = await Promise.all([read('assets/i18n.mjs'), read('assets/admin-shell.mjs'), read('index.html')]);
+  assert.match(i18n, /SUPPORTED_LOCALES[^\n]*\['de', 'en', 'es', 'fr', 'it'\]/);
+  assert.match(i18n, /infranexum\.locale/);
+  assert.match(shell, /ctrlKey \|\| event\.metaKey/);
+  assert.match(shell, /ArrowDown/);
+  assert.match(shell, /ArrowUp/);
+  assert.match(shell, /aria-activedescendant/);
+  assert.match(index, /Ctrl K/);
+  assert.doesNotMatch(index, /https?:\/\/[^"']+\.(?:css|js)/i);
 });

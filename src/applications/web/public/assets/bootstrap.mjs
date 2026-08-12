@@ -1,3 +1,14 @@
+import { initializeAdminShell, setOrganizationAvailability } from './admin-shell.mjs';
+import { initializeNotificationCenter } from './notifications.mjs';
+import { initializePlatformAutoRefresh, loadPlatformInsights } from './platform-insights.mjs';
+import { initializePreferences } from './preferences.mjs';
+import {
+  initializeLocalization,
+  setLocalizedAriaLabel,
+  setLocalizedElementText,
+  setLocalizedText,
+} from './i18n.mjs';
+
 const REQUIRED_SCHEMA = 'infranexum.web-runtime-config/v1';
 const THEME_STORAGE_KEY = 'infranexum.theme';
 
@@ -38,28 +49,25 @@ export function renderRuntimeConfiguration(documentObject, configuration) {
   setText(documentObject, 'runtime-api', configuration.apiBaseUrl);
   setText(documentObject, 'runtime-api-detail', configuration.apiBaseUrl);
   setText(documentObject, 'runtime-architecture', configuration.architectureBaseline);
-  setText(documentObject, 'runtime-message', 'Runtime configuration loaded.');
-  setText(documentObject, 'sidebar-version', `Version ${configuration.version}`);
-  setText(documentObject, 'footer-version', `Version ${configuration.version}`);
-  setText(documentObject, 'topbar-environment', `Environment ${configuration.environment}`);
-  setText(documentObject, 'dashboard-runtime', 'Operational');
+  setLocalizedText(documentObject, 'runtime-message', 'runtime.loaded');
+  setLocalizedText(documentObject, 'sidebar-version', 'common.version', { value: configuration.version });
+  setLocalizedText(documentObject, 'footer-version', 'common.version', { value: configuration.version });
+  setLocalizedText(documentObject, 'topbar-environment', 'common.environment', { value: configuration.environment });
+  setLocalizedText(documentObject, 'dashboard-runtime', 'runtime.operational');
   setText(documentObject, 'dashboard-environment', configuration.environment);
-  setText(documentObject, 'dashboard-version', `Version ${configuration.version}`);
-  setText(documentObject, 'dashboard-foundation', configuration.organizationFoundationEnabled ? 'Enabled' : 'Disabled');
-  setText(documentObject, 'sidebar-runtime-state', 'Operational');
-  setBadge(documentObject, 'runtime-health-badge', 'UP', 'text-bg-success');
-  setBadge(documentObject, 'api-health-badge', 'Configured', 'text-bg-primary');
-  setBadge(
+  setLocalizedText(documentObject, 'dashboard-version', 'common.version', { value: configuration.version });
+  setLocalizedText(documentObject, 'dashboard-foundation', configuration.organizationFoundationEnabled ? 'common.enabled' : 'common.disabled');
+  setLocalizedText(documentObject, 'sidebar-runtime-state', 'runtime.operational');
+  setLocalizedBadge(documentObject, 'runtime-health-badge', 'common.up', 'text-bg-success');
+  setLocalizedBadge(documentObject, 'api-health-badge', 'common.configured', 'text-bg-primary');
+  setLocalizedBadge(
     documentObject,
     'foundation-health-badge',
-    configuration.organizationFoundationEnabled ? 'Enabled' : 'Disabled',
+    configuration.organizationFoundationEnabled ? 'common.enabled' : 'common.disabled',
     configuration.organizationFoundationEnabled ? 'text-bg-success' : 'text-bg-secondary',
   );
 
-  const workspace = documentObject.getElementById('organization-workspace');
-  if (workspace) {
-    workspace.hidden = !configuration.organizationFoundationEnabled;
-  }
+  setOrganizationAvailability(documentObject, configuration.organizationFoundationEnabled);
   if (configuration.organizationFoundationEnabled) {
     void loadOrganizations(documentObject, configuration);
   } else {
@@ -68,11 +76,12 @@ export function renderRuntimeConfiguration(documentObject, configuration) {
 }
 
 export function renderRuntimeFailure(documentObject) {
-  setText(documentObject, 'runtime-message', 'The Web runtime configuration could not be loaded. Contact an InfraNexum administrator.');
+  setLocalizedText(documentObject, 'runtime-message', 'runtime.loadFailure');
   documentObject.getElementById('runtime-message')?.setAttribute('data-state', 'error');
-  setText(documentObject, 'dashboard-runtime', 'Unavailable');
-  setText(documentObject, 'sidebar-runtime-state', 'Unavailable');
-  setBadge(documentObject, 'runtime-health-badge', 'DOWN', 'text-bg-danger');
+  setLocalizedText(documentObject, 'dashboard-runtime', 'runtime.unavailable');
+  setLocalizedText(documentObject, 'sidebar-runtime-state', 'runtime.unavailable');
+  setLocalizedBadge(documentObject, 'runtime-health-badge', 'common.down', 'text-bg-danger');
+  setOrganizationAvailability(documentObject, false);
 }
 
 export function initializeTheme(documentObject = document, storageObject = globalThis.localStorage) {
@@ -87,15 +96,18 @@ export function initializeTheme(documentObject = document, storageObject = globa
     persisted = undefined;
   }
   const initial = persisted === 'dark' || persisted === 'light' ? persisted : preferredTheme();
-  applyTheme(root, button, initial, Boolean(persisted));
+  applyTheme(documentObject, root, button, initial, Boolean(persisted));
   button.addEventListener('click', () => {
     const next = root.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
-    applyTheme(root, button, next, true);
+    applyTheme(documentObject, root, button, next, true);
     try {
       storageObject?.setItem(THEME_STORAGE_KEY, next);
     } catch {
       // Storage may be unavailable in hardened/private browser contexts.
     }
+  });
+  documentObject.addEventListener?.('infranexum:locale-change', () => {
+    applyTheme(documentObject, root, button, root.getAttribute('data-bs-theme') === 'dark' ? 'dark' : 'light', root.getAttribute('data-theme-user') === 'true');
   });
 }
 
@@ -107,15 +119,21 @@ function preferredTheme() {
   }
 }
 
-function applyTheme(root, button, theme, explicit) {
+function applyTheme(documentObject, root, button, theme, explicit) {
   root.setAttribute('data-bs-theme', theme);
   if (explicit) root.setAttribute('data-theme-user', 'true');
   else root.removeAttribute?.('data-theme-user');
   button.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
-  button.setAttribute('aria-label', theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+  setLocalizedAriaLabel(documentObject, button, theme === 'dark' ? 'theme.toLight' : 'theme.toDark');
 }
 
-export async function bootstrap({ fetchFunction = fetch, documentObject = document } = {}) {
+export async function bootstrap({
+  fetchFunction = fetch,
+  documentObject = document,
+  notificationCenter = null,
+  preferenceController = null,
+  timerObject = globalThis,
+} = {}) {
   try {
     const response = await fetchFunction('/runtime-config.json', {
       cache: 'no-store',
@@ -125,12 +143,27 @@ export async function bootstrap({ fetchFunction = fetch, documentObject = docume
     if (!response.ok) {
       throw new Error(`Runtime configuration returned HTTP ${response.status}`);
     }
-    renderRuntimeConfiguration(
-      documentObject,
-      validatePublicConfiguration(await response.json()),
-    );
+    const configuration = validatePublicConfiguration(await response.json());
+    renderRuntimeConfiguration(documentObject, configuration);
+    notificationCenter?.upsert?.({
+      id: 'web-runtime', severity: 'success', titleKey: 'notification.runtimeReady.title', bodyKey: 'notification.runtimeReady.body',
+      parameters: { version: configuration.version, environment: configuration.environment },
+    });
+
+    if (documentObject?.getElementById?.('platform-insights-state')) {
+      const refreshInsights = () => loadPlatformInsights(documentObject, configuration, fetchFunction, notificationCenter);
+      await refreshInsights();
+      if (preferenceController) {
+        initializePlatformAutoRefresh(documentObject, refreshInsights, preferenceController.get(), timerObject);
+      }
+    }
+    return configuration;
   } catch {
     renderRuntimeFailure(documentObject);
+    notificationCenter?.upsert?.({
+      id: 'web-runtime', severity: 'error', titleKey: 'notification.runtimeUnavailable.title', bodyKey: 'notification.runtimeUnavailable.body',
+    });
+    return null;
   }
 }
 
@@ -149,11 +182,11 @@ export async function loadOrganizations(documentObject, configuration, fetchFunc
     table.replaceChildren(
       ...organizations.map((item) => organizationRow(documentObject, item, configuration, fetchFunction)),
     );
-    status.textContent = `${organizations.length} organisation(s)`;
+    setLocalizedElementText(documentObject, status, 'organization.count', { count: organizations.length });
     setText(documentObject, 'dashboard-organization-count', String(organizations.length));
   } catch {
-    status.textContent = 'Organisation data unavailable';
-    setText(documentObject, 'dashboard-organization-count', 'Unavailable');
+    setLocalizedElementText(documentObject, status, 'organization.unavailable');
+    setLocalizedText(documentObject, 'dashboard-organization-count', 'runtime.unavailable');
   }
 }
 
@@ -165,8 +198,8 @@ export async function loadSubdivisions(documentObject, configuration, organizati
   if (!panel || !title || !status || !table) return;
 
   panel.hidden = false;
-  title.textContent = `Subdivisions — ${organization.code}`;
-  status.textContent = 'Loading…';
+  setLocalizedElementText(documentObject, title, 'subdivision.titleFor', { code: organization.code });
+  setLocalizedElementText(documentObject, status, 'organization.loading');
 
   try {
     const response = await fetchFunction(
@@ -176,10 +209,10 @@ export async function loadSubdivisions(documentObject, configuration, organizati
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const subdivisions = await response.json();
     table.replaceChildren(...subdivisions.map((item) => subdivisionRow(documentObject, item)));
-    status.textContent = `${subdivisions.length} subdivision(s)`;
+    setLocalizedElementText(documentObject, status, 'subdivision.count', { count: subdivisions.length });
   } catch {
     table.replaceChildren();
-    status.textContent = 'Subdivision data unavailable';
+    setLocalizedElementText(documentObject, status, 'subdivision.unavailable');
   }
 }
 
@@ -195,8 +228,8 @@ function organizationRow(documentObject, item, configuration, fetchFunction) {
   const button = documentObject.createElement('button');
   button.type = 'button';
   button.className = 'btn btn-sm btn-outline-primary';
-  button.textContent = 'View hierarchy';
-  button.setAttribute('aria-label', `Show subdivisions for ${item.code}`);
+  setLocalizedElementText(documentObject, button, 'organization.viewHierarchy');
+  setLocalizedAriaLabel(documentObject, button, 'organization.showSubdivisions', { code: item.code });
   button.addEventListener('click', () => { void loadSubdivisions(documentObject, configuration, item, fetchFunction); });
   actionCell.appendChild(button);
   row.appendChild(actionCell);
@@ -239,14 +272,18 @@ function setText(documentObject, id, value) {
   if (element) element.textContent = value;
 }
 
-function setBadge(documentObject, id, text, className) {
+function setLocalizedBadge(documentObject, id, key, className) {
   const element = documentObject.getElementById(id);
   if (!element) return;
-  element.textContent = text;
+  setLocalizedElementText(documentObject, element, key);
   element.className = `badge rounded-pill ${className}`;
 }
 
 if (typeof document !== 'undefined') {
+  initializeLocalization(document);
   initializeTheme(document);
-  void bootstrap();
+  const preferenceController = initializePreferences(document);
+  const notificationCenter = initializeNotificationCenter(document);
+  initializeAdminShell(document, globalThis.window);
+  void bootstrap({ notificationCenter, preferenceController });
 }

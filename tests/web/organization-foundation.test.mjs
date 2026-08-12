@@ -82,7 +82,7 @@ test('organization foundation UI is fail-closed in production', () => {
     () => WebRuntimeConfiguration.fromEnvironment({
       INFRANEXUM_WEB_ENVIRONMENT: 'production',
       INFRANEXUM_WEB_ORGANIZATION_FOUNDATION_ENABLED: 'true',
-    }, { version: '2.0.0-alpha.0.58' }),
+    }, { version: '2.0.0-alpha.0.60' }),
     /cannot be enabled in production/,
   );
 });
@@ -91,7 +91,7 @@ test('organization foundation configuration accepts explicit true and false only
   const enabled = WebRuntimeConfiguration.fromEnvironment({
     INFRANEXUM_WEB_ENVIRONMENT: 'local',
     INFRANEXUM_WEB_ORGANIZATION_FOUNDATION_ENABLED: 'true',
-  }, { version: '2.0.0-alpha.0.58' });
+  }, { version: '2.0.0-alpha.0.60' });
   assert.equal(enabled.organizationFoundationEnabled, true);
   assert.equal(enabled.publicConfiguration().organizationFoundationEnabled, true);
   assert.equal(validatePublicConfiguration(enabled.publicConfiguration()).organizationFoundationEnabled, true);
@@ -99,14 +99,14 @@ test('organization foundation configuration accepts explicit true and false only
   const disabled = WebRuntimeConfiguration.fromEnvironment({
     INFRANEXUM_WEB_ENVIRONMENT: 'local',
     INFRANEXUM_WEB_ORGANIZATION_FOUNDATION_ENABLED: 'false',
-  }, { version: '2.0.0-alpha.0.58' });
+  }, { version: '2.0.0-alpha.0.60' });
   assert.equal(disabled.organizationFoundationEnabled, false);
 
   assert.throws(
     () => WebRuntimeConfiguration.fromEnvironment({
       INFRANEXUM_WEB_ENVIRONMENT: 'local',
       INFRANEXUM_WEB_ORGANIZATION_FOUNDATION_ENABLED: 'yes',
-    }, { version: '2.0.0-alpha.0.58' }),
+    }, { version: '2.0.0-alpha.0.60' }),
     /must be true or false/,
   );
   assert.throws(

@@ -35,7 +35,7 @@ try {
   assert.ok(response?.ok, `Web runtime did not become ready: ${output}`);
   assert.deepEqual(await response.json(), { status: 'UP' });
   const runtime = await fetch(`http://127.0.0.1:${port}/runtime-config.json`);
-  assert.equal((await runtime.json()).version, '2.0.0-alpha.0.58');
+  assert.equal((await runtime.json()).version, '2.0.0-alpha.0.60');
   const page = await fetch(`http://127.0.0.1:${port}/`);
   assert.match(await page.text(), /Infrastructure Control &amp; Governance Platform/);
   child.kill('SIGTERM');

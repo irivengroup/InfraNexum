@@ -1,0 +1,518 @@
+export const SUPPORTED_LOCALES = Object.freeze(['de', 'en', 'es', 'fr', 'it']);
+export const FALLBACK_LOCALE = 'en';
+export const LOCALE_STORAGE_KEY = 'infranexum.locale';
+
+const MESSAGES = Object.freeze({
+  en: Object.freeze({
+    'app.skip': 'Skip to content',
+    'brand.subtitle': 'Control & Governance',
+    'nav.workspace': 'Workspace',
+    'nav.overview': 'Overview',
+    'nav.organizations': 'Organizations',
+    'nav.platform': 'Platform',
+    'nav.infrastructure': 'Infrastructure',
+    'nav.discovery': 'Discovery',
+    'nav.governance': 'Governance',
+    'nav.soon': 'Soon',
+    'runtime.label': 'Runtime',
+    'runtime.connecting': 'Connecting…',
+    'runtime.operational': 'Operational',
+    'runtime.unavailable': 'Unavailable',
+    'runtime.loaded': 'Runtime configuration loaded.',
+    'runtime.loadFailure': 'The Web runtime configuration could not be loaded. Contact an InfraNexum administrator.',
+    'common.version': 'Version {value}',
+    'common.environment': 'Environment {value}',
+    'common.enabled': 'Enabled',
+    'common.disabled': 'Disabled',
+    'common.checking': 'Checking',
+    'common.configured': 'Configured',
+    'common.live': 'Live',
+    'common.up': 'UP',
+    'common.down': 'DOWN',
+    'topbar.eyebrow': 'Infrastructure Control & Governance Platform',
+    'topbar.dashboard': 'Administration dashboard',
+    'topbar.organizations': 'Organizations & subdivisions',
+    'breadcrumb.home': 'InfraNexum',
+    'theme.switch': 'Switch color theme',
+    'theme.toLight': 'Switch to light theme',
+    'theme.toDark': 'Switch to dark theme',
+    'session.localAdmin': 'Local administrator session',
+    'language.label': 'Interface language',
+    'command.open': 'Search & commands',
+    'command.short': 'Search',
+    'command.title': 'Command palette',
+    'command.subtitle': 'Navigate the control plane and run available interface actions.',
+    'command.placeholder': 'Search commands…',
+    'command.close': 'Close command palette',
+    'command.empty': 'No available command matches your search.',
+    'command.hint.navigate': 'Navigate',
+    'command.hint.select': 'Select',
+    'command.hint.close': 'Close',
+    'command.category.workspace': 'Workspace',
+    'command.category.appearance': 'Appearance',
+    'command.overview.title': 'Open overview',
+    'command.overview.description': 'Show control plane health, runtime and deployment context.',
+    'command.organizations.title': 'Open organizations',
+    'command.organizations.description': 'Manage authoritative organizations and subdivision hierarchy.',
+    'command.runtime.title': 'Focus runtime status',
+    'command.runtime.description': 'Jump to deployment and runtime configuration details.',
+    'command.theme.title': 'Toggle color theme',
+    'command.theme.description': 'Switch between light and dark administration themes.',
+
+    'command.category.system': 'System',
+    'command.preferences.title': 'Open dashboard preferences', 'command.preferences.description': 'Adjust density, sidebar behavior and operational refresh cadence.',
+    'command.notifications.title': 'Open operational notifications', 'command.notifications.description': 'Review facts observed by this browser session.',
+    'notification.open': 'Open operational notifications', 'notification.close': 'Close operational notifications', 'notification.eyebrow': 'Observed events', 'notification.title': 'Operational notifications', 'notification.subtitle': 'Only facts observed by this browser session are shown here.', 'notification.scope': 'Current browser session', 'notification.markRead': 'Mark all read', 'notification.empty': 'No operational event has been observed yet.', 'notification.unread': '{count} unread notification(s)',
+    'notification.severity.info': 'Info', 'notification.severity.success': 'Healthy', 'notification.severity.warning': 'Warning', 'notification.severity.error': 'Attention',
+    'notification.runtimeReady.title': 'Web runtime validated', 'notification.runtimeReady.body': 'Runtime {version} is loaded for environment {environment}.', 'notification.runtimeUnavailable.title': 'Web runtime unavailable', 'notification.runtimeUnavailable.body': 'The browser could not load validated runtime configuration.',
+    'notification.platformReady.title': 'Platform API reachable', 'notification.platformReady.body': 'Effective profile {profile} / {tier} was read from the Server APIs.', 'notification.platformUnavailable.title': 'Platform API unavailable', 'notification.platformUnavailable.body': 'Capabilities or quota decisions could not be read from the Server API.',
+    'preference.open': 'Open dashboard preferences', 'preference.close': 'Close dashboard preferences', 'preference.eyebrow': 'Local operator experience', 'preference.title': 'Dashboard preferences', 'preference.subtitle': 'Stored in this browser until IAM-backed user preferences are available.', 'preference.density': 'Information density', 'preference.density.comfortable': 'Comfortable', 'preference.density.compact': 'Compact', 'preference.navigation': 'Sidebar mode', 'preference.navigation.auto': 'Responsive', 'preference.navigation.expanded': 'Expanded', 'preference.navigation.compact': 'Compact', 'preference.refresh': 'Operational data refresh', 'preference.refresh.off': 'Off', 'preference.refresh.30': 'Every 30 seconds', 'preference.refresh.60': 'Every minute', 'preference.refresh.300': 'Every 5 minutes', 'preference.noteTitle': 'Scope', 'preference.note': 'Language and color theme remain independently persisted in the top bar.', 'preference.reset': 'Reset defaults', 'preference.save': 'Save preferences',
+    'platform.eyebrow': 'Effective platform contract', 'platform.title': 'Profile, capabilities & capacity', 'platform.description': 'Live, secret-free decisions published by the Server capability and quota APIs.', 'platform.profile': 'Installation profile', 'platform.profileMeta': 'Effective runtime profile', 'platform.tier': 'Allocation tier', 'platform.tierMeta': 'Effective quota tier', 'platform.capabilities': 'Capabilities', 'platform.capabilitiesMeta': 'Available / evaluated', 'platform.catalog': 'Catalog', 'platform.catalogMeta': 'Capability catalog version', 'platform.ha': 'High availability', 'platform.haMeta': 'Deployment capability', 'platform.splitWeb': 'Split Web', 'platform.splitWebMeta': 'Dedicated Web tier', 'platform.orgLimit': 'Organizations', 'platform.serverLimit': 'Server nodes', 'platform.webLimit': 'Web nodes', 'platform.limitMeta': 'Effective maximum', 'platform.ready': 'Live data',
+    'hero.eyebrow': 'Control plane',
+    'hero.title': 'Operate infrastructure with clarity.',
+    'hero.lead': 'A unified operational view for governance, topology, inventory and lifecycle decisions.',
+    'hero.action': 'Open organization workspace',
+    'hero.loading': 'Loading validated public configuration…',
+    'kpi.runtime': 'Runtime',
+    'kpi.runtimeMeta': 'Web control plane',
+    'kpi.organizations': 'Organizations',
+    'kpi.organizationsMeta': 'Authoritative scopes',
+    'kpi.foundation': 'Foundation',
+    'kpi.foundationMeta': 'Organization capability',
+    'kpi.environment': 'Environment',
+    'status.eyebrow': 'Operational posture',
+    'status.title': 'Control plane status',
+    'status.webRuntime': 'Web runtime',
+    'status.webRuntimeMeta': 'Static shell and runtime configuration',
+    'status.serverApi': 'Server API',
+    'status.foundation': 'Organization foundation',
+    'status.foundationMeta': 'Authoritative organization hierarchy',
+    'deployment.eyebrow': 'Runtime',
+    'deployment.title': 'Deployment context',
+    'deployment.version': 'Version',
+    'deployment.environment': 'Environment',
+    'deployment.api': 'API entrypoint',
+    'deployment.architecture': 'Architecture',
+    'organization.eyebrow': 'Governance workspace',
+    'organization.title': 'Organizations & subdivisions',
+    'organization.description': 'Authoritative organizational boundaries used to scope infrastructure, ownership and governance.',
+    'organization.loading': 'Loading…',
+    'organization.count': '{count} organisation(s)',
+    'organization.unavailable': 'Organisation data unavailable',
+    'organization.code': 'Code',
+    'organization.name': 'Organization',
+    'organization.country': 'Country',
+    'organization.state': 'State',
+    'organization.version': 'Version',
+    'organization.actions': 'Actions',
+    'organization.viewHierarchy': 'View hierarchy',
+    'organization.showSubdivisions': 'Show subdivisions for {code}',
+    'subdivision.eyebrow': 'Hierarchy',
+    'subdivision.title': 'Subdivisions',
+    'subdivision.titleFor': 'Subdivisions — {code}',
+    'subdivision.count': '{count} subdivision(s)',
+    'subdivision.unavailable': 'Subdivision data unavailable',
+    'subdivision.code': 'Code',
+    'subdivision.name': 'Subdivision',
+    'subdivision.type': 'Type',
+    'subdivision.state': 'State',
+    'subdivision.version': 'Version',
+    'footer.product': 'InfraNexum — Infrastructure Control & Governance Platform',
+    'noscript': 'JavaScript is required to initialize the InfraNexum Web interface.',
+  }),
+  fr: Object.freeze({
+    'app.skip': 'Aller au contenu',
+    'brand.subtitle': 'Contrôle & Gouvernance',
+    'nav.workspace': 'Espace de travail',
+    'nav.overview': 'Vue d’ensemble',
+    'nav.organizations': 'Organisations',
+    'nav.platform': 'Plateforme',
+    'nav.infrastructure': 'Infrastructure',
+    'nav.discovery': 'Découverte',
+    'nav.governance': 'Gouvernance',
+    'nav.soon': 'Bientôt',
+    'runtime.label': 'Runtime',
+    'runtime.connecting': 'Connexion…',
+    'runtime.operational': 'Opérationnel',
+    'runtime.unavailable': 'Indisponible',
+    'runtime.loaded': 'Configuration runtime chargée.',
+    'runtime.loadFailure': 'La configuration du runtime Web n’a pas pu être chargée. Contactez un administrateur InfraNexum.',
+    'common.version': 'Version {value}',
+    'common.environment': 'Environnement {value}',
+    'common.enabled': 'Activé',
+    'common.disabled': 'Désactivé',
+    'common.checking': 'Vérification',
+    'common.configured': 'Configurée',
+    'common.live': 'Actif',
+    'common.up': 'UP',
+    'common.down': 'DOWN',
+    'topbar.eyebrow': 'Infrastructure Control & Governance Platform',
+    'topbar.dashboard': 'Tableau de bord d’administration',
+    'topbar.organizations': 'Organisations & subdivisions',
+    'breadcrumb.home': 'InfraNexum',
+    'theme.switch': 'Changer le thème',
+    'theme.toLight': 'Passer au thème clair',
+    'theme.toDark': 'Passer au thème sombre',
+    'session.localAdmin': 'Session administrateur locale',
+    'language.label': 'Langue de l’interface',
+    'command.open': 'Recherche & commandes',
+    'command.short': 'Rechercher',
+    'command.title': 'Palette de commandes',
+    'command.subtitle': 'Naviguez dans le control plane et exécutez les actions d’interface disponibles.',
+    'command.placeholder': 'Rechercher une commande…',
+    'command.close': 'Fermer la palette de commandes',
+    'command.empty': 'Aucune commande disponible ne correspond à votre recherche.',
+    'command.hint.navigate': 'Naviguer',
+    'command.hint.select': 'Sélectionner',
+    'command.hint.close': 'Fermer',
+    'command.category.workspace': 'Espace de travail',
+    'command.category.appearance': 'Apparence',
+    'command.overview.title': 'Ouvrir la vue d’ensemble',
+    'command.overview.description': 'Afficher la santé du control plane, le runtime et le contexte de déploiement.',
+    'command.organizations.title': 'Ouvrir les organisations',
+    'command.organizations.description': 'Gérer les organisations de référence et leur hiérarchie de subdivisions.',
+    'command.runtime.title': 'Afficher l’état du runtime',
+    'command.runtime.description': 'Accéder aux détails de déploiement et de configuration runtime.',
+    'command.theme.title': 'Basculer le thème',
+    'command.theme.description': 'Basculer entre les thèmes d’administration clair et sombre.',
+
+    'command.category.system': 'Système',
+    'command.preferences.title': 'Ouvrir les préférences du dashboard', 'command.preferences.description': 'Ajuster la densité, la barre latérale et la cadence de rafraîchissement opérationnel.',
+    'command.notifications.title': 'Ouvrir les notifications opérationnelles', 'command.notifications.description': 'Consulter les faits observés par cette session navigateur.',
+    'notification.open': 'Ouvrir les notifications opérationnelles', 'notification.close': 'Fermer les notifications opérationnelles', 'notification.eyebrow': 'Événements observés', 'notification.title': 'Notifications opérationnelles', 'notification.subtitle': 'Seuls les faits réellement observés par cette session navigateur sont affichés.', 'notification.scope': 'Session navigateur courante', 'notification.markRead': 'Tout marquer comme lu', 'notification.empty': 'Aucun événement opérationnel observé pour le moment.', 'notification.unread': '{count} notification(s) non lue(s)',
+    'notification.severity.info': 'Info', 'notification.severity.success': 'Sain', 'notification.severity.warning': 'Alerte', 'notification.severity.error': 'Attention',
+    'notification.runtimeReady.title': 'Runtime Web validé', 'notification.runtimeReady.body': 'Le runtime {version} est chargé pour l’environnement {environment}.', 'notification.runtimeUnavailable.title': 'Runtime Web indisponible', 'notification.runtimeUnavailable.body': 'Le navigateur n’a pas pu charger une configuration runtime validée.',
+    'notification.platformReady.title': 'API plateforme joignable', 'notification.platformReady.body': 'Le profil effectif {profile} / {tier} a été lu depuis les API Server.', 'notification.platformUnavailable.title': 'API plateforme indisponible', 'notification.platformUnavailable.body': 'Les décisions de capacités ou de quotas n’ont pas pu être lues depuis l’API Server.',
+    'preference.open': 'Ouvrir les préférences du dashboard', 'preference.close': 'Fermer les préférences du dashboard', 'preference.eyebrow': 'Expérience opérateur locale', 'preference.title': 'Préférences du dashboard', 'preference.subtitle': 'Stockées dans ce navigateur jusqu’à la disponibilité des préférences utilisateur IAM.', 'preference.density': 'Densité d’information', 'preference.density.comfortable': 'Confortable', 'preference.density.compact': 'Compacte', 'preference.navigation': 'Mode de la barre latérale', 'preference.navigation.auto': 'Responsive', 'preference.navigation.expanded': 'Déployée', 'preference.navigation.compact': 'Compacte', 'preference.refresh': 'Rafraîchissement des données opérationnelles', 'preference.refresh.off': 'Désactivé', 'preference.refresh.30': 'Toutes les 30 secondes', 'preference.refresh.60': 'Chaque minute', 'preference.refresh.300': 'Toutes les 5 minutes', 'preference.noteTitle': 'Portée', 'preference.note': 'La langue et le thème restent persistés indépendamment dans la barre supérieure.', 'preference.reset': 'Réinitialiser', 'preference.save': 'Enregistrer',
+    'platform.eyebrow': 'Contrat plateforme effectif', 'platform.title': 'Profil, capacités & capacité', 'platform.description': 'Décisions réelles et sans secret publiées par les API Server de capacités et de quotas.', 'platform.profile': 'Profil d’installation', 'platform.profileMeta': 'Profil runtime effectif', 'platform.tier': 'Palier d’allocation', 'platform.tierMeta': 'Palier de quotas effectif', 'platform.capabilities': 'Capacités', 'platform.capabilitiesMeta': 'Disponibles / évaluées', 'platform.catalog': 'Catalogue', 'platform.catalogMeta': 'Version du catalogue de capacités', 'platform.ha': 'Haute disponibilité', 'platform.haMeta': 'Capacité de déploiement', 'platform.splitWeb': 'Web séparé', 'platform.splitWebMeta': 'Tier Web dédié', 'platform.orgLimit': 'Organisations', 'platform.serverLimit': 'Nœuds Server', 'platform.webLimit': 'Nœuds Web', 'platform.limitMeta': 'Maximum effectif', 'platform.ready': 'Données réelles',
+    'hero.eyebrow': 'Control plane',
+    'hero.title': 'Pilotez l’infrastructure avec clarté.',
+    'hero.lead': 'Une vue opérationnelle unifiée pour les décisions de gouvernance, topologie, inventaire et cycle de vie.',
+    'hero.action': 'Ouvrir l’espace Organisations',
+    'hero.loading': 'Chargement de la configuration publique validée…',
+    'kpi.runtime': 'Runtime',
+    'kpi.runtimeMeta': 'Control plane Web',
+    'kpi.organizations': 'Organisations',
+    'kpi.organizationsMeta': 'Périmètres de référence',
+    'kpi.foundation': 'Fondation',
+    'kpi.foundationMeta': 'Capacité Organisation',
+    'kpi.environment': 'Environnement',
+    'status.eyebrow': 'Posture opérationnelle',
+    'status.title': 'État du control plane',
+    'status.webRuntime': 'Runtime Web',
+    'status.webRuntimeMeta': 'Shell statique et configuration runtime',
+    'status.serverApi': 'API Server',
+    'status.foundation': 'Fondation Organisation',
+    'status.foundationMeta': 'Hiérarchie organisationnelle de référence',
+    'deployment.eyebrow': 'Runtime',
+    'deployment.title': 'Contexte de déploiement',
+    'deployment.version': 'Version',
+    'deployment.environment': 'Environnement',
+    'deployment.api': 'Point d’entrée API',
+    'deployment.architecture': 'Architecture',
+    'organization.eyebrow': 'Espace de gouvernance',
+    'organization.title': 'Organisations & subdivisions',
+    'organization.description': 'Périmètres organisationnels de référence utilisés pour cadrer l’infrastructure, les responsabilités et la gouvernance.',
+    'organization.loading': 'Chargement…',
+    'organization.count': '{count} organisation(s)',
+    'organization.unavailable': 'Données Organisations indisponibles',
+    'organization.code': 'Code',
+    'organization.name': 'Organisation',
+    'organization.country': 'Pays',
+    'organization.state': 'État',
+    'organization.version': 'Version',
+    'organization.actions': 'Actions',
+    'organization.viewHierarchy': 'Voir la hiérarchie',
+    'organization.showSubdivisions': 'Afficher les subdivisions de {code}',
+    'subdivision.eyebrow': 'Hiérarchie',
+    'subdivision.title': 'Subdivisions',
+    'subdivision.titleFor': 'Subdivisions — {code}',
+    'subdivision.count': '{count} subdivision(s)',
+    'subdivision.unavailable': 'Données Subdivisions indisponibles',
+    'subdivision.code': 'Code',
+    'subdivision.name': 'Subdivision',
+    'subdivision.type': 'Type',
+    'subdivision.state': 'État',
+    'subdivision.version': 'Version',
+    'footer.product': 'InfraNexum — Infrastructure Control & Governance Platform',
+    'noscript': 'JavaScript est requis pour initialiser l’interface Web InfraNexum.',
+  }),
+  de: Object.freeze({
+    'app.skip': 'Zum Inhalt springen', 'brand.subtitle': 'Steuerung & Governance', 'nav.workspace': 'Arbeitsbereich', 'nav.overview': 'Übersicht', 'nav.organizations': 'Organisationen', 'nav.platform': 'Plattform', 'nav.infrastructure': 'Infrastruktur', 'nav.discovery': 'Erkennung', 'nav.governance': 'Governance', 'nav.soon': 'Bald',
+    'runtime.label': 'Runtime', 'runtime.connecting': 'Verbindung…', 'runtime.operational': 'Betriebsbereit', 'runtime.unavailable': 'Nicht verfügbar', 'runtime.loaded': 'Runtime-Konfiguration geladen.', 'runtime.loadFailure': 'Die Web-Runtime-Konfiguration konnte nicht geladen werden. Wenden Sie sich an einen InfraNexum-Administrator.',
+    'common.version': 'Version {value}', 'common.environment': 'Umgebung {value}', 'common.enabled': 'Aktiviert', 'common.disabled': 'Deaktiviert', 'common.checking': 'Prüfung', 'common.configured': 'Konfiguriert', 'common.live': 'Live', 'common.up': 'UP', 'common.down': 'DOWN',
+    'topbar.eyebrow': 'Infrastructure Control & Governance Platform', 'topbar.dashboard': 'Administrations-Dashboard', 'topbar.organizations': 'Organisationen & Untergliederungen', 'breadcrumb.home': 'InfraNexum', 'theme.switch': 'Farbschema wechseln', 'theme.toLight': 'Zum hellen Thema wechseln', 'theme.toDark': 'Zum dunklen Thema wechseln', 'session.localAdmin': 'Lokale Administratorsitzung', 'language.label': 'Oberflächensprache',
+    'command.open': 'Suche & Befehle', 'command.short': 'Suchen', 'command.title': 'Befehlspalette', 'command.subtitle': 'Navigieren Sie im Control Plane und führen Sie verfügbare Oberflächenaktionen aus.', 'command.placeholder': 'Befehl suchen…', 'command.close': 'Befehlspalette schließen', 'command.empty': 'Kein verfügbarer Befehl entspricht Ihrer Suche.', 'command.hint.navigate': 'Navigieren', 'command.hint.select': 'Auswählen', 'command.hint.close': 'Schließen', 'command.category.workspace': 'Arbeitsbereich', 'command.category.appearance': 'Darstellung',
+    'command.overview.title': 'Übersicht öffnen', 'command.overview.description': 'Control-Plane-Zustand, Runtime und Bereitstellungskontext anzeigen.', 'command.organizations.title': 'Organisationen öffnen', 'command.organizations.description': 'Verbindliche Organisationen und Untergliederungshierarchien verwalten.', 'command.runtime.title': 'Runtime-Status fokussieren', 'command.runtime.description': 'Zu Bereitstellungs- und Runtime-Konfigurationsdetails springen.', 'command.theme.title': 'Farbschema umschalten', 'command.theme.description': 'Zwischen hellem und dunklem Administrationsthema wechseln.',
+
+    'command.category.system': 'System', 'command.preferences.title': 'Dashboard-Einstellungen öffnen', 'command.preferences.description': 'Dichte, Seitenleiste und Aktualisierungsintervall anpassen.', 'command.notifications.title': 'Betriebsbenachrichtigungen öffnen', 'command.notifications.description': 'Von dieser Browser-Sitzung beobachtete Fakten anzeigen.',
+    'notification.open': 'Betriebsbenachrichtigungen öffnen', 'notification.close': 'Betriebsbenachrichtigungen schließen', 'notification.eyebrow': 'Beobachtete Ereignisse', 'notification.title': 'Betriebsbenachrichtigungen', 'notification.subtitle': 'Es werden nur von dieser Browser-Sitzung tatsächlich beobachtete Fakten angezeigt.', 'notification.scope': 'Aktuelle Browser-Sitzung', 'notification.markRead': 'Alle als gelesen markieren', 'notification.empty': 'Noch kein Betriebsereignis beobachtet.', 'notification.unread': '{count} ungelesene Benachrichtigung(en)', 'notification.severity.info': 'Info', 'notification.severity.success': 'Gesund', 'notification.severity.warning': 'Warnung', 'notification.severity.error': 'Achtung', 'notification.runtimeReady.title': 'Web-Runtime validiert', 'notification.runtimeReady.body': 'Runtime {version} ist für Umgebung {environment} geladen.', 'notification.runtimeUnavailable.title': 'Web-Runtime nicht verfügbar', 'notification.runtimeUnavailable.body': 'Die validierte Runtime-Konfiguration konnte nicht geladen werden.', 'notification.platformReady.title': 'Plattform-API erreichbar', 'notification.platformReady.body': 'Effektives Profil {profile} / {tier} wurde von den Server-APIs gelesen.', 'notification.platformUnavailable.title': 'Plattform-API nicht verfügbar', 'notification.platformUnavailable.body': 'Capability- oder Quota-Entscheidungen konnten nicht gelesen werden.',
+    'preference.open': 'Dashboard-Einstellungen öffnen', 'preference.close': 'Dashboard-Einstellungen schließen', 'preference.eyebrow': 'Lokale Operator-Erfahrung', 'preference.title': 'Dashboard-Einstellungen', 'preference.subtitle': 'Bis zu IAM-Benutzereinstellungen in diesem Browser gespeichert.', 'preference.density': 'Informationsdichte', 'preference.density.comfortable': 'Komfortabel', 'preference.density.compact': 'Kompakt', 'preference.navigation': 'Seitenleistenmodus', 'preference.navigation.auto': 'Responsiv', 'preference.navigation.expanded': 'Erweitert', 'preference.navigation.compact': 'Kompakt', 'preference.refresh': 'Aktualisierung Betriebsdaten', 'preference.refresh.off': 'Aus', 'preference.refresh.30': 'Alle 30 Sekunden', 'preference.refresh.60': 'Jede Minute', 'preference.refresh.300': 'Alle 5 Minuten', 'preference.noteTitle': 'Geltungsbereich', 'preference.note': 'Sprache und Farbthema bleiben unabhängig in der Kopfleiste gespeichert.', 'preference.reset': 'Standardwerte', 'preference.save': 'Speichern',
+    'platform.eyebrow': 'Effektiver Plattformvertrag', 'platform.title': 'Profil, Capabilities & Kapazität', 'platform.description': 'Live-Entscheidungen ohne Geheimnisse aus den Server-APIs für Capabilities und Quotas.', 'platform.profile': 'Installationsprofil', 'platform.profileMeta': 'Effektives Runtime-Profil', 'platform.tier': 'Zuteilungsstufe', 'platform.tierMeta': 'Effektive Quota-Stufe', 'platform.capabilities': 'Capabilities', 'platform.capabilitiesMeta': 'Verfügbar / bewertet', 'platform.catalog': 'Katalog', 'platform.catalogMeta': 'Capability-Katalogversion', 'platform.ha': 'Hochverfügbarkeit', 'platform.haMeta': 'Deployment-Capability', 'platform.splitWeb': 'Getrenntes Web', 'platform.splitWebMeta': 'Dedizierte Web-Schicht', 'platform.orgLimit': 'Organisationen', 'platform.serverLimit': 'Server-Knoten', 'platform.webLimit': 'Web-Knoten', 'platform.limitMeta': 'Effektives Maximum', 'platform.ready': 'Live-Daten',
+    'hero.eyebrow': 'Control Plane', 'hero.title': 'Infrastruktur mit Klarheit steuern.', 'hero.lead': 'Eine einheitliche operative Sicht für Governance-, Topologie-, Inventar- und Lebenszyklusentscheidungen.', 'hero.action': 'Organisationsbereich öffnen', 'hero.loading': 'Validierte öffentliche Konfiguration wird geladen…',
+    'kpi.runtime': 'Runtime', 'kpi.runtimeMeta': 'Web Control Plane', 'kpi.organizations': 'Organisationen', 'kpi.organizationsMeta': 'Verbindliche Bereiche', 'kpi.foundation': 'Grundlage', 'kpi.foundationMeta': 'Organisationsfunktion', 'kpi.environment': 'Umgebung',
+    'status.eyebrow': 'Betriebsstatus', 'status.title': 'Control-Plane-Status', 'status.webRuntime': 'Web-Runtime', 'status.webRuntimeMeta': 'Statische Shell und Runtime-Konfiguration', 'status.serverApi': 'Server-API', 'status.foundation': 'Organisationsgrundlage', 'status.foundationMeta': 'Verbindliche Organisationshierarchie',
+    'deployment.eyebrow': 'Runtime', 'deployment.title': 'Bereitstellungskontext', 'deployment.version': 'Version', 'deployment.environment': 'Umgebung', 'deployment.api': 'API-Einstiegspunkt', 'deployment.architecture': 'Architektur',
+    'organization.eyebrow': 'Governance-Arbeitsbereich', 'organization.title': 'Organisationen & Untergliederungen', 'organization.description': 'Verbindliche organisatorische Grenzen für Infrastruktur, Verantwortlichkeiten und Governance.', 'organization.loading': 'Laden…', 'organization.count': '{count} Organisation(en)', 'organization.unavailable': 'Organisationsdaten nicht verfügbar', 'organization.code': 'Code', 'organization.name': 'Organisation', 'organization.country': 'Land', 'organization.state': 'Status', 'organization.version': 'Version', 'organization.actions': 'Aktionen', 'organization.viewHierarchy': 'Hierarchie anzeigen', 'organization.showSubdivisions': 'Untergliederungen für {code} anzeigen',
+    'subdivision.eyebrow': 'Hierarchie', 'subdivision.title': 'Untergliederungen', 'subdivision.titleFor': 'Untergliederungen — {code}', 'subdivision.count': '{count} Untergliederung(en)', 'subdivision.unavailable': 'Untergliederungsdaten nicht verfügbar', 'subdivision.code': 'Code', 'subdivision.name': 'Untergliederung', 'subdivision.type': 'Typ', 'subdivision.state': 'Status', 'subdivision.version': 'Version',
+    'footer.product': 'InfraNexum — Infrastructure Control & Governance Platform', 'noscript': 'JavaScript ist erforderlich, um die InfraNexum-Weboberfläche zu initialisieren.',
+  }),
+  es: Object.freeze({
+    'app.skip': 'Ir al contenido', 'brand.subtitle': 'Control y Gobernanza', 'nav.workspace': 'Espacio de trabajo', 'nav.overview': 'Resumen', 'nav.organizations': 'Organizaciones', 'nav.platform': 'Plataforma', 'nav.infrastructure': 'Infraestructura', 'nav.discovery': 'Descubrimiento', 'nav.governance': 'Gobernanza', 'nav.soon': 'Próximamente',
+    'runtime.label': 'Runtime', 'runtime.connecting': 'Conectando…', 'runtime.operational': 'Operativo', 'runtime.unavailable': 'No disponible', 'runtime.loaded': 'Configuración runtime cargada.', 'runtime.loadFailure': 'No se pudo cargar la configuración del runtime Web. Contacte con un administrador de InfraNexum.',
+    'common.version': 'Versión {value}', 'common.environment': 'Entorno {value}', 'common.enabled': 'Activado', 'common.disabled': 'Desactivado', 'common.checking': 'Comprobando', 'common.configured': 'Configurada', 'common.live': 'Activo', 'common.up': 'UP', 'common.down': 'DOWN',
+    'topbar.eyebrow': 'Infrastructure Control & Governance Platform', 'topbar.dashboard': 'Panel de administración', 'topbar.organizations': 'Organizaciones y subdivisiones', 'breadcrumb.home': 'InfraNexum', 'theme.switch': 'Cambiar tema', 'theme.toLight': 'Cambiar al tema claro', 'theme.toDark': 'Cambiar al tema oscuro', 'session.localAdmin': 'Sesión de administrador local', 'language.label': 'Idioma de la interfaz',
+    'command.open': 'Buscar y comandos', 'command.short': 'Buscar', 'command.title': 'Paleta de comandos', 'command.subtitle': 'Navegue por el control plane y ejecute las acciones de interfaz disponibles.', 'command.placeholder': 'Buscar un comando…', 'command.close': 'Cerrar la paleta de comandos', 'command.empty': 'Ningún comando disponible coincide con la búsqueda.', 'command.hint.navigate': 'Navegar', 'command.hint.select': 'Seleccionar', 'command.hint.close': 'Cerrar', 'command.category.workspace': 'Espacio de trabajo', 'command.category.appearance': 'Apariencia',
+    'command.overview.title': 'Abrir resumen', 'command.overview.description': 'Mostrar salud del control plane, runtime y contexto de despliegue.', 'command.organizations.title': 'Abrir organizaciones', 'command.organizations.description': 'Gestionar organizaciones de referencia y su jerarquía de subdivisiones.', 'command.runtime.title': 'Ver estado del runtime', 'command.runtime.description': 'Ir a los detalles de despliegue y configuración runtime.', 'command.theme.title': 'Alternar tema', 'command.theme.description': 'Cambiar entre los temas de administración claro y oscuro.',
+
+    'command.category.system': 'Sistema', 'command.preferences.title': 'Abrir preferencias del panel', 'command.preferences.description': 'Ajustar densidad, barra lateral y frecuencia de actualización operativa.', 'command.notifications.title': 'Abrir notificaciones operativas', 'command.notifications.description': 'Revisar hechos observados por esta sesión del navegador.',
+    'notification.open': 'Abrir notificaciones operativas', 'notification.close': 'Cerrar notificaciones operativas', 'notification.eyebrow': 'Eventos observados', 'notification.title': 'Notificaciones operativas', 'notification.subtitle': 'Solo se muestran hechos realmente observados por esta sesión del navegador.', 'notification.scope': 'Sesión actual del navegador', 'notification.markRead': 'Marcar todo como leído', 'notification.empty': 'Todavía no se ha observado ningún evento operativo.', 'notification.unread': '{count} notificación(es) sin leer', 'notification.severity.info': 'Info', 'notification.severity.success': 'Saludable', 'notification.severity.warning': 'Aviso', 'notification.severity.error': 'Atención', 'notification.runtimeReady.title': 'Runtime Web validado', 'notification.runtimeReady.body': 'El runtime {version} está cargado para el entorno {environment}.', 'notification.runtimeUnavailable.title': 'Runtime Web no disponible', 'notification.runtimeUnavailable.body': 'El navegador no pudo cargar una configuración runtime validada.', 'notification.platformReady.title': 'API de plataforma disponible', 'notification.platformReady.body': 'El perfil efectivo {profile} / {tier} se leyó desde las API Server.', 'notification.platformUnavailable.title': 'API de plataforma no disponible', 'notification.platformUnavailable.body': 'No se pudieron leer las decisiones de capacidades o cuotas.',
+    'preference.open': 'Abrir preferencias del panel', 'preference.close': 'Cerrar preferencias del panel', 'preference.eyebrow': 'Experiencia local del operador', 'preference.title': 'Preferencias del panel', 'preference.subtitle': 'Guardadas en este navegador hasta disponer de preferencias de usuario IAM.', 'preference.density': 'Densidad de información', 'preference.density.comfortable': 'Cómoda', 'preference.density.compact': 'Compacta', 'preference.navigation': 'Modo de barra lateral', 'preference.navigation.auto': 'Responsivo', 'preference.navigation.expanded': 'Expandida', 'preference.navigation.compact': 'Compacta', 'preference.refresh': 'Actualización de datos operativos', 'preference.refresh.off': 'Desactivada', 'preference.refresh.30': 'Cada 30 segundos', 'preference.refresh.60': 'Cada minuto', 'preference.refresh.300': 'Cada 5 minutos', 'preference.noteTitle': 'Alcance', 'preference.note': 'El idioma y el tema de color se guardan de forma independiente en la barra superior.', 'preference.reset': 'Restablecer', 'preference.save': 'Guardar',
+    'platform.eyebrow': 'Contrato efectivo de plataforma', 'platform.title': 'Perfil, capacidades y capacidad', 'platform.description': 'Decisiones reales y sin secretos publicadas por las API Server de capacidades y cuotas.', 'platform.profile': 'Perfil de instalación', 'platform.profileMeta': 'Perfil runtime efectivo', 'platform.tier': 'Nivel de asignación', 'platform.tierMeta': 'Nivel de cuotas efectivo', 'platform.capabilities': 'Capacidades', 'platform.capabilitiesMeta': 'Disponibles / evaluadas', 'platform.catalog': 'Catálogo', 'platform.catalogMeta': 'Versión del catálogo de capacidades', 'platform.ha': 'Alta disponibilidad', 'platform.haMeta': 'Capacidad de despliegue', 'platform.splitWeb': 'Web separado', 'platform.splitWebMeta': 'Capa Web dedicada', 'platform.orgLimit': 'Organizaciones', 'platform.serverLimit': 'Nodos Server', 'platform.webLimit': 'Nodos Web', 'platform.limitMeta': 'Máximo efectivo', 'platform.ready': 'Datos reales',
+    'hero.eyebrow': 'Control plane', 'hero.title': 'Opere la infraestructura con claridad.', 'hero.lead': 'Una vista operativa unificada para decisiones de gobernanza, topología, inventario y ciclo de vida.', 'hero.action': 'Abrir espacio de Organizaciones', 'hero.loading': 'Cargando la configuración pública validada…',
+    'kpi.runtime': 'Runtime', 'kpi.runtimeMeta': 'Control plane Web', 'kpi.organizations': 'Organizaciones', 'kpi.organizationsMeta': 'Ámbitos de referencia', 'kpi.foundation': 'Fundación', 'kpi.foundationMeta': 'Capacidad Organización', 'kpi.environment': 'Entorno',
+    'status.eyebrow': 'Postura operativa', 'status.title': 'Estado del control plane', 'status.webRuntime': 'Runtime Web', 'status.webRuntimeMeta': 'Shell estático y configuración runtime', 'status.serverApi': 'API Server', 'status.foundation': 'Fundación Organización', 'status.foundationMeta': 'Jerarquía organizativa de referencia',
+    'deployment.eyebrow': 'Runtime', 'deployment.title': 'Contexto de despliegue', 'deployment.version': 'Versión', 'deployment.environment': 'Entorno', 'deployment.api': 'Punto de entrada API', 'deployment.architecture': 'Arquitectura',
+    'organization.eyebrow': 'Espacio de gobernanza', 'organization.title': 'Organizaciones y subdivisiones', 'organization.description': 'Límites organizativos de referencia para delimitar infraestructura, responsabilidad y gobernanza.', 'organization.loading': 'Cargando…', 'organization.count': '{count} organización(es)', 'organization.unavailable': 'Datos de organizaciones no disponibles', 'organization.code': 'Código', 'organization.name': 'Organización', 'organization.country': 'País', 'organization.state': 'Estado', 'organization.version': 'Versión', 'organization.actions': 'Acciones', 'organization.viewHierarchy': 'Ver jerarquía', 'organization.showSubdivisions': 'Mostrar subdivisiones de {code}',
+    'subdivision.eyebrow': 'Jerarquía', 'subdivision.title': 'Subdivisiones', 'subdivision.titleFor': 'Subdivisiones — {code}', 'subdivision.count': '{count} subdivisión(es)', 'subdivision.unavailable': 'Datos de subdivisiones no disponibles', 'subdivision.code': 'Código', 'subdivision.name': 'Subdivisión', 'subdivision.type': 'Tipo', 'subdivision.state': 'Estado', 'subdivision.version': 'Versión',
+    'footer.product': 'InfraNexum — Infrastructure Control & Governance Platform', 'noscript': 'JavaScript es necesario para inicializar la interfaz Web de InfraNexum.',
+  }),
+  it: Object.freeze({
+    'app.skip': 'Vai al contenuto', 'brand.subtitle': 'Controllo & Governance', 'nav.workspace': 'Area di lavoro', 'nav.overview': 'Panoramica', 'nav.organizations': 'Organizzazioni', 'nav.platform': 'Piattaforma', 'nav.infrastructure': 'Infrastruttura', 'nav.discovery': 'Discovery', 'nav.governance': 'Governance', 'nav.soon': 'Prossimamente',
+    'runtime.label': 'Runtime', 'runtime.connecting': 'Connessione…', 'runtime.operational': 'Operativo', 'runtime.unavailable': 'Non disponibile', 'runtime.loaded': 'Configurazione runtime caricata.', 'runtime.loadFailure': 'Impossibile caricare la configurazione del runtime Web. Contattare un amministratore InfraNexum.',
+    'common.version': 'Versione {value}', 'common.environment': 'Ambiente {value}', 'common.enabled': 'Abilitato', 'common.disabled': 'Disabilitato', 'common.checking': 'Verifica', 'common.configured': 'Configurata', 'common.live': 'Attivo', 'common.up': 'UP', 'common.down': 'DOWN',
+    'topbar.eyebrow': 'Infrastructure Control & Governance Platform', 'topbar.dashboard': 'Dashboard di amministrazione', 'topbar.organizations': 'Organizzazioni & suddivisioni', 'breadcrumb.home': 'InfraNexum', 'theme.switch': 'Cambia tema', 'theme.toLight': 'Passa al tema chiaro', 'theme.toDark': 'Passa al tema scuro', 'session.localAdmin': 'Sessione amministratore locale', 'language.label': 'Lingua dell’interfaccia',
+    'command.open': 'Ricerca & comandi', 'command.short': 'Cerca', 'command.title': 'Palette comandi', 'command.subtitle': 'Naviga nel control plane ed esegui le azioni di interfaccia disponibili.', 'command.placeholder': 'Cerca un comando…', 'command.close': 'Chiudi la palette comandi', 'command.empty': 'Nessun comando disponibile corrisponde alla ricerca.', 'command.hint.navigate': 'Naviga', 'command.hint.select': 'Seleziona', 'command.hint.close': 'Chiudi', 'command.category.workspace': 'Area di lavoro', 'command.category.appearance': 'Aspetto',
+    'command.overview.title': 'Apri panoramica', 'command.overview.description': 'Mostra salute del control plane, runtime e contesto di deployment.', 'command.organizations.title': 'Apri organizzazioni', 'command.organizations.description': 'Gestisci organizzazioni autorevoli e gerarchia delle suddivisioni.', 'command.runtime.title': 'Mostra stato runtime', 'command.runtime.description': 'Vai ai dettagli di deployment e configurazione runtime.', 'command.theme.title': 'Alterna tema', 'command.theme.description': 'Passa tra i temi di amministrazione chiaro e scuro.',
+
+    'command.category.system': 'Sistema', 'command.preferences.title': 'Apri preferenze dashboard', 'command.preferences.description': 'Regola densità, barra laterale e frequenza di aggiornamento operativo.', 'command.notifications.title': 'Apri notifiche operative', 'command.notifications.description': 'Esamina i fatti osservati da questa sessione del browser.',
+    'notification.open': 'Apri notifiche operative', 'notification.close': 'Chiudi notifiche operative', 'notification.eyebrow': 'Eventi osservati', 'notification.title': 'Notifiche operative', 'notification.subtitle': 'Sono mostrati solo fatti realmente osservati da questa sessione del browser.', 'notification.scope': 'Sessione browser corrente', 'notification.markRead': 'Segna tutto come letto', 'notification.empty': 'Nessun evento operativo osservato finora.', 'notification.unread': '{count} notifica/e non letta/e', 'notification.severity.info': 'Info', 'notification.severity.success': 'Sano', 'notification.severity.warning': 'Avviso', 'notification.severity.error': 'Attenzione', 'notification.runtimeReady.title': 'Runtime Web validato', 'notification.runtimeReady.body': 'Il runtime {version} è caricato per l’ambiente {environment}.', 'notification.runtimeUnavailable.title': 'Runtime Web non disponibile', 'notification.runtimeUnavailable.body': 'Il browser non ha potuto caricare una configurazione runtime validata.', 'notification.platformReady.title': 'API piattaforma raggiungibile', 'notification.platformReady.body': 'Il profilo effettivo {profile} / {tier} è stato letto dalle API Server.', 'notification.platformUnavailable.title': 'API piattaforma non disponibile', 'notification.platformUnavailable.body': 'Impossibile leggere decisioni di capability o quota.',
+    'preference.open': 'Apri preferenze dashboard', 'preference.close': 'Chiudi preferenze dashboard', 'preference.eyebrow': 'Esperienza operatore locale', 'preference.title': 'Preferenze dashboard', 'preference.subtitle': 'Memorizzate in questo browser fino alle preferenze utente basate su IAM.', 'preference.density': 'Densità informazioni', 'preference.density.comfortable': 'Confortevole', 'preference.density.compact': 'Compatta', 'preference.navigation': 'Modalità barra laterale', 'preference.navigation.auto': 'Responsive', 'preference.navigation.expanded': 'Espansa', 'preference.navigation.compact': 'Compatta', 'preference.refresh': 'Aggiornamento dati operativi', 'preference.refresh.off': 'Disattivato', 'preference.refresh.30': 'Ogni 30 secondi', 'preference.refresh.60': 'Ogni minuto', 'preference.refresh.300': 'Ogni 5 minuti', 'preference.noteTitle': 'Ambito', 'preference.note': 'Lingua e tema colore restano memorizzati separatamente nella barra superiore.', 'preference.reset': 'Ripristina', 'preference.save': 'Salva',
+    'platform.eyebrow': 'Contratto piattaforma effettivo', 'platform.title': 'Profilo, capability e capacità', 'platform.description': 'Decisioni reali e senza segreti pubblicate dalle API Server di capability e quota.', 'platform.profile': 'Profilo installazione', 'platform.profileMeta': 'Profilo runtime effettivo', 'platform.tier': 'Livello allocazione', 'platform.tierMeta': 'Livello quota effettivo', 'platform.capabilities': 'Capability', 'platform.capabilitiesMeta': 'Disponibili / valutate', 'platform.catalog': 'Catalogo', 'platform.catalogMeta': 'Versione catalogo capability', 'platform.ha': 'Alta disponibilità', 'platform.haMeta': 'Capability deployment', 'platform.splitWeb': 'Web separato', 'platform.splitWebMeta': 'Tier Web dedicato', 'platform.orgLimit': 'Organizzazioni', 'platform.serverLimit': 'Nodi Server', 'platform.webLimit': 'Nodi Web', 'platform.limitMeta': 'Massimo effettivo', 'platform.ready': 'Dati reali',
+    'hero.eyebrow': 'Control plane', 'hero.title': 'Gestisci l’infrastruttura con chiarezza.', 'hero.lead': 'Una vista operativa unificata per decisioni di governance, topologia, inventario e ciclo di vita.', 'hero.action': 'Apri area Organizzazioni', 'hero.loading': 'Caricamento della configurazione pubblica validata…',
+    'kpi.runtime': 'Runtime', 'kpi.runtimeMeta': 'Control plane Web', 'kpi.organizations': 'Organizzazioni', 'kpi.organizationsMeta': 'Ambiti autorevoli', 'kpi.foundation': 'Fondazione', 'kpi.foundationMeta': 'Capacità Organizzazione', 'kpi.environment': 'Ambiente',
+    'status.eyebrow': 'Postura operativa', 'status.title': 'Stato del control plane', 'status.webRuntime': 'Runtime Web', 'status.webRuntimeMeta': 'Shell statica e configurazione runtime', 'status.serverApi': 'API Server', 'status.foundation': 'Fondazione Organizzazione', 'status.foundationMeta': 'Gerarchia organizzativa autorevole',
+    'deployment.eyebrow': 'Runtime', 'deployment.title': 'Contesto di deployment', 'deployment.version': 'Versione', 'deployment.environment': 'Ambiente', 'deployment.api': 'Endpoint API', 'deployment.architecture': 'Architettura',
+    'organization.eyebrow': 'Area governance', 'organization.title': 'Organizzazioni & suddivisioni', 'organization.description': 'Confini organizzativi autorevoli usati per definire infrastruttura, responsabilità e governance.', 'organization.loading': 'Caricamento…', 'organization.count': '{count} organizzazione/i', 'organization.unavailable': 'Dati organizzazioni non disponibili', 'organization.code': 'Codice', 'organization.name': 'Organizzazione', 'organization.country': 'Paese', 'organization.state': 'Stato', 'organization.version': 'Versione', 'organization.actions': 'Azioni', 'organization.viewHierarchy': 'Vedi gerarchia', 'organization.showSubdivisions': 'Mostra suddivisioni di {code}',
+    'subdivision.eyebrow': 'Gerarchia', 'subdivision.title': 'Suddivisioni', 'subdivision.titleFor': 'Suddivisioni — {code}', 'subdivision.count': '{count} suddivisione/i', 'subdivision.unavailable': 'Dati suddivisioni non disponibili', 'subdivision.code': 'Codice', 'subdivision.name': 'Suddivisione', 'subdivision.type': 'Tipo', 'subdivision.state': 'Stato', 'subdivision.version': 'Versione',
+    'footer.product': 'InfraNexum — Infrastructure Control & Governance Platform', 'noscript': 'JavaScript è necessario per inizializzare l’interfaccia Web InfraNexum.',
+  }),
+});
+
+export function normalizeLocale(value) {
+  if (typeof value !== 'string' || value.trim().length === 0) return null;
+  const normalized = value.trim().toLowerCase().replace('_', '-').split('-')[0];
+  return SUPPORTED_LOCALES.includes(normalized) ? normalized : null;
+}
+
+export function resolveLocale({ storageObject = globalThis.localStorage, navigatorObject = globalThis.navigator } = {}) {
+  try {
+    const persisted = normalizeLocale(storageObject?.getItem(LOCALE_STORAGE_KEY));
+    if (persisted) return persisted;
+  } catch {
+    // Browser storage may be unavailable; browser language detection remains valid.
+  }
+  const candidates = Array.isArray(navigatorObject?.languages) && navigatorObject.languages.length > 0
+    ? navigatorObject.languages
+    : [navigatorObject?.language];
+  for (const candidate of candidates) {
+    const locale = normalizeLocale(candidate);
+    if (locale) return locale;
+  }
+  return FALLBACK_LOCALE;
+}
+
+export function translate(locale, key, parameters = {}) {
+  const selected = normalizeLocale(locale) ?? FALLBACK_LOCALE;
+  const template = MESSAGES[selected]?.[key] ?? MESSAGES[FALLBACK_LOCALE]?.[key];
+  if (typeof template !== 'string') return key;
+  return template.replace(/\{([A-Za-z0-9_]+)\}/g, (_match, name) => String(parameters[name] ?? `{${name}}`));
+}
+
+export function localeFromDocument(documentObject) {
+  return normalizeLocale(documentObject?.documentElement?.getAttribute?.('lang')) ?? FALLBACK_LOCALE;
+}
+
+export function applyTranslations(documentObject, locale) {
+  const selected = normalizeLocale(locale) ?? FALLBACK_LOCALE;
+  documentObject?.documentElement?.setAttribute?.('lang', selected);
+  for (const element of documentObject?.querySelectorAll?.('[data-i18n]') ?? []) {
+    element.textContent = translate(selected, element.getAttribute('data-i18n'));
+  }
+  for (const element of documentObject?.querySelectorAll?.('[data-i18n-aria-label]') ?? []) {
+    element.setAttribute('aria-label', translate(selected, element.getAttribute('data-i18n-aria-label')));
+  }
+  for (const element of documentObject?.querySelectorAll?.('[data-i18n-placeholder]') ?? []) {
+    element.setAttribute('placeholder', translate(selected, element.getAttribute('data-i18n-placeholder')));
+  }
+  for (const element of documentObject?.querySelectorAll?.('[data-i18n-dynamic]') ?? []) {
+    const parameters = parseParameters(element.getAttribute('data-i18n-params'));
+    element.textContent = translate(selected, element.getAttribute('data-i18n-dynamic'), parameters);
+  }
+  for (const element of documentObject?.querySelectorAll?.('[data-i18n-aria-dynamic]') ?? []) {
+    const parameters = parseParameters(element.getAttribute('data-i18n-aria-params'));
+    element.setAttribute('aria-label', translate(selected, element.getAttribute('data-i18n-aria-dynamic'), parameters));
+  }
+
+  // Keep language controls synchronized without rebuilding them. Replacing a native
+  // <select> or its parent while its popup is open makes Chromium/Windows close the
+  // picker. The stable listbox switcher below therefore updates attributes/text only.
+  const selector = documentObject?.getElementById?.('language-select');
+  if (selector) selector.value = selected;
+  const current = documentObject?.getElementById?.('language-current');
+  if (current) current.textContent = selected.toUpperCase();
+  for (const option of documentObject?.querySelectorAll?.('[data-locale]') ?? []) {
+    option.setAttribute?.('aria-selected', normalizeLocale(option.getAttribute?.('data-locale')) === selected ? 'true' : 'false');
+  }
+  return selected;
+}
+
+export function initializeLocalization(
+  documentObject = document,
+  storageObject = globalThis.localStorage,
+  navigatorObject = globalThis.navigator,
+) {
+  const initial = resolveLocale({ storageObject, navigatorObject });
+  applyTranslations(documentObject, initial);
+
+  const commitLocale = (value) => {
+    const selected = normalizeLocale(value) ?? FALLBACK_LOCALE;
+    try {
+      storageObject?.setItem(LOCALE_STORAGE_KEY, selected);
+    } catch {
+      // Persistence failure must not prevent an explicit locale change.
+    }
+    applyTranslations(documentObject, selected);
+    dispatchLocaleChange(documentObject, selected);
+    return selected;
+  };
+
+  // Legacy/native fallback for embedded or older shells. The current dashboard uses
+  // the stable custom switcher initialized below.
+  const selector = documentObject?.getElementById?.('language-select');
+  selector?.addEventListener?.('change', () => { commitLocale(selector.value); });
+  initializeLanguageSwitcher(documentObject, commitLocale);
+  return initial;
+}
+
+export function initializeLanguageSwitcher(documentObject, commitLocale) {
+  const switcher = documentObject?.getElementById?.('language-switcher');
+  const trigger = documentObject?.getElementById?.('language-trigger');
+  const menu = documentObject?.getElementById?.('language-menu');
+  const options = [...(documentObject?.querySelectorAll?.('[data-locale]') ?? [])];
+  if (!switcher || !trigger || !menu || options.length === 0 || typeof commitLocale !== 'function') {
+    return Object.freeze({ open() {}, close() {}, isOpen: () => false });
+  }
+
+  const selectedIndex = () => {
+    const locale = localeFromDocument(documentObject);
+    const index = options.findIndex((option) => normalizeLocale(option.getAttribute?.('data-locale')) === locale);
+    return index >= 0 ? index : 0;
+  };
+  const focusOption = (index) => options[((index % options.length) + options.length) % options.length]?.focus?.();
+  const open = ({ focusSelected = false } = {}) => {
+    menu.hidden = false;
+    trigger.setAttribute?.('aria-expanded', 'true');
+    if (focusSelected) focusOption(selectedIndex());
+  };
+  const close = ({ returnFocus = false } = {}) => {
+    menu.hidden = true;
+    trigger.setAttribute?.('aria-expanded', 'false');
+    if (returnFocus) trigger.focus?.();
+  };
+  const isOpen = () => menu.hidden === false;
+  const choose = (option) => {
+    const locale = normalizeLocale(option?.getAttribute?.('data-locale'));
+    if (!locale) return;
+    commitLocale(locale);
+    close({ returnFocus: true });
+  };
+
+  trigger.addEventListener?.('click', () => {
+    if (isOpen()) close();
+    else open();
+  });
+  trigger.addEventListener?.('keydown', (event) => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault?.();
+      open({ focusSelected: true });
+    } else if (event.key === 'Escape' && isOpen()) {
+      event.preventDefault?.();
+      close();
+    }
+  });
+
+  options.forEach((option, index) => {
+    option.addEventListener?.('click', () => choose(option));
+    option.addEventListener?.('keydown', (event) => {
+      if (event.key === 'ArrowDown') {
+        event.preventDefault?.();
+        focusOption(index + 1);
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault?.();
+        focusOption(index - 1);
+      } else if (event.key === 'Home') {
+        event.preventDefault?.();
+        focusOption(0);
+      } else if (event.key === 'End') {
+        event.preventDefault?.();
+        focusOption(options.length - 1);
+      } else if (event.key === 'Escape') {
+        event.preventDefault?.();
+        close({ returnFocus: true });
+      } else if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault?.();
+        choose(option);
+      }
+    });
+  });
+
+  // Only an explicit outside pointer interaction closes the menu. Background runtime
+  // refreshes, notification renders and locale retranslation never touch open state.
+  documentObject?.addEventListener?.('pointerdown', (event) => {
+    if (!isOpen()) return;
+    if (typeof switcher.contains === 'function' && switcher.contains(event?.target)) return;
+    close();
+  });
+
+  return Object.freeze({ open, close, isOpen });
+}
+
+export function setLocalizedText(documentObject, id, key, parameters = {}) {
+  const element = documentObject?.getElementById?.(id);
+  if (!element) return;
+  setLocalizedElementText(documentObject, element, key, parameters);
+}
+
+export function setLocalizedElementText(documentObject, element, key, parameters = {}) {
+  element.textContent = translate(localeFromDocument(documentObject), key, parameters);
+  element.setAttribute?.('data-i18n-dynamic', key);
+  element.setAttribute?.('data-i18n-params', JSON.stringify(parameters));
+}
+
+export function setLocalizedAriaLabel(documentObject, element, key, parameters = {}) {
+  element.setAttribute?.('aria-label', translate(localeFromDocument(documentObject), key, parameters));
+  element.setAttribute?.('data-i18n-aria-dynamic', key);
+  element.setAttribute?.('data-i18n-aria-params', JSON.stringify(parameters));
+}
+
+function parseParameters(value) {
+  if (!value) return {};
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function dispatchLocaleChange(documentObject, locale) {
+  try {
+    const EventConstructor = globalThis.CustomEvent;
+    if (typeof EventConstructor === 'function') {
+      documentObject?.dispatchEvent?.(new EventConstructor('infranexum:locale-change', { detail: { locale } }));
+    }
+  } catch {
+    // Translation already succeeded; event delivery is best-effort integration glue.
+  }
+}

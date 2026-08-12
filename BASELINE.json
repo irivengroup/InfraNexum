@@ -1,7 +1,7 @@
 {
   "schema": "infranexum.source-baseline/v1",
   "product": "InfraNexum — Infrastructure Control & Governance Platform",
-  "implementation_version": "2.0.0-alpha.0.58",
+  "implementation_version": "2.0.0-alpha.0.60",
   "architecture_baseline": "2.0.0-draft.21",
   "roadmap_baseline": "1.0.0-draft.1",
   "architecture_archive_sha256": "372cf19929f8ea3b7586c3af3e7c5004e590cf746ff2d6d59d4d0b88912aea64",
@@ -61,7 +61,8 @@
     "PRO HA worker-store failover recovery alpha.0.56: JDBC TaskStore maps only transient connectivity SQLSTATEs and recoverable connection exceptions to a dedicated recoverable signal; TaskWorkerPool keeps loops alive with paced retries, drops fail-closed readiness while each loop lacks a working store path, restores readiness automatically after writer recovery, exposes fixed-cardinality store readiness/failure telemetry, and preserves fatal handling for unexpected runtime or functional SQL defects.",
     "PGM-03-E01 Organization foundation alpha.0.57: authoritative Organization/Subdivision aggregates, UUIDv7, strict lifecycle, profile/quota guards, temporal typed scopes, atomic outbox/idempotency JDBC writes, paired PostgreSQL/Oracle migration 0010, fail-closed local pre-IAM API and Bootstrap 5 themed Web organization list.",
     "PRO HA Docker runtime alpha.0.56 certified on Docker Desktop: nominal smoke, PostgreSQL primary failover and rejoin, Server node failover, Web node failover, and final Server readiness UP all passed.",
-    "Organization foundation alpha.0.57: authoritative Organization/Subdivision/temporal-scope bounded context with UUIDv7, lifecycle, optimistic versioning, capability-driven quotas, idempotency/outbox, PostgreSQL/Oracle migration 0010, local-only pre-IAM API, and same-origin Bootstrap Web foundation."
+    "Organization foundation alpha.0.57: authoritative Organization/Subdivision/temporal-scope bounded context with UUIDv7, lifecycle, optimistic versioning, capability-driven quotas, idempotency/outbox, PostgreSQL/Oracle migration 0010, local-only pre-IAM API, and same-origin Bootstrap Web foundation.",
+    "Web administration experience alpha.0.59: route-aware Overview/Organizations shell, DE/EN/ES/FR/IT browser-detected and persisted i18n with English fallback, localized dynamic runtime and organization states, breadcrumbs, independent theme/locale preferences, and a keyboard-first Ctrl/Cmd+K command palette indexing only currently actionable UI capabilities."
   ],
   "roadmap_archive_sha256": "11db7d27bbc79f688cd1fda31a24aaf31b56a56db36b6487b64154c148ab54d3",
   "engineering_governance_sha256": "f24357051a5401f598c3d77bbe5814d3759a176095537659243658ba3ff109c7"

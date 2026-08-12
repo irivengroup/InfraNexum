@@ -1,6 +1,36 @@
-# InfraNexum 2.0.0-alpha.0.58 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.60 — état d’implémentation
 
 
+
+
+
+## 2.0.0-alpha.0.60 — Operational preferences, notifications & live platform insights
+
+**Statut : expérience Web implémentée et validée localement ; runtime Docker Desktop et contrôle visuel cible à valider.**
+
+Le dashboard internationalisé gagne une couche d’exploitation sans introduire de données simulées. `platform-insights.mjs` lit en same-origin les contrats existants `/api/v1/platform/capabilities` et `/api/v1/platform/quotas`, valide strictement leurs formes puis expose le profil effectif, le palier d’allocation, le nombre de capabilities disponibles/évaluées, les décisions `deployment.high_availability` / `deployment.split_web` et les limites effectives `organization.organizations.max`, `deployment.server.nodes_total.max` et `deployment.web.nodes_total.max`. Toute indisponibilité de l’un des deux contrats remet l’ensemble du widget dans un état explicite `Unavailable` au lieu de conserver des valeurs périmées ou fictives.
+
+Les préférences opérateur sont regroupées dans un document JSON versionné `infranexum.web-preferences/v1`, persisté localement sous `infranexum.preferences.v1`. Les paramètres couvrent la densité (`comfortable|compact`), le comportement de sidebar (`auto|expanded|compact`) et la cadence de rafraîchissement des données opérationnelles (`0|30|60|300` secondes). Une valeur ou un JSON corrompu retombe sur des défauts sûrs. Langue et thème conservent leurs clés historiques séparées pour compatibilité ascendante ; aucune persistance serveur n’est revendiquée avant IAM.
+
+Le contrôle de langue a été durci après observation d'une fermeture prématurée du `<select>` natif pendant l'interaction. Il est remplacé par un listbox accessible persistant dont l'état ouvert n'est jamais modifié par les rafraîchissements runtime/Capabilities/Quotas ou le rerender des notifications. Seules une sélection explicite, `Escape` ou une interaction pointeur hors du composant le ferment ; la navigation clavier `↑/↓`, `Home/End`, `Enter/Espace` est couverte par non-régression.
+
+Le centre de notifications est volontairement **observational** : il ne contient que des faits vus par le navigateur pendant la session (runtime validé/indisponible, lecture Capabilities/Quotas réussie/échouée). Les événements sont identifiés et dédupliqués, disposent d’un compteur non lu et sont retraduits lors d’un changement de locale. Aucun incident, alerte d’infrastructure ou événement métier non fourni par le backend n’est inventé. La command palette ajoute seulement deux actions locales réellement exécutables : ouvrir les préférences et les notifications.
+
+Validations locales de l’incrément avant packaging : Web **61/61**, couverture runtime lignes **99,67 %**, branches **98,33 %**, fonctions **100 %** ; préférences structurées/corruption storage **PASS** ; notifications observées/déduplication/non-lu **PASS** ; Capabilities/Quotas validation/rendu/fail-closed/auto-refresh **PASS**. Les gates transverses et la validation post-extraction sont consignés dans le release manifest.
+
+## 2.0.0-alpha.0.59 — Internationalized administration shell & command palette
+
+**Statut : expérience Web implémentée et validée localement ; rendu final et runtime Docker Desktop à valider sur la cible.**
+
+Le dashboard professionnel introduit en `alpha.0.58` devient un véritable shell d’administration navigable. Les workspaces `Overview` et `Organizations` sont routés par hash sans dépendance frontend externe, la navigation active et le breadcrumb suivent la route courante, et le workspace Organisations reste fail-closed tant que la capability locale pré-IAM n’est pas explicitement disponible. Les modules non livrés restent visuellement signalés comme indisponibles et ne sont pas exposés comme commandes exécutables.
+
+L’internationalisation Web couvre désormais **DE, EN, ES, FR et IT**. Au premier chargement, la langue est résolue depuis `navigator.languages`/`navigator.language` avec repli anglais ; une préférence explicite est persistée sous `infranexum.locale`. Le changement de langue met à jour les libellés statiques, les états runtime dynamiques, les compteurs Organisations/Subdivisions, les actions, les breadcrumbs, le titre de page et les attributs d’accessibilité. Le thème clair/sombre reste indépendant et persistant sous `infranexum.theme`.
+
+Une command palette globale du **dashboard** est accessible par `Ctrl+K` ou `Cmd+K`, avec filtrage localisé insensible à la casse et aux accents, navigation clavier `↑/↓`, sélection `Enter` et fermeture `Esc`. Elle ne simule pas la future recherche métier globale : seules les routes et actions d’interface réellement disponibles sont indexées. Les commandes actuelles couvrent la vue d’ensemble, Organisations lorsque la capability est active, le focus runtime et le basculement de thème.
+
+Le socle visuel reste Bootstrap 5.3.6 vendored localement + thème InfraNexum adapté du prédécesseur, sans CDN ni Bootstrap JavaScript. La nouvelle couche ajoute une barre de commande compacte, un sélecteur de langue, des breadcrumbs, un dialogue de commandes responsive et des états mobile/tablette cohérents, tout en conservant `prefers-reduced-motion`, focus visible, contenu API rendu par `textContent` et accès same-origin `/api`.
+
+Validations locales de l’incrément : Web **49/49**, couverture runtime lignes **99,67 %**, branches **98,33 %**, fonctions **100 %** ; tests i18n dédiés (détection, persistance, fallback, traductions dynamiques) **PASS** ; tests routing/command palette (fail-closed capability, recherche localisée, actions locales idempotentes) **PASS**. Les gates transverses et le packaging final sont consignés dans le release manifest de l’archive.
 
 
 ## 2.0.0-alpha.0.58 — PGM-03-E01 Organization & Subdivision foundation

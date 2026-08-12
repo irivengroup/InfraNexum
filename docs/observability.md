@@ -35,7 +35,7 @@ Runtime overrides:
 ```text
 INFRANEXUM_ENVIRONMENT=local
 INFRANEXUM_SERVER_INSTANCE_ID=server-local-1
-INFRANEXUM_VERSION=2.0.0-alpha.0.58
+INFRANEXUM_VERSION=2.0.0-alpha.0.60
 ```
 
 The console format is fixed to ECS so runtime configuration cannot bypass the structured-value redaction customizer. Every string value is sanitized immediately before JSON serialization; stack trace output is additionally bounded to 8192 characters and 32 throwable frames.
