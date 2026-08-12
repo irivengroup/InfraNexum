@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import os
 import pathlib
 import re
 import subprocess
+import tempfile
+import textwrap
 import unittest
 
 import yaml
@@ -87,6 +90,103 @@ class ComposeContractTest(unittest.TestCase):
         self.assertIn("sync_state IN ('sync','quorum')", bootstrap)
         self.assertIn("createdb", bootstrap)
         self.assertEqual("service_completed_successfully", self.services["migrate"]["depends_on"]["db-bootstrap"]["condition"])
+
+    def test_database_bootstrap_uses_psql_stdin_for_password_interpolation(self) -> None:
+        """Regression: psql -c must never receive psql-only :'variable' syntax."""
+        bootstrap = (DOCKER / "bootstrap-postgresql-ha.sh").read_text(encoding="utf-8")
+        self.assertIn(r"\getenv db_password INFRANEXUM_BOOTSTRAP_DATABASE_PASSWORD", bootstrap)
+        self.assertIn("psql_admin <<'SQL'", bootstrap)
+        self.assertNotRegex(bootstrap, r"--command .*PASSWORD :'db_password'")
+        self.assertNotIn("--set=db_password=", bootstrap)
+
+    def test_database_bootstrap_executes_with_psql_only_interpolation_on_stdin(self) -> None:
+        """Execute the bootstrap against deterministic command stubs reproducing alpha.0.47."""
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temp = pathlib.Path(temporary_directory)
+            password = temp / "db-password"
+            password.write_text("fixture-secret-with-safe-quote-'\n", encoding="utf-8")
+            bin_dir = temp / "bin"
+            bin_dir.mkdir()
+            psql_log = temp / "psql.log"
+
+            psql = bin_dir / "psql"
+            psql.write_text(textwrap.dedent(r'''
+                #!/bin/sh
+                set -eu
+                printf 'ARGS:%s\n' "$*" >> "$PSQL_STUB_LOG"
+                command_sql=''
+                previous=''
+                for argument in "$@"; do
+                  if [ "$previous" = '--command' ]; then
+                    command_sql="$argument"
+                    break
+                  fi
+                  previous="$argument"
+                done
+                case "$command_sql" in
+                  *"SELECT count(*) FROM pg_stat_replication WHERE state='streaming' AND sync_state"*)
+                    state="$PSQL_STUB_STATE_DIR/sync-ready"
+                    if [ -f "$state" ]; then printf '1\n'; else : > "$state"; printf '0\n'; fi
+                    exit 0 ;;
+                  *"SELECT count(*) FROM pg_stat_replication WHERE state='streaming'"*)
+                    state="$PSQL_STUB_STATE_DIR/streaming-ready"
+                    if [ -f "$state" ]; then printf '2\n'; else : > "$state"; printf '1\n'; fi
+                    exit 0 ;;
+                  *"SELECT 1 FROM pg_roles"*) exit 0 ;;
+                  *"SELECT 1 FROM pg_database"*) printf '1\n'; exit 0 ;;
+                  'SELECT 1') printf '1\n'; exit 0 ;;
+                  *":'db_password'"*) echo 'psql -c forwarded psql-only interpolation to the server' >&2; exit 1 ;;
+                esac
+                if [ -z "$command_sql" ]; then
+                  input=$(cat)
+                  printf 'STDIN:%s\n' "$input" >> "$PSQL_STUB_LOG"
+                  printf '%s\n' "$input" | grep -F '\getenv db_password INFRANEXUM_BOOTSTRAP_DATABASE_PASSWORD' >/dev/null
+                  printf '%s\n' "$input" | grep -F "CREATE ROLE infranexum LOGIN PASSWORD :'db_password';" >/dev/null
+                  [ "${INFRANEXUM_BOOTSTRAP_DATABASE_PASSWORD:-}" = "fixture-secret-with-safe-quote-'" ]
+                  exit 0
+                fi
+                echo "Unexpected psql invocation: $*" >&2
+                exit 70
+            ''').lstrip(), encoding="utf-8")
+            psql.chmod(0o755)
+
+            createdb = bin_dir / "createdb"
+            createdb.write_text("#!/bin/sh\nexit 70\n", encoding="utf-8")
+            createdb.chmod(0o755)
+            sleep = bin_dir / "sleep"
+            sleep.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            sleep.chmod(0o755)
+
+            environment = os.environ.copy()
+            environment.update({
+                "PATH": f"{bin_dir}{os.pathsep}{environment.get('PATH', '')}",
+                "INFRANEXUM_DATABASE_PASSWORD_FILE": str(password),
+                "PSQL_STUB_LOG": str(psql_log),
+                "PSQL_STUB_STATE_DIR": str(temp),
+                "PGHOST": "postgres",
+                "PGPORT": "5432",
+            })
+            result = subprocess.run(
+                ["sh", str(DOCKER / "bootstrap-postgresql-ha.sh")],
+                cwd=ROOT,
+                env=environment,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertIn("PRO PostgreSQL bootstrap invariant verified", result.stdout)
+            log = psql_log.read_text(encoding="utf-8")
+            self.assertIn("STDIN:", log)
+            self.assertGreaterEqual(log.count("state='streaming'"), 4)
+            argument_log = "\n".join(line for line in log.splitlines() if line.startswith("ARGS:"))
+            self.assertNotIn("fixture-secret-with-safe-quote-'", argument_log)
+
+    def test_database_bootstrap_has_bounded_replication_waits(self) -> None:
+        bootstrap = (DOCKER / "bootstrap-postgresql-ha.sh").read_text(encoding="utf-8")
+        self.assertIn("wait_for_scalar_at_least", bootstrap)
+        self.assertIn('while [ "$attempt" -lt "$attempts" ]', bootstrap)
+        self.assertIn("observed $last_value", bootstrap)
 
     def test_patroni_and_etcd_have_separate_persistent_volumes(self) -> None:
         expected = {*(f"etcd-{i}-data" for i in range(1, 4)), *(f"postgres-{i}-data" for i in range(1, 4)), "runtime-secrets"}

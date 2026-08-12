@@ -108,6 +108,24 @@ The official etcd 3.6 container is distroless and must not be probed through `CM
 
 This checks a successful etcd proposal rather than merely testing whether TCP/2379 is open.
 
+## PostgreSQL bootstrap
+
+`db-bootstrap` runs only after the PostgreSQL writer router is healthy. It then waits, with a bounded 60-attempt timeout, for the full PRO invariant: two `streaming` standbys and at least one `sync`/`quorum` standby. A non-converging cluster fails closed with exit code 69 and reports the last observed count.
+
+Application-role password SQL is read by `psql` from stdin. The password is imported with `\getenv` from the process environment so psql can safely apply `:'db_password'` SQL-literal interpolation; it is never passed in a `--command` or `--set=db_password=...` process argument.
+
+For a bootstrap failure, inspect only the relevant one-shot service first:
+
+```powershell
+docker compose logs --no-color db-bootstrap
+```
+
+Then inspect replication state through the stable writer endpoint if needed:
+
+```powershell
+.\docker\dev-compose.ps1 smoke
+```
+
 ## PRO HA validation
 
 `smoke` requires the three etcd members, the three Patroni/PostgreSQL nodes, both routers and all four Server nodes to be healthy. It also requires two streaming standbys and at least one synchronous/quorum standby.

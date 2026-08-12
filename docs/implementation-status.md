@@ -1,4 +1,15 @@
-# InfraNexum 2.0.0-alpha.0.47 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.48 — état d’implémentation
+
+
+## 2.0.0-alpha.0.48 — PRO HA database bootstrap repair
+
+**Statut : correction implémentée et testée hors moteur Docker ; runtime Docker Desktop PRO à revalider.**
+
+Le démarrage réel de `alpha.0.47` a confirmé etcd et les trois nœuds Patroni/PostgreSQL sains, puis `db-bootstrap` a terminé avec le code 1. La cause est le passage de `PASSWORD :'db_password'` à `psql --command`. L’interpolation `:'variable'` appartient au client `psql` ; un argument `-c/--command` doit être directement analysable par le serveur. Le bootstrap lit désormais les commandes de création/modification du rôle sur stdin, importe le secret via `\getenv` depuis l’environnement du processus et ne place plus le mot de passe dans les arguments de processus.
+
+Le bootstrap ne refuse plus immédiatement un cluster dont HAProxy est prêt quelques instants avant la convergence de la réplication. Il attend de façon bornée jusqu’à 60 tentatives les deux standbys `streaming` puis au moins un standby `sync`/`quorum`, avec diagnostic de la dernière valeur observée et code 69 en cas de non-convergence. Le comportement reste fail-closed et aucune exigence PRO HA n’est abaissée.
+
+Le test de non-régression exécutable reproduit le défaut `alpha.0.47` avec un faux `psql` strict : l’ancien script sort en code 1 lorsque la syntaxe psql-only est envoyée via `--command`; le script corrigé termine en code 0, transmet le SQL par stdin et vérifie que le secret n’apparaît pas dans les arguments `psql`. La suite Compose passe désormais 39/39 tests hors moteur Docker.
 
 
 ## 2.0.0-alpha.0.47 — hosted JDK25 and PRO HA stabilization
