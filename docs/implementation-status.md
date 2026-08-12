@@ -1,5 +1,15 @@
-# InfraNexum 2.0.0-alpha.0.44 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.45 — état d’implémentation
 
+
+## 2.0.0-alpha.0.45 — PRO Docker HA topology
+
+**Statut : implémentation statique/local hors Docker réalisée ; runtime Docker Desktop PRO NON EXÉCUTÉ dans l’environnement de génération.**
+
+Le banc Docker/Compose de développement modélise désormais la topologie PRO `single_cluster` : trois PostgreSQL 17.10 gérés par Patroni 4.1.4 et un DCS etcd à trois membres, avec au moins un standby synchrone strict et un second réplica, ainsi que quatre nœuds Server `REGIONAL` derrière HAProxy. Le routeur PostgreSQL distingue writer primaire et replicas, et seuls les routeurs sont publiés en loopback sur la station de développement.
+
+Le bootstrap BDD attend deux replicas streaming et au moins un standby `sync`/`quorum` avant de créer le rôle et la base applicatifs. `smoke` vérifie toute la topologie ; `ha-smoke` arrête volontairement le primaire Patroni, exige une nouvelle élection bornée, vérifie la reprise du writer et la readiness Server, redémarre l’ancien primaire puis exige son retour et deux replicas streaming. Backup, restore et rollback utilisent le writer stable et arrêtent les quatre nœuds Server pour les opérations incompatibles.
+
+Le runtime Entitlements est désactivé uniquement dans ce banc de topologie afin de ne pas embarquer de manifeste d’activation client ; cette dérogation n’est jamais un mode de production. Le cluster Web PRO reste volontairement différé.
 
 ## 2.0.0-alpha.0.44 — Sensitive observability redaction
 

@@ -2,14 +2,19 @@
 
 `docker/` is repository-level **development and test tooling**. It is deliberately outside `src/` because InfraNexum production deployments target standalone bare-metal or VM servers. The installer and production deployment model must not depend on Docker, Compose or Podman.
 
-The topology provides `secret-init -> postgres -> migrate -> server`, plus an explicit maintenance-only `rollback` service. PostgreSQL and the Server are health-checked, the developer backend uses a regular Docker bridge (not `internal: true`, because Docker internal networks can suppress host port publishing), runtime secrets live in a named volume, and both developer-facing ports are published on host loopback only by default using the Compose short binding syntax: PostgreSQL on `127.0.0.1:5432` and Server HTTP on `127.0.0.1:8080`. Override them with `INFRANEXUM_POSTGRES_PUBLISHED_PORT` and `INFRANEXUM_SERVER_PUBLISHED_PORT`; no wildcard host binding is used. The smoke resolves Docker's effective bindings and falls back to `docker inspect` if `docker compose port` cannot render the binding.
+The default topology models the **PRO `single_cluster` reference shape**: three PostgreSQL 17 nodes managed by Patroni with a three-member etcd DCS, one required synchronous standby plus a second replica, and four InfraNexum Server nodes behind HAProxy. PostgreSQL writes are routed only to the current Patroni primary; a second loopback endpoint exposes healthy replicas for diagnostics. The **Web cluster is intentionally deferred** to a later increment.
+
+Only stable routers are published to the workstation: PostgreSQL writer `127.0.0.1:5432`, PostgreSQL replicas `127.0.0.1:5433`, and Server HTTP `127.0.0.1:8080`. etcd, Patroni REST, raw PostgreSQL and individual Server ports remain private to the Compose bridge. The smoke resolves effective Docker bindings and rejects any non-loopback exposure.
+
+This is an **HA topology harness**, not an activation bypass for production. Server nodes run with `PRO` + `HIGH_AVAILABILITY`, while Entitlements enforcement is disabled only inside this developer topology so HA can be exercised without embedding customer activation material. Signed activation remains separately mandatory for production.
 
 Server readiness includes the bounded Workers runtime. The developer smoke test requires both `/actuator/health/readiness` and the low-cardinality `infranexum.workers.ready` metric to be available before accepting the topology as healthy. Worker concurrency, lease/heartbeat timing, shutdown and retry settings can be overridden through the `INFRANEXUM_WORKERS_*` variables documented in `.env.example`.
 
 ## Dockerfiles
 
 - `server.Dockerfile`: reproducible Java 25 build and non-root Server runtime.
-- `postgres-tools.Dockerfile`: pinned PostgreSQL tooling image containing secret initialization, migration and rollback scripts.
+- `postgres-tools.Dockerfile`: pinned PostgreSQL tooling image containing secret initialization, HA bootstrap, migration and rollback scripts.
+- `patroni-postgres.Dockerfile`: PostgreSQL 17.10 + Patroni 4.1.4 HA node for the PRO developer topology.
 
 ## Start from the repository root
 
@@ -20,6 +25,7 @@ Server readiness includes the bounded Workers runtime. The developer smoke test 
 .\docker\dev-compose.ps1 build
 .\docker\dev-compose.ps1 up
 .\docker\dev-compose.ps1 smoke
+.\docker\dev-compose.ps1 ha-smoke
 ```
 
 Direct Compose equivalent from the repository root:
@@ -32,6 +38,7 @@ Verify the effective host bindings:
 
 ```powershell
 docker compose port postgres 5432
+docker compose port postgres 5433
 docker compose port server 8080
 ```
 
@@ -39,6 +46,7 @@ Expected defaults:
 
 ```text
 127.0.0.1:5432
+127.0.0.1:5433
 127.0.0.1:8080
 ```
 
@@ -51,6 +59,7 @@ The canonical model remains `docker/compose.yaml`; the root `compose.yaml` only 
 ./docker/dev-compose.sh build
 ./docker/dev-compose.sh up
 ./docker/dev-compose.sh smoke
+./docker/dev-compose.sh ha-smoke
 ```
 
 Or through the root Makefile:
@@ -88,6 +97,12 @@ make compose-logs
 SERVICES=migrate make compose-logs
 make compose-down
 ```
+
+## PRO HA validation
+
+`smoke` requires the three etcd members, the three Patroni/PostgreSQL nodes, both routers and all four Server nodes to be healthy. It also requires two streaming standbys and at least one synchronous/quorum standby.
+
+`ha-smoke` is deliberately disruptive but bounded: it identifies and stops the Patroni primary, requires election of a different primary, validates the stable writer and Server readiness, restarts the former primary, then requires the cluster to return to two streaming standbys. It never deletes volumes.
 
 ## Backup, restore and rollback
 

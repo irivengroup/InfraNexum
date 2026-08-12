@@ -1,10 +1,10 @@
-# InfraNexum 2.0.0-alpha.0.44 — Sensitive Observability Redaction
+# InfraNexum 2.0.0-alpha.0.45 — PRO Docker HA Topology
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 
-`alpha.0.44` hardens the observability boundary with deterministic sensitive-data redaction. Every built-in ECS structured-log string value is processed immediately before JSON serialization, including messages, MDC values and stack traces; credential-bearing field paths are replaced wholesale and common inline password/token/cookie/authorization/URI-userinfo/JWT/private-key encodings are redacted. Entitlement RFC Problem details pass through the same policy before leaving the Server.
+`alpha.0.45` changes the repository-level Docker/Compose developer reference to profile **PRO**. The database tier is a three-node PostgreSQL 17.10 cluster managed by Patroni with a three-member etcd DCS, strict synchronous replication to at least one standby and a second replica. Four `REGIONAL` Server nodes form the PRO `single_cluster` topology behind a readiness-aware HAProxy router. A separate HAProxy database router exposes stable writer and replica endpoints.
 
-The ECS formatter is now fixed rather than runtime-switchable, stack traces are bounded, and manual span attributes remain strictly allowlisted to validated task type and UUIDv7 correlation metadata. OpenTelemetry/OTLP remains disabled for export by default. Production deployment remains standalone bare-metal or VM; root Docker/Compose remains developer/test tooling. PGM-12-E01 is **not complete**: dashboards/runbooks and target-environment telemetry export certification remain pending.
+Only router ports are published on `127.0.0.1`; individual etcd, PostgreSQL/Patroni and Server nodes stay on the private Compose bridge. `smoke` proves cluster health and replication invariants, while the deliberately disruptive `ha-smoke` verifies bounded PostgreSQL primary failover, writer recovery, Server readiness and rejoin without deleting volumes. The PRO Web cluster is intentionally deferred to a later increment. Production deployment remains standalone bare-metal or VM, and signed PRO activation remains a separate certification concern.
 
 ## Source layout
 

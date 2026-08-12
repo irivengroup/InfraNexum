@@ -20,8 +20,11 @@ create_secret() {
 
 # Database password is read by PostgreSQL, migrator and Server (different UIDs) inside an isolated volume.
 create_secret "$secret_dir/db-password" 0444 root:root
-# Integrity key is intentionally readable only by the non-root Server UID.
+# Replication password is shared only by Patroni PostgreSQL nodes in the private developer network.
+create_secret "$secret_dir/replication-password" 0444 root:root
+# Integrity key is retained for activation-specific tests outside the HA topology harness.
 create_secret "$secret_dir/integrity-key" 0400 10001:10001
 
 test -s "$secret_dir/db-password"
+test -s "$secret_dir/replication-password"
 test -s "$secret_dir/integrity-key"

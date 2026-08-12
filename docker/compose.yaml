@@ -1,11 +1,100 @@
 name: infranexum-dev
 
-x-postgres-image: &postgres-image postgres:17.10-alpine3.24
 x-postgres-tools: &postgres-tools
-  image: infranexum/postgres-tools:${INFRANEXUM_VERSION:-2.0.0-alpha.0.44}
+  image: infranexum/postgres-tools:${INFRANEXUM_VERSION:-2.0.0-alpha.0.45}
   build:
     context: ..
     dockerfile: docker/postgres-tools.Dockerfile
+
+x-patroni-node: &patroni-node
+  image: infranexum/patroni-postgres:${INFRANEXUM_VERSION:-2.0.0-alpha.0.45}
+  build:
+    context: ..
+    dockerfile: docker/patroni-postgres.Dockerfile
+    args:
+      PATRONI_VERSION: "4.1.4"
+  environment: &patroni-environment
+    PATRONI_SCOPE: infranexum-pro
+    PATRONI_ETCD3_HOSTS: etcd-1:2379,etcd-2:2379,etcd-3:2379
+    INFRANEXUM_DATABASE_PASSWORD_FILE: /run/infranexum-secrets/db-password
+    INFRANEXUM_REPLICATION_PASSWORD_FILE: /run/infranexum-secrets/replication-password
+  depends_on:
+    secret-init: {condition: service_completed_successfully}
+    etcd-1: {condition: service_healthy}
+    etcd-2: {condition: service_healthy}
+    etcd-3: {condition: service_healthy}
+  volumes:
+    - runtime-secrets:/run/infranexum-secrets:ro
+  networks: [backend]
+  healthcheck:
+    test: ["CMD-SHELL", "curl --fail --silent --show-error http://127.0.0.1:8008/health >/dev/null || exit 1"]
+    interval: 5s
+    timeout: 5s
+    retries: 30
+    start_period: 15s
+  restart: unless-stopped
+  stop_grace_period: 45s
+
+x-server-environment: &server-environment
+  INFRANEXUM_VERSION: ${INFRANEXUM_VERSION:-2.0.0-alpha.0.45}
+  INFRANEXUM_SERVER_ADDRESS: 0.0.0.0
+  INFRANEXUM_SERVER_PORT: "8080"
+  INFRANEXUM_SERVER_MODE: REGIONAL
+  INFRANEXUM_SERVER_REGION: local
+  INFRANEXUM_SERVER_SITE: local
+  INFRANEXUM_ENVIRONMENT: ${INFRANEXUM_ENVIRONMENT:-local}
+  INFRANEXUM_OTEL_ENABLED: ${INFRANEXUM_OTEL_ENABLED:-true}
+  INFRANEXUM_OTEL_EXPORT_ENABLED: ${INFRANEXUM_OTEL_EXPORT_ENABLED:-false}
+  INFRANEXUM_OTEL_EXPORT_ENDPOINT: ${INFRANEXUM_OTEL_EXPORT_ENDPOINT:-http://otel-collector:4318/v1/traces}
+  INFRANEXUM_OTEL_SAMPLING_PROBABILITY: ${INFRANEXUM_OTEL_SAMPLING_PROBABILITY:-1.0}
+  INFRANEXUM_OTEL_CONNECT_TIMEOUT: ${INFRANEXUM_OTEL_CONNECT_TIMEOUT:-5s}
+  INFRANEXUM_OTEL_EXPORT_TIMEOUT: ${INFRANEXUM_OTEL_EXPORT_TIMEOUT:-10s}
+  INFRANEXUM_PROFILE: PRO
+  INFRANEXUM_ALLOCATION_TIER: STANDARD
+  INFRANEXUM_TOPOLOGY: HIGH_AVAILABILITY
+  INFRANEXUM_ROLES: SERVER
+  INFRANEXUM_ACTIVATION_STATE: ACTIVE
+  INFRANEXUM_PERSISTENCE_MODE: POSTGRESQL
+  INFRANEXUM_PERSISTENCE_ISOLATION: READ_COMMITTED
+  INFRANEXUM_DATABASE_URL: jdbc:postgresql://postgres:5432/infranexum
+  INFRANEXUM_DATABASE_USERNAME: infranexum
+  INFRANEXUM_DATABASE_PASSWORD_FILE: /run/infranexum-secrets/db-password
+  # Docker PRO is a topology harness. Signed activation is certified separately; never use this bypass in production.
+  INFRANEXUM_ENTITLEMENTS_ENABLED: "false"
+  INFRANEXUM_CUSTOMER_ID: docker-pro-topology
+  INFRANEXUM_SCHEDULING_POOL_SIZE: ${INFRANEXUM_SCHEDULING_POOL_SIZE:-2}
+  INFRANEXUM_SCHEDULING_SHUTDOWN_TIMEOUT: ${INFRANEXUM_SCHEDULING_SHUTDOWN_TIMEOUT:-PT10S}
+  INFRANEXUM_WORKERS_ENABLED: ${INFRANEXUM_WORKERS_ENABLED:-true}
+  INFRANEXUM_WORKERS_CONCURRENCY: ${INFRANEXUM_WORKERS_CONCURRENCY:-2}
+  INFRANEXUM_WORKERS_POLL_INTERVAL: ${INFRANEXUM_WORKERS_POLL_INTERVAL:-PT0.5S}
+  INFRANEXUM_WORKERS_LEASE_DURATION: ${INFRANEXUM_WORKERS_LEASE_DURATION:-PT30S}
+  INFRANEXUM_WORKERS_HEARTBEAT_INTERVAL: ${INFRANEXUM_WORKERS_HEARTBEAT_INTERVAL:-PT10S}
+  INFRANEXUM_WORKERS_SHUTDOWN_TIMEOUT: ${INFRANEXUM_WORKERS_SHUTDOWN_TIMEOUT:-PT15S}
+  INFRANEXUM_WORKERS_MAXIMUM_ATTEMPTS: ${INFRANEXUM_WORKERS_MAXIMUM_ATTEMPTS:-5}
+  INFRANEXUM_WORKERS_INITIAL_RETRY_DELAY: ${INFRANEXUM_WORKERS_INITIAL_RETRY_DELAY:-PT1S}
+  INFRANEXUM_WORKERS_MAXIMUM_RETRY_DELAY: ${INFRANEXUM_WORKERS_MAXIMUM_RETRY_DELAY:-PT1M}
+  INFRANEXUM_WORKERS_JITTER_RATIO: ${INFRANEXUM_WORKERS_JITTER_RATIO:-0.2}
+
+x-server-node: &server-node
+  image: infranexum/server:${INFRANEXUM_VERSION:-2.0.0-alpha.0.45}
+  build:
+    context: ..
+    dockerfile: docker/server.Dockerfile
+  depends_on:
+    secret-init: {condition: service_completed_successfully}
+    postgres: {condition: service_healthy}
+    migrate: {condition: service_completed_successfully}
+  volumes:
+    - runtime-secrets:/run/infranexum-secrets:ro
+  networks: [backend]
+  healthcheck:
+    test: ["CMD-SHELL", "curl --fail --silent --show-error http://127.0.0.1:8080/actuator/health/readiness >/dev/null"]
+    interval: 10s
+    timeout: 5s
+    retries: 18
+    start_period: 20s
+  restart: unless-stopped
+  stop_grace_period: 30s
 
 services:
   secret-init:
@@ -19,29 +108,99 @@ services:
     networks: [backend]
     restart: "no"
 
-  postgres:
-    image: *postgres-image
-    environment:
-      POSTGRES_DB: infranexum
-      POSTGRES_USER: infranexum
-      POSTGRES_PASSWORD_FILE: /run/infranexum-secrets/db-password
-    depends_on:
-      secret-init:
-        condition: service_completed_successfully
-    ports:
-      - "127.0.0.1:${INFRANEXUM_POSTGRES_PUBLISHED_PORT:-5432}:5432"
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-      - runtime-secrets:/run/infranexum-secrets:ro
+  etcd-1:
+    image: gcr.io/etcd-development/etcd:v3.6.14
+    command: ["/usr/local/bin/etcd", "--name=etcd-1", "--data-dir=/etcd-data", "--listen-client-urls=http://0.0.0.0:2379", "--advertise-client-urls=http://etcd-1:2379", "--listen-peer-urls=http://0.0.0.0:2380", "--initial-advertise-peer-urls=http://etcd-1:2380", "--initial-cluster=etcd-1=http://etcd-1:2380,etcd-2=http://etcd-2:2380,etcd-3=http://etcd-3:2380", "--initial-cluster-state=new", "--initial-cluster-token=infranexum-pro-etcd"]
+    volumes: [etcd-1-data:/etcd-data]
     networks: [backend]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U infranexum -d infranexum || exit 1"]
+      test: ["CMD-SHELL", "ETCDCTL_API=3 etcdctl --endpoints=http://127.0.0.1:2379 endpoint health >/dev/null 2>&1"]
       interval: 5s
       timeout: 5s
       retries: 20
       start_period: 5s
     restart: unless-stopped
-    stop_grace_period: 30s
+
+  etcd-2:
+    image: gcr.io/etcd-development/etcd:v3.6.14
+    command: ["/usr/local/bin/etcd", "--name=etcd-2", "--data-dir=/etcd-data", "--listen-client-urls=http://0.0.0.0:2379", "--advertise-client-urls=http://etcd-2:2379", "--listen-peer-urls=http://0.0.0.0:2380", "--initial-advertise-peer-urls=http://etcd-2:2380", "--initial-cluster=etcd-1=http://etcd-1:2380,etcd-2=http://etcd-2:2380,etcd-3=http://etcd-3:2380", "--initial-cluster-state=new", "--initial-cluster-token=infranexum-pro-etcd"]
+    volumes: [etcd-2-data:/etcd-data]
+    networks: [backend]
+    healthcheck:
+      test: ["CMD-SHELL", "ETCDCTL_API=3 etcdctl --endpoints=http://127.0.0.1:2379 endpoint health >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
+    restart: unless-stopped
+
+  etcd-3:
+    image: gcr.io/etcd-development/etcd:v3.6.14
+    command: ["/usr/local/bin/etcd", "--name=etcd-3", "--data-dir=/etcd-data", "--listen-client-urls=http://0.0.0.0:2379", "--advertise-client-urls=http://etcd-3:2379", "--listen-peer-urls=http://0.0.0.0:2380", "--initial-advertise-peer-urls=http://etcd-3:2380", "--initial-cluster=etcd-1=http://etcd-1:2380,etcd-2=http://etcd-2:2380,etcd-3=http://etcd-3:2380", "--initial-cluster-state=new", "--initial-cluster-token=infranexum-pro-etcd"]
+    volumes: [etcd-3-data:/etcd-data]
+    networks: [backend]
+    healthcheck:
+      test: ["CMD-SHELL", "ETCDCTL_API=3 etcdctl --endpoints=http://127.0.0.1:2379 endpoint health >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
+    restart: unless-stopped
+
+  postgres-1:
+    <<: *patroni-node
+    environment:
+      <<: *patroni-environment
+      PATRONI_NAME: postgres-1
+    volumes: [postgres-1-data:/var/lib/postgresql/data, runtime-secrets:/run/infranexum-secrets:ro]
+
+  postgres-2:
+    <<: *patroni-node
+    environment:
+      <<: *patroni-environment
+      PATRONI_NAME: postgres-2
+    volumes: [postgres-2-data:/var/lib/postgresql/data, runtime-secrets:/run/infranexum-secrets:ro]
+
+  postgres-3:
+    <<: *patroni-node
+    environment:
+      <<: *patroni-environment
+      PATRONI_NAME: postgres-3
+    volumes: [postgres-3-data:/var/lib/postgresql/data, runtime-secrets:/run/infranexum-secrets:ro]
+
+  postgres:
+    image: haproxy:3.2.21-alpine
+    depends_on:
+      postgres-1: {condition: service_healthy}
+      postgres-2: {condition: service_healthy}
+      postgres-3: {condition: service_healthy}
+    volumes:
+      - ./haproxy-postgres.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - "127.0.0.1:${INFRANEXUM_POSTGRES_PUBLISHED_PORT:-5432}:5432"
+      - "127.0.0.1:${INFRANEXUM_POSTGRES_READ_PUBLISHED_PORT:-5433}:5433"
+    networks: [backend]
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 5432"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    restart: unless-stopped
+
+  db-bootstrap:
+    <<: *postgres-tools
+    entrypoint: ["/bin/sh", "/opt/infranexum/docker/bootstrap-postgresql-ha.sh"]
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      INFRANEXUM_DATABASE_PASSWORD_FILE: /run/infranexum-secrets/db-password
+    depends_on:
+      postgres: {condition: service_healthy}
+    volumes:
+      - runtime-secrets:/run/infranexum-secrets:ro
+    networks: [backend]
+    restart: "no"
 
   migrate:
     <<: *postgres-tools
@@ -51,82 +210,73 @@ services:
       PGPORT: "5432"
       PGDATABASE: infranexum
       PGUSER: infranexum
-      INFRANEXUM_VERSION: ${INFRANEXUM_VERSION:-2.0.0-alpha.0.44}
+      INFRANEXUM_VERSION: ${INFRANEXUM_VERSION:-2.0.0-alpha.0.45}
       INFRANEXUM_DATABASE_PASSWORD_FILE: /run/infranexum-secrets/db-password
       INFRANEXUM_MIGRATION_ROOT: /opt/infranexum/migrations
     depends_on:
-      postgres:
-        condition: service_healthy
+      db-bootstrap: {condition: service_completed_successfully}
     volumes:
       - runtime-secrets:/run/infranexum-secrets:ro
       - ../src/distribution/migrations:/opt/infranexum/migrations:ro
     networks: [backend]
     restart: "no"
 
-  server:
-    build:
-      context: ..
-      dockerfile: docker/server.Dockerfile
-    image: infranexum/server:${INFRANEXUM_VERSION:-2.0.0-alpha.0.44}
+  server-1:
+    <<: *server-node
     environment:
-      INFRANEXUM_VERSION: ${INFRANEXUM_VERSION:-2.0.0-alpha.0.44}
-      INFRANEXUM_SERVER_ADDRESS: 0.0.0.0
-      INFRANEXUM_SERVER_PORT: "8080"
-      INFRANEXUM_SERVER_INSTANCE_ID: ${INFRANEXUM_SERVER_INSTANCE_ID:-server-compose-1}
-      INFRANEXUM_SERVER_MODE: STANDALONE
-      INFRANEXUM_SERVER_REGION: local
-      INFRANEXUM_SERVER_SITE: local
-      INFRANEXUM_ENVIRONMENT: ${INFRANEXUM_ENVIRONMENT:-local}
-      INFRANEXUM_OTEL_ENABLED: ${INFRANEXUM_OTEL_ENABLED:-true}
-      INFRANEXUM_OTEL_EXPORT_ENABLED: ${INFRANEXUM_OTEL_EXPORT_ENABLED:-false}
-      INFRANEXUM_OTEL_EXPORT_ENDPOINT: ${INFRANEXUM_OTEL_EXPORT_ENDPOINT:-http://127.0.0.1:4318/v1/traces}
-      INFRANEXUM_OTEL_SAMPLING_PROBABILITY: ${INFRANEXUM_OTEL_SAMPLING_PROBABILITY:-1.0}
-      INFRANEXUM_OTEL_CONNECT_TIMEOUT: ${INFRANEXUM_OTEL_CONNECT_TIMEOUT:-5s}
-      INFRANEXUM_OTEL_EXPORT_TIMEOUT: ${INFRANEXUM_OTEL_EXPORT_TIMEOUT:-10s}
-      INFRANEXUM_PROFILE: LITE
-      INFRANEXUM_ALLOCATION_TIER: STANDARD
-      INFRANEXUM_PERSISTENCE_MODE: POSTGRESQL
-      INFRANEXUM_PERSISTENCE_ISOLATION: READ_COMMITTED
-      INFRANEXUM_DATABASE_URL: jdbc:postgresql://postgres:5432/infranexum
-      INFRANEXUM_DATABASE_USERNAME: infranexum
-      INFRANEXUM_DATABASE_PASSWORD_FILE: /run/infranexum-secrets/db-password
-      INFRANEXUM_ENTITLEMENTS_ENABLED: "true"
-      INFRANEXUM_CUSTOMER_ID: local-evaluation
-      INFRANEXUM_INTEGRITY_KEY_FILE: /run/infranexum-secrets/integrity-key
-      INFRANEXUM_INTEGRITY_PROOF_DIRECTORY: /var/lib/infranexum/integrity
-      INFRANEXUM_SCHEDULING_POOL_SIZE: ${INFRANEXUM_SCHEDULING_POOL_SIZE:-2}
-      INFRANEXUM_SCHEDULING_SHUTDOWN_TIMEOUT: ${INFRANEXUM_SCHEDULING_SHUTDOWN_TIMEOUT:-PT10S}
-      INFRANEXUM_WORKERS_ENABLED: ${INFRANEXUM_WORKERS_ENABLED:-true}
-      INFRANEXUM_WORKERS_CONCURRENCY: ${INFRANEXUM_WORKERS_CONCURRENCY:-2}
-      INFRANEXUM_WORKERS_POLL_INTERVAL: ${INFRANEXUM_WORKERS_POLL_INTERVAL:-PT0.5S}
-      INFRANEXUM_WORKERS_LEASE_DURATION: ${INFRANEXUM_WORKERS_LEASE_DURATION:-PT30S}
-      INFRANEXUM_WORKERS_HEARTBEAT_INTERVAL: ${INFRANEXUM_WORKERS_HEARTBEAT_INTERVAL:-PT10S}
-      INFRANEXUM_WORKERS_SHUTDOWN_TIMEOUT: ${INFRANEXUM_WORKERS_SHUTDOWN_TIMEOUT:-PT15S}
-      INFRANEXUM_WORKERS_MAXIMUM_ATTEMPTS: ${INFRANEXUM_WORKERS_MAXIMUM_ATTEMPTS:-5}
-      INFRANEXUM_WORKERS_INITIAL_RETRY_DELAY: ${INFRANEXUM_WORKERS_INITIAL_RETRY_DELAY:-PT1S}
-      INFRANEXUM_WORKERS_MAXIMUM_RETRY_DELAY: ${INFRANEXUM_WORKERS_MAXIMUM_RETRY_DELAY:-PT1M}
-      INFRANEXUM_WORKERS_JITTER_RATIO: ${INFRANEXUM_WORKERS_JITTER_RATIO:-0.2}
+      <<: *server-environment
+      INFRANEXUM_SERVER_INSTANCE_ID: server-pro-1
+  server-2:
+    <<: *server-node
+    environment:
+      <<: *server-environment
+      INFRANEXUM_SERVER_INSTANCE_ID: server-pro-2
+  server-3:
+    <<: *server-node
+    environment:
+      <<: *server-environment
+      INFRANEXUM_SERVER_INSTANCE_ID: server-pro-3
+  server-4:
+    <<: *server-node
+    environment:
+      <<: *server-environment
+      INFRANEXUM_SERVER_INSTANCE_ID: server-pro-4
+
+  server:
+    image: haproxy:3.2.21-alpine
     depends_on:
-      secret-init:
-        condition: service_completed_successfully
-      postgres:
-        condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
+      server-1: {condition: service_healthy}
+      server-2: {condition: service_healthy}
+      server-3: {condition: service_healthy}
+      server-4: {condition: service_healthy}
+    volumes:
+      - ./haproxy-server.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     ports:
       - "127.0.0.1:${INFRANEXUM_SERVER_PUBLISHED_PORT:-8080}:8080"
-    volumes:
-      - runtime-secrets:/run/infranexum-secrets:ro
-      - integrity-proof:/var/lib/infranexum/integrity
     networks: [backend]
     healthcheck:
-      test: ["CMD-SHELL", "curl --fail --silent --show-error http://127.0.0.1:8080/actuator/health/readiness >/dev/null"]
-      interval: 10s
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/actuator/health/readiness"]
+      interval: 5s
       timeout: 5s
-      retries: 18
-      start_period: 20s
+      retries: 20
+      start_period: 5s
     restart: unless-stopped
-    stop_grace_period: 30s
+
+  db-admin:
+    <<: *postgres-tools
+    profiles: [maintenance]
+    entrypoint: ["/bin/sh", "-c", "exec sleep infinity"]
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: infranexum
+      PGUSER: infranexum
+      INFRANEXUM_DATABASE_PASSWORD_FILE: /run/infranexum-secrets/db-password
+    depends_on:
+      postgres: {condition: service_healthy}
+    volumes: [runtime-secrets:/run/infranexum-secrets:ro]
+    networks: [backend]
+    restart: "no"
 
   rollback:
     <<: *postgres-tools
@@ -141,16 +291,20 @@ services:
       INFRANEXUM_MIGRATION_ROOT: /opt/infranexum/migrations
       MIGRATION_ID: ${MIGRATION_ID:-}
       CONFIRM_INFRANEXUM_ROLLBACK: ${CONFIRM_INFRANEXUM_ROLLBACK:-}
-    volumes:
-      - runtime-secrets:/run/infranexum-secrets:ro
-      - ../src/distribution/migrations:/opt/infranexum/migrations:ro
+    depends_on:
+      postgres: {condition: service_healthy}
+    volumes: [runtime-secrets:/run/infranexum-secrets:ro, ../src/distribution/migrations:/opt/infranexum/migrations:ro]
     networks: [backend]
     restart: "no"
 
 volumes:
-  postgres-data:
+  etcd-1-data:
+  etcd-2-data:
+  etcd-3-data:
+  postgres-1-data:
+  postgres-2-data:
+  postgres-3-data:
   runtime-secrets:
-  integrity-proof:
 
 networks:
   backend:
