@@ -1,7 +1,73 @@
-# InfraNexum 2.0.0-alpha.0.60 — état d’implémentation
+## alpha.0.67 — authentification navigateur déterministe et HA Patroni sans tracebacks de transport
+
+La validation Docker Desktop réelle d’`alpha.0.66` confirme désormais le nominal complet (`compose-smoke: PASS`) et le scénario HA PostgreSQL/Server/Web (`compose-ha-smoke: PASS`), mais le formulaire navigateur restait sans réaction. Les tests Web précédents invoquaient directement les callbacks d’un faux DOM et ne prouvaient donc pas l’attachement effectif des événements dans le chemin de bootstrap réel. `alpha.0.67` transforme l’authentification en chemin critique autonome : les listeners `click` et `submit` sont câblés synchroniquement avant le probe de session, les tentatives sont sérialisées, les boutons statiques sont désactivés jusqu’au câblage (`data-auth-wired=true`), et préférences/notifications/admin-shell ne sont initialisés qu’après authentification réussie.
+
+Le smoke Docker ne se contente plus de vérifier qu’un appel anonyme est rejeté : si le compte `admin` est encore en `must_change=true`, il lit explicitement le secret du volume développeur, réalise un `POST /api/v1/iam/local-auth/session` via l’ingress Web, exige le payload de session, les cookies `INX_SESSION` et `INX_XSRF`, puis effectue un logout CSRF protégé sans modifier le credential. Le résultat expose `CredentialLogin=PASS`; si le mot de passe bootstrap a déjà été remplacé, le contrôle est explicitement `SKIPPED_CHANGED`.
+
+Les tracebacks Python Patroni observés pendant le HA smoke provenaient des probes REST qui n’avaient besoin que du code HTTP mais utilisaient des `GET`. Les health checks Patroni Docker, les checks HAProxy `/primary`/`/replica` et la détection de primaire des wrappers utilisent désormais `HEAD`. Les boucles de réintégration deviennent silencieuses pendant les états transitoires et n’impriment les logs qu’en cas d’échec final. En complément, `ha-smoke` collecte les logs Patroni uniquement depuis le début du scénario et échoue si `Traceback`, `ConnectionResetError` ou `BrokenPipeError` apparaît ; le PASS final exige `PatroniPythonErrors=0`.
+
+Validations locales : Web **73/73**, couverture runtime **99,67 % lignes / 98,37 % branches / 100 % fonctions**, process smoke PASS ; Compose **63/63** ; migrations **42/42** ; Architecture **57/57** ; Source Integrity **45/45** ; Toolchains **25/25** ; Archive Compatibility **12/12** ; Eventing **10/10** ; Persistence **12/12** ; Capabilities **10/10** ; Entitlements **10/10** ; Audit **8/8**. L’exécution Chromium headless réelle est **NON EXÉCUTÉE** dans le conteneur de travail car Chromium y bloque sur l’environnement système/DBus même pour une page minimale. La toolchain Agent cible Go 1.26.5 est également **NON EXÉCUTÉE localement** : le Go installé tente de télécharger la toolchain, mais le réseau est désactivé. La validation Docker Desktop/PowerShell d’`alpha.0.67` reste requise.
+
+## alpha.0.66 — normalisation du body HTTP PowerShell
+
+**Statut :** correction ciblée du tooling de smoke Windows, sans changement IAM, migration ou topologie.
+
+La validation Docker Desktop d’`alpha.0.65` a prouvé que le backend renvoie désormais un `401` avec un body JSON UTF-8 complet contenant le `correlation_id` attendu. PowerShell 7 exposait toutefois `Invoke-WebRequest.Content` sous forme binaire et le cast `[string]` produisait une suite décimale (`123 34 115 ...`) au lieu du JSON. `alpha.0.66` introduit une normalisation explicite des corps HTTP (`string`, `byte[]`, `HttpContent`, `Stream` et enumerable de bytes) avant `ConvertFrom-Json`. Le smoke conserve les assertions strictes sur le status HTTP, le header `X-Correlation-ID` et le `correlation_id` du Problem JSON.
+
+## alpha.0.65 — contrat terminal Local Auth et UX Secure Area
+
+`alpha.0.64` a confirmé sur Docker Desktop que le header `X-Correlation-ID` traverse correctement l’ingress Web, mais le body du `401` ne contenait pas le champ `correlation_id` attendu. `alpha.0.65` rend donc la réponse terminale déterministe au niveau de `LocalAuthenticationFilter` : buffer réinitialisé avant écriture, `application/problem+json`, `Content-Length` explicite, corps contenant `correlation_id` et `trace_id`, puis `flushBuffer()` avant retour de la chaîne de filtres. Le smoke PowerShell conserve l’exigence stricte `status + header + body` et affiche désormais le body brut dans le diagnostic en cas de divergence.
+
+L’écran de connexion est simplifié conformément au contrat UI : le formulaire central affiche **Secure Area**, sans eyebrow ni texte introductif. Le panneau de marque conserve son contexte via une clé i18n distincte. Le badge d’état du service d’authentification est conditionnel : il reste masqué quand le service est sain et devient visible uniquement lorsqu’une indisponibilité est détectée. Les cinq langues DE/EN/ES/FR/IT restent couvertes.
+
+Aucune migration, aucun privilège IAM et aucun invariant HA n’est modifié.
+
+## alpha.0.64 — durcissement de la corrélation à la frontière Local Auth
+
+`alpha.0.63` a atteint correctement la frontière d’authentification mais le smoke PowerShell a produit un faux négatif en lisant les en-têtes HTTP d’une réponse `401` via `Exception.Response.Headers`. Ce chemin d’erreur n’expose pas le même contrat de réponse que le résultat normal d’`Invoke-WebRequest`.
+
+`alpha.0.64` rend la frontière auto-descriptive : `LocalAuthenticationFilter` réaffirme explicitement le `X-Correlation-ID` canonique sur ses réponses terminales `401/403`, tandis que le smoke PowerShell 7 utilise `-SkipHttpErrorCheck` pour traiter le `401` attendu comme une réponse normale. Il vérifie simultanément le code HTTP, l’en-tête `X-Correlation-ID` et le champ `correlation_id` du corps Problem JSON à travers le chemin same-origin Web → Server. Le wrapper refuse désormais PowerShell < 7, déjà incompatible avec ses primitives natives modernes.
+
+Aucune migration, aucun privilège IAM et aucun invariant HA n’est modifié.
+
+## alpha.0.63 — correction du contexte PostgreSQL des diagnostics Local Auth
+
+`alpha.0.62` a produit sur Docker Desktop un faux négatif : le smoke interrogeait `infranexum_core.schema_history` et `infranexum_iam.*` via la connexion superutilisateur dédiée aux diagnostics de réplication, laquelle utilise volontairement `dbname=postgres`. Ces objets vivent dans la base applicative `infranexum`; PostgreSQL ne partage pas les schémas entre bases. La relation était donc introuvable dans `postgres` indépendamment de l’état réel des migrations.
+
+`alpha.0.63` sépare explicitement `cluster_admin_db_scalar`/`Invoke-ClusterDatabaseAdminScalar` (base `postgres`, uniquement diagnostics cluster) de `application_admin_db_scalar`/`Invoke-ApplicationDatabaseAdminScalar` (base `infranexum`, diagnostics schéma/historique IAM). Les requêtes `pg_stat_replication` restent sur la connexion cluster et les vérifications `schema_history`, `local_account`, `local_session` et compte bootstrap sont exécutées dans la base applicative. Une non-régression interdit toute requête d’objet applicatif via la connexion cluster.
+
+Aucune migration `0013` n’est ajoutée : `0011` et `0012` restent les migrations IAM autoritatives. La correction porte sur le diagnostic et non sur le modèle de données.
+
+
+## alpha.0.62 — réparation migration IAM et login
+
+`alpha.0.62` corrigeait un défaut source réel du catalogue découvert après la validation `alpha.0.61`: le dossier `0011-local-identity-foundation` existait sans être déclaré dans `catalogue.yaml`. Le message runtime « relation local_account does not exist » n’est plus interprété comme preuve de l’absence de la table, car `alpha.0.63` a établi que le smoke interrogeait alors la mauvaise base PostgreSQL. La migration `0011-local-identity-foundation` est désormais déclarée dans le catalogue et son contrat `verify.sql.yaml` est machine-validable. Le checker refuse tout futur dossier de migration à quatre chiffres absent de `catalogue.yaml`.
+
+La migration additive `0012-local-identity-repair` est idempotente et non destructive. Elle recrée les objets IAM locaux manquants sur une base persistante et vérifie leur présence. Le wrapper de développement rejoue explicitement `secret-init`, `db-bootstrap` et `migrate` à chaque `up`, sans suppression des volumes. Le smoke vérifie d’abord `schema_history` pour `0011`/`0012`, puis les tables et enfin le compte bootstrap.
+
+Le formulaire Web de connexion expose désormais l’indisponibilité backend dès le probe initial et utilise un état de soumission visible (`aria-busy`, bouton désactivé, indicateur de progression) avec possibilité de retry.
+
+# InfraNexum 2.0.0-alpha.0.67 — état d’implémentation
 
 
 
+
+
+## 2.0.0-alpha.0.61 — PGM-03-E02 Local Identity & Authentication foundation
+
+**Statut : implémentation source complète et validations locales hors reactor JDK25/Docker cible ; RBAC/MFA/fédérations restent hors périmètre de cet incrément.**
+
+Le bounded context `identity-local` introduit les comptes humains locaux, la politique credentials autoritative, les états de verrouillage et les sessions opaques. La politique mot de passe impose 12–128 caractères, majuscule/minuscule/chiffre/spécial, refuse les caractères de contrôle et ne tronque jamais. L’adaptateur Security utilise Argon2id avec sel aléatoire par secret, paramètres de coût versionnés, comparaison constante via la bibliothèque et rehash transparent lors d’une authentification réussie lorsque les paramètres deviennent obsolètes. Les identités inexistantes, suspendues ou temporairement verrouillées consomment un travail cryptographique équivalent et toutes les erreurs de login restent génériques afin d’éviter l’énumération des comptes.
+
+La migration paire `0011-local-identity-foundation` crée les comptes et sessions PostgreSQL/Oracle avec UUIDv7, version optimiste, compteur d’échecs, lockout borné, security epoch, expirations idle/absolute et révocation. Les tokens de session et CSRF ne sont jamais persistés en clair : seuls leurs fingerprints SHA-256 sont stockés. Le changement de mot de passe incrémente le security epoch, révoque toutes les sessions existantes et crée une nouvelle session.
+
+Le Server expose `/api/v1/iam/local-auth/session`, `/password` et `/password-policy/validate`. Le filtre d’authentification protège les autres APIs v1 ; le bootstrap `mustChange` interdit leur accès tant que le secret initial n’a pas été remplacé. Toute mutation protégée exige un header `X-CSRF-Token`. Les cookies `INX_SESSION` (HttpOnly) et `INX_XSRF` utilisent `SameSite=Strict`; `Secure=false` n’est autorisé que pour `environment=local`. `/api/v1/system/build` reste public car il est utilisé comme contrat secret-free de routage/smoke.
+
+Le Web publie `localAuthEnabled` comme configuration publique, affiche un auth gate same-origin avant le dashboard, force le remplacement du secret bootstrap et offre un logout avec révocation côté serveur. Le shell Bootstrap 5.3.6, le thème InfraNexum, le sélecteur de langue stable DE/EN/ES/FR/IT, la command palette, les préférences et les notifications sont conservés. Aucun mot de passe/token n’est stocké dans `localStorage`.
+
+Le banc Docker PRO génère le secret bootstrap dans le volume runtime-secrets et ne le révèle que via la commande développeur explicite `credentials`. Le smoke exige désormais au moins un compte local, la migration `local_session` et un HTTP 401 corrélé sur l’API Organisation anonyme.
+
+Validations locales avant packaging : Web **68/68**, couverture runtime lignes **99,67 %**, branches **98,37 %**, fonctions **100 %**, Web process smoke **PASS** ; smoke Java autonome bootstrap/login/CSRF/password-rotation/session-revocation **PASS** ; compilation stricte Domain/Security sous JDK local compatible **PASS** ; contrats Compose **57/57** ; migrations/Architecture/Source Integrity/Toolchains/Archive Compatibility et gates Core transverses **PASS**. Le reactor Maven complet sous JDK25 et le runtime Docker Desktop de `alpha.0.61` restent à exécuter sur la cible.
 
 
 ## 2.0.0-alpha.0.60 — Operational preferences, notifications & live platform insights

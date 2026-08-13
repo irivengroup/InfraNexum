@@ -84,6 +84,18 @@ test('vendored Bootstrap license notice is shipped beside the framework asset', 
 });
 
 
+test('authentication bootstrap is invoked before non-critical dashboard initializers', async () => {
+  const bootstrapSource = await read('assets/bootstrap.mjs');
+  const authCall = bootstrapSource.lastIndexOf('void bootstrap().then');
+  assert.ok(authCall > 0);
+  for (const initializer of ['initializePreferences(document)', 'initializeNotificationCenter(document)', 'initializeAdminShell(document']) {
+    const position = bootstrapSource.lastIndexOf(initializer);
+    assert.ok(position > authCall, `${initializer} must run only after authentication bootstrap`);
+  }
+  const html = await read('index.html');
+  assert.match(html, /id="auth-login-submit"[^>]*data-auth-wired="false"[^>]*disabled/);
+});
+
 test('admin shell ships five-locale i18n and keyboard command palette without external dependencies', async () => {
   const [i18n, shell, index] = await Promise.all([read('assets/i18n.mjs'), read('assets/admin-shell.mjs'), read('index.html')]);
   assert.match(i18n, /SUPPORTED_LOCALES[^\n]*\['de', 'en', 'es', 'fr', 'it'\]/);

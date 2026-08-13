@@ -19,6 +19,7 @@ export class WebRuntimeConfiguration {
   #version;
   #architectureBaseline;
   #organizationFoundationEnabled;
+  #localAuthEnabled;
 
   constructor({
     listenHost,
@@ -30,6 +31,7 @@ export class WebRuntimeConfiguration {
     version,
     architectureBaseline,
     organizationFoundationEnabled,
+    localAuthEnabled,
   }) {
     this.#listenHost = listenHost;
     this.#listenPort = listenPort;
@@ -40,6 +42,7 @@ export class WebRuntimeConfiguration {
     this.#version = version;
     this.#architectureBaseline = architectureBaseline;
     this.#organizationFoundationEnabled = organizationFoundationEnabled;
+    this.#localAuthEnabled = localAuthEnabled;
     Object.freeze(this);
   }
 
@@ -92,6 +95,11 @@ export class WebRuntimeConfiguration {
       'INFRANEXUM_WEB_ORGANIZATION_FOUNDATION_ENABLED',
       false,
     );
+    const localAuthEnabled = readBoolean(
+      environment,
+      'INFRANEXUM_WEB_LOCAL_AUTH_ENABLED',
+      false,
+    );
     if (organizationFoundationEnabled && runtimeEnvironment === 'production') {
       throw new Error('Organization foundation UI is pre-IAM and cannot be enabled in production');
     }
@@ -106,6 +114,7 @@ export class WebRuntimeConfiguration {
       version,
       architectureBaseline,
       organizationFoundationEnabled,
+      localAuthEnabled,
     });
   }
 
@@ -118,6 +127,7 @@ export class WebRuntimeConfiguration {
   get version() { return this.#version; }
   get architectureBaseline() { return this.#architectureBaseline; }
   get organizationFoundationEnabled() { return this.#organizationFoundationEnabled; }
+  get localAuthEnabled() { return this.#localAuthEnabled; }
 
   publicConfiguration() {
     return Object.freeze({
@@ -129,6 +139,7 @@ export class WebRuntimeConfiguration {
       environment: this.#environment,
       apiBaseUrl: this.#apiBaseUrl,
       organizationFoundationEnabled: this.#organizationFoundationEnabled,
+      localAuthEnabled: this.#localAuthEnabled,
     });
   }
 }

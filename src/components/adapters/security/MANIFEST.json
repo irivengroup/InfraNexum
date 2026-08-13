@@ -1,0 +1,7 @@
+{
+  "component": "security",
+  "kind": "adapter",
+  "status": "implemented",
+  "program_epics": ["PGM-03-E02"],
+  "owns": ["argon2id-password-hashing", "secure-session-token-generation"]
+}

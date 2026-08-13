@@ -28,11 +28,12 @@ const valid = {
   schema: 'infranexum.web-runtime-config/v1',
   product: 'InfraNexum',
   component: 'web',
-  version: '2.0.0-alpha.0.60',
+  version: '2.0.0-alpha.0.67',
   architectureBaseline: '2.0.0-draft.21',
   environment: 'test',
   apiBaseUrl: '/api',
-    organizationFoundationEnabled: false,
+  organizationFoundationEnabled: false,
+  localAuthEnabled: false,
 };
 
 test('browser bootstrap validates and renders public configuration', async () => {

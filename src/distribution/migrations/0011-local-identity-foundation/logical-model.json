@@ -1,0 +1,14 @@
+{
+  "schema": "infranexum.logical-migration/v1",
+  "migration": "0011",
+  "context": "identity-local",
+  "entities": {
+    "local_account": ["id","username","display_name","password_hash","must_change","status","failed_attempts","locked_until","security_epoch","version","created_at","updated_at"],
+    "local_session": ["id","account_id","token_hash","csrf_hash","security_epoch","created_at","last_seen_at","idle_expires_at","absolute_expires_at","revoked_at"]
+  },
+  "security": {
+    "password_plaintext_persisted": false,
+    "session_bearer_plaintext_persisted": false,
+    "csrf_plaintext_persisted": false
+  }
+}

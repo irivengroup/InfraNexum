@@ -1,7 +1,7 @@
 {
   "schema": "infranexum.source-baseline/v1",
   "product": "InfraNexum — Infrastructure Control & Governance Platform",
-  "implementation_version": "2.0.0-alpha.0.60",
+  "implementation_version": "2.0.0-alpha.0.67",
   "architecture_baseline": "2.0.0-draft.21",
   "roadmap_baseline": "1.0.0-draft.1",
   "architecture_archive_sha256": "372cf19929f8ea3b7586c3af3e7c5004e590cf746ff2d6d59d4d0b88912aea64",
@@ -62,7 +62,11 @@
     "PGM-03-E01 Organization foundation alpha.0.57: authoritative Organization/Subdivision aggregates, UUIDv7, strict lifecycle, profile/quota guards, temporal typed scopes, atomic outbox/idempotency JDBC writes, paired PostgreSQL/Oracle migration 0010, fail-closed local pre-IAM API and Bootstrap 5 themed Web organization list.",
     "PRO HA Docker runtime alpha.0.56 certified on Docker Desktop: nominal smoke, PostgreSQL primary failover and rejoin, Server node failover, Web node failover, and final Server readiness UP all passed.",
     "Organization foundation alpha.0.57: authoritative Organization/Subdivision/temporal-scope bounded context with UUIDv7, lifecycle, optimistic versioning, capability-driven quotas, idempotency/outbox, PostgreSQL/Oracle migration 0010, local-only pre-IAM API, and same-origin Bootstrap Web foundation.",
-    "Web administration experience alpha.0.59: route-aware Overview/Organizations shell, DE/EN/ES/FR/IT browser-detected and persisted i18n with English fallback, localized dynamic runtime and organization states, breadcrumbs, independent theme/locale preferences, and a keyboard-first Ctrl/Cmd+K command palette indexing only currently actionable UI capabilities."
+    "Web administration experience alpha.0.59: route-aware Overview/Organizations shell, DE/EN/ES/FR/IT browser-detected and persisted i18n with English fallback, localized dynamic runtime and organization states, breadcrumbs, independent theme/locale preferences, and a keyboard-first Ctrl/Cmd+K command palette indexing only currently actionable UI capabilities.",
+    "Web operational administration alpha.0.60: structured versioned browser preferences, observed-and-deduplicated notification center, real capability/quota insights, bounded operational refresh, and a stable accessible language listbox that remains open across asynchronous refreshes; no fabricated backend metrics or alerts.",
+    "PGM-03-E02 Local Identity & Authentication foundation alpha.0.61: local human accounts with strict password policy, Argon2id password hashing, generic anti-enumeration authentication failures, bounded lockout, opaque durable sessions with idle/absolute expiry and security epochs, CSRF-protected mutations, password-rotation session revocation, PostgreSQL/Oracle migration 0011, developer-only bootstrap credential disclosure, and a same-origin Web authentication gate; RBAC, MFA and external identity providers remain pending subsequent IAM epics.",
+    "Local identity migration recovery alpha.0.62: migration catalogue completeness is enforced; 0011 is catalogued and machine-verifiable; 0012 idempotently repairs missing local identity tables on persisted development databases; developer up explicitly replays secret-init, db-bootstrap and migrate one-shots without deleting volumes; Web login exposes backend unavailability with a visible busy/retry state.",
+    "Local Auth correlation boundary hardening alpha.0.64: terminal 401/403 authentication responses explicitly preserve the canonical X-Correlation-ID, PowerShell 7 smoke captures expected HTTP errors as normal responses via SkipHttpErrorCheck, and same-origin Web ingress validates status, response header and Problem JSON correlation_id without weakening authentication or HA invariants."
   ],
   "roadmap_archive_sha256": "11db7d27bbc79f688cd1fda31a24aaf31b56a56db36b6487b64154c148ab54d3",
   "engineering_governance_sha256": "f24357051a5401f598c3d77bbe5814d3759a176095537659243658ba3ff109c7"

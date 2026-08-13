@@ -40,9 +40,36 @@ extract_checksum() {
   ' "$manifest"
 }
 
+catalogue="$migration_root/catalogue.yaml"
+if [ ! -r "$catalogue" ]; then
+  echo "Migration catalogue is not readable: $catalogue" >&2
+  exit 64
+fi
+catalogue_paths="$(mktemp)"
+awk '$1 == "path:" { print $2 }' "$catalogue" > "$catalogue_paths"
+if [ ! -s "$catalogue_paths" ]; then
+  echo "Migration catalogue contains no migration paths" >&2
+  rm -f "$catalogue_paths"
+  exit 65
+fi
 for migration_dir in "$migration_root"/[0-9][0-9][0-9][0-9]-*; do
   [ -d "$migration_dir" ] || continue
-  manifest="$migration_dir/migration.yaml"
+  relative="$(basename "$migration_dir")/migration.yaml"
+  if ! grep -Fxq "$relative" "$catalogue_paths"; then
+    echo "Migration directory is not declared in catalogue: $relative" >&2
+    rm -f "$catalogue_paths"
+    exit 65
+  fi
+done
+
+while IFS= read -r relative_manifest; do
+  manifest="$migration_root/$relative_manifest"
+  migration_dir="$(dirname "$manifest")"
+  if [ ! -r "$manifest" ]; then
+    echo "Catalogued migration descriptor is not readable: $manifest" >&2
+    rm -f "$catalogue_paths"
+    exit 65
+  fi
   sql_file="$migration_dir/postgresql.sql"
   migration_id="$(awk '$1 == "id:" { gsub(/\047/, "", $2); print $2; exit }' "$manifest")"
   logical_checksum="$(extract_checksum "$manifest" 'logical-model.json')"
@@ -97,7 +124,14 @@ for migration_dir in "$migration_root"/[0-9][0-9][0-9][0-9]-*; do
   $psql_base --file "$control"
   rm -f "$control"
   trap - EXIT HUP INT TERM
-done
+  applied_count="$($psql_base --tuples-only --no-align --command "SELECT count(*) FROM infranexum_core.schema_history WHERE migration_id = '$migration_id'")"
+  if [ "$applied_count" != "1" ]; then
+    echo "Migration $migration_id is not durably recorded in schema_history" >&2
+    rm -f "$catalogue_paths"
+    exit 65
+  fi
+done < "$catalogue_paths"
+rm -f "$catalogue_paths"
 
 # A fresh deployment must have exactly one stable UUIDv7 installation identity before
 # Entitlements starts. PostgreSQL 17 exposes gen_random_uuid() as UUIDv4 only, so construct

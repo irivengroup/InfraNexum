@@ -10,8 +10,70 @@
     <link rel="stylesheet" href="/assets/infranexum-theme.css" />
     <script type="module" src="/assets/bootstrap.mjs"></script>
   </head>
-  <body class="inx-app-body">
+  <body class="inx-app-body inx-auth-pending">
     <a class="skip-link" href="#main" data-i18n="app.skip">Skip to content</a>
+
+
+    <section id="auth-gate" class="inx-auth-gate" aria-labelledby="auth-title" hidden>
+      <div class="inx-auth-backdrop" aria-hidden="true">
+        <span class="inx-auth-orbit inx-auth-orbit-a"></span>
+        <span class="inx-auth-orbit inx-auth-orbit-b"></span>
+        <span class="inx-auth-orbit inx-auth-orbit-c"></span>
+      </div>
+      <div class="inx-auth-layout">
+        <aside class="inx-auth-brand-panel">
+          <div class="inx-auth-brand">
+            <span class="inx-auth-brand-mark" aria-hidden="true">IN</span>
+            <div><strong>InfraNexum</strong><span>Infrastructure Control &amp; Governance Platform</span></div>
+          </div>
+          <div class="inx-auth-brand-copy">
+            <p class="inx-eyebrow" data-i18n="auth.eyebrow">Secure local access</p>
+            <h1 data-i18n="auth.brandTitle">Sign in to InfraNexum</h1>
+            <p data-i18n="auth.subtitle">Use the local administrator credential provisioned for this installation.</p>
+          </div>
+          <div class="inx-auth-security-note">
+            <span aria-hidden="true">◆</span>
+            <div><strong>Local security boundary</strong><span>Opaque server-side session · HttpOnly cookie · CSRF protected mutations</span></div>
+          </div>
+        </aside>
+        <div class="inx-auth-card-wrap">
+          <div class="inx-auth-card">
+            <div id="auth-login-view">
+              <h2 id="auth-title" data-i18n="auth.title">Secure Area</h2>
+              <div id="auth-service-state" class="inx-auth-service-state" data-state="checking" role="status" aria-live="polite" hidden>
+                <span class="inx-auth-service-dot" aria-hidden="true"></span>
+                <span id="auth-service-state-text" data-i18n="auth.service.checking">Checking authentication service…</span>
+              </div>
+              <form id="auth-login-form" class="inx-auth-form" autocomplete="on">
+                <label for="auth-username" data-i18n="auth.username">Username</label>
+                <input id="auth-username" name="username" class="form-control" type="text" autocomplete="username" maxlength="128" required />
+                <label for="auth-password" data-i18n="auth.password">Password</label>
+                <input id="auth-password" name="password" class="form-control" type="password" autocomplete="current-password" maxlength="128" required />
+                <button id="auth-login-submit" class="btn btn-primary inx-auth-submit" type="submit" data-i18n="auth.signIn" data-auth-wired="false" aria-disabled="true" disabled>Sign in</button>
+              </form>
+            </div>
+            <div id="auth-password-view" hidden>
+              <p class="inx-eyebrow" data-i18n="auth.eyebrow">Secure local access</p>
+              <h2 data-i18n="auth.password.title">Change your bootstrap password</h2>
+              <p class="inx-auth-lead" data-i18n="auth.password.subtitle">The bootstrap credential must be replaced before the administration workspace can be used.</p>
+              <div class="inx-auth-account"><span data-i18n="session.signedInAs">Signed in as</span><strong id="auth-account-name">—</strong></div>
+              <form id="auth-password-form" class="inx-auth-form" autocomplete="off">
+                <label for="auth-current-password" data-i18n="auth.currentPassword">Current password</label>
+                <input id="auth-current-password" class="form-control" type="password" autocomplete="current-password" maxlength="128" required />
+                <label for="auth-new-password" data-i18n="auth.newPassword">New password</label>
+                <input id="auth-new-password" class="form-control" type="password" autocomplete="new-password" minlength="12" maxlength="128" required />
+                <label for="auth-confirm-password" data-i18n="auth.confirmPassword">Confirm new password</label>
+                <input id="auth-confirm-password" class="form-control" type="password" autocomplete="new-password" minlength="12" maxlength="128" required />
+                <p class="inx-auth-policy" data-i18n="auth.policy">12–128 characters, with uppercase, lowercase, digit and special character.</p>
+                <button id="auth-password-submit" class="btn btn-primary inx-auth-submit" type="submit" data-i18n="auth.changePassword" data-auth-wired="false" aria-disabled="true" disabled>Change password and continue</button>
+              </form>
+            </div>
+            <p id="auth-message" class="inx-auth-message" role="status" aria-live="polite" data-state="info" data-i18n="auth.login.prompt">Authentication is required to open the administration workspace.</p>
+            <p class="inx-auth-bootstrap-hint" data-i18n="auth.bootstrapHint">Docker development credentials are available through the dev-compose credentials command.</p>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <div class="inx-app-shell">
       <aside class="inx-sidebar" aria-label="Primary navigation">
@@ -108,7 +170,11 @@
               <span class="inx-theme-light" aria-hidden="true">☀</span>
               <span class="inx-theme-dark" aria-hidden="true">◐</span>
             </button>
-            <div class="inx-user-avatar" data-i18n-aria-label="session.localAdmin" aria-label="Local administrator session">AD</div>
+            <div class="inx-session-chip" data-i18n-aria-label="session.localAdmin" aria-label="Local administrator session">
+              <div id="session-avatar" class="inx-user-avatar" aria-hidden="true">AD</div>
+              <div class="inx-session-copy"><span data-i18n="session.signedInAs">Signed in as</span><strong id="session-identity">Local Administrator</strong></div>
+            </div>
+            <button id="session-logout" class="btn inx-session-logout" type="button" data-i18n="session.logout" hidden>Sign out</button>
           </div>
         </header>
 

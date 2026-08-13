@@ -1,0 +1,24 @@
+schema: infranexum.migration/v1
+id: '0011'
+name: local-identity-foundation
+owner_context: identity-local
+dependencies:
+- '0010'
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 10
+preconditions:
+- organization-foundation-present
+postconditions:
+- local-identity-account-and-session-tables-exist
+recovery: restore-from-pre-migration-backup-if-local-identity-foundation-fails
+rollback: drops-local-identity-foundation-objects
+checksums:
+  postgresql.sql: 2c4953a77e2e002a2e43e40f190eabe82eaa58932143f3fec3a64eca6af36f5c
+  oracle.sql: 10701cd7edbed97b3de12ab6364c8e5d6382550509b369e23303e545e9bb98e7
+  rollback/postgresql.sql: 459e4d74a07ce9336e900933006868ba645a10cb8dc71e486ec41c5b6101df4e
+  rollback/oracle.sql: 02fd6a3f2e5fbdc2886fa044b045660570598dc3d83b4b07c99a5ba14ce6cd93
+  logical-model.json: d0e7bd3c8b76658cc335bca0efdd993159696d4a0bceefecf7e7f8daa3d162f0
+  verify.sql.yaml: c98fd2f711d34947c23aa02799a1886ddff4545c343c22a46027d604803cc5b5

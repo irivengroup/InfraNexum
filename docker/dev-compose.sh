@@ -47,13 +47,20 @@ db_scalar() {
     'export PGPASSWORD="$(cat /run/infranexum-secrets/db-password)"; exec psql --no-psqlrc --tuples-only --no-align --host=postgres --port=5432 --username=infranexum --dbname=infranexum --command "$1"' sh "$sql"
 }
 
-admin_db_scalar() {
+cluster_admin_db_scalar() {
   sql=$1
-  # Replication state is privileged monitoring data. Keep the application role
-  # least-privileged and use the bootstrap superuser only inside this developer
-  # topology diagnostic path.
+  # Cluster-wide diagnostics use the postgres maintenance database. Application
+  # schemas are database-local and must never be queried through this helper.
   compose run --rm --no-deps --entrypoint /bin/sh migrate -eu -c \
     'export PGPASSWORD="$(cat /run/infranexum-secrets/db-password)"; exec psql --no-psqlrc --tuples-only --no-align --host=postgres --port=5432 --username=postgres --dbname=postgres --command "$1"' sh "$sql"
+}
+
+application_admin_db_scalar() {
+  sql=$1
+  # Use postgres privileges while connecting to the InfraNexum application
+  # database for schema/history diagnostics.
+  compose run --rm --no-deps --entrypoint /bin/sh migrate -eu -c \
+    'export PGPASSWORD="$(cat /run/infranexum-secrets/db-password)"; exec psql --no-psqlrc --tuples-only --no-align --host=postgres --port=5432 --username=postgres --dbname=infranexum --command "$1"' sh "$sql"
 }
 
 backup() {
@@ -72,9 +79,9 @@ smoke() {
   for service in $cluster_services; do assert_service_healthy "$service"; done
   writer_port=$(published_port postgres 5432); read_port=$(published_port postgres 5433); server_port=$(published_port server 8080); web_port=$(published_port web 8080)
   echo "Compose PRO bindings: writer=127.0.0.1:$writer_port replicas=127.0.0.1:$read_port server=127.0.0.1:$server_port web=127.0.0.1:$web_port"
-  streaming=$(admin_db_scalar "SELECT count(*) FROM pg_stat_replication WHERE state='streaming'")
+  streaming=$(cluster_admin_db_scalar "SELECT count(*) FROM pg_stat_replication WHERE state='streaming'")
   test "$streaming" -ge 2 || { echo "Expected two streaming standbys; observed $streaming" >&2; exit 69; }
-  synchronous=$(admin_db_scalar "SELECT count(*) FROM pg_stat_replication WHERE state='streaming' AND sync_state IN ('sync','quorum')")
+  synchronous=$(cluster_admin_db_scalar "SELECT count(*) FROM pg_stat_replication WHERE state='streaming' AND sync_state IN ('sync','quorum')")
   test "$synchronous" -ge 1 || { echo 'No synchronous PostgreSQL standby' >&2; exit 69; }
   wait_server_router_ready "$server_port"
   curl --fail --silent --show-error "http://127.0.0.1:$server_port/actuator/metrics/infranexum.workers.ready" | grep -q '"name":"infranexum.workers.ready"'
@@ -86,20 +93,30 @@ smoke() {
   curl --fail --silent --show-error "http://127.0.0.1:$web_port/health/ready" | grep -q '"status":"UP"'
   curl --fail --silent --show-error "http://127.0.0.1:$web_port/runtime-config.json" > "$tmp"
   grep -Fq '"component":"web"' "$tmp"
-  grep -Fq '"version":"2.0.0-alpha.0.60"' "$tmp"
+  grep -Fq '"version":"2.0.0-alpha.0.67"' "$tmp"
   grep -Fq '"apiBaseUrl":"/api"' "$tmp"
   rm -f "$tmp"; trap - EXIT HUP INT TERM
+  iam_history=$(application_admin_db_scalar "SELECT count(*) FROM infranexum_core.schema_history WHERE migration_id IN ('0011','0012')")
+  test "$iam_history" -eq 2 || { echo "Local identity migration history is incomplete; expected 0011 and 0012, observed $iam_history" >&2; exit 69; }
+  account_table=$(application_admin_db_scalar "SELECT CASE WHEN to_regclass('infranexum_iam.local_account') IS NOT NULL THEN 1 ELSE 0 END")
+  test "$account_table" -eq 1 || { echo 'Local identity account table is missing after repair migration 0012' >&2; exit 69; }
+  session_table=$(application_admin_db_scalar "SELECT CASE WHEN to_regclass('infranexum_iam.local_session') IS NOT NULL THEN 1 ELSE 0 END")
+  test "$session_table" -eq 1 || { echo 'Local identity session table is missing after repair migration 0012' >&2; exit 69; }
+  account_count=$(application_admin_db_scalar 'SELECT count(*) FROM infranexum_iam.local_account')
+  test "$account_count" -ge 1 || { echo 'Local identity bootstrap account is missing after schema repair and Server bootstrap' >&2; exit 69; }
+  credential_login=$(test_local_credential_login "$web_port")
   organization_headers=$(mktemp); organization_body=$(mktemp); trap 'rm -f "$organization_headers" "$organization_body"' EXIT HUP INT TERM
-  curl --fail --silent --show-error --dump-header "$organization_headers" --header "X-Correlation-ID: $correlation_id" "http://127.0.0.1:$web_port/api/v1/iam/organizations?limit=1" > "$organization_body"
-  grep -Eq '^[[:space:]]*\[' "$organization_body"
+  organization_status=$(curl --silent --show-error --output "$organization_body" --dump-header "$organization_headers" --write-out '%{http_code}' --header "X-Correlation-ID: $correlation_id" "http://127.0.0.1:$web_port/api/v1/iam/organizations?limit=1")
+  test "$organization_status" = 401 || { echo "Protected Organization API returned HTTP $organization_status to an anonymous request" >&2; exit 69; }
   grep -Eiq "^X-Correlation-ID:[[:space:]]*$correlation_id[[:space:]]*$" "$organization_headers"
+  grep -Fq "\"correlation_id\":\"$correlation_id\"" "$organization_body"
   rm -f "$organization_headers" "$organization_body"; trap - EXIT HUP INT TERM
-  echo "compose-smoke: PASS (streaming=$streaming synchronous=$synchronous Server=4 Web=2 OrganizationAPI=UP)"
+  echo "compose-smoke: PASS (streaming=$streaming synchronous=$synchronous Server=4 Web=2 LocalAuth=ENFORCED CredentialLogin=$credential_login)"
 }
 
 patroni_primary() {
   for service in postgres-1 postgres-2 postgres-3; do
-    code=$(compose exec -T "$service" sh -c 'curl --silent --output /dev/null --write-out "%{http_code}" http://127.0.0.1:8008/primary' 2>/dev/null || true)
+    code=$(compose exec -T "$service" sh -c 'curl --silent --head --output /dev/null --write-out "%{http_code}" http://127.0.0.1:8008/primary' 2>/dev/null || true)
     test "$code" = 200 && { echo "$service"; return 0; }
   done
   return 1
@@ -162,6 +179,7 @@ wait_web_router_ready() {
 
 ha_smoke() {
   require_repo; smoke
+  ha_started_at=$(date -u '+%Y-%m-%dT%H:%M:%S.000Z')
   primary=$(patroni_primary) || { echo 'Unable to identify Patroni primary' >&2; exit 69; }
   echo "Stopping current Patroni primary: $primary"; compose stop "$primary"
   restore_primary() { compose start "$primary" >/dev/null 2>&1 || true; }; trap restore_primary EXIT HUP INT TERM
@@ -173,7 +191,7 @@ ha_smoke() {
   restore_primary; trap - EXIT HUP INT TERM
   attempts=0; while [ "$attempts" -lt 30 ]; do sleep 3; if (assert_service_healthy "$primary") >/dev/null 2>&1; then break; fi; attempts=$((attempts + 1)); done
   test "$attempts" -lt 30 || { echo "Former primary $primary did not rejoin healthy within 90 seconds" >&2; exit 69; }
-  attempts=0; streaming=0; while [ "$attempts" -lt 30 ]; do sleep 3; streaming=$(admin_db_scalar "SELECT count(*) FROM pg_stat_replication WHERE state='streaming'" 2>/dev/null || echo 0); test "$streaming" -ge 2 && break; attempts=$((attempts + 1)); done
+  attempts=0; streaming=0; while [ "$attempts" -lt 30 ]; do sleep 3; streaming=$(cluster_admin_db_scalar "SELECT count(*) FROM pg_stat_replication WHERE state='streaming'" 2>/dev/null || echo 0); test "$streaming" -ge 2 && break; attempts=$((attempts + 1)); done
   test "$streaming" -ge 2 || { echo "Cluster did not return to two streaming standbys; observed $streaming" >&2; exit 69; }
 
   server_port=$(published_port server 8080)
@@ -193,7 +211,51 @@ ha_smoke() {
   attempts=0; while [ "$attempts" -lt 30 ]; do sleep 2; if (assert_service_healthy web-1) >/dev/null 2>&1; then break; fi; attempts=$((attempts + 1)); done
   test "$attempts" -lt 30 || { echo 'Web node web-1 did not rejoin healthy within 60 seconds' >&2; exit 69; }
 
-  echo "compose-ha-smoke: PASS (PostgreSQL $primary -> $replacement -> rejoined; Server and Web node failover verified)"
+  patroni_logs=$(compose logs --no-color --since "$ha_started_at" postgres-1 postgres-2 postgres-3 2>&1 || true)
+  if printf '%s
+' "$patroni_logs" | grep -Eq 'Traceback \(most recent call last\):|ConnectionResetError:|BrokenPipeError:'; then
+    echo 'Patroni REST API emitted Python transport tracebacks during HA smoke. Health checks must not terminate response bodies early.' >&2
+    printf '%s
+' "$patroni_logs" | grep -E 'Traceback \(most recent call last\):|ConnectionResetError:|BrokenPipeError:' | head -12 >&2
+    exit 69
+  fi
+
+  echo "compose-ha-smoke: PASS (PostgreSQL $primary -> $replacement -> rejoined; Server and Web node failover verified; PatroniPythonErrors=0)"
+}
+
+
+local_developer_password() {
+  compose run --rm --no-deps --entrypoint /bin/sh secret-init -eu -c 'cat /run/infranexum-secrets/local-admin-password'
+}
+
+test_local_credential_login() {
+  web_port=$1
+  must_change=$(application_admin_db_scalar "SELECT count(*) FROM infranexum_iam.local_account WHERE username='admin' AND must_change=TRUE AND status='ACTIVE'")
+  if [ "$must_change" -eq 0 ]; then printf '%s' 'SKIPPED_CHANGED'; return 0; fi
+  password=$(local_developer_password)
+  test -n "$password" || { echo 'Local administrator bootstrap credential is unavailable' >&2; return 69; }
+  cookie_jar=$(mktemp); login_body=$(mktemp); logout_body=$(mktemp)
+  trap 'rm -f "$cookie_jar" "$login_body" "$logout_body"' EXIT HUP INT TERM
+  payload=$(printf '{"username":"admin","password":"%s"}' "$password")
+  status=$(curl --silent --show-error --output "$login_body" --cookie-jar "$cookie_jar" --write-out '%{http_code}'     --header 'Accept: application/json' --header 'Content-Type: application/json'     --data "$payload" "http://127.0.0.1:$web_port/api/v1/iam/local-auth/session")
+  test "$status" = 200 || { echo "Bootstrap credential login failed through Web ingress with HTTP $status; body='$(cat "$login_body")'" >&2; return 69; }
+  grep -Fq '"username":"admin"' "$login_body" || { echo 'Bootstrap credential login returned unexpected username' >&2; return 69; }
+  grep -Fq '"mustChange":true' "$login_body" || { echo 'Bootstrap credential login did not require bootstrap password change' >&2; return 69; }
+  session_cookie=$(awk '$6=="INX_SESSION" {print $7}' "$cookie_jar" | tail -1)
+  csrf_cookie=$(awk '$6=="INX_XSRF" {print $7}' "$cookie_jar" | tail -1)
+  test -n "$session_cookie" || { echo 'Bootstrap credential login did not issue INX_SESSION' >&2; return 69; }
+  test -n "$csrf_cookie" || { echo 'Bootstrap credential login did not issue INX_XSRF' >&2; return 69; }
+  logout_status=$(curl --silent --show-error --output "$logout_body" --cookie "$cookie_jar" --write-out '%{http_code}'     --request DELETE --header "X-CSRF-Token: $csrf_cookie" "http://127.0.0.1:$web_port/api/v1/iam/local-auth/session")
+  test "$logout_status" = 204 || { echo "Bootstrap credential smoke logout returned HTTP $logout_status" >&2; return 69; }
+  rm -f "$cookie_jar" "$login_body" "$logout_body"; trap - EXIT HUP INT TERM
+  printf '%s' 'PASS'
+}
+
+show_local_credentials() {
+  require_repo
+  password=$(local_developer_password)
+  test -n "$password" || { echo 'Local administrator bootstrap credential is unavailable' >&2; exit 69; }
+  printf '%s\n' 'InfraNexum local development administrator' 'Username: admin' "Password: $password" 'The password must be changed at first sign-in.'
 }
 
 restore() {
@@ -210,15 +272,16 @@ command=${1:-help}; test "$#" -gt 0 && shift || true
 case "$command" in
   config) require_repo; compose config --quiet ;;
   build) require_repo; compose config --quiet; compose build --pull ;;
-  up) require_repo; compose config --quiet; compose up --detach --build --wait web ;;
+  up) require_repo; compose config --quiet; compose rm --stop --force migrate db-bootstrap secret-init >/dev/null 2>&1 || true; compose up --detach --build --wait web ;;
   down) require_repo; compose down --remove-orphans ;;
   logs) require_repo; if [ "$#" -gt 0 ]; then compose logs --no-color --tail=200 "$@"; else compose logs --no-color --tail=200 web web-1 web-2 server server-1 server-2 server-3 server-4 postgres postgres-1 postgres-2 postgres-3 migrate; fi ;;
   smoke) smoke ;;
   ha-smoke) ha_smoke ;;
+  credentials) show_local_credentials ;;
   backup) backup ;;
   restore) restore ;;
   rollback) require_repo; : "${MIGRATION_ID:?MIGRATION_ID is required}"; test "${CONFIRM_INFRANEXUM_ROLLBACK:-}" = YES || { echo 'Refusing rollback' >&2; exit 64; }; compose up --detach --wait postgres; backup_file=$(backup); echo "Pre-rollback backup: $backup_file"; compose stop web web-1 web-2 server server-1 server-2 server-3 server-4 >/dev/null 2>&1 || true; compose --profile maintenance run --rm -e MIGRATION_ID="$MIGRATION_ID" -e CONFIRM_INFRANEXUM_ROLLBACK=YES rollback ;;
   reset) require_repo; test "${CONFIRM_INFRANEXUM_VOLUME_DELETE:-}" = YES || { echo 'Refusing volume deletion' >&2; exit 64; }; compose down --volumes --remove-orphans ;;
-  help|-h|--help) echo 'Commands: config build up down logs smoke ha-smoke backup restore rollback reset' ;;
+  help|-h|--help) echo 'Commands: config build up down logs smoke ha-smoke credentials backup restore rollback reset' ;;
   *) echo "Unknown command: $command" >&2; exit 64 ;;
 esac

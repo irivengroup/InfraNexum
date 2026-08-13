@@ -5,7 +5,7 @@ import test from 'node:test';
 
 import { WebRuntimeConfiguration } from '../../src/applications/web/runtime/config.mjs';
 
-const options = { version: '2.0.0-alpha.0.60', baseDirectory: os.tmpdir() };
+const options = { version: '2.0.0-alpha.0.67', baseDirectory: os.tmpdir() };
 
 test('configuration applies safe defaults and exposes only public values', () => {
   const configuration = WebRuntimeConfiguration.fromEnvironment({}, options);
@@ -26,6 +26,7 @@ test('configuration applies safe defaults and exposes only public values', () =>
     environment: 'production',
     apiBaseUrl: '/api',
     organizationFoundationEnabled: false,
+    localAuthEnabled: false,
   });
   assert.equal(Object.isFrozen(configuration), true);
   assert.equal(Object.isFrozen(configuration.publicConfiguration()), true);
@@ -118,4 +119,12 @@ test('configuration enforces safe public API URLs', () => {
     }, options),
     /requires HTTPS/,
   );
+});
+
+
+test('local authentication publication accepts explicit true and rejects malformed booleans', () => {
+  const enabled = WebRuntimeConfiguration.fromEnvironment({ INFRANEXUM_WEB_LOCAL_AUTH_ENABLED: 'true' }, options);
+  assert.equal(enabled.localAuthEnabled, true);
+  assert.equal(enabled.publicConfiguration().localAuthEnabled, true);
+  assert.throws(() => WebRuntimeConfiguration.fromEnvironment({ INFRANEXUM_WEB_LOCAL_AUTH_ENABLED: 'yes' }, options), /LOCAL_AUTH_ENABLED/);
 });

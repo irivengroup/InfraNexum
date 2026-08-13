@@ -1,5 +1,5 @@
 schema: infranexum.migration-catalogue/v1
-version: 1.9.0
+version: 1.11.0
 entries:
 - id: '0001'
   path: 0001-core-schema-history/migration.yaml
@@ -15,9 +15,13 @@ entries:
   path: 0006-core-workers/migration.yaml
 - id: '0007'
   path: 0007-core-installation-uuidv7/migration.yaml
-- id: '0008'
+- id: 0008
   path: 0008-core-entitlement-time-precision/migration.yaml
-- id: '0009'
+- id: 0009
   path: 0009-core-worker-correlation/migration.yaml
 - id: '0010'
   path: 0010-organization-foundation/migration.yaml
+- id: '0011'
+  path: 0011-local-identity-foundation/migration.yaml
+- id: '0012'
+  path: 0012-local-identity-repair/migration.yaml

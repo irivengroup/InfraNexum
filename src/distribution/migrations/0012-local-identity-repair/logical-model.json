@@ -1,0 +1,14 @@
+{
+  "schema": "infranexum.logical-migration/v1",
+  "migration": "0012",
+  "context": "identity-local",
+  "objects": [
+    "infranexum_iam.local_account",
+    "infranexum_iam.local_session"
+  ],
+  "purpose": "repair-and-verify-local-identity-physical-schema",
+  "security": {
+    "destructive": false,
+    "stores_plaintext_credentials": false
+  }
+}

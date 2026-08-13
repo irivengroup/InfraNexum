@@ -1,0 +1,20 @@
+schema: infranexum.migration-verification/v1
+checks:
+- id: local-account-table-exists
+  postgresql: "SELECT to_regclass('infranexum_iam.local_account') IS NOT NULL"
+  oracle: "SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM USER_TABLES WHERE TABLE_NAME = 'INFRANEXUM_IAM_LOCAL_ACCOUNT'"
+- id: local-session-table-exists
+  postgresql: "SELECT to_regclass('infranexum_iam.local_session') IS NOT NULL"
+  oracle: "SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM USER_TABLES WHERE TABLE_NAME = 'INFRANEXUM_IAM_LOCAL_SESSION'"
+- id: local-account-username-unique
+  postgresql: "SELECT COUNT(*) = COUNT(DISTINCT username) FROM infranexum_iam.local_account"
+  oracle: "SELECT CASE WHEN COUNT(*) = COUNT(DISTINCT USERNAME) THEN 1 ELSE 0 END FROM INFRANEXUM_IAM_LOCAL_ACCOUNT"
+- id: local-session-token-hash-unique
+  postgresql: "SELECT COUNT(*) = COUNT(DISTINCT token_hash) FROM infranexum_iam.local_session"
+  oracle: "SELECT CASE WHEN COUNT(*) = COUNT(DISTINCT TOKEN_HASH) THEN 1 ELSE 0 END FROM INFRANEXUM_IAM_LOCAL_SESSION"
+- id: no-plaintext-password-column
+  postgresql: "SELECT COUNT(*) = 0 FROM information_schema.columns WHERE table_schema='infranexum_iam' AND table_name='local_account' AND column_name IN ('password','plaintext_password','secret')"
+  oracle: "SELECT CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END FROM USER_TAB_COLUMNS WHERE TABLE_NAME='INFRANEXUM_IAM_LOCAL_ACCOUNT' AND COLUMN_NAME IN ('PASSWORD','PLAINTEXT_PASSWORD','SECRET')"
+- id: no-plaintext-session-token-column
+  postgresql: "SELECT COUNT(*) = 0 FROM information_schema.columns WHERE table_schema='infranexum_iam' AND table_name='local_session' AND column_name IN ('token','session_token','csrf_token')"
+  oracle: "SELECT CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END FROM USER_TAB_COLUMNS WHERE TABLE_NAME='INFRANEXUM_IAM_LOCAL_SESSION' AND COLUMN_NAME IN ('TOKEN','SESSION_TOKEN','CSRF_TOKEN')"

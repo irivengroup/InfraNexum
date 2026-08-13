@@ -42,6 +42,7 @@ class MigrationChecker:
         seen: set[str] = set()
         previous = "-1"
         known_ids = {entry.get("id") for entry in entries if isinstance(entry, dict)}
+        catalogue_paths = {entry.get("path") for entry in entries if isinstance(entry, dict) and isinstance(entry.get("path"), str)}
         for item in entries:
             if not isinstance(item, dict) or not isinstance(item.get("id"), str) or not isinstance(item.get("path"), str):
                 self._add("CHECK-MIG-CATALOGUE-003", catalogue_path, "every entry requires string id and path")
@@ -56,6 +57,13 @@ class MigrationChecker:
             seen.add(migration_id)
             previous = migration_id
             self._check_entry(migration_id, item["path"], known_ids)
+        # Completeness is checked only when the catalogue itself and all referenced
+        # descriptors are otherwise valid. This keeps diagnostics precise while
+        # preventing an unlisted migration directory from bypassing validation.
+        if not self.violations:
+            discovered_paths = {path.relative_to(self.root).as_posix() for path in self.root.glob("[0-9][0-9][0-9][0-9]-*/migration.yaml")}
+            for orphan in sorted(discovered_paths - catalogue_paths):
+                self._add("CHECK-MIG-CATALOGUE-004", self.root / orphan, "migration descriptor is not declared in catalogue")
         return tuple(sorted(set(self.violations)))
 
     def _check_entry(self, catalogue_id: str, relative: str, known_ids: set[Any]) -> None:
@@ -108,8 +116,10 @@ class MigrationChecker:
         except (OSError, ValueError) as error:
             self._add("CHECK-MIG-MODEL-001", path, f"invalid logical model: {error}")
             return
-        if not isinstance(payload.get("objects"), list) or not payload["objects"]:
-            self._add("CHECK-MIG-MODEL-002", path, "logical model must define at least one object")
+        objects = payload.get("objects")
+        entities = payload.get("entities")
+        if not ((isinstance(objects, list) and objects) or (isinstance(entities, dict) and entities)):
+            self._add("CHECK-MIG-MODEL-002", path, "logical model must define at least one object or entity")
 
     def _check_verification(self, path: Path) -> None:
         payload = self._load_yaml(path, "CHECK-MIG-VERIFY-001")

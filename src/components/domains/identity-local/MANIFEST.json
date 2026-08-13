@@ -1,0 +1,7 @@
+{
+  "component": "identity-local",
+  "kind": "domain",
+  "status": "implemented",
+  "program_epics": ["PGM-03-E02"],
+  "owns": ["local-password-policy", "local-credentials", "opaque-local-sessions"]
+}

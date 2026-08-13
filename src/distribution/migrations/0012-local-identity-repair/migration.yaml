@@ -1,0 +1,24 @@
+schema: infranexum.migration/v1
+id: '0012'
+name: local-identity-repair
+owner_context: identity-local
+dependencies:
+- '0011'
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 10
+preconditions:
+- local-identity-foundation-declared
+postconditions:
+- local-identity-account-and-session-tables-exist-and-are-queryable
+recovery: repair-is-idempotent-rerun-after-correcting-database-connectivity
+rollback: non-destructive-repair-has-no-destructive-rollback
+checksums:
+  postgresql.sql: 368c5ff0a0056f61f97c4250310a776b491211b4de697819eef7578e2d9ec77d
+  oracle.sql: 10701cd7edbed97b3de12ab6364c8e5d6382550509b369e23303e545e9bb98e7
+  rollback/postgresql.sql: 01f21515ad5376f7c321f4d8f171562ed806cec8418851f8ecfe7302137b5164
+  rollback/oracle.sql: bde3268ab90f74e5b9f767f12c4e9c856bf6d9156494187d6b6c12c86e9ca9ab
+  logical-model.json: e5a14dcb815abca05ee29e522698f8e9515110d5f010a84752f54a96f110a3d5
+  verify.sql.yaml: c98fd2f711d34947c23aa02799a1886ddff4545c343c22a46027d604803cc5b5

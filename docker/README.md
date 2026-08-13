@@ -10,6 +10,11 @@ This is an **HA topology harness**, not an activation bypass for production. Ser
 
 Server readiness includes the bounded Workers runtime. The developer smoke test requires both `/actuator/health/readiness` and the low-cardinality `infranexum.workers.ready` metric to be available before accepting the topology as healthy. Worker concurrency, lease/heartbeat timing, shutdown and retry settings can be overridden through the `INFRANEXUM_WORKERS_*` variables documented in `.env.example`.
 
+### PostgreSQL diagnostic database contexts
+
+Developer health diagnostics deliberately distinguish two superuser connections. Cluster-wide replication state (`pg_stat_replication`) is queried in the `postgres` maintenance database, while InfraNexum schema/history checks (`infranexum_core`, `infranexum_iam`, and other application schemas) connect to the `infranexum` database. PostgreSQL schemas are database-local; using the cluster helper for application objects is a contract violation guarded by deployment tests.
+
+
 ## Dockerfiles
 
 - `server.Dockerfile`: reproducible Java 25 build and non-root Server runtime.

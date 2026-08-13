@@ -1,4 +1,5 @@
 import { initializeAdminShell, setOrganizationAvailability } from './admin-shell.mjs';
+import { initializeLocalAuthentication } from './auth.mjs';
 import { initializeNotificationCenter } from './notifications.mjs';
 import { initializePlatformAutoRefresh, loadPlatformInsights } from './platform-insights.mjs';
 import { initializePreferences } from './preferences.mjs';
@@ -32,6 +33,9 @@ export function validatePublicConfiguration(value) {
   }
   if (typeof value.organizationFoundationEnabled !== 'boolean') {
     throw new Error('Runtime configuration organizationFoundationEnabled is invalid');
+  }
+  if (typeof value.localAuthEnabled !== 'boolean') {
+    throw new Error('Runtime configuration localAuthEnabled is invalid');
   }
   if (
     value.schema !== REQUIRED_SCHEMA
@@ -144,6 +148,7 @@ export async function bootstrap({
       throw new Error(`Runtime configuration returned HTTP ${response.status}`);
     }
     const configuration = validatePublicConfiguration(await response.json());
+    await initializeLocalAuthentication(documentObject, configuration, fetchFunction);
     renderRuntimeConfiguration(documentObject, configuration);
     notificationCenter?.upsert?.({
       id: 'web-runtime', severity: 'success', titleKey: 'notification.runtimeReady.title', bodyKey: 'notification.runtimeReady.body',
@@ -280,10 +285,29 @@ function setLocalizedBadge(documentObject, id, key, className) {
 }
 
 if (typeof document !== 'undefined') {
-  initializeLocalization(document);
-  initializeTheme(document);
-  const preferenceController = initializePreferences(document);
-  const notificationCenter = initializeNotificationCenter(document);
-  initializeAdminShell(document, globalThis.window);
-  void bootstrap({ notificationCenter, preferenceController });
+  // Authentication is the critical browser path. Non-critical dashboard modules
+  // must never be able to prevent the login form from being wired. Localization
+  // and theme are best-effort because auth.mjs has safe default strings.
+  try { initializeLocalization(document); } catch { /* auth must remain available */ }
+  try { initializeTheme(document); } catch { /* auth must remain available */ }
+
+  void bootstrap().then((configuration) => {
+    if (!configuration) return;
+
+    let preferenceController = null;
+    let notificationCenter = null;
+    try { preferenceController = initializePreferences(document); } catch { /* non-critical */ }
+    try { notificationCenter = initializeNotificationCenter(document); } catch { /* non-critical */ }
+    try { initializeAdminShell(document, globalThis.window); } catch { /* non-critical */ }
+
+    notificationCenter?.upsert?.({
+      id: 'web-runtime', severity: 'success', titleKey: 'notification.runtimeReady.title', bodyKey: 'notification.runtimeReady.body',
+      parameters: { version: configuration.version, environment: configuration.environment },
+    });
+
+    if (preferenceController && document.getElementById('platform-insights-state')) {
+      const refreshInsights = () => loadPlatformInsights(document, configuration, fetch, notificationCenter);
+      initializePlatformAutoRefresh(document, refreshInsights, preferenceController.get(), globalThis);
+    }
+  });
 }

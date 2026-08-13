@@ -52,7 +52,7 @@ class ComposeContractTest(unittest.TestCase):
     def test_web_cluster_is_two_private_nodes_behind_loopback_router(self) -> None:
         for name in WEB:
             service = self.services[name]
-            self.assertEqual("infranexum/web:${INFRANEXUM_VERSION:-2.0.0-alpha.0.60}", service["image"])
+            self.assertEqual("infranexum/web:${INFRANEXUM_VERSION:-2.0.0-alpha.0.67}", service["image"])
             self.assertEqual("service_healthy", service["depends_on"]["server"]["condition"])
             self.assertNotIn("ports", service)
             self.assertEqual("local", service["environment"]["INFRANEXUM_WEB_ENVIRONMENT"])
@@ -220,8 +220,10 @@ class ComposeContractTest(unittest.TestCase):
     def test_database_haproxy_routes_writer_by_patroni_primary(self) -> None:
         cfg = (DOCKER / "haproxy-postgres.cfg").read_text(encoding="utf-8")
         self.assertEqual("haproxy:3.2.21-alpine", self.services["postgres"]["image"])
-        self.assertIn("option httpchk GET /primary", cfg)
-        self.assertIn("option httpchk GET /replica", cfg)
+        self.assertIn("option httpchk HEAD /primary", cfg)
+        self.assertIn("option httpchk HEAD /replica", cfg)
+        self.assertNotIn("option httpchk GET /primary", cfg)
+        self.assertNotIn("option httpchk GET /replica", cfg)
         self.assertIn("on-marked-down shutdown-sessions", cfg)
 
     def test_server_haproxy_routes_four_readiness_healthy_nodes(self) -> None:
@@ -332,23 +334,51 @@ class ComposeContractTest(unittest.TestCase):
 
         self.assertIn("db_scalar()", sh)
         self.assertIn("--username=infranexum --dbname=infranexum", sh)
-        self.assertIn("admin_db_scalar()", sh)
+        self.assertIn("cluster_admin_db_scalar()", sh)
+        self.assertIn("application_admin_db_scalar()", sh)
         self.assertIn("--username=postgres --dbname=postgres", sh)
-        self.assertIn('streaming=$(admin_db_scalar "SELECT count(*) FROM pg_stat_replication', sh)
-        self.assertIn('synchronous=$(admin_db_scalar "SELECT count(*) FROM pg_stat_replication', sh)
+        self.assertIn("--username=postgres --dbname=infranexum", sh)
+        self.assertIn('streaming=$(cluster_admin_db_scalar "SELECT count(*) FROM pg_stat_replication', sh)
+        self.assertIn('synchronous=$(cluster_admin_db_scalar "SELECT count(*) FROM pg_stat_replication', sh)
+        self.assertIn('iam_history=$(application_admin_db_scalar "SELECT count(*) FROM infranexum_core.schema_history', sh)
         self.assertNotIn('streaming=$(db_scalar "SELECT count(*) FROM pg_stat_replication', sh)
 
         self.assertIn("function Invoke-DatabaseScalar", ps)
         self.assertIn("--username=infranexum --dbname=infranexum", ps)
-        self.assertIn("function Invoke-DatabaseAdminScalar", ps)
+        self.assertIn("function Invoke-ClusterDatabaseAdminScalar", ps)
+        self.assertIn("function Invoke-ApplicationDatabaseAdminScalar", ps)
         self.assertIn("--username=postgres --dbname=postgres", ps)
-        self.assertIn('[int](Invoke-DatabaseAdminScalar "SELECT count(*) FROM pg_stat_replication', ps)
+        self.assertIn("--username=postgres --dbname=infranexum", ps)
+        self.assertIn('[int](Invoke-ClusterDatabaseAdminScalar "SELECT count(*) FROM pg_stat_replication', ps)
+        self.assertIn('[int](Invoke-ApplicationDatabaseAdminScalar "SELECT count(*) FROM infranexum_core.schema_history', ps)
         self.assertNotIn('[int](Invoke-DatabaseScalar "SELECT count(*) FROM pg_stat_replication', ps)
 
         # Least privilege is preserved: the fix must not grant broad monitoring roles
         # to the application identity merely to make a developer smoke test pass.
         for role in ("pg_monitor", "pg_read_all_stats"):
             self.assertNotIn(f"GRANT {role.upper()}", bootstrap.upper())
+
+    def test_schema_diagnostics_never_query_application_objects_in_postgres_database(self) -> None:
+        """Regression: PostgreSQL schemas are database-local; IAM/history live in database infranexum."""
+        sh = (DOCKER / "dev-compose.sh").read_text(encoding="utf-8")
+        ps = (DOCKER / "dev-compose.ps1").read_text(encoding="utf-8")
+
+        for application_relation in (
+            "infranexum_core.schema_history",
+            "infranexum_iam.local_account",
+            "infranexum_iam.local_session",
+        ):
+            self.assertNotRegex(
+                sh,
+                rf"cluster_admin_db_scalar[^\n]*{re.escape(application_relation)}",
+            )
+            self.assertNotRegex(
+                ps,
+                rf"Invoke-ClusterDatabaseAdminScalar[^\n]*{re.escape(application_relation)}",
+            )
+
+        self.assertRegex(sh, r"application_admin_db_scalar[^\n]*infranexum_core\.schema_history")
+        self.assertRegex(ps, r"Invoke-ApplicationDatabaseAdminScalar[^\n]*infranexum_core\.schema_history")
 
     def test_posix_smoke_observes_replication_with_admin_role_when_application_stats_are_filtered(self) -> None:
         """Execute smoke with PostgreSQL-style statistics filtering for the application role."""
@@ -390,6 +420,12 @@ if [ "${1:-}" = compose ]; then
     run)
       all="$*"
       case "$all" in
+        *"SELECT count(*) FROM infranexum_core.schema_history WHERE migration_id IN ('0011','0012')"*) echo 2; exit 0 ;;
+        *"to_regclass('infranexum_iam.local_account')"*) echo 1; exit 0 ;;
+        *"to_regclass('infranexum_iam.local_session')"*) echo 1; exit 0 ;;
+        *"username='admin' AND must_change=TRUE AND status='ACTIVE'"*) echo 0; exit 0 ;;
+        *"SELECT count(*) FROM infranexum_iam.local_account"*) echo 1; exit 0 ;;
+        *"information_schema.tables"*"local_session"*) echo 1; exit 0 ;;
         *pg_stat_replication*)
           case "$all" in
             *--username=postgres*)
@@ -415,11 +451,15 @@ exit 70
 set -eu
 dump=''
 correlation=''
+output=''
+writeout=''
 url=''
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --dump-header) dump=$2; shift 2 ;;
     --header) correlation=${2#X-Correlation-ID: }; shift 2 ;;
+    --output) output=$2; shift 2 ;;
+    --write-out) writeout=$2; shift 2 ;;
     --fail|--silent|--show-error) shift ;;
     *) url=$1; shift ;;
   esac
@@ -431,10 +471,12 @@ case "$url" in
     [ -z "$dump" ] || printf 'HTTP/1.1 200 OK\r\nX-Correlation-ID: %s\r\n\r\n' "$correlation" > "$dump"
     printf '%s' '{"instanceId":"server-pro-2"}' ;;
   */api/v1/iam/organizations?limit=1)
-    [ -z "$dump" ] || printf 'HTTP/1.1 200 OK\r\nX-Correlation-ID: %s\r\n\r\n' "$correlation" > "$dump"
-    printf '%s' '[]' ;;
+    [ -z "$dump" ] || printf 'HTTP/1.1 401 Unauthorized\r\nX-Correlation-ID: %s\r\n\r\n' "$correlation" > "$dump"
+    body=$(printf '{"status":401,"correlation_id":"%s"}' "$correlation")
+    [ -z "$output" ] || printf '%s' "$body" > "$output"
+    if [ -n "$writeout" ]; then printf '%s' '401'; else printf '%s' "$body"; fi ;;
   */health/ready) printf '%s' '{"status":"UP"}' ;;
-  */runtime-config.json) printf '%s' '{"component":"web","version":"2.0.0-alpha.0.60","apiBaseUrl":"/api"}' ;;
+  */runtime-config.json) printf '%s' '{"component":"web","version":"2.0.0-alpha.0.67","apiBaseUrl":"/api"}' ;;
   *) echo "unexpected curl URL: $url" >&2; exit 70 ;;
 esac
 '''), encoding="utf-8")
@@ -451,7 +493,7 @@ esac
                 check=False,
             )
             self.assertEqual(0, result.returncode, result.stderr)
-            self.assertIn("compose-smoke: PASS (streaming=2 synchronous=1 Server=4 Web=2 OrganizationAPI=UP)", result.stdout)
+            self.assertIn("compose-smoke: PASS (streaming=2 synchronous=1 Server=4 Web=2 LocalAuth=ENFORCED CredentialLogin=SKIPPED_CHANGED)", result.stdout)
 
     def test_ha_smoke_waits_for_haproxy_writer_after_patroni_election(self) -> None:
         # Regression: Patroni leadership may precede HAProxy writer convergence.
@@ -531,9 +573,16 @@ if [ "${1:-}" = compose ]; then
       [ "${1:-}" != postgres-1 ] || : > "$state/failover"
       exit 0 ;;
     start) exit 0 ;;
+    logs) exit 0 ;;
     run)
       all="$*"
       case "$all" in
+        *"SELECT count(*) FROM infranexum_core.schema_history WHERE migration_id IN ('0011','0012')"*) echo 2; exit 0 ;;
+        *"to_regclass('infranexum_iam.local_account')"*) echo 1; exit 0 ;;
+        *"to_regclass('infranexum_iam.local_session')"*) echo 1; exit 0 ;;
+        *"username='admin' AND must_change=TRUE AND status='ACTIVE'"*) echo 0; exit 0 ;;
+        *"SELECT count(*) FROM infranexum_iam.local_account"*) echo 1; exit 0 ;;
+        *"information_schema.tables"*"local_session"*) echo 1; exit 0 ;;
         *pg_stat_replication*)
           case "$all" in *sync_state*) echo 1 ;; *) echo 2 ;; esac
           exit 0 ;;
@@ -563,11 +612,13 @@ exit 70
             curl.write_text(textwrap.dedent(r'''#!/bin/sh
 set -eu
 state=${INFRANEXUM_TEST_STATE:?}
-dump=''; correlation=''; url=''
+dump=''; correlation=''; output=''; writeout=''; url=''
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --dump-header) dump=$2; shift 2 ;;
     --header) correlation=${2#X-Correlation-ID: }; shift 2 ;;
+    --output) output=$2; shift 2 ;;
+    --write-out) writeout=$2; shift 2 ;;
     --fail|--silent|--show-error) shift ;;
     *) url=$1; shift ;;
   esac
@@ -589,10 +640,12 @@ case "$url" in
     [ -z "$dump" ] || printf 'HTTP/1.1 200 OK\r\nX-Correlation-ID: %s\r\n\r\n' "$correlation" > "$dump"
     printf '%s' '{"instanceId":"server-pro-2"}' ;;
   */api/v1/iam/organizations?limit=1)
-    [ -z "$dump" ] || printf 'HTTP/1.1 200 OK\r\nX-Correlation-ID: %s\r\n\r\n' "$correlation" > "$dump"
-    printf '%s' '[]' ;;
+    [ -z "$dump" ] || printf 'HTTP/1.1 401 Unauthorized\r\nX-Correlation-ID: %s\r\n\r\n' "$correlation" > "$dump"
+    body=$(printf '{"status":401,"correlation_id":"%s"}' "$correlation")
+    [ -z "$output" ] || printf '%s' "$body" > "$output"
+    if [ -n "$writeout" ]; then printf '%s' '401'; else printf '%s' "$body"; fi ;;
   */health/ready) printf '%s' '{"status":"UP"}' ;;
-  */runtime-config.json) printf '%s' '{"component":"web","version":"2.0.0-alpha.0.60","apiBaseUrl":"/api"}' ;;
+  */runtime-config.json) printf '%s' '{"component":"web","version":"2.0.0-alpha.0.67","apiBaseUrl":"/api"}' ;;
   *) echo "unexpected curl URL: $url" >&2; exit 70 ;;
 esac
 '''), encoding="utf-8")
@@ -617,6 +670,33 @@ esac
             self.assertEqual("3", attempts_file.read_text(encoding="utf-8"))
             self.assertGreaterEqual(int(server_attempts_file.read_text(encoding="utf-8")), 3)
             self.assertIn("compose-ha-smoke: PASS", result.stdout)
+
+    def test_patroni_health_probes_are_header_only_and_ha_smoke_rejects_python_transport_tracebacks(self) -> None:
+        sh = (DOCKER / "dev-compose.sh").read_text(encoding="utf-8")
+        ps = (DOCKER / "dev-compose.ps1").read_text(encoding="utf-8")
+        compose = (DOCKER / "compose.yaml").read_text(encoding="utf-8")
+        haproxy = (DOCKER / "haproxy-postgres.cfg").read_text(encoding="utf-8")
+
+        self.assertIn("option httpchk HEAD /primary", haproxy)
+        self.assertIn("option httpchk HEAD /replica", haproxy)
+        self.assertIn("curl --fail --silent --show-error --head", compose)
+        self.assertIn("curl --silent --head --output /dev/null", sh)
+        self.assertIn("curl --silent --head --output /dev/null", ps)
+        for text in (sh, ps):
+            self.assertIn("ConnectionResetError:", text)
+            self.assertIn("BrokenPipeError:", text)
+            self.assertIn("Traceback", text)
+            self.assertIn("PatroniPythonErrors=0", text)
+
+    def test_smoke_proves_bootstrap_credential_login_when_password_is_still_unmodified(self) -> None:
+        sh = (DOCKER / "dev-compose.sh").read_text(encoding="utf-8")
+        ps = (DOCKER / "dev-compose.ps1").read_text(encoding="utf-8")
+        for text in (sh, ps):
+            self.assertIn("must_change", text)
+            self.assertIn("INX_SESSION", text)
+            self.assertIn("INX_XSRF", text)
+            self.assertIn("/api/v1/iam/local-auth/session", text)
+            self.assertIn("CredentialLogin", text)
 
     def test_ha_smoke_http_router_retries_are_bounded_and_idempotent(self) -> None:
         sh = (DOCKER / "dev-compose.sh").read_text(encoding="utf-8")
@@ -696,6 +776,44 @@ esac
         self.assertIn('$stdout -split "`r?`n"', block)
         self.assertNotIn("2>&1", block)
 
+    def test_smoke_captures_expected_401_as_response_and_validates_correlation_contract(self) -> None:
+        ps = (DOCKER / "dev-compose.ps1").read_text(encoding="utf-8")
+        sh = (DOCKER / "dev-compose.sh").read_text(encoding="utf-8")
+        self.assertIn("PowerShell 7 or later is required", ps)
+        self.assertIn("-SkipHttpErrorCheck", ps)
+        self.assertIn("$anonymousResponse.StatusCode", ps)
+        self.assertIn("$anonymousResponse.Headers['X-Correlation-ID']", ps)
+        self.assertIn("$problemCorrelationProperty", ps)
+        self.assertIn("$problemCorrelation", ps)
+        self.assertIn("body='$anonymousRawBody'", ps)
+        self.assertIn("function Convert-WebResponseContentToText", ps)
+        self.assertIn("$Content -is [byte[]]", ps)
+        self.assertIn("[System.Text.Encoding]::UTF8.GetString($Content)", ps)
+        self.assertIn("Convert-WebResponseContentToText $anonymousResponse.Content", ps)
+        self.assertNotIn("$anonymousRawBody = [string]$anonymousResponse.Content", ps)
+        smoke_block = ps.split("function Invoke-Smoke", 1)[1].split("function Get-PatroniPrimaryService", 1)[0]
+        self.assertNotIn("Exception.Response.Headers", smoke_block)
+        self.assertIn('grep -Eiq "^X-Correlation-ID:', sh)
+        self.assertIn('grep -Fq \"\\\"correlation_id\\\":\\\"$correlation_id\\\"\"', sh)
+        auth_filter = (ROOT / "src/applications/server/main/io/infranexum/server/identity/LocalAuthenticationFilter.java").read_text(encoding="utf-8")
+        self.assertIn("response.resetBuffer()", auth_filter)
+        self.assertIn("response.setContentLength(body.length)", auth_filter)
+        self.assertIn("response.flushBuffer()", auth_filter)
+        self.assertIn("correlation_id", auth_filter)
+        self.assertIn("trace_id", auth_filter)
+
+    def test_powershell_http_body_normalizer_decodes_binary_content_before_json_parsing(self) -> None:
+        """Regression: PowerShell may expose application/problem+json as bytes."""
+        ps = (DOCKER / "dev-compose.ps1").read_text(encoding="utf-8")
+        block = ps.split("function Convert-WebResponseContentToText {", 1)[1].split("function Assert-Repository {", 1)[0]
+        self.assertIn("$Content -is [byte[]]", block)
+        self.assertIn("[System.Text.Encoding]::UTF8.GetString($Content)", block)
+        self.assertIn("$Content -is [System.Net.Http.HttpContent]", block)
+        self.assertIn("$Content -is [System.IO.Stream]", block)
+        self.assertIn("$allBytes", block)
+        self.assertIn("[byte[]]$items", block)
+        self.assertNotIn("return ($Content | Out-String)", block)
+
     def test_powershell_sql_uses_environment_transport_not_nested_escaping(self) -> None:
         ps = (DOCKER / "dev-compose.ps1").read_text(encoding="utf-8")
         block = ps.split("function Invoke-DatabaseScalar", 1)[1].split("function New-DatabaseBackup", 1)[0]
@@ -727,14 +845,23 @@ esac
             self.assertEqual(0, result.returncode, f"{name}: {result.stderr}")
 
 
-    def test_migration_runner_covers_all_four_digit_catalogue_ids(self) -> None:
+    def test_migration_runner_is_catalogue_driven_and_covers_repair_migration(self) -> None:
         script = (DOCKER / "migrate-postgresql.sh").read_text(encoding="utf-8")
-        self.assertIn(
-            '"$migration_root"/[0-9][0-9][0-9][0-9]-*',
-            script,
-        )
+        self.assertIn('catalogue="$migration_root/catalogue.yaml"', script)
+        self.assertIn("awk '$1 == \"path:\" { print $2 }'", script)
+        self.assertIn('migration directory is not declared in catalogue'.lower(), script.lower())
         self.assertNotIn('"$migration_root"/000*', script)
-        self.assertTrue((ROOT / "src/distribution/migrations/0010-organization-foundation").is_dir())
+        self.assertTrue((ROOT / "src/distribution/migrations/0011-local-identity-foundation").is_dir())
+        self.assertTrue((ROOT / "src/distribution/migrations/0012-local-identity-repair").is_dir())
+
+    def test_developer_up_replays_one_shot_bootstrap_without_deleting_volumes(self) -> None:
+        ps = (DOCKER / "dev-compose.ps1").read_text(encoding="utf-8")
+        sh = (DOCKER / "dev-compose.sh").read_text(encoding="utf-8")
+        self.assertIn('rm --stop --force migrate db-bootstrap secret-init', ps)
+        self.assertIn('rm --stop --force migrate db-bootstrap secret-init', sh)
+        for text in (ps, sh):
+            up_line = next(line for line in text.splitlines() if "'up'" in line or line.strip().startswith('up)'))
+            self.assertNotIn('--volumes', up_line)
 
     def test_required_docker_files_exist_and_are_executable_where_applicable(self) -> None:
         for name in ("patroni-postgres.Dockerfile", "web.Dockerfile", "haproxy-postgres.cfg", "haproxy-server.cfg", "haproxy-web.cfg"):
@@ -759,6 +886,51 @@ esac
             entrypoint.index('exec su-exec postgres'),
         )
 
+
+
+    def test_local_authentication_is_enabled_only_for_developer_pro_topology(self) -> None:
+        for name in SERVER:
+            env = self.services[name]["environment"]
+            self.assertEqual("true", env["INFRANEXUM_LOCAL_AUTH_ENABLED"])
+            self.assertEqual("false", env["INFRANEXUM_LOCAL_AUTH_COOKIE_SECURE"])
+            self.assertEqual("admin", env["INFRANEXUM_BOOTSTRAP_ADMIN_USERNAME"])
+            self.assertEqual("/run/infranexum-secrets/local-admin-password", env["INFRANEXUM_BOOTSTRAP_ADMIN_PASSWORD_FILE"])
+        for name in WEB:
+            self.assertEqual("true", self.services[name]["environment"]["INFRANEXUM_WEB_LOCAL_AUTH_ENABLED"])
+
+    def test_local_admin_bootstrap_secret_is_generated_in_runtime_secret_volume(self) -> None:
+        script = (DOCKER / "init-secrets.sh").read_text(encoding="utf-8")
+        self.assertIn("local-admin-password", script)
+        self.assertIn('chmod 0444 "$tmp"', script)
+        self.assertNotIn("echo $local_admin_password", script)
+        self.assertNotIn("set -x", script)
+
+    def test_credentials_command_is_explicit_and_never_part_of_smoke_output(self) -> None:
+        ps = (DOCKER / "dev-compose.ps1").read_text(encoding="utf-8")
+        sh = (DOCKER / "dev-compose.sh").read_text(encoding="utf-8")
+        for text in (ps, sh):
+            self.assertIn("credentials", text)
+            self.assertIn("local-admin-password", text)
+            self.assertIn("Password:", text)
+            self.assertIn("must be changed at first sign-in", text)
+        self.assertNotIn("local-admin-password", "\n".join(line for line in ps.splitlines() if "compose-smoke: PASS" in line))
+        self.assertNotIn("local-admin-password", "\n".join(line for line in sh.splitlines() if "compose-smoke: PASS" in line))
+
+    def test_smoke_proves_local_authentication_boundary_is_enforced(self) -> None:
+        ps = (DOCKER / "dev-compose.ps1").read_text(encoding="utf-8")
+        sh = (DOCKER / "dev-compose.sh").read_text(encoding="utf-8")
+        for text in (ps, sh):
+            self.assertIn("LocalAuth=ENFORCED", text)
+            self.assertIn("/api/v1/iam/organizations?limit=1", text)
+            self.assertIn("401", text)
+        self.assertTrue((ROOT / "src/distribution/migrations/0011-local-identity-foundation").is_dir())
+
+    def test_local_auth_openapi_documents_cookie_and_csrf_boundaries(self) -> None:
+        spec = yaml.safe_load((ROOT / "src/applications/server/resources/openapi/local-auth.yaml").read_text(encoding="utf-8"))
+        self.assertIn("/api/v1/iam/local-auth/session", spec["paths"])
+        self.assertEqual("INX_SESSION", spec["components"]["securitySchemes"]["LocalSessionCookie"]["name"])
+        self.assertEqual("X-CSRF-Token", spec["components"]["parameters"]["CsrfToken"]["name"])
+        self.assertIn("writeOnly", str(spec["components"]["schemas"]["LoginRequest"]))
 
 
 if __name__ == "__main__":

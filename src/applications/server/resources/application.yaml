@@ -7,7 +7,7 @@ server:
 spring:
   application:
     name: infranexum-server
-    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.60}
+    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.67}
   datasource:
     url: ${INFRANEXUM_DATABASE_URL:}
     username: ${INFRANEXUM_DATABASE_USERNAME:}
@@ -60,12 +60,25 @@ infranexum:
   organization:
     api-enabled: ${INFRANEXUM_ORGANIZATION_API_ENABLED:false}
     environment: ${INFRANEXUM_ENVIRONMENT:production}
+  identity:
+    local:
+      enabled: ${INFRANEXUM_LOCAL_AUTH_ENABLED:false}
+      environment: ${INFRANEXUM_ENVIRONMENT:production}
+      cookie-secure: ${INFRANEXUM_LOCAL_AUTH_COOKIE_SECURE:true}
+      bootstrap-username: ${INFRANEXUM_BOOTSTRAP_ADMIN_USERNAME:admin}
+      bootstrap-display-name: ${INFRANEXUM_BOOTSTRAP_ADMIN_DISPLAY_NAME:Local Administrator}
+      bootstrap-password-file: ${INFRANEXUM_BOOTSTRAP_ADMIN_PASSWORD_FILE:}
+      lock-threshold: ${INFRANEXUM_LOCAL_AUTH_LOCK_THRESHOLD:5}
+      lock-duration: ${INFRANEXUM_LOCAL_AUTH_LOCK_DURATION:PT15M}
+      idle-timeout: ${INFRANEXUM_LOCAL_AUTH_IDLE_TIMEOUT:PT30M}
+      absolute-timeout: ${INFRANEXUM_LOCAL_AUTH_ABSOLUTE_TIMEOUT:PT12H}
+      touch-interval: ${INFRANEXUM_LOCAL_AUTH_TOUCH_INTERVAL:PT1M}
   server:
     instance-id: ${INFRANEXUM_SERVER_INSTANCE_ID:server-local-1}
     mode: ${INFRANEXUM_SERVER_MODE:STANDALONE}
     region: ${INFRANEXUM_SERVER_REGION:local}
     site: ${INFRANEXUM_SERVER_SITE:local}
-    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.60}
+    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.67}
     architecture-baseline: ${INFRANEXUM_ARCHITECTURE_BASELINE:2.0.0-draft.21}
 
 logging:
@@ -81,7 +94,7 @@ logging:
         include-hashes: true
     ecs:
       service:
-        version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.60}
+        version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.67}
         environment: ${INFRANEXUM_ENVIRONMENT:local}
         node-name: ${INFRANEXUM_SERVER_INSTANCE_ID:server-local-1}
 
@@ -106,7 +119,7 @@ management:
     map-environment-variables: false
     resource-attributes:
       service.namespace: infranexum
-      service.version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.60}
+      service.version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.67}
       service.instance.id: ${INFRANEXUM_SERVER_INSTANCE_ID:server-local-1}
       deployment.environment.name: ${INFRANEXUM_ENVIRONMENT:local}
     tracing:

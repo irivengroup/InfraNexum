@@ -71,6 +71,12 @@ class MigrationCheckerTest(unittest.TestCase):
         self.write_catalogue({"entries": "invalid"})
         self.assertEqual({"CHECK-MIG-CATALOGUE-002"}, self.ids())
 
+    def test_orphan_migration_directory_is_blocked(self) -> None:
+        orphan = self.root / "9998-orphan"
+        orphan.mkdir()
+        (orphan / "migration.yaml").write_text("id: '9998'\n", encoding="utf-8")
+        self.assertIn("CHECK-MIG-CATALOGUE-004", self.ids())
+
     def test_catalogue_entries_require_string_id_and_path(self) -> None:
         self.write_catalogue({"entries": [None, {"id": 1, "path": "x"}, {"id": "0001"}]})
         self.assertEqual({"CHECK-MIG-CATALOGUE-003"}, self.ids())
