@@ -3,6 +3,8 @@ package io.infranexum.server.identityaccess;
 import io.infranexum.adapters.persistence.jdbc.JdbcAuditJournal;
 import io.infranexum.adapters.persistence.jdbc.JdbcDatabaseDialect;
 import io.infranexum.adapters.persistence.jdbc.JdbcIdentityAccessRepository;
+import io.infranexum.adapters.persistence.jdbc.JdbcOrganizationRepository;
+import io.infranexum.adapters.persistence.jdbc.JdbcSubdivisionRepository;
 import io.infranexum.adapters.persistence.jdbc.JdbcLocalIdentityRepository;
 import io.infranexum.adapters.persistence.jdbc.JdbcTransactionalEventStore;
 import io.infranexum.core.audit.AuditJournal;
@@ -13,6 +15,7 @@ import io.infranexum.identity.access.application.IdentityAccessAdminService;
 import io.infranexum.identity.access.application.RbacAuthorizationService;
 import io.infranexum.identity.access.domain.IdentityUser;
 import io.infranexum.identity.access.ports.IdentityAccessFeaturePolicy;
+import io.infranexum.identity.access.ports.OrganizationScopeReferencePort;
 import io.infranexum.server.identity.LocalAuthRuntimeProperties;
 import io.infranexum.identity.local.application.LocalAuthenticationService;
 import io.infranexum.server.identityaccess.cli.IdentityAccessCli;
@@ -65,14 +68,30 @@ public class IdentityAccessRuntimeConfiguration {
     }
 
     @Bean
+    OrganizationScopeReferencePort identityAccessOrganizationScopeReferences(
+            DataSource dataSource,
+            TransactionalEventStore eventStore,
+            PersistenceRuntimeProperties persistence) {
+        if (!(eventStore instanceof JdbcTransactionalEventStore jdbcEventStore)) {
+            throw new IllegalStateException("IAM organization references require durable JDBC persistence");
+        }
+        JdbcDatabaseDialect databaseDialect = dialect(persistence.mode());
+        return new OrganizationScopeReferenceAdapter(
+                new JdbcOrganizationRepository(dataSource, jdbcEventStore, databaseDialect),
+                new JdbcSubdivisionRepository(dataSource, jdbcEventStore, databaseDialect));
+    }
+
+    @Bean
     IdentityAccessAdminService identityAccessAdministrationService(
             JdbcIdentityAccessRepository repository,
             IdentityAccessFeaturePolicy features,
+            OrganizationScopeReferencePort organizationScopes,
             TransactionalEventStore events,
             AuditJournal audit,
             @Qualifier("platformClock") Clock clock) {
         return new IdentityAccessAdminService(
-                repository, features, events, audit, new UuidV7Generator(clock, new SecureRandom()), clock);
+                repository, features, organizationScopes, events, audit,
+                new UuidV7Generator(clock, new SecureRandom()), clock);
     }
 
     @Bean

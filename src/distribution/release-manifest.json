@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.68",
-  "profile": "pgm-03-e03-rbac-foundation-pro-ha-local-development",
+  "version": "2.0.0-alpha.0.69",
+  "profile": "pgm-06-e01-rsot-authority-foundation-pro-ha-local-development",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -14,7 +14,7 @@
     },
     {
       "id": "infranexum-server",
-      "status": "source-server-pgm03-e03-rbac-users-groups-roles-permissions-scoped-temporal-assignments-deny-by-default-http-pep-server-owned-cli-local-auth-bootstrap-platform-admin-audit-outbox-jdk25-compilation-observed-spring-boot-canonical-mainclass-fixed-runtime-and-jacoco-gates-pending"
+      "status": "source-server-alpha069-rbac-preserved-iam-weak-organization-reference-validation-rsot-read-composition-postgresql-oracle-pgm06-e01-target-jdk25-maven-jacoco-and-docker-runtime-gates-pending"
     },
     {
       "id": "infranexum-agent",
@@ -37,8 +37,8 @@
       "status": "postgresql-oracle-jdbc-workers-local-identity-session-persistence-security-epoch-transient-connectivity-classification-durable-nullable-uuidv7-correlation-entitlements-revocations-json-binding-and-contextual-domain-errors-hosted-jdk25-jacoco-proof-pending"
     },
     {
-      "id": "migration-catalogue-0001-0013",
-      "status": "paired-catalogue-postgresql-oracle-through-0013-including-identity-access-rbac-foundation-approved-permission-seed-same-id-local-account-projection-system-platform-admin-bootstrap-and-nondestructive-rbac-rollback"
+      "id": "migration-catalogue-0001-0015",
+      "status": "paired-catalogue-postgresql-oracle-through-0015-including-0014-cross-context-iam-organization-fk-removal-with-weak-reference-preservation-and-0015-isolated-rsot-canonical-authority-foundation"
     },
     {
       "id": "ci-foundation",
@@ -66,22 +66,26 @@
     },
     {
       "id": "identity-access-rbac-v1",
-      "status": "pgm-03-e03-users-memberships-groups-nesting-cycle-guard-roles-permissions-temporal-scopes-soft-delete-system-protection-api-cli-web-deny-by-default-audit-outbox-migration0013; abac-pdp-sod-deferred-to-pgm03-e04"
+      "status": "pgm-03-e03-rbac-preserved; pgm-04-e02-weak-organization-subdivision-references-validated-via-public-organization-ports-no-cross-context-fk; abac-pdp-sod-deferred-to-pgm03-e04"
+    },
+    {
+      "id": "rsot-authority-foundation-v1",
+      "status": "pgm-06-e01-canonical-identity-lifecycle-nine-row-draft21-authority-matrix-ten-provider-context-map-versioned-temporal-bounded-attribute-authority-policies-fail-closed-resolution-isolated-postgresql-oracle-schema-migration0015-jdbc-read-repository-server-composition; ingestion-reconciliation-api-cli-web-and-abac-pdp-sod-deferred"
     }
   ],
   "validation_reports": [],
   "validation_summary": {
-    "source_inventory_paths": 724,
+    "source_inventory_paths": 764,
     "source_integrity_tests": 45,
     "source_integrity_coverage_percent": 100,
     "source_integrity_violations": 0,
-    "python_tests": 312,
-    "architecture_tests": 69,
+    "python_tests": 335,
+    "architecture_tests": 79,
     "architecture_violations": 0,
     "toolchain_tests": 25,
     "toolchain_coverage_percent": 99,
     "toolchain_violations": 0,
-    "migration_tests": 50,
+    "migration_tests": 61,
     "migration_coverage_percent": 99,
     "migration_violations": 0,
     "eventing_tests": 10,
@@ -99,7 +103,7 @@
     "audit_tests": 8,
     "audit_coverage_percent": 100,
     "audit_violations": 0,
-    "java_offline_smoke_targets": 11,
+    "java_offline_smoke_targets": 12,
     "workers_module_tests_defined": 52,
     "jdbc_workers_scripted_contract_groups": 11,
     "jdbc_workers_junit_tests_defined": 11,
@@ -110,29 +114,29 @@
     "web_branch_coverage_percent": 98.39,
     "web_function_coverage_percent": 100,
     "repository_syntax_counts": {
-      "python": 60,
-      "json": 54,
-      "yaml": 37,
-      "xml": 13,
+      "python": 62,
+      "json": 57,
+      "yaml": 41,
+      "xml": 14,
       "javascript": 30,
       "go": 8,
       "shell": 7,
-      "java": 409
+      "java": 431
     },
     "archive_compatibility_tests": 12,
     "archive_compatibility_coverage_percent": 100,
     "archive_compatibility_violations": 0,
-    "archive_compatibility_max_project_path": 114,
-    "archive_compatibility_max_member_path": 142,
+    "archive_compatibility_max_project_path": 120,
+    "archive_compatibility_max_member_path": 148,
     "entitlements_module_tests_defined": 49,
     "audit_module_tests_defined": 21,
-    "architecture_coverage_status": "NON_EXECUTED_ALPHA068_AGGREGATED_COVERAGE_TIMEOUT_180S_FUNCTIONAL_65_OF_65_PASS",
-    "architecture_functional_tests": 67,
-    "jdbc_module_tests_defined": 53,
+    "architecture_coverage_status": "NON_EXECUTED_ALPHA069_AGGREGATED_COVERAGE_TIMEOUT_FUNCTIONAL_79_OF_79_PASS",
+    "architecture_functional_tests": 79,
+    "jdbc_module_tests_defined": 63,
     "jdbc_postgresql_live_tests_defined": 18,
-    "server_module_tests_defined": 92,
+    "server_module_tests_defined": 106,
     "server_capability_configuration_contract_local": "EXECUTED_JAVA21_STRICT_HARNESS",
-    "agent_target_toolchain_status": "NON_EXECUTED_LOCAL_TARGET_GO_1_26_5_TOOLCHAIN_DOWNLOAD_BLOCKED_BY_DISABLED_NETWORK",
+    "agent_target_toolchain_status": "NON_EXECUTED_LOCAL_TARGET_GO_1_26_5_LOCAL_GO_1_23_2",
     "jdbc_deterministic_harness_tests_executed": 33,
     "jdbc_explicit_source_branch_gaps_diagnostic": 0,
     "server_workers_runtime_tests_defined": 10,
@@ -306,26 +310,29 @@
     "docker_runtime_alpha068": "NON_EXECUTED_LOCAL_DOCKER_COMMAND_UNAVAILABLE_POSTGRESQL_ORACLE_RUNTIME_AND_SMOKE_REVALIDATION_REQUIRED",
     "archive_compatibility_unit_alpha068": "EXECUTED_12_OF_12_100_PERCENT",
     "archive_compatibility_alpha068": "EXECUTED_FINAL_ARCHIVE_ZERO_VIOLATIONS",
-    "archive_post_extract_alpha068": "EXECUTED_FINAL_ARCHIVE_726_OF_726_PACKAGED_BYTE_CHECKSUMS_SOURCE_INTEGRITY_ZERO_VIOLATIONS_ARCHITECTURE_PASS_MIGRATIONS_ZERO_VIOLATIONS_COMPOSE_63_OF_63_WEB_79_OF_79_LINE99_68_BRANCH98_39_FUNCTION100_SMOKE_PASS_NO_GENERATED_DIRS_EXECUTABLE_MODES_PRESERVED_GIT_BLOB_MANIFEST_DIRECT_COMPARE_722_OF_725_WITH_3_EXPECTED_EOL_FILTERED_WINDOWS_FILES"
+    "archive_post_extract_alpha068": "EXECUTED_FINAL_ARCHIVE_726_OF_726_PACKAGED_BYTE_CHECKSUMS_SOURCE_INTEGRITY_ZERO_VIOLATIONS_ARCHITECTURE_PASS_MIGRATIONS_ZERO_VIOLATIONS_COMPOSE_63_OF_63_WEB_79_OF_79_LINE99_68_BRANCH98_39_FUNCTION100_SMOKE_PASS_NO_GENERATED_DIRS_EXECUTABLE_MODES_PRESERVED_GIT_BLOB_MANIFEST_DIRECT_COMPARE_722_OF_725_WITH_3_EXPECTED_EOL_FILTERED_WINDOWS_FILES",
+    "rsot_module_tests_defined": 10,
+    "identity_access_module_tests_defined": 23,
+    "rsot_jdbc_server_strict_harness_tests_executed": 22
   },
   "source_layout": "All production solution spaces are contained below src/; Java, Go and Web tests are repository-level under tests/; canonical relative paths are limited to 120 characters and path components to 80 characters.",
   "source_integrity": {
     "canonical_inventory": "source-inventory.json",
     "git_blob_checksums": "source-files.sha256",
-    "tracked_files": 726,
-    "source_recorded_files": 725,
+    "tracked_files": 766,
+    "source_recorded_files": 765,
     "staged_snapshot_required": true,
     "pre_commit_hook": ".githooks/pre-commit"
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.68",
-    "archive_entries": 726,
+    "prefix": "infranexum-2.0.0-alpha.0.69",
+    "archive_entries": 766,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
-    "source_recorded_files": 725,
+    "source_recorded_files": 765,
     "release_checksum_manifest": "../../artifacts/validation/release-files.sha256"
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.68-validation-evidence.zip",
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.69-validation-evidence.zip",
   "runtime_validation": {
     "web_local_runtime_alpha058": "EXECUTED_38_OF_38_LINE_99_67_BRANCH_98_33_FUNCTION_100_PROCESS_SMOKE_PASS_LOCAL_NODE22_BOOTSTRAP5_3_6_PROFESSIONAL_ADMIN_DASHBOARD_THEME_TOGGLE_TRUTHFUL_KPI_SAME_ORIGIN_ORGANIZATION_UI",
     "architecture_functional_alpha058": "EXECUTED_57_OF_57",
@@ -460,7 +467,31 @@
     "migration_alpha068": "EXECUTED_50_OF_50_STATIC_MIGRATION_TESTS_PASS_POSTGRESQL_ORACLE_LIVE_EXECUTION_PENDING",
     "compose_contract_alpha068": "EXECUTED_63_OF_63_INCLUDING_MIGRATION0013_AND_BOOTSTRAP_PLATFORM_ADMIN_SMOKE_CONTRACTS_REAL_DOCKER_RUNTIME_PENDING",
     "maven_target_jdk25_alpha068": "EXECUTED_USER_DOCKER_DESKTOP_TEMURIN25_0_4_MAVEN3_9_16_PACKAGE_FAILED_SERVER_MISSING_PERMISSIONCODES_IMPORT_FIXED_REV1_REVALIDATION_REQUIRED",
-    "identity_access_controller_permissioncodes_import_regression_alpha068_rev1": "EXECUTED_8_OF_8_TARGETED_RBAC_ARCHITECTURE_TESTS_PASS_IMPORT_AND_SPRING422_DEPRECATION_GUARDS_FULL_ARCHITECTURE_FUNCTIONAL_67_OF_67_PASS"
+    "identity_access_controller_permissioncodes_import_regression_alpha068_rev1": "EXECUTED_8_OF_8_TARGETED_RBAC_ARCHITECTURE_TESTS_PASS_IMPORT_AND_SPRING422_DEPRECATION_GUARDS_FULL_ARCHITECTURE_FUNCTIONAL_67_OF_67_PASS",
+    "docker_runtime_alpha068": "EXECUTED_USER_DOCKER_DESKTOP_PRO_UP_SMOKE_AND_HA_SMOKE_REPORTED_OK_BY_OPERATOR_AFTER_REV2",
+    "rsot_foundation_alpha069": "EXECUTED_LOCAL_JDK21_XLINT_ALL_WERROR_RSOT_AND_JDBC_SMOKES_TARGET_JDK25_JUNIT_JACOCO_PENDING",
+    "migration_alpha069": "EXECUTED_61_OF_61_99_PERCENT_ZERO_VIOLATIONS_INCLUDING_0014_0015_LIVE_POSTGRESQL_ORACLE_PENDING",
+    "architecture_alpha069": "EXECUTED_TARGETED_AND_ARCHITECTURE_AS_CODE_PASS_CURRENT_FINAL_COUNTS_PENDING_RELEASE_CLOSURE",
+    "docker_runtime_alpha069": "NON_EXECUTED_LOCAL_NO_DOCKER_ENGINE_USER_DOCKER_DESKTOP_PRO_UP_SMOKE_HA_SMOKE_REQUIRED_WITHOUT_VOLUME_RESET",
+    "source_integrity_alpha069": "EXECUTED_45_OF_45_100_PERCENT_STAGED_SNAPSHOT_765_GIT_BLOB_CHECKSUMS_ZERO_VIOLATIONS",
+    "architecture_functional_alpha069": "EXECUTED_79_OF_79",
+    "architecture_check_alpha069": "EXECUTED_PASS_ZERO_VIOLATIONS",
+    "architecture_coverage_alpha069": "NON_EXECUTED_AGGREGATED_COVERAGE_RUNNER_TIMEOUT_FUNCTIONAL_79_OF_79_EXECUTED_SEPARATELY",
+    "toolchain_alpha069": "EXECUTED_25_OF_25_99_PERCENT_ZERO_VIOLATIONS",
+    "eventing_alpha069": "EXECUTED_10_OF_10_100_PERCENT_ZERO_VIOLATIONS",
+    "persistence_alpha069": "EXECUTED_12_OF_12_98_PERCENT_ZERO_VIOLATIONS",
+    "capabilities_alpha069": "EXECUTED_10_OF_10_99_PERCENT_ZERO_VIOLATIONS",
+    "entitlements_alpha069": "EXECUTED_10_OF_10_100_PERCENT_ZERO_VIOLATIONS",
+    "audit_alpha069": "EXECUTED_8_OF_8_100_PERCENT_ZERO_VIOLATIONS",
+    "compose_contract_alpha069": "EXECUTED_63_OF_63",
+    "web_local_runtime_alpha069": "EXECUTED_LOCAL_NODE22_16_0_79_OF_79_LINE99_68_BRANCH98_39_FUNCTION100_PROCESS_SMOKE_PASS_TARGET_NODE24_18_1_PENDING",
+    "java_offline_smokes_alpha069": "EXECUTED_12_OF_12_LOCAL_JAVA21_XLINT_ALL_WERROR",
+    "rsot_strict_harness_alpha069": "EXECUTED_LOCAL_JAVA21_XLINT_ALL_WERROR_22_ASSERTION_SCENARIOS_RSOT_DOMAIN_JDBC_ORGANIZATION_WEAK_REFERENCE_AND_RSOT_COMPOSITION_PASS",
+    "maven_target_jdk25_alpha069": "NON_EXECUTED_LOCAL_JDK21_TARGET_TEMURIN25_0_4_MAVEN_JUNIT_JACOCO_REQUIRED",
+    "web_target_node24_alpha069": "NON_EXECUTED_LOCAL_NODE22_16_0_TARGET_NODE24_18_1_REQUIRED",
+    "agent_target_go1265_alpha069": "NON_EXECUTED_LOCAL_GO1_23_2_TARGET_GO1_26_5_REQUIRED",
+    "postgresql_live_migration_alpha069": "NON_EXECUTED_LOCAL_DOCKER_UNAVAILABLE_UPGRADE_FROM_ALPHA068_PERSISTED_VOLUME_MUST_APPLY_0014_0015",
+    "oracle_live_migration_alpha069": "NON_EXECUTED_LOCAL_ORACLE_UNAVAILABLE_0014_0015_APPLY_VERIFY_ROLLBACK_REQUIRED"
   },
-  "runtime_validation_note": "alpha.0.68 implements PGM-03-E03 RBAC foundation. User Docker Desktop execution proved Temurin 25.0.4+7 and Maven 3.9.16 reach the Server module, where the initial candidate failed on a missing PermissionCodes import in IdentityAccessController. The import is fixed in this revised candidate and protected by a dedicated architecture regression; Docker Desktop rebuild, JUnit/JaCoCo under JDK25, Node 24.18.1, Go 1.26.5 and live PostgreSQL/Oracle validation remain mandatory before promotion."
+  "runtime_validation_note": "alpha.0.69 remediates IAM→Organization cross-bounded-context foreign keys through additive migration 0014 and public-port weak-reference validation, then establishes the isolated PGM-06-E01 RSOT canonical identity/authority foundation through migration 0015. The prior alpha.0.68 rev2 PRO Docker up/smoke/ha-smoke gates were reported successful by the operator. Current local deterministic gates are green except the aggregated Architecture coverage runner, which times out while all 79 functional tests pass separately. Target Temurin 25.0.4 Maven/JUnit/JaCoCo, Node 24.18.1, Go 1.26.5, Docker Desktop upgrade/runtime, live PostgreSQL 0014/0015 and live Oracle 0014/0015 remain mandatory before alpha.0.69 promotion."
 }

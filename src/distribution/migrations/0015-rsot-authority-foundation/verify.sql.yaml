@@ -1,0 +1,14 @@
+schema: infranexum.migration-verification/v1
+checks:
+- id: rsot-authority-matrix-exact-cardinality
+  postgresql: "SELECT COUNT(*) = 9 AND MIN(position_no)=1 AND MAX(position_no)=9 FROM infranexum_rsot.authority_matrix WHERE matrix_version='2.0.0-draft.21'"
+  oracle: "SELECT CASE WHEN COUNT(*)=9 AND MIN(POSITION_NO)=1 AND MAX(POSITION_NO)=9 THEN 1 ELSE 0 END FROM INFRANEXUM_RSOT_AUTHORITY_MATRIX WHERE MATRIX_VERSION='2.0.0-draft.21'"
+- id: rsot-context-map-forbids-direct-storage-writes
+  postgresql: "SELECT COUNT(*) = 10 AND COUNT(*) FILTER (WHERE direct_storage_write_allowed) = 0 FROM infranexum_rsot.context_relationship"
+  oracle: "SELECT CASE WHEN COUNT(*)=10 AND SUM(DIRECT_STORAGE_WRITE_ALLOWED)=0 THEN 1 ELSE 0 END FROM INFRANEXUM_RSOT_CONTEXT_RELATIONSHIP"
+- id: rsot-implicit-global-authority-absent
+  postgresql: "SELECT COUNT(*) = 0 FROM infranexum_rsot.attribute_authority_policy WHERE object_type IN ('*','.*') OR attribute_path IN ('*','.*')"
+  oracle: "SELECT CASE WHEN COUNT(*)=0 THEN 1 ELSE 0 END FROM INFRANEXUM_RSOT_ATTRIBUTE_AUTHORITY_POLICY WHERE OBJECT_TYPE IN ('*','.*') OR ATTRIBUTE_PATH IN ('*','.*')"
+- id: rsot-canonical-storage-has-no-external-foreign-key
+  postgresql: "SELECT COUNT(*) = 0 FROM pg_constraint c JOIN pg_class t ON t.oid=c.conrelid JOIN pg_namespace n ON n.oid=t.relnamespace JOIN pg_class rt ON rt.oid=c.confrelid JOIN pg_namespace rn ON rn.oid=rt.relnamespace WHERE c.contype='f' AND n.nspname='infranexum_rsot' AND rn.nspname<>'infranexum_rsot'"
+  oracle: "SELECT CASE WHEN COUNT(*)=0 THEN 1 ELSE 0 END FROM USER_CONSTRAINTS WHERE TABLE_NAME LIKE 'INFRANEXUM_RSOT_%' AND CONSTRAINT_TYPE='R'"

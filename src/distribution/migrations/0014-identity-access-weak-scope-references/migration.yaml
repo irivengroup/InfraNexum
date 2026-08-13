@@ -1,0 +1,26 @@
+schema: infranexum.migration/v1
+id: '0014'
+name: identity-access-weak-scope-references
+owner_context: identity-access
+dependencies:
+- '0013'
+preconditions:
+- identity-access-rbac-foundation-declared
+postconditions:
+- iam-organization-identifiers-are-weak-references
+- cross-context-foreign-keys-removed
+- application-reference-validation-required
+recovery: rerun-idempotent-constraint-removal-after-correcting-database-connectivity
+rollback: non-restorative-by-design-inter-context-foreign-keys-remain-forbidden
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 15
+checksums:
+  postgresql.sql: 5de148416631d72383cee3800dc460243b067762f7ac9e532ba3e82a6c3872a8
+  oracle.sql: de9a4136be0dd7ff5cc93ce19165c52fc1e1f6c68f804d33f96333fdbb04269f
+  rollback/postgresql.sql: 279c534a71989eb43e16958c9754262989eda18940d6d137a04a4d543268bd16
+  rollback/oracle.sql: 2a1482c33f7cbd9bbe30a096040acd8ae08a6c978dda1486532db1ab837ee37f
+  logical-model.json: daff3336c2410a5bb6902c9efd11f85b96940218dff499b86efc130065154b6b
+  verify.sql.yaml: fdf55d5dc3b1f78bf43402830bf25d08c1dd42b10407f3f76caadd262f54eaca

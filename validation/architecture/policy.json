@@ -33,6 +33,7 @@
     "components/core/workers",
     "components/domains",
     "components/domains/organization",
+    "components/domains/rsot",
     "deployment",
     "distribution",
     "engines",

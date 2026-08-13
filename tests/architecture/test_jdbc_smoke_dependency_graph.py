@@ -29,6 +29,8 @@ class JdbcSmokeDependencyGraphTest(unittest.TestCase):
             "domains/identity-access/main/io/infranexum/identity/access/ports/*.java",
             "domains/organization/main/io/infranexum/organization/domain/*.java",
             "domains/organization/main/io/infranexum/organization/ports/*.java",
+            "domains/rsot/main/io/infranexum/rsot/domain/*.java",
+            "domains/rsot/main/io/infranexum/rsot/ports/*.java",
         ):
             self.assertIn(required_path, MAKEFILE)
 

@@ -13,7 +13,9 @@
     "components.core.entitlements",
     "components.core.events",
     "components.core.workers",
-    "components.adapters.persistence-jdbc"
+    "components.adapters.persistence-jdbc",
+    "components.domains.organization",
+    "components.domains.rsot"
   ],
   "source_baseline": [
     "PGM-02-E01",
@@ -22,6 +24,9 @@
     "ADR-0062",
     "PGM-02-E05",
     "CDC-10",
-    "PGM-12-E01"
+    "PGM-12-E01",
+    "PGM-03-E03",
+    "PGM-04-E02",
+    "PGM-06-E01"
   ]
 }

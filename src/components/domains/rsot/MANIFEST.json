@@ -1,0 +1,21 @@
+{
+  "schema": "infranexum.component-manifest/v1",
+  "id": "components.domains.rsot",
+  "kind": "component",
+  "owner": "team.data-rsot",
+  "lifecycle": "active",
+  "languages": [
+    "java"
+  ],
+  "dependencies": [
+    "components.core.contracts"
+  ],
+  "source_baseline": [
+    "IAR-04 RSOT context map",
+    "CDC-RSOT RSOT-ADV-002",
+    "CDC RSOT 07 canonical identity/lifecycle foundation",
+    "CDC RSOT 16 authority matrix",
+    "ADR-0029",
+    "PGM-06-E01"
+  ]
+}

@@ -14,6 +14,9 @@
   "source_baseline": [
     "IAR-04 Organisation",
     "CDC-ORGANIZATION",
-    "PGM-03-E01"
+    "PGM-03-E01",
+    "IAR-04 RSOT context map",
+    "PGM-06-E01",
+    "ADR-0029"
   ]
 }

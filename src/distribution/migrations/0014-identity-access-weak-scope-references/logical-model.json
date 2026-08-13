@@ -1,0 +1,27 @@
+{
+  "schema": "infranexum.logical-migration/v1",
+  "migration": "0014",
+  "context": "identity-access",
+  "purpose": "replace-iam-organization-physical-foreign-keys-with-validated-weak-references",
+  "weak_references": [
+    "user_membership.organization_id",
+    "user_membership.subdivision_id",
+    "iam_group.organization_id",
+    "permission.organization_id",
+    "role.organization_id",
+    "role_assignment.organization_id",
+    "role_assignment.subdivision_id"
+  ],
+  "security": {
+    "cross_context_foreign_keys_forbidden": true,
+    "application_reference_validation_required": true,
+    "destructive": false
+  },
+  "objects": [
+    "infranexum_iam.user_membership",
+    "infranexum_iam.iam_group",
+    "infranexum_iam.permission",
+    "infranexum_iam.role",
+    "infranexum_iam.role_assignment"
+  ]
+}

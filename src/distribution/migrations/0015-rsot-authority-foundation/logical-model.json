@@ -1,0 +1,24 @@
+{
+  "schema": "infranexum.logical-migration/v1",
+  "migration": "0015",
+  "context": "rsot",
+  "objects": [
+    "infranexum_rsot.canonical_object",
+    "infranexum_rsot.attribute_authority_policy",
+    "infranexum_rsot.authority_matrix",
+    "infranexum_rsot.context_relationship"
+  ],
+  "purpose": "canonical-identity-authority-matrix-context-map-foundation",
+  "authority": {
+    "matrix_version": "2.0.0-draft.21",
+    "matrix_rows": 9,
+    "context_relationships": 10,
+    "attribute_policy_fields": ["object_type", "attribute_path", "authority_context", "source_priority", "effective_from", "effective_until", "policy_version", "approval_ref"]
+  },
+  "security": {
+    "cross_context_foreign_keys": false,
+    "direct_cross_context_storage_writes": false,
+    "global_implicit_authority_forbidden": true,
+    "destructive": false
+  }
+}

@@ -1,0 +1,29 @@
+schema: infranexum.migration/v1
+id: '0015'
+name: rsot-authority-foundation
+owner_context: rsot
+dependencies:
+- '0014'
+preconditions:
+- identity-access-weak-scope-references-declared
+- organization-foundation-declared
+postconditions:
+- rsot-private-schema-created
+- canonical-object-identity-foundation-created
+- draft21-authority-matrix-seeded
+- draft21-context-map-seeded
+- implicit-global-authority-forbidden
+recovery: rerun-idempotent-ddl-and-seeds-after-correcting-database-connectivity
+rollback: drops-only-rsot-foundation-objects-and-does-not-recreate-cross-context-foreign-keys
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 20
+checksums:
+  postgresql.sql: 4f03078cc7d4350305e604a7f0dd9959380fb825ef49a73a3e1fe508b95364ac
+  oracle.sql: cb91296326e853101f2e8f2b3a282769c31257eadf8e089d82b0328454a7840e
+  rollback/postgresql.sql: 57d99042db28f65af131313e8167631b61e30ffdbbc06111f5b4aad78cbf1489
+  rollback/oracle.sql: fc6c20f08817eeaad8a240817318a2f08d35571a85e0d3e9c240e17830527d84
+  logical-model.json: 1051e8d2facda4ff8522bee6b04f26b1a8125767ae4ee582f2a8cc6e6aad404d
+  verify.sql.yaml: 955f136af96f0b680be7966742f441f6f9101cdf554946f877f5fe488f46b218

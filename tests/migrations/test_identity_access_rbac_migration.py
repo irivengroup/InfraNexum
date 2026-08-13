@@ -55,7 +55,7 @@ class IdentityAccessRbacMigrationTest(unittest.TestCase):
         )
         entries = catalogue["entries"]
         ids = [str(entry["id"]).zfill(4) for entry in entries]
-        self.assertEqual("0013", ids[-1])
+        self.assertIn("0013", ids)
         self.assertEqual(ids.index("0012") + 1, ids.index("0013"))
 
     def test_approved_permission_catalogue_is_identical_on_both_databases(self) -> None:

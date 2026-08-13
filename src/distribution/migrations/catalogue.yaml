@@ -1,5 +1,5 @@
 schema: infranexum.migration-catalogue/v1
-version: 1.12.0
+version: 1.14.0
 entries:
 - id: '0001'
   path: 0001-core-schema-history/migration.yaml
@@ -27,3 +27,7 @@ entries:
   path: 0012-local-identity-repair/migration.yaml
 - id: '0013'
   path: 0013-identity-access-rbac-foundation/migration.yaml
+- id: '0014'
+  path: 0014-identity-access-weak-scope-references/migration.yaml
+- id: '0015'
+  path: 0015-rsot-authority-foundation/migration.yaml

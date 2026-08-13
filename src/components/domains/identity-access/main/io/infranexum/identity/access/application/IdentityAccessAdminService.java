@@ -16,14 +16,17 @@ public final class IdentityAccessAdminService {
 
     private final IdentityAccessRepository repository;
     private final IdentityAccessFeaturePolicy features;
+    private final OrganizationScopeReferencePort organizationScopes;
     private final TransactionalEventStore events;
     private final AuditJournal audit;
     private final UuidV7Generator ids;
     private final Clock clock;
 
     public IdentityAccessAdminService(IdentityAccessRepository repository, IdentityAccessFeaturePolicy features,
-            TransactionalEventStore events, AuditJournal audit, UuidV7Generator ids, Clock clock) {
+            OrganizationScopeReferencePort organizationScopes, TransactionalEventStore events,
+            AuditJournal audit, UuidV7Generator ids, Clock clock) {
         this.repository=Objects.requireNonNull(repository,"repository"); this.features=Objects.requireNonNull(features,"features");
+        this.organizationScopes=Objects.requireNonNull(organizationScopes,"organizationScopes");
         this.events=Objects.requireNonNull(events,"events"); this.audit=Objects.requireNonNull(audit,"audit");
         this.ids=Objects.requireNonNull(ids,"ids"); this.clock=Objects.requireNonNull(clock,"clock");
     }
@@ -76,7 +79,8 @@ public final class IdentityAccessAdminService {
 
     public UserMembership addMembership(DomainIdentifier userId,DomainIdentifier orgId,DomainIdentifier subdivisionId,
             Instant effectiveFrom,Instant effectiveTo,IdentityAccessCommandContext context) {
-        Objects.requireNonNull(context,"context"); getUser(userId); Instant from=effectiveFrom==null?clock.instant():effectiveFrom;
+        Objects.requireNonNull(context,"context"); getUser(userId); requireOrganizationScope(orgId,subdivisionId);
+        Instant from=effectiveFrom==null?clock.instant():effectiveFrom;
         UserMembership membership=new UserMembership(ids.next(),userId,orgId,subdivisionId,from,effectiveTo,null);
         if(!features.supportsMultiMembership()) {
             for(UserMembership current:repository.memberships(userId)) if(current.effectiveAt(from)
@@ -90,6 +94,7 @@ public final class IdentityAccessAdminService {
     }
 
     public IdentityGroup createGroup(DomainIdentifier orgId,String code,String displayName,IdentityAccessCommandContext context) {
+        requireOrganizationScope(orgId,null);
         Instant now=clock.instant(); IdentityGroup group=new IdentityGroup(ids.next(),orgId,code,displayName,false,now,now,null);
         return execute(tx->{ repository.insertGroup(group); tx.append(event("iam.group.created.v1",group.id(),context.correlationId(),now,groupPayload(group)));
             auditMutation(context,"iam.group.create","group",group.id().toString(),scopeFor(orgId),"SUCCESS",Map.of("code",group.code())); return group; });
@@ -141,6 +146,7 @@ public final class IdentityAccessAdminService {
     }
 
     public Permission createPermission(DomainIdentifier orgId,String code,String resourceType,String action,String sensitivity,ScopeKind scopeKind,IdentityAccessCommandContext context) {
+        requireOrganizationScope(orgId,null);
         Instant now=clock.instant(); Permission permission=new Permission(ids.next(),orgId,code,resourceType,action,sensitivity,scopeKind,false,true,now,now,null);
         return execute(tx->{ repository.insertPermission(permission); tx.append(event("iam.permission.created.v1",permission.id(),context.correlationId(),now,permissionPayload(permission)));
             auditMutation(context,"iam.permission.create","permission",permission.id().toString(),scopeFor(orgId),"SUCCESS",Map.of("code",permission.code())); return permission; });
@@ -160,7 +166,7 @@ public final class IdentityAccessAdminService {
     }
 
     public Role createRole(DomainIdentifier orgId,String code,String displayName,ScopeKind scopeKind,Set<String> permissionCodes,IdentityAccessCommandContext context) {
-        requirePermissionSet(permissionCodes); Instant now=clock.instant(); Role role=new Role(ids.next(),orgId,code,displayName,scopeKind,false,true,now,now,null);
+        requireOrganizationScope(orgId,null); requirePermissionSet(permissionCodes); Instant now=clock.instant(); Role role=new Role(ids.next(),orgId,code,displayName,scopeKind,false,true,now,now,null);
         return execute(tx->{ repository.insertRole(role,normalizedPermissions(permissionCodes)); tx.append(event("iam.role.created.v1",role.id(),context.correlationId(),now,rolePayload(role)));
             auditMutation(context,"iam.role.create","role",role.id().toString(),scopeFor(orgId),"SUCCESS",Map.of("code",role.code())); return role; });
     }
@@ -183,6 +189,7 @@ public final class IdentityAccessAdminService {
     public RoleAssignment assignRole(DomainIdentifier roleId,AssignmentActorType actorType,DomainIdentifier actorId,AuthorizationScope scope,
             Instant effectiveFrom,Instant effectiveTo,IdentityAccessCommandContext context) {
         Role role=getRole(roleId); Instant from=effectiveFrom==null?clock.instant():effectiveFrom; requireCompatibleScope(role,scope);
+        requireOrganizationScope(scope.organizationId(),scope.subdivisionId());
         requireSystemRoleAdministrator(role, context.actorId(), from);
         if(actorType==AssignmentActorType.USER) {
             getUser(actorId);
@@ -210,6 +217,25 @@ public final class IdentityAccessAdminService {
         IdentityUser current=getUser(userId); IdentityUser changed=transition.apply(current,clock.instant());
         return execute(tx->{ repository.updateUser(changed); tx.append(event(eventName,userId,context.correlationId(),changed.updatedAt(),userPayload(changed)));
             auditMutation(context,action,"user",userId.toString(),scopeFor(null),"SUCCESS",Map.of("status",changed.status().name())); return changed; });
+    }
+
+
+    private void requireOrganizationScope(DomainIdentifier organizationId, DomainIdentifier subdivisionId) {
+        if (organizationId == null) {
+            if (subdivisionId != null) {
+                throw new IdentityAccessException("IAM_SCOPE_REFERENCE_INVALID",
+                        "subdivision reference requires an organization reference");
+            }
+            return;
+        }
+        if (!organizationScopes.organizationExists(organizationId)) {
+            throw new IdentityAccessException("IAM_ORGANIZATION_NOT_FOUND",
+                    "referenced organization does not exist");
+        }
+        if (subdivisionId != null && !organizationScopes.subdivisionExists(organizationId, subdivisionId)) {
+            throw new IdentityAccessException("IAM_SUBDIVISION_NOT_FOUND",
+                    "referenced subdivision does not exist in organization");
+        }
     }
 
     private void requireSystemRoleAdministrator(Role role, DomainIdentifier actorId, Instant at) {

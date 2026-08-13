@@ -25,6 +25,7 @@ import io.infranexum.identity.access.domain.RoleAssignment;
 import io.infranexum.identity.access.domain.ScopeKind;
 import io.infranexum.identity.access.domain.UserMembership;
 import io.infranexum.identity.access.ports.IdentityAccessFeaturePolicy;
+import io.infranexum.identity.access.ports.OrganizationScopeReferencePort;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Instant;
@@ -235,9 +236,38 @@ class IdentityAccessAdminServiceTest {
         assertTrue(repository.rolePermissionCodes(role.id()).isEmpty());
     }
 
+    @Test
+    void mutationsRejectDanglingOrganizationAndSubdivisionReferencesBeforePersistence() {
+        IdentityUser user = service.createUser("scope.user", null, "Scope User", true, context);
+        DomainIdentifier missingOrg = IdentityAccessDomainTest.id(901);
+        DomainIdentifier missingSubdivision = IdentityAccessDomainTest.id(902);
+
+        assertCode("IAM_ORGANIZATION_NOT_FOUND",
+                () -> service.addMembership(user.id(), missingOrg, null, NOW, null, context));
+        assertCode("IAM_SUBDIVISION_NOT_FOUND",
+                () -> service.addMembership(user.id(), ORG, missingSubdivision, NOW, null, context));
+        assertCode("IAM_ORGANIZATION_NOT_FOUND",
+                () -> service.createGroup(missingOrg, "dangling.group", "Dangling", context));
+        assertCode("IAM_ORGANIZATION_NOT_FOUND",
+                () -> service.createPermission(missingOrg, "asset.missing", "asset", "read", "normal", ScopeKind.ORGANIZATION, context));
+        assertCode("IAM_ORGANIZATION_NOT_FOUND",
+                () -> service.createRole(missingOrg, "dangling.role", "Dangling", ScopeKind.ORGANIZATION, Set.of("iam.user.read"), context));
+    }
+
     private IdentityAccessAdminService service(IdentityAccessFeaturePolicy features) {
         Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
-        return new IdentityAccessAdminService(repository, features, events, audit,
+        OrganizationScopeReferencePort organizationScopes = new OrganizationScopeReferencePort() {
+            @Override
+            public boolean organizationExists(DomainIdentifier organizationId) {
+                return organizationId.equals(ORG) || organizationId.equals(OTHER_ORG);
+            }
+
+            @Override
+            public boolean subdivisionExists(DomainIdentifier organizationId, DomainIdentifier subdivisionId) {
+                return organizationId.equals(ORG) && subdivisionId.equals(SUBDIVISION);
+            }
+        };
+        return new IdentityAccessAdminService(repository, features, organizationScopes, events, audit,
                 new UuidV7Generator(clock, new SecureRandom(new byte[] {7, 3, 1, 9})), clock);
     }
 
