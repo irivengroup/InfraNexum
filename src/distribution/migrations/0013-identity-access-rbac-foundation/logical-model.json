@@ -1,0 +1,24 @@
+{
+  "schema": "infranexum.logical-migration/v1",
+  "migration": "0013",
+  "context": "identity-access",
+  "objects": [
+    "infranexum_iam.iam_user",
+    "infranexum_iam.user_membership",
+    "infranexum_iam.iam_group",
+    "infranexum_iam.group_user_member",
+    "infranexum_iam.group_group_member",
+    "infranexum_iam.permission",
+    "infranexum_iam.role",
+    "infranexum_iam.role_permission",
+    "infranexum_iam.role_assignment"
+  ],
+  "purpose": "rbac-users-groups-roles-permissions-scoped-temporal-assignments",
+  "security": {
+    "deny_by_default": true,
+    "system_roles_protected": true,
+    "soft_delete": true,
+    "nested_group_cycles_forbidden": true,
+    "destructive": false
+  }
+}

@@ -3,6 +3,7 @@ import { localeFromDocument, setLocalizedText, translate } from './i18n.mjs';
 const ROUTES = Object.freeze({
   overview: Object.freeze({ viewId: 'overview-view', labelKey: 'nav.overview', titleKey: 'topbar.dashboard' }),
   organizations: Object.freeze({ viewId: 'organization-workspace', labelKey: 'nav.organizations', titleKey: 'topbar.organizations' }),
+  access: Object.freeze({ viewId: 'identity-access-workspace', labelKey: 'nav.access', titleKey: 'topbar.access' }),
 });
 
 export function normalizeRoute(value) {
@@ -50,6 +51,24 @@ export function setOrganizationAvailability(documentObject, enabled, windowObjec
   }
 }
 
+
+export function setIdentityAccessAvailability(documentObject, enabled, windowObject = globalThis.window) {
+  const available = enabled === true;
+  const link = documentObject?.getElementById?.('nav-access');
+  if (link) {
+    link.hidden = !available;
+    link.setAttribute?.('aria-disabled', available ? 'false' : 'true');
+    link.setAttribute?.('data-capability-enabled', String(available));
+  }
+  const workspace = documentObject?.getElementById?.('identity-access-workspace');
+  workspace?.setAttribute?.('data-capability-enabled', String(available));
+  if (!available && currentRoute(documentObject) === 'access') {
+    applyRoute(documentObject, 'overview', windowObject, { replaceHash: true });
+  } else {
+    applyRoute(documentObject, currentRoute(documentObject), windowObject, { replaceHash: false });
+  }
+}
+
 export function applyRoute(
   documentObject,
   requestedRoute,
@@ -58,6 +77,7 @@ export function applyRoute(
 ) {
   let route = normalizeRoute(requestedRoute);
   if (route === 'organizations' && !organizationsAvailable(documentObject)) route = 'overview';
+  if (route === 'access' && !identityAccessAvailable(documentObject)) route = 'overview';
 
   for (const [name, definition] of Object.entries(ROUTES)) {
     const view = documentObject?.getElementById?.(definition.viewId);
@@ -140,6 +160,11 @@ export function buildCommands(documentObject, windowObject = globalThis.window) 
   if (organizationsAvailable(documentObject)) {
     commands.splice(1, 0, command('organizations', 'command.category.workspace', 'command.organizations.title', 'command.organizations.description', () => {
       applyRoute(documentObject, 'organizations', windowObject);
+    }));
+  }
+  if (identityAccessAvailable(documentObject)) {
+    commands.splice(1, 0, command('access', 'command.category.workspace', 'command.access.title', 'command.access.description', () => {
+      applyRoute(documentObject, 'access', windowObject);
     }));
   }
   return commands;
@@ -243,7 +268,7 @@ function commandElement(documentObject, item, index, locale, onClick, active) {
   const icon = documentObject.createElement('span');
   icon.className = 'inx-command-item-icon';
   icon.setAttribute('aria-hidden', 'true');
-  icon.textContent = item.id === 'theme' ? '◐' : item.id === 'organizations' ? '◎' : item.id === 'runtime' ? '◇' : '◫';
+  icon.textContent = item.id === 'theme' ? '◐' : item.id === 'organizations' ? '◎' : item.id === 'access' ? '⚿' : item.id === 'runtime' ? '◇' : '◫';
 
   const copy = documentObject.createElement('span');
   copy.className = 'inx-command-item-copy';
@@ -277,6 +302,11 @@ function searchable(value) {
 
 function organizationsAvailable(documentObject) {
   const workspace = documentObject?.getElementById?.('organization-workspace');
+  return workspace?.getAttribute?.('data-capability-enabled') === 'true';
+}
+
+function identityAccessAvailable(documentObject) {
+  const workspace = documentObject?.getElementById?.('identity-access-workspace');
   return workspace?.getAttribute?.('data-capability-enabled') === 'true';
 }
 

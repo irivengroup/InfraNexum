@@ -10,7 +10,7 @@ import yaml
 
 
 class OrganizationFoundationArchitectureTest(unittest.TestCase):
-    """Keep the first business bounded context isolated, fail-closed and same-origin."""
+    """Keep the Organization bounded context isolated, RBAC-protected and same-origin."""
 
     ROOT = Path(__file__).resolve().parents[2]
     ORG = ROOT / "src/components/domains/organization"
@@ -24,14 +24,13 @@ class OrganizationFoundationArchitectureTest(unittest.TestCase):
         self.assertIn('"lifecycle": "active"', manifest)
         self.assertIn("team.identity-organization", owners)
 
-    def test_pre_iam_http_adapter_is_fail_closed_outside_local(self) -> None:
+    def test_http_adapter_is_composed_without_pre_iam_environment_bypass(self) -> None:
         properties = (self.SERVER / "OrganizationRuntimeProperties.java").read_text(encoding="utf-8")
         configuration = (self.SERVER / "OrganizationRuntimeConfiguration.java").read_text(encoding="utf-8")
         application = (self.ROOT / "src/applications/server/resources/application.yaml").read_text(encoding="utf-8")
         self.assertIn('ConfigurationProperties(prefix = "infranexum.organization")', properties)
-        self.assertIn("localDevelopment()", properties)
-        self.assertIn("if (!runtime.localDevelopment())", configuration)
-        self.assertIn("may only be enabled in local development", configuration)
+        self.assertIn("Server RBAC protects its HTTP surface", configuration)
+        self.assertNotIn("may only be enabled in local development", configuration)
         self.assertIn("api-enabled: ${INFRANEXUM_ORGANIZATION_API_ENABLED:false}", application)
         self.assertIn("environment: ${INFRANEXUM_ENVIRONMENT:production}", application)
 
@@ -52,7 +51,9 @@ class OrganizationFoundationArchitectureTest(unittest.TestCase):
             .read_text(encoding="utf-8")
         )
         self.assertEqual("3.1.0", openapi["openapi"])
-        self.assertTrue(openapi["x-infranexum-pre-iam-local-only"])
+        self.assertTrue(openapi["x-infranexum-rbac-enforced"])
+        self.assertEqual("INX_SESSION", openapi["components"]["securitySchemes"]["LocalSessionCookie"]["name"])
+        self.assertEqual("X-CSRF-Token", openapi["components"]["parameters"]["CsrfToken"]["name"])
         self.assertIn("CorrelationId", openapi["components"]["parameters"])
         self.assertIn("IdempotencyKey", openapi["components"]["parameters"])
 

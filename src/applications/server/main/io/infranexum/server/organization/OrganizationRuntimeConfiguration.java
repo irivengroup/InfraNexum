@@ -22,7 +22,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/** Composes the Organization context only when explicitly enabled for local pre-IAM development. */
+/** Composes the Organization context when enabled; Server RBAC protects its HTTP surface. */
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(OrganizationRuntimeProperties.class)
 @ConditionalOnProperty(name = "infranexum.organization.api-enabled", havingValue = "true")
@@ -33,12 +33,7 @@ public class OrganizationRuntimeConfiguration {
             TransactionalEventStore eventStore,
             PlatformCapabilityService capabilities,
             PersistenceRuntimeProperties persistence,
-            OrganizationRuntimeProperties runtime,
             @Qualifier("platformClock") Clock clock) {
-        if (!runtime.localDevelopment()) {
-            throw new IllegalStateException(
-                    "Organization foundation API is pre-IAM and may only be enabled in local development");
-        }
         if (!(eventStore instanceof JdbcTransactionalEventStore jdbcEventStore)) {
             throw new IllegalStateException("Organization foundation requires JDBC persistence");
         }

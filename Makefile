@@ -23,6 +23,17 @@ WEB_ROOT := $(APPLICATION_ROOT)/web
 DOCKER_ROOT := docker
 DOCKER_COMPOSE_SH := ./$(DOCKER_ROOT)/dev-compose.sh
 
+# JDBC adapters implement ports owned by these bounded contexts. Keep the
+# offline smoke compilation aligned with the Maven dependency graph so adding
+# an adapter cannot silently break the mandatory javac smoke targets.
+JDBC_DOMAIN_SOURCES := \
+	$(COMPONENT_ROOT)/domains/identity-local/main/io/infranexum/identity/local/domain/*.java \
+	$(COMPONENT_ROOT)/domains/identity-local/main/io/infranexum/identity/local/ports/*.java \
+	$(COMPONENT_ROOT)/domains/identity-access/main/io/infranexum/identity/access/domain/*.java \
+	$(COMPONENT_ROOT)/domains/identity-access/main/io/infranexum/identity/access/ports/*.java \
+	$(COMPONENT_ROOT)/domains/organization/main/io/infranexum/organization/domain/*.java \
+	$(COMPONENT_ROOT)/domains/organization/main/io/infranexum/organization/ports/*.java
+
 
 # Python validation packages live at repository root outside the src/ product boundary.
 # PYTHONPATH=. keeps validation imports deterministic on every runner.
@@ -183,6 +194,7 @@ java-jdbc-smoke:
 		$(COMPONENT_ROOT)/core/capabilities/main/io/infranexum/core/capabilities/*.java \
 		$(COMPONENT_ROOT)/core/entitlements/main/io/infranexum/core/entitlements/*.java \
 		$(COMPONENT_ROOT)/core/audit/main/io/infranexum/core/audit/*.java \
+		$(JDBC_DOMAIN_SOURCES) \
 		$(COMPONENT_ROOT)/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/*.java \
 		$(TEST_ROOT)/java/jdbc/io/infranexum/adapters/persistence/jdbc/JdbcAdapterSmoke.java \
 		$(TEST_ROOT)/java/jdbc/io/infranexum/adapters/persistence/jdbc/JdbcAuditJournalSmoke.java; \
@@ -199,6 +211,7 @@ java-jdbc-workers-smoke:
 		$(COMPONENT_ROOT)/core/capabilities/main/io/infranexum/core/capabilities/*.java \
 		$(COMPONENT_ROOT)/core/entitlements/main/io/infranexum/core/entitlements/*.java \
 		$(COMPONENT_ROOT)/core/audit/main/io/infranexum/core/audit/*.java \
+		$(JDBC_DOMAIN_SOURCES) \
 		$(COMPONENT_ROOT)/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/*.java \
 		$(TEST_ROOT)/java/jdbc/io/infranexum/adapters/persistence/jdbc/JdbcTaskStoreSmoke.java; \
 	$(JAVA) -ea -cp "$$build_dir" io.infranexum.adapters.persistence.jdbc.JdbcTaskStoreSmoke
@@ -235,6 +248,7 @@ java-entitlement-runtime-smoke:
 		$(COMPONENT_ROOT)/core/capabilities/main/io/infranexum/core/capabilities/*.java \
 		$(COMPONENT_ROOT)/core/entitlements/main/io/infranexum/core/entitlements/*.java \
 		$(COMPONENT_ROOT)/core/audit/main/io/infranexum/core/audit/*.java \
+		$(JDBC_DOMAIN_SOURCES) \
 		$(COMPONENT_ROOT)/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/*.java \
 		$(TEST_ROOT)/java-entitlement-runtime-smoke/io/infranexum/core/entitlements/EntitlementRuntimeSmoke.java; \
 	$(JAVA) -ea -cp "$$build_dir" io.infranexum.core.entitlements.EntitlementRuntimeSmoke \

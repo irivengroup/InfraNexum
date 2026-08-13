@@ -1,5 +1,6 @@
-import { initializeAdminShell, setOrganizationAvailability } from './admin-shell.mjs';
+import { initializeAdminShell, setIdentityAccessAvailability, setOrganizationAvailability } from './admin-shell.mjs';
 import { initializeLocalAuthentication } from './auth.mjs';
+import { initializeIdentityAccess } from './identity-access.mjs';
 import { initializeNotificationCenter } from './notifications.mjs';
 import { initializePlatformAutoRefresh, loadPlatformInsights } from './platform-insights.mjs';
 import { initializePreferences } from './preferences.mjs';
@@ -36,6 +37,9 @@ export function validatePublicConfiguration(value) {
   }
   if (typeof value.localAuthEnabled !== 'boolean') {
     throw new Error('Runtime configuration localAuthEnabled is invalid');
+  }
+  if (typeof value.identityAccessEnabled !== 'boolean') {
+    throw new Error('Runtime configuration identityAccessEnabled is invalid');
   }
   if (
     value.schema !== REQUIRED_SCHEMA
@@ -86,6 +90,7 @@ export function renderRuntimeFailure(documentObject) {
   setLocalizedText(documentObject, 'sidebar-runtime-state', 'runtime.unavailable');
   setLocalizedBadge(documentObject, 'runtime-health-badge', 'common.down', 'text-bg-danger');
   setOrganizationAvailability(documentObject, false);
+  setIdentityAccessAvailability(documentObject, false);
 }
 
 export function initializeTheme(documentObject = document, storageObject = globalThis.localStorage) {
@@ -150,6 +155,7 @@ export async function bootstrap({
     const configuration = validatePublicConfiguration(await response.json());
     await initializeLocalAuthentication(documentObject, configuration, fetchFunction);
     renderRuntimeConfiguration(documentObject, configuration);
+    await initializeIdentityAccess(documentObject, configuration, fetchFunction);
     notificationCenter?.upsert?.({
       id: 'web-runtime', severity: 'success', titleKey: 'notification.runtimeReady.title', bodyKey: 'notification.runtimeReady.body',
       parameters: { version: configuration.version, environment: configuration.environment },

@@ -1,0 +1,17 @@
+schema: infranexum.migration-verification/v1
+checks:
+- id: platform-admin-role-present
+  postgresql: "SELECT COUNT(*) = 1 FROM infranexum_iam.role WHERE code = 'system.platform_admin' AND system_role = TRUE AND active = TRUE AND deleted_at IS NULL"
+  oracle: "SELECT CASE WHEN COUNT(*) = 1 THEN 1 ELSE 0 END FROM INFRANEXUM_IAM_ROLE WHERE CODE = 'system.platform_admin' AND SYSTEM_ROLE = 1 AND ACTIVE = 1 AND DELETED_AT IS NULL"
+- id: local-accounts-projected
+  postgresql: "SELECT COUNT(*) = 0 FROM infranexum_iam.local_account l LEFT JOIN infranexum_iam.iam_user u ON u.id=l.id WHERE u.id IS NULL"
+  oracle: "SELECT CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END FROM INFRANEXUM_IAM_LOCAL_ACCOUNT l LEFT JOIN INFRANEXUM_IAM_USER u ON u.ID=l.ID WHERE u.ID IS NULL"
+- id: local-accounts-platform-admin
+  postgresql: "SELECT COUNT(*) = 0 FROM infranexum_iam.local_account l LEFT JOIN infranexum_iam.role_assignment a ON a.actor_type='USER' AND a.actor_id=l.id AND a.scope_kind='PLATFORM' AND a.revoked_at IS NULL LEFT JOIN infranexum_iam.role r ON r.id=a.role_id AND r.code='system.platform_admin' WHERE r.id IS NULL"
+  oracle: "SELECT CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END FROM INFRANEXUM_IAM_LOCAL_ACCOUNT l LEFT JOIN INFRANEXUM_IAM_ROLE_ASSIGNMENT a ON a.ACTOR_TYPE='USER' AND a.ACTOR_ID=l.ID AND a.SCOPE_KIND='PLATFORM' AND a.REVOKED_AT IS NULL LEFT JOIN INFRANEXUM_IAM_ROLE r ON r.ID=a.ROLE_ID AND r.CODE='system.platform_admin' WHERE r.ID IS NULL"
+- id: nested-group-self-cycles-absent
+  postgresql: "SELECT COUNT(*) = 0 FROM infranexum_iam.group_group_member WHERE parent_group_id=child_group_id"
+  oracle: "SELECT CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END FROM INFRANEXUM_IAM_GROUP_GROUP_MEMBER WHERE PARENT_GROUP_ID=CHILD_GROUP_ID"
+- id: temporal-assignments-valid
+  postgresql: "SELECT COUNT(*) = 0 FROM infranexum_iam.role_assignment WHERE effective_to IS NOT NULL AND effective_to<=effective_from"
+  oracle: "SELECT CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END FROM INFRANEXUM_IAM_ROLE_ASSIGNMENT WHERE EFFECTIVE_TO IS NOT NULL AND EFFECTIVE_TO<=EFFECTIVE_FROM"

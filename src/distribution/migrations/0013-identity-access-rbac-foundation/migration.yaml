@@ -1,0 +1,29 @@
+schema: infranexum.migration/v1
+id: '0013'
+name: identity-access-rbac-foundation
+owner_context: identity-access
+dependencies:
+- '0012'
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 30
+preconditions:
+- local-identity-foundation-declared
+- organization-foundation-declared
+postconditions:
+- rbac-schema-created
+- approved-permission-catalog-seeded
+- platform-admin-system-role-protected
+- local-account-identifiers-projected-to-iam-users
+- existing-local-accounts-retain-platform-administration
+recovery: rerun-idempotent-ddl-and-seed-after-correcting-database-connectivity
+rollback: drops-only-rbac-foundation-objects-and-preserves-local-credentials-and-sessions
+checksums:
+  postgresql.sql: aa203a33f1be797c589312384ff9d0f35b1e6a4a9217c27a4fc05eb7083eaa5c
+  oracle.sql: 2a15d446b95514236f322237e6afd7b546cc0efcd1731c8ed736ac972b82df2e
+  rollback/postgresql.sql: a9342c2bd59ef6d754d1de1e1c950ad13e02ccdd9800e1a8639bd633160b4143
+  rollback/oracle.sql: 7c06992d2ca0ed7f0e8e5468a7809de3b57cd9a6d0b0bcdcd59ca32366a8eb7b
+  logical-model.json: 7b199968d0f64ee1be28d715826cf88896bbbdfed92d3a5a7f1e4922f426d1b5
+  verify.sql.yaml: 7e9bc84bd9c83af55ae0c843977393bba29b571eeb84bf07eb4f69c32b3aef78

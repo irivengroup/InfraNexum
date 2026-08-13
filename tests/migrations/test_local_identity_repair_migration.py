@@ -14,10 +14,12 @@ class LocalIdentityRepairMigrationTest(unittest.TestCase):
     def test_catalogue_declares_foundation_and_repair_in_order(self) -> None:
         catalogue = yaml.safe_load((MIGRATIONS / "catalogue.yaml").read_text(encoding="utf-8"))
         ids = [entry["id"] for entry in catalogue["entries"]]
-        self.assertEqual(["0011", "0012"], ids[-2:])
+        foundation_index = ids.index("0011")
+        self.assertEqual("0012", ids[foundation_index + 1])
+        repair = next(entry for entry in catalogue["entries"] if entry["id"] == "0012")
         self.assertEqual(
             "0012-local-identity-repair/migration.yaml",
-            catalogue["entries"][-1]["path"],
+            repair["path"],
         )
 
     def test_foundation_verification_is_machine_validatable(self) -> None:

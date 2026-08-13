@@ -30,6 +30,7 @@ public record AuditEntry(
         String sensitivity) {
 
     private static final Pattern TOKEN = Pattern.compile("[A-Za-z][A-Za-z0-9._:-]{0,159}");
+    private static final Pattern IDENTIFIER = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}");
     private static final Pattern DECISION = Pattern.compile("[A-Z][A-Z0-9_]{1,31}");
     private static final Pattern SENSITIVE_KEY = Pattern.compile(
             "(?i).*(password|passwd|secret|token|credential|authorization|cookie|private[_-]?key).*");
@@ -38,11 +39,11 @@ public record AuditEntry(
     public AuditEntry {
         Objects.requireNonNull(auditId, "auditId");
         Objects.requireNonNull(scope, "scope");
-        actorId = token(actorId, "actorId");
+        actorId = identifier(actorId, "actorId");
         actorType = token(actorType, "actorType");
         action = token(action, "action");
         targetType = token(targetType, "targetType");
-        targetId = token(targetId, "targetId");
+        targetId = identifier(targetId, "targetId");
         authorizationDecision = decision(authorizationDecision, "authorizationDecision");
         Objects.requireNonNull(timestamp, "timestamp");
         result = decision(result, "result");
@@ -59,6 +60,15 @@ public record AuditEntry(
         if (value.chars().anyMatch(Character::isISOControl)) throw new IllegalArgumentException("invalid " + field);
         String normalized = value.strip();
         if (!TOKEN.matcher(normalized).matches()) throw new IllegalArgumentException("invalid " + field);
+        return normalized;
+    }
+
+    /** Actor and target identifiers may be UUIDs, so their first character is not constrained to a letter. */
+    private static String identifier(String value, String field) {
+        Objects.requireNonNull(value, field);
+        if (value.chars().anyMatch(Character::isISOControl)) throw new IllegalArgumentException("invalid " + field);
+        String normalized = value.strip();
+        if (!IDENTIFIER.matcher(normalized).matches()) throw new IllegalArgumentException("invalid " + field);
         return normalized;
     }
 

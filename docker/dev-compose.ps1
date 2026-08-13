@@ -239,15 +239,19 @@ function Invoke-Smoke {
     $cid='018bcfe5-6800-7001-8000-000000000001'; $response=Invoke-WebRequest -Uri "http://127.0.0.1:$port/api/v1/system/build" -Headers @{'X-Correlation-ID'=$cid} -TimeoutSec 10
     $build=$response.Content | ConvertFrom-Json; if ($build.instanceId -notmatch '^server-pro-[1-4]$') { throw "Unexpected routed instance $($build.instanceId)" }; if ($response.Headers['X-Correlation-ID'] -ne $cid) { throw 'Correlation was not propagated' }
     $webReady=Invoke-RestMethod -Uri "http://127.0.0.1:$webPort/health/ready" -TimeoutSec 10; if ($webReady.status -ne 'UP') { throw 'Web router readiness is not UP' }
-    $runtime=Invoke-RestMethod -Uri "http://127.0.0.1:$webPort/runtime-config.json" -TimeoutSec 10; if ($runtime.component -ne 'web' -or $runtime.version -ne '2.0.0-alpha.0.67' -or $runtime.apiBaseUrl -ne '/api') { throw 'Web runtime configuration is inconsistent with Compose bindings' }
-    $iamHistory=[int](Invoke-ApplicationDatabaseAdminScalar "SELECT count(*) FROM infranexum_core.schema_history WHERE migration_id IN ('0011','0012')")
-    if ($iamHistory -ne 2) { throw "Local identity migration history is incomplete; expected 0011 and 0012, observed $iamHistory" }
+    $runtime=Invoke-RestMethod -Uri "http://127.0.0.1:$webPort/runtime-config.json" -TimeoutSec 10; if ($runtime.component -ne 'web' -or $runtime.version -ne '2.0.0-alpha.0.68' -or $runtime.apiBaseUrl -ne '/api') { throw 'Web runtime configuration is inconsistent with Compose bindings' }
+    $iamHistory=[int](Invoke-ApplicationDatabaseAdminScalar "SELECT count(*) FROM infranexum_core.schema_history WHERE migration_id IN ('0011','0012','0013')")
+    if ($iamHistory -ne 3) { throw "IAM migration history is incomplete; expected 0011, 0012 and 0013, observed $iamHistory" }
     $accountTable=[int](Invoke-ApplicationDatabaseAdminScalar "SELECT CASE WHEN to_regclass('infranexum_iam.local_account') IS NOT NULL THEN 1 ELSE 0 END")
     if ($accountTable -ne 1) { throw 'Local identity account table is missing after repair migration 0012' }
     $sessionTable=[int](Invoke-ApplicationDatabaseAdminScalar "SELECT CASE WHEN to_regclass('infranexum_iam.local_session') IS NOT NULL THEN 1 ELSE 0 END")
     if ($sessionTable -ne 1) { throw 'Local identity session table is missing after repair migration 0012' }
     $accountCount=[int](Invoke-ApplicationDatabaseAdminScalar "SELECT count(*) FROM infranexum_iam.local_account")
     if ($accountCount -lt 1) { throw 'Local identity bootstrap account is missing after schema repair and Server bootstrap' }
+    $rbacUserTable=[int](Invoke-ApplicationDatabaseAdminScalar "SELECT CASE WHEN to_regclass('infranexum_iam.iam_user') IS NOT NULL THEN 1 ELSE 0 END")
+    if ($rbacUserTable -ne 1) { throw 'RBAC IAM user table is missing after migration 0013' }
+    $platformAdminCount=[int](Invoke-ApplicationDatabaseAdminScalar "SELECT count(*) FROM infranexum_iam.role_assignment ra JOIN infranexum_iam.role r ON r.id=ra.role_id WHERE ra.actor_type='USER' AND ra.scope_kind='PLATFORM' AND ra.revoked_at IS NULL AND r.code='system.platform_admin' AND r.system_role=TRUE AND r.active=TRUE AND r.deleted_at IS NULL")
+    if ($platformAdminCount -lt 1) { throw 'RBAC bootstrap platform administrator assignment is missing after migration 0013/Server bootstrap' }
     $credentialLogin = Test-LocalCredentialLogin -WebPort $webPort
     # PowerShell 7 can preserve HTTP error responses as ordinary response objects.
     # This avoids the different header representation exposed through exception

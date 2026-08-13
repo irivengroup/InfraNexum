@@ -7,6 +7,7 @@ import {
   filterCommands,
   normalizeRoute,
   routeForHash,
+  setIdentityAccessAvailability,
   setOrganizationAvailability,
 } from '../../src/applications/web/public/assets/admin-shell.mjs';
 
@@ -30,13 +31,16 @@ class Element {
   click() { this.clicked = true; }
 }
 
-function shellDocument({ organizations = false } = {}) {
+function shellDocument({ organizations = false, access = false } = {}) {
   const root = new Element({ lang: 'en', 'data-route': 'overview' });
   const overviewView = new Element();
   const workspace = new Element({ 'data-capability-enabled': String(organizations) });
+  const accessWorkspace = new Element({ 'data-capability-enabled': String(access) });
   const overviewLink = new Element({ 'data-route': 'overview', class: 'inx-nav-link active' });
   const organizationsLink = new Element({ 'data-route': 'organizations', class: 'inx-nav-link' });
   organizationsLink.hidden = !organizations;
+  const accessLink = new Element({ 'data-route': 'access', class: 'inx-nav-link' });
+  accessLink.hidden = !access;
   const breadcrumb = new Element();
   const title = new Element();
   const runtimeTitle = new Element();
@@ -46,7 +50,9 @@ function shellDocument({ organizations = false } = {}) {
   const byId = new Map([
     ['overview-view', overviewView],
     ['organization-workspace', workspace],
+    ['identity-access-workspace', accessWorkspace],
     ['nav-organizations', organizationsLink],
+    ['nav-access', accessLink],
     ['breadcrumb-current', breadcrumb],
     ['topbar-page-title', title],
     ['runtime-title', runtimeTitle],
@@ -58,11 +64,13 @@ function shellDocument({ organizations = false } = {}) {
     documentElement: root,
     title: '',
     getElementById: (id) => byId.get(id),
-    querySelectorAll: (selector) => selector === '[data-route]' ? [overviewLink, organizationsLink] : [],
+    querySelectorAll: (selector) => selector === '[data-route]' ? [overviewLink, organizationsLink, accessLink] : [],
     overviewView,
     workspace,
+    accessWorkspace,
     overviewLink,
     organizationsLink,
+    accessLink,
     breadcrumb,
     topbarTitle: title,
     runtimeTitle,
@@ -86,6 +94,8 @@ function windowFixture(hash = '') {
 
 test('route parser accepts only known administration routes', () => {
   assert.equal(normalizeRoute('organizations'), 'organizations');
+  assert.equal(normalizeRoute('access'), 'access');
+  assert.equal(routeForHash('#/access'), 'access');
   assert.equal(routeForHash('#/organizations'), 'organizations');
   assert.equal(routeForHash('#overview'), 'overview');
   assert.equal(routeForHash('#/unknown'), 'overview');
@@ -109,12 +119,31 @@ test('organization route is fail-closed until the capability is explicitly avail
   assert.equal(documentObject.topbarTitle.textContent, 'Organizations & subdivisions');
 });
 
+test('identity-access route is fail-closed until its capability is explicitly available', () => {
+  const documentObject = shellDocument({ organizations: true, access: false });
+  const windowObject = windowFixture('#/access');
+  assert.equal(applyRoute(documentObject, 'access', windowObject, { replaceHash: true }), 'overview');
+  assert.equal(documentObject.accessWorkspace.hidden, true);
+  assert.equal(windowObject.location.hash, '#/overview');
+
+  setIdentityAccessAvailability(documentObject, true, windowObject);
+  assert.equal(documentObject.accessLink.hidden, false);
+  assert.equal(documentObject.accessLink.getAttribute('aria-disabled'), 'false');
+  assert.equal(applyRoute(documentObject, 'access', windowObject), 'access');
+  assert.equal(documentObject.accessWorkspace.hidden, false);
+  assert.equal(documentObject.overviewView.hidden, true);
+  assert.equal(documentObject.breadcrumb.textContent, 'Identity & access');
+  assert.equal(documentObject.topbarTitle.textContent, 'Identity & access');
+});
+
 test('command catalogue exposes only actionable capabilities', () => {
   const documentObject = shellDocument({ organizations: false });
   const windowObject = windowFixture();
   assert.deepEqual(buildCommands(documentObject, windowObject).map((item) => item.id), ['overview', 'runtime', 'theme', 'preferences', 'notifications']);
   setOrganizationAvailability(documentObject, true, windowObject);
   assert.deepEqual(buildCommands(documentObject, windowObject).map((item) => item.id), ['overview', 'organizations', 'runtime', 'theme', 'preferences', 'notifications']);
+  setIdentityAccessAvailability(documentObject, true, windowObject);
+  assert.deepEqual(buildCommands(documentObject, windowObject).map((item) => item.id), ['overview', 'access', 'organizations', 'runtime', 'theme', 'preferences', 'notifications']);
 });
 
 test('command search is localized, case-insensitive and accent-insensitive', () => {

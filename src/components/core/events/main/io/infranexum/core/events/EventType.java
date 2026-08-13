@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 /** Stable dotted event type used at transactional and transport boundaries. */
 public record EventType(String value) implements Comparable<EventType> {
     private static final Pattern FORMAT = Pattern.compile(
-            "[a-z][a-z0-9]*(?:\\.[a-z][a-z0-9-]*){2,7}\\.v[1-9][0-9]*");
+            "[a-z][a-z0-9]*(?:\\.[a-z][a-z0-9_-]*){2,7}\\.v[1-9][0-9]*");
 
     public EventType {
         Objects.requireNonNull(value, "value");

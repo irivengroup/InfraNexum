@@ -20,6 +20,7 @@ export class WebRuntimeConfiguration {
   #architectureBaseline;
   #organizationFoundationEnabled;
   #localAuthEnabled;
+  #identityAccessEnabled;
 
   constructor({
     listenHost,
@@ -32,6 +33,7 @@ export class WebRuntimeConfiguration {
     architectureBaseline,
     organizationFoundationEnabled,
     localAuthEnabled,
+    identityAccessEnabled,
   }) {
     this.#listenHost = listenHost;
     this.#listenPort = listenPort;
@@ -43,6 +45,7 @@ export class WebRuntimeConfiguration {
     this.#architectureBaseline = architectureBaseline;
     this.#organizationFoundationEnabled = organizationFoundationEnabled;
     this.#localAuthEnabled = localAuthEnabled;
+    this.#identityAccessEnabled = identityAccessEnabled;
     Object.freeze(this);
   }
 
@@ -100,8 +103,13 @@ export class WebRuntimeConfiguration {
       'INFRANEXUM_WEB_LOCAL_AUTH_ENABLED',
       false,
     );
-    if (organizationFoundationEnabled && runtimeEnvironment === 'production') {
-      throw new Error('Organization foundation UI is pre-IAM and cannot be enabled in production');
+    const identityAccessEnabled = readBoolean(
+      environment,
+      'INFRANEXUM_WEB_IDENTITY_ACCESS_ENABLED',
+      false,
+    );
+    if (identityAccessEnabled && (!organizationFoundationEnabled || !localAuthEnabled)) {
+      throw new Error('Identity-access UI requires organization foundation and local authentication');
     }
 
     return new WebRuntimeConfiguration({
@@ -115,6 +123,7 @@ export class WebRuntimeConfiguration {
       architectureBaseline,
       organizationFoundationEnabled,
       localAuthEnabled,
+      identityAccessEnabled,
     });
   }
 
@@ -128,6 +137,7 @@ export class WebRuntimeConfiguration {
   get architectureBaseline() { return this.#architectureBaseline; }
   get organizationFoundationEnabled() { return this.#organizationFoundationEnabled; }
   get localAuthEnabled() { return this.#localAuthEnabled; }
+  get identityAccessEnabled() { return this.#identityAccessEnabled; }
 
   publicConfiguration() {
     return Object.freeze({
@@ -140,6 +150,7 @@ export class WebRuntimeConfiguration {
       apiBaseUrl: this.#apiBaseUrl,
       organizationFoundationEnabled: this.#organizationFoundationEnabled,
       localAuthEnabled: this.#localAuthEnabled,
+      identityAccessEnabled: this.#identityAccessEnabled,
     });
   }
 }

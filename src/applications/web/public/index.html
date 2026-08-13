@@ -95,6 +95,10 @@
             <span class="inx-nav-icon" aria-hidden="true">◎</span>
             <span data-i18n="nav.organizations">Organizations</span>
           </a>
+          <a id="nav-access" class="inx-nav-link" href="#/access" data-route="access" aria-disabled="true" data-capability-enabled="false" hidden>
+            <span class="inx-nav-icon" aria-hidden="true">⚿</span>
+            <span data-i18n="nav.access">Identity &amp; access</span>
+          </a>
           <p class="inx-nav-label mt-4" data-i18n="nav.platform">Platform</p>
           <span class="inx-nav-link disabled" aria-disabled="true">
             <span class="inx-nav-icon" aria-hidden="true">◇</span>
@@ -304,6 +308,221 @@
                 </div>
               </div>
             </section>
+          </section>
+
+
+          <section id="identity-access-workspace" class="inx-panel inx-page-panel" data-view="access" data-capability-enabled="false" aria-labelledby="iam-title" hidden>
+            <div class="inx-page-intro">
+              <div>
+                <p class="inx-eyebrow" data-i18n="iam.eyebrow">Identity governance</p>
+                <h2 id="iam-title" class="inx-page-title" data-i18n="iam.title">Users, groups, roles &amp; permissions</h2>
+                <p class="inx-page-description" data-i18n="iam.description">Manage scoped RBAC identities and assignments through the Server authorization boundary.</p>
+              </div>
+              <span id="iam-status" class="badge rounded-pill text-bg-secondary" role="status" aria-live="polite" data-i18n="iam.loading">Loading…</span>
+            </div>
+
+            <div class="row g-3 align-items-end mb-4">
+              <div class="col-lg-7">
+                <label class="form-label" for="iam-organization" data-i18n="iam.organization">Organization scope</label>
+                <select id="iam-organization" class="form-select" disabled></select>
+              </div>
+              <div class="col-lg-5"><p class="small text-body-secondary mb-2" data-i18n="iam.scopeHint">All group, role and custom-permission operations are evaluated in this organization scope.</p></div>
+            </div>
+
+            <div class="accordion" id="iam-sections">
+              <details class="inx-panel mb-3" open>
+                <summary class="h5 mb-0" data-i18n="iam.users">Users</summary>
+                <div class="row g-4 mt-1">
+                  <div class="col-xl-5">
+                    <form id="iam-user-create-form" class="row g-2">
+                      <h3 class="h6" data-i18n="iam.userCreate">Create user</h3>
+                      <div class="col-md-6"><label class="form-label" for="iam-user-login" data-i18n="iam.login">Login</label><input id="iam-user-login" name="login" class="form-control" maxlength="128" required /></div>
+                      <div class="col-md-6"><label class="form-label" for="iam-user-email" data-i18n="iam.email">Email</label><input id="iam-user-email" name="email" class="form-control" type="email" maxlength="320" required /></div>
+                      <div class="col-md-8"><label class="form-label" for="iam-user-name" data-i18n="iam.displayName">Display name</label><input id="iam-user-name" name="displayName" class="form-control" maxlength="200" required /></div>
+                      <div class="col-md-4"><label class="form-label" for="iam-user-subdivision" data-i18n="iam.subdivisionOptional">Subdivision UUID</label><input id="iam-user-subdivision" name="subdivisionId" class="form-control" autocomplete="off" /></div>
+                      <div class="col-12 form-check ms-2"><input id="iam-user-activate" name="activate" class="form-check-input" type="checkbox" checked /><label class="form-check-label" for="iam-user-activate" data-i18n="iam.activateNow">Activate immediately</label></div>
+                      <div class="col-12"><label class="form-label" for="iam-user-reason" data-i18n="iam.reason">Audit reason</label><input id="iam-user-reason" name="reason" class="form-control" maxlength="1024" /></div>
+                      <div class="col-12"><button class="btn btn-primary" type="submit" data-i18n="iam.create">Create</button></div>
+                    </form>
+                    <hr />
+                    <form id="iam-user-update-form" class="row g-2">
+                      <h3 class="h6" data-i18n="iam.userUpdate">Update user</h3>
+                      <div class="col-12"><input name="userId" class="form-control" required data-i18n-placeholder="iam.userId" data-i18n-aria-label="iam.userId" placeholder="User UUID" /></div>
+                      <div class="col-md-6"><input name="email" type="email" class="form-control" required maxlength="320" data-i18n-placeholder="iam.email" data-i18n-aria-label="iam.email" placeholder="Email" /></div>
+                      <div class="col-md-6"><input name="displayName" class="form-control" required maxlength="200" data-i18n-placeholder="iam.displayName" data-i18n-aria-label="iam.displayName" placeholder="Display name" /></div>
+                      <div class="col-12"><input name="reason" class="form-control" maxlength="1024" data-i18n-placeholder="iam.reason" data-i18n-aria-label="iam.reason" placeholder="Audit reason" /></div>
+                      <div class="col-12"><button class="btn btn-outline-primary" type="submit" data-i18n="iam.update">Update</button></div>
+                    </form>
+                    <hr />
+                    <form id="iam-membership-form" class="row g-2">
+                      <h3 class="h6" data-i18n="iam.membershipAdd">Add temporal membership</h3>
+                      <div class="col-12"><label class="form-label" for="iam-membership-user" data-i18n="iam.userId">User UUID</label><input id="iam-membership-user" name="userId" class="form-control" required /></div>
+                      <div class="col-12"><label class="form-label" for="iam-membership-subdivision" data-i18n="iam.subdivisionOptional">Subdivision UUID</label><input id="iam-membership-subdivision" name="subdivisionId" class="form-control" /></div>
+                      <div class="col-md-6"><label class="form-label" for="iam-membership-from" data-i18n="iam.effectiveFrom">Effective from (ISO-8601)</label><input id="iam-membership-from" name="effectiveFrom" class="form-control" placeholder="2026-08-13T13:00:00Z" /></div>
+                      <div class="col-md-6"><label class="form-label" for="iam-membership-to" data-i18n="iam.effectiveTo">Effective to (ISO-8601)</label><input id="iam-membership-to" name="effectiveTo" class="form-control" placeholder="2026-12-31T23:59:59Z" /></div>
+                      <div class="col-12"><input name="reason" class="form-control" maxlength="1024" data-i18n-placeholder="iam.reason" data-i18n-aria-label="iam.reason" placeholder="Audit reason" /></div>
+                      <div class="col-12"><button class="btn btn-outline-primary" type="submit" data-i18n="iam.addMembership">Add membership</button></div>
+                    </form>
+                    <hr />
+                    <form id="iam-user-role-form" class="row g-2">
+                      <h3 class="h6" data-i18n="iam.userRoleAssign">Assign role to user</h3>
+                      <div class="col-12"><input name="userId" class="form-control" required data-i18n-placeholder="iam.userId" data-i18n-aria-label="iam.userId" placeholder="User UUID" /></div>
+                      <div class="col-12"><input name="roleId" class="form-control" required data-i18n-placeholder="iam.roleId" data-i18n-aria-label="iam.roleId" placeholder="Role UUID" /></div>
+                      <div class="col-md-6"><select name="scopeKind" class="form-select" data-i18n-aria-label="iam.scope"><option value="ORGANIZATION">ORGANIZATION</option><option value="SUBDIVISION">SUBDIVISION</option><option value="PLATFORM">PLATFORM</option></select></div>
+                      <div class="col-md-6"><input name="subdivisionId" class="form-control" data-i18n-placeholder="iam.subdivisionOptional" data-i18n-aria-label="iam.subdivisionOptional" placeholder="Subdivision UUID" /></div>
+                      <div class="col-md-6"><input name="effectiveFrom" class="form-control" data-i18n-placeholder="iam.effectiveFrom" data-i18n-aria-label="iam.effectiveFrom" placeholder="Effective from (ISO-8601)" /></div>
+                      <div class="col-md-6"><input name="effectiveTo" class="form-control" data-i18n-placeholder="iam.effectiveTo" data-i18n-aria-label="iam.effectiveTo" placeholder="Effective to (ISO-8601)" /></div>
+                      <div class="col-12"><input name="reason" class="form-control" maxlength="1024" data-i18n-placeholder="iam.reason" data-i18n-aria-label="iam.reason" placeholder="Audit reason" /></div>
+                      <div class="col-12"><button class="btn btn-outline-primary" type="submit" data-i18n="iam.assign">Assign</button></div>
+                    </form>
+                  </div>
+                  <div class="col-xl-7"><div class="table-responsive"><table class="table inx-data-table align-middle"><caption class="visually-hidden" data-i18n="iam.users">Users</caption><thead><tr><th data-i18n="iam.login">Login</th><th data-i18n="iam.email">Email</th><th data-i18n="iam.displayName">Display name</th><th data-i18n="iam.status">Status</th><th colspan="2" data-i18n="iam.actions">Actions</th></tr></thead><tbody id="iam-user-rows"></tbody></table></div></div>
+                </div>
+              </details>
+
+              <details class="inx-panel mb-3">
+                <summary class="h5 mb-0" data-i18n="iam.groups">Groups</summary>
+                <div class="row g-4 mt-1">
+                  <div class="col-xl-5">
+                    <form id="iam-group-create-form" class="row g-2">
+                      <h3 class="h6" data-i18n="iam.groupCreate">Create group</h3>
+                      <div class="col-md-6"><input name="code" class="form-control" required maxlength="96" data-i18n-placeholder="iam.code" data-i18n-aria-label="iam.code" placeholder="Code" /></div>
+                      <div class="col-md-6"><input name="displayName" class="form-control" required maxlength="200" data-i18n-placeholder="iam.displayName" data-i18n-aria-label="iam.displayName" placeholder="Display name" /></div>
+                      <div class="col-12"><input name="reason" class="form-control" maxlength="1024" data-i18n-placeholder="iam.reason" data-i18n-aria-label="iam.reason" placeholder="Audit reason" /></div>
+                      <div class="col-12"><button class="btn btn-primary" type="submit" data-i18n="iam.create">Create</button></div>
+                    </form>
+                    <hr />
+                    <form id="iam-group-update-form" class="row g-2">
+                      <h3 class="h6" data-i18n="iam.groupUpdate">Update group</h3>
+                      <div class="col-md-6"><input name="groupId" class="form-control" required data-i18n-placeholder="iam.groupId" data-i18n-aria-label="iam.groupId" placeholder="Group UUID" /></div>
+                      <div class="col-md-6"><input name="displayName" class="form-control" required maxlength="200" data-i18n-placeholder="iam.displayName" data-i18n-aria-label="iam.displayName" placeholder="Display name" /></div>
+                      <div class="col-12"><input name="reason" class="form-control" maxlength="1024" data-i18n-placeholder="iam.reason" data-i18n-aria-label="iam.reason" placeholder="Audit reason" /></div>
+                      <div class="col-12"><button class="btn btn-outline-primary" type="submit" data-i18n="iam.update">Update</button></div>
+                    </form>
+                    <hr />
+                    <form id="iam-group-member-form" class="row g-2">
+                      <h3 class="h6" data-i18n="iam.groupMemberAdd">Add group member</h3>
+                      <div class="col-12"><input name="groupId" class="form-control" required data-i18n-placeholder="iam.groupId" data-i18n-aria-label="iam.groupId" placeholder="Group UUID" /></div>
+                      <div class="col-md-5"><select name="memberType" class="form-select" data-i18n-aria-label="iam.memberType"><option value="USER">USER</option><option value="GROUP">GROUP</option></select></div>
+                      <div class="col-md-7"><input name="memberId" class="form-control" required data-i18n-placeholder="iam.memberId" data-i18n-aria-label="iam.memberId" placeholder="Member UUID" /></div>
+                      <div class="col-12"><input name="reason" class="form-control" maxlength="1024" data-i18n-placeholder="iam.reason" data-i18n-aria-label="iam.reason" placeholder="Audit reason" /></div>
+                      <div class="col-12"><button class="btn btn-outline-primary" type="submit" data-i18n="iam.add">Add</button></div>
+                    </form>
+                    <hr />
+                    <form id="iam-group-member-remove-form" class="row g-2">
+                      <h3 class="h6" data-i18n="iam.groupMemberRemove">Remove group member</h3>
+                      <div class="col-12"><input name="groupId" class="form-control" required data-i18n-placeholder="iam.groupId" data-i18n-aria-label="iam.groupId" placeholder="Group UUID" /></div>
+                      <div class="col-md-5"><select name="memberType" class="form-select" data-i18n-aria-label="iam.memberType"><option value="USER">USER</option><option value="GROUP">GROUP</option></select></div>
+                      <div class="col-md-7"><input name="memberId" class="form-control" required data-i18n-placeholder="iam.memberId" data-i18n-aria-label="iam.memberId" placeholder="Member UUID" /></div>
+                      <div class="col-12"><input name="reason" class="form-control" maxlength="1024" data-i18n-placeholder="iam.reason" data-i18n-aria-label="iam.reason" placeholder="Audit reason" /></div>
+                      <div class="col-12"><button class="btn btn-outline-danger" type="submit" data-i18n="iam.remove">Remove</button></div>
+                    </form>
+                    <hr />
+                    <form id="iam-group-role-form" class="row g-2">
+                      <h3 class="h6" data-i18n="iam.groupRoleAssign">Assign role to group</h3>
+                      <div class="col-12"><input name="groupId" class="form-control" required data-i18n-placeholder="iam.groupId" data-i18n-aria-label="iam.groupId" placeholder="Group UUID" /></div>
+                      <div class="col-12"><input name="roleId" class="form-control" required data-i18n-placeholder="iam.roleId" data-i18n-aria-label="iam.roleId" placeholder="Role UUID" /></div>
+                      <div class="col-md-6"><select name="scopeKind" class="form-select" data-i18n-aria-label="iam.scope"><option value="ORGANIZATION">ORGANIZATION</option><option value="SUBDIVISION">SUBDIVISION</option></select></div>
+                      <div class="col-md-6"><input name="subdivisionId" class="form-control" data-i18n-placeholder="iam.subdivisionOptional" data-i18n-aria-label="iam.subdivisionOptional" placeholder="Subdivision UUID" /></div>
+                      <div class="col-md-6"><input name="effectiveFrom" class="form-control" data-i18n-placeholder="iam.effectiveFrom" data-i18n-aria-label="iam.effectiveFrom" placeholder="Effective from (ISO-8601)" /></div>
+                      <div class="col-md-6"><input name="effectiveTo" class="form-control" data-i18n-placeholder="iam.effectiveTo" data-i18n-aria-label="iam.effectiveTo" placeholder="Effective to (ISO-8601)" /></div>
+                      <div class="col-12"><input name="reason" class="form-control" maxlength="1024" data-i18n-placeholder="iam.reason" data-i18n-aria-label="iam.reason" placeholder="Audit reason" /></div>
+                      <div class="col-12"><button class="btn btn-outline-primary" type="submit" data-i18n="iam.assign">Assign</button></div>
+                    </form>
+                    <div class="mt-3"><h3 class="h6" data-i18n="iam.effectiveMembers">Effective group members</h3><pre id="iam-effective-group-members" class="p-3 rounded border bg-body-tertiary mb-0" aria-live="polite">—</pre></div>
+                  </div>
+                  <div class="col-xl-7"><div class="table-responsive"><table class="table inx-data-table align-middle"><caption class="visually-hidden" data-i18n="iam.groups">Groups</caption><thead><tr><th data-i18n="iam.code">Code</th><th data-i18n="iam.displayName">Display name</th><th colspan="2" data-i18n="iam.actions">Actions</th></tr></thead><tbody id="iam-group-rows"></tbody></table></div></div>
+                </div>
+              </details>
+
+              <details class="inx-panel mb-3">
+                <summary class="h5 mb-0" data-i18n="iam.roles">Roles</summary>
+                <div class="row g-4 mt-1">
+                  <div class="col-xl-5">
+                    <form id="iam-role-create-form" class="row g-2">
+                      <h3 class="h6" data-i18n="iam.roleCreate">Create role</h3>
+                      <div class="col-md-6"><input name="code" class="form-control" required maxlength="160" data-i18n-placeholder="iam.code" data-i18n-aria-label="iam.code" placeholder="Code" /></div>
+                      <div class="col-md-6"><input name="displayName" class="form-control" required maxlength="200" data-i18n-placeholder="iam.displayName" data-i18n-aria-label="iam.displayName" placeholder="Display name" /></div>
+                      <div class="col-md-5"><select name="scopeKind" class="form-select" data-i18n-aria-label="iam.scope"><option value="ORGANIZATION">ORGANIZATION</option><option value="SUBDIVISION">SUBDIVISION</option></select></div>
+                      <div class="col-md-7"><input name="permissionCodes" class="form-control" required data-i18n-placeholder="iam.permissionCodes" data-i18n-aria-label="iam.permissionCodes" placeholder="permission.code,permission.code" /></div>
+                      <div class="col-12"><input name="reason" class="form-control" maxlength="1024" data-i18n-placeholder="iam.reason" data-i18n-aria-label="iam.reason" placeholder="Audit reason" /></div>
+                      <div class="col-12"><button class="btn btn-primary" type="submit" data-i18n="iam.create">Create</button></div>
+                    </form>
+                    <hr />
+                    <form id="iam-role-update-form" class="row g-2">
+                      <h3 class="h6" data-i18n="iam.roleUpdate">Update role</h3>
+                      <div class="col-12"><input name="roleId" class="form-control" required data-i18n-placeholder="iam.roleId" data-i18n-aria-label="iam.roleId" placeholder="Role UUID" /></div>
+                      <div class="col-md-6"><input name="code" class="form-control" required maxlength="160" data-i18n-placeholder="iam.code" data-i18n-aria-label="iam.code" placeholder="Code" /></div>
+                      <div class="col-md-6"><input name="displayName" class="form-control" required maxlength="200" data-i18n-placeholder="iam.displayName" data-i18n-aria-label="iam.displayName" placeholder="Display name" /></div>
+                      <div class="col-12"><input name="permissionCodes" class="form-control" data-i18n-placeholder="iam.permissionCodesOptional" data-i18n-aria-label="iam.permissionCodesOptional" placeholder="Permission codes (optional)" /></div>
+                      <div class="col-12"><input name="reason" class="form-control" maxlength="1024" data-i18n-placeholder="iam.reason" data-i18n-aria-label="iam.reason" placeholder="Audit reason" /></div>
+                      <div class="col-12"><button class="btn btn-outline-primary" type="submit" data-i18n="iam.update">Update</button></div>
+                    </form>
+                    <hr />
+                    <form id="iam-role-assignment-form" class="row g-2">
+                      <h3 class="h6" data-i18n="iam.roleAssign">Assign role</h3>
+                      <div class="col-12"><input name="roleId" class="form-control" required data-i18n-placeholder="iam.roleId" data-i18n-aria-label="iam.roleId" placeholder="Role UUID" /></div>
+                      <div class="col-md-5"><select name="actorType" class="form-select" data-i18n-aria-label="iam.actorType"><option value="USER">USER</option><option value="GROUP">GROUP</option></select></div>
+                      <div class="col-md-7"><input name="actorId" class="form-control" required data-i18n-placeholder="iam.actorId" data-i18n-aria-label="iam.actorId" placeholder="Actor UUID" /></div>
+                      <div class="col-md-6"><select name="scopeKind" class="form-select" data-i18n-aria-label="iam.scope"><option value="ORGANIZATION">ORGANIZATION</option><option value="SUBDIVISION">SUBDIVISION</option></select></div>
+                      <div class="col-md-6"><input name="subdivisionId" class="form-control" data-i18n-placeholder="iam.subdivisionOptional" data-i18n-aria-label="iam.subdivisionOptional" placeholder="Subdivision UUID" /></div>
+                      <div class="col-md-6"><input name="effectiveFrom" class="form-control" data-i18n-placeholder="iam.effectiveFrom" data-i18n-aria-label="iam.effectiveFrom" placeholder="Effective from (ISO-8601)" /></div>
+                      <div class="col-md-6"><input name="effectiveTo" class="form-control" data-i18n-placeholder="iam.effectiveTo" data-i18n-aria-label="iam.effectiveTo" placeholder="Effective to (ISO-8601)" /></div>
+                      <div class="col-12"><input name="reason" class="form-control" maxlength="1024" data-i18n-placeholder="iam.reason" data-i18n-aria-label="iam.reason" placeholder="Audit reason" /></div>
+                      <div class="col-12"><button class="btn btn-outline-primary" type="submit" data-i18n="iam.assign">Assign</button></div>
+                    </form>
+                    <hr />
+                    <form id="iam-role-revoke-form" class="row g-2">
+                      <h3 class="h6" data-i18n="iam.roleRevoke">Revoke assignment</h3>
+                      <div class="col-md-6"><input name="roleId" class="form-control" required data-i18n-placeholder="iam.roleId" data-i18n-aria-label="iam.roleId" placeholder="Role UUID" /></div>
+                      <div class="col-md-6"><input name="assignmentId" class="form-control" required data-i18n-placeholder="iam.assignmentId" data-i18n-aria-label="iam.assignmentId" placeholder="Assignment UUID" /></div>
+                      <div class="col-12"><input name="reason" class="form-control" maxlength="1024" data-i18n-placeholder="iam.reason" data-i18n-aria-label="iam.reason" placeholder="Audit reason" /></div>
+                      <div class="col-12"><button class="btn btn-outline-danger" type="submit" data-i18n="iam.revoke">Revoke</button></div>
+                    </form>
+                  </div>
+                  <div class="col-xl-7"><div class="table-responsive"><table class="table inx-data-table align-middle"><caption class="visually-hidden" data-i18n="iam.roles">Roles</caption><thead><tr><th data-i18n="iam.code">Code</th><th data-i18n="iam.displayName">Display name</th><th data-i18n="iam.scope">Scope</th><th data-i18n="iam.type">Type</th><th data-i18n="iam.actions">Actions</th></tr></thead><tbody id="iam-role-rows"></tbody></table></div></div>
+                </div>
+              </details>
+
+              <details class="inx-panel mb-3">
+                <summary class="h5 mb-0" data-i18n="iam.permissions">Permissions</summary>
+                <div class="row g-4 mt-1">
+                  <div class="col-xl-5">
+                    <form id="iam-permission-create-form" class="row g-2">
+                      <h3 class="h6" data-i18n="iam.permissionCreate">Create custom permission</h3>
+                      <div class="col-12"><input name="code" class="form-control" required maxlength="160" data-i18n-placeholder="iam.code" data-i18n-aria-label="iam.code" placeholder="Code" /></div>
+                      <div class="col-md-6"><input name="resourceType" class="form-control" required maxlength="64" data-i18n-placeholder="iam.resource" data-i18n-aria-label="iam.resource" placeholder="Resource" /></div>
+                      <div class="col-md-6"><input name="action" class="form-control" required maxlength="64" data-i18n-placeholder="iam.action" data-i18n-aria-label="iam.action" placeholder="Action" /></div>
+                      <div class="col-md-6"><select name="sensitivity" class="form-select" data-i18n-aria-label="iam.sensitivity"><option value="normal">NORMAL</option><option value="elevated">ELEVATED</option><option value="critical">CRITICAL</option></select></div>
+                      <div class="col-md-6"><select name="scopeKind" class="form-select" data-i18n-aria-label="iam.scope"><option value="ORGANIZATION">ORGANIZATION</option><option value="SUBDIVISION">SUBDIVISION</option></select></div>
+                      <div class="col-12"><input name="reason" class="form-control" maxlength="1024" data-i18n-placeholder="iam.reason" data-i18n-aria-label="iam.reason" placeholder="Audit reason" /></div>
+                      <div class="col-12"><button class="btn btn-primary" type="submit" data-i18n="iam.create">Create</button></div>
+                    </form>
+                    <hr />
+                    <form id="iam-permission-update-form" class="row g-2">
+                      <h3 class="h6" data-i18n="iam.permissionUpdate">Update permission</h3>
+                      <div class="col-12"><input name="permissionId" class="form-control" required data-i18n-placeholder="iam.permissionId" data-i18n-aria-label="iam.permissionId" placeholder="Permission UUID" /></div>
+                      <div class="col-md-6"><input name="resourceType" class="form-control" required maxlength="64" data-i18n-placeholder="iam.resource" data-i18n-aria-label="iam.resource" placeholder="Resource" /></div>
+                      <div class="col-md-6"><input name="action" class="form-control" required maxlength="64" data-i18n-placeholder="iam.action" data-i18n-aria-label="iam.action" placeholder="Action" /></div>
+                      <div class="col-md-4"><select name="sensitivity" class="form-select" data-i18n-aria-label="iam.sensitivity"><option value="normal">NORMAL</option><option value="elevated">ELEVATED</option><option value="critical">CRITICAL</option></select></div>
+                      <div class="col-md-4"><select name="scopeKind" class="form-select" data-i18n-aria-label="iam.scope"><option value="ORGANIZATION">ORGANIZATION</option><option value="SUBDIVISION">SUBDIVISION</option></select></div>
+                      <div class="col-md-4 form-check d-flex align-items-center ps-5"><input id="iam-permission-active" name="active" class="form-check-input me-2" type="checkbox" checked /><label class="form-check-label" for="iam-permission-active" data-i18n="iam.active">Active</label></div>
+                      <div class="col-12"><input name="reason" class="form-control" maxlength="1024" data-i18n-placeholder="iam.reason" data-i18n-aria-label="iam.reason" placeholder="Audit reason" /></div>
+                      <div class="col-12"><button class="btn btn-outline-primary" type="submit" data-i18n="iam.update">Update</button></div>
+                    </form>
+                    <hr />
+                    <form id="iam-permission-evaluate-form" class="row g-2">
+                      <h3 class="h6" data-i18n="iam.permissionEvaluate">Effective permissions</h3>
+                      <div class="col-12"><input name="actorId" class="form-control" required data-i18n-placeholder="iam.actorId" data-i18n-aria-label="iam.actorId" placeholder="Actor UUID" /></div>
+                      <div class="col-12"><input name="subdivisionId" class="form-control" data-i18n-placeholder="iam.subdivisionOptional" data-i18n-aria-label="iam.subdivisionOptional" placeholder="Subdivision UUID" /></div>
+                      <div class="col-12"><button class="btn btn-outline-primary" type="submit" data-i18n="iam.evaluate">Evaluate</button></div>
+                      <div class="col-12"><pre id="iam-effective-permissions" class="p-3 rounded border bg-body-tertiary mb-0" aria-live="polite">—</pre></div>
+                    </form>
+                  </div>
+                  <div class="col-xl-7"><div class="table-responsive"><table class="table inx-data-table align-middle"><caption class="visually-hidden" data-i18n="iam.permissions">Permissions</caption><thead><tr><th data-i18n="iam.code">Code</th><th data-i18n="iam.resource">Resource</th><th data-i18n="iam.action">Action</th><th data-i18n="iam.sensitivity">Sensitivity</th><th data-i18n="iam.scope">Scope</th><th data-i18n="iam.type">Type</th><th data-i18n="iam.actions">Actions</th></tr></thead><tbody id="iam-permission-rows"></tbody></table></div></div>
+                </div>
+              </details>
+            </div>
           </section>
 
           <footer class="inx-footer"><span data-i18n="footer.product">InfraNexum — Infrastructure Control &amp; Governance Platform</span><span id="footer-version">Version —</span></footer>

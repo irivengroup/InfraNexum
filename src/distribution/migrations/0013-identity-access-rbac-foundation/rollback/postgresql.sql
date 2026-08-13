@@ -1,0 +1,9 @@
+DROP TABLE IF EXISTS infranexum_iam.role_assignment;
+DROP TABLE IF EXISTS infranexum_iam.role_permission;
+DROP TABLE IF EXISTS infranexum_iam.role;
+DROP TABLE IF EXISTS infranexum_iam.permission;
+DROP TABLE IF EXISTS infranexum_iam.group_group_member;
+DROP TABLE IF EXISTS infranexum_iam.group_user_member;
+DROP TABLE IF EXISTS infranexum_iam.iam_group;
+DROP TABLE IF EXISTS infranexum_iam.user_membership;
+DROP TABLE IF EXISTS infranexum_iam.iam_user;

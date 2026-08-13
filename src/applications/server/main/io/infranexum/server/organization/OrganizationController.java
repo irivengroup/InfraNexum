@@ -17,6 +17,7 @@ import io.infranexum.organization.application.OrganizationApplicationService;
 import io.infranexum.organization.application.OrganizationCommandContext;
 import io.infranexum.organization.domain.OrganizationState;
 import io.infranexum.server.observability.CorrelationContext;
+import io.infranexum.server.identity.LocalAuthenticationFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.security.SecureRandom;
@@ -37,12 +38,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Local-only pre-IAM HTTP adapter invoking the authoritative Organization application service. */
+/** RBAC-protected HTTP adapter invoking the authoritative Organization application service. */
 @RestController
 @RequestMapping("/api/v1/iam/organizations")
 public final class OrganizationController {
-    private static final String LOCAL_ACTOR = "local-development";
-
     private final OrganizationApplicationService service;
     private final UuidV7Generator ids;
     private final Clock clock;
@@ -190,7 +189,14 @@ public final class OrganizationController {
             HttpServletRequest request, String idempotencyKey, String reason) {
         DomainIdentifier correlationId = CorrelationContext.identifier(request).orElseGet(ids::next);
         return new OrganizationCommandContext(
-                LOCAL_ACTOR, correlationId, idempotencyKey, normalizeReason(reason));
+                authenticatedActor(request), correlationId, idempotencyKey, normalizeReason(reason));
+    }
+
+
+    private static String authenticatedActor(HttpServletRequest request) {
+        Object value = request.getAttribute(LocalAuthenticationFilter.ACCOUNT_ATTRIBUTE);
+        if (value instanceof DomainIdentifier actor) return actor.toString();
+        throw new IllegalStateException("authenticated actor missing after RBAC boundary");
     }
 
     private static String normalizeReason(String reason) {

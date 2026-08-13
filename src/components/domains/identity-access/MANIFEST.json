@@ -1,0 +1,7 @@
+{
+  "component": "identity-access",
+  "kind": "domain",
+  "status": "implemented",
+  "program_epics": ["PGM-03-E03"],
+  "owns": ["iam-users", "iam-memberships", "iam-groups", "iam-roles", "iam-permissions", "rbac-assignments"]
+}

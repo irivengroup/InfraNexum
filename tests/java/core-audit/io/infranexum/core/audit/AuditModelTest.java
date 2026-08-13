@@ -46,6 +46,20 @@ final class AuditModelTest {
     }
 
     @Test
+    void acceptsOpaqueUuidActorAndTargetIdentifiersWithoutRelaxingTypedTokens() {
+        String actorId = id(21).toString();
+        String targetId = id(22).toString();
+        AuditEntry entry = entryWith(id(20), actorId, "USER", "iam.role.assign", "ROLE", targetId,
+                "ALLOW", Instant.EPOCH, "SUCCESS", "api", Map.of(), "INTERNAL");
+        assertEquals(actorId, entry.actorId());
+        assertEquals(targetId, entry.targetId());
+        assertThrows(IllegalArgumentException.class, () -> entryWith(id(23), actorId, "9USER", "iam.role.assign", "ROLE", targetId,
+                "ALLOW", Instant.EPOCH, "SUCCESS", "api", Map.of(), "INTERNAL"));
+        assertThrows(IllegalArgumentException.class, () -> entryWith(id(24), actorId, "USER", "9bad.action", "ROLE", targetId,
+                "ALLOW", Instant.EPOCH, "SUCCESS", "api", Map.of(), "INTERNAL"));
+    }
+
+    @Test
     void validatesRecordVerificationAndPurgeTombstone() {
         AuditEntry entry = entry(3, AuditScope.platform(), Map.of());
         String hash = AuditCanonicalizer.hash(1, AuditCanonicalizer.GENESIS_HASH, entry);

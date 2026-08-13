@@ -1,21 +1,21 @@
 openapi: 3.1.0
 info:
   title: InfraNexum Local Authentication API
-  version: 2.0.0-alpha.0.67
-  description: >-
-    Local human authentication foundation. Credentials are verified server-side with Argon2id;
-    browser sessions are opaque, durable and revocable. The bootstrap administrator must replace
-    its generated password before accessing protected v1 APIs. RBAC authorization is delivered by
-    the subsequent IAM increment and is deliberately not simulated here.
+  version: 2.0.0-alpha.0.68
+  description: Local human authentication foundation. Credentials are verified server-side with Argon2id; browser sessions
+    are opaque, durable and revocable. The bootstrap administrator must replace its generated password before accessing protected
+    v1 APIs. A validated session establishes the actor consumed by the downstream PGM-03-E03 RBAC PEP.
 tags:
-  - name: IAM / Local authentication
+- name: IAM / Local authentication
 x-tagGroups:
-  - name: IAM
-    tags: [IAM / Local authentication]
+- name: IAM
+  tags:
+  - IAM / Local authentication
 paths:
   /api/v1/iam/local-auth/session:
     post:
-      tags: [IAM / Local authentication]
+      tags:
+      - IAM / Local authentication
       operationId: createLocalSession
       summary: Authenticate a local account and establish an opaque browser session
       security: []
@@ -23,67 +23,89 @@ paths:
         required: true
         content:
           application/json:
-            schema: {$ref: '#/components/schemas/LoginRequest'}
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
       responses:
         '200':
           description: Authentication succeeded. Opaque session and CSRF cookies are issued.
           headers:
             Set-Cookie:
               description: INX_SESSION HttpOnly cookie and INX_XSRF CSRF cookie.
-              schema: {type: string}
+              schema:
+                type: string
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/Session'}
-        '400': {$ref: '#/components/responses/BadRequest'}
-        '401': {$ref: '#/components/responses/AuthenticationFailed'}
+              schema:
+                $ref: '#/components/schemas/Session'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/AuthenticationFailed'
     get:
-      tags: [IAM / Local authentication]
+      tags:
+      - IAM / Local authentication
       operationId: currentLocalSession
       summary: Resolve the current local browser session
-      security: [{LocalSessionCookie: []}]
+      security:
+      - LocalSessionCookie: []
       responses:
         '200':
           description: Current validated local session.
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/Session'}
-        '401': {$ref: '#/components/responses/InvalidSession'}
+              schema:
+                $ref: '#/components/schemas/Session'
+        '401':
+          $ref: '#/components/responses/InvalidSession'
     delete:
-      tags: [IAM / Local authentication]
+      tags:
+      - IAM / Local authentication
       operationId: revokeCurrentLocalSession
       summary: Revoke the current session and expire browser cookies
-      security: [{LocalSessionCookie: []}]
+      security:
+      - LocalSessionCookie: []
       parameters:
-        - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/CsrfToken'
       responses:
-        '204': {description: Session revoked.}
-        '401': {$ref: '#/components/responses/InvalidSession'}
-        '403': {$ref: '#/components/responses/CsrfRejected'}
+        '204':
+          description: Session revoked.
+        '401':
+          $ref: '#/components/responses/InvalidSession'
+        '403':
+          $ref: '#/components/responses/CsrfRejected'
   /api/v1/iam/local-auth/password:
     post:
-      tags: [IAM / Local authentication]
+      tags:
+      - IAM / Local authentication
       operationId: changeLocalPassword
       summary: Replace the local password, revoke all existing sessions and issue a replacement session
-      security: [{LocalSessionCookie: []}]
+      security:
+      - LocalSessionCookie: []
       parameters:
-        - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/CsrfToken'
       requestBody:
         required: true
         content:
           application/json:
-            schema: {$ref: '#/components/schemas/PasswordChangeRequest'}
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
       responses:
         '200':
           description: Password changed and a replacement session issued.
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/Session'}
-        '400': {$ref: '#/components/responses/PasswordPolicy'}
-        '401': {$ref: '#/components/responses/AuthenticationFailed'}
-        '403': {$ref: '#/components/responses/CsrfRejected'}
+              schema:
+                $ref: '#/components/schemas/Session'
+        '400':
+          $ref: '#/components/responses/PasswordPolicy'
+        '401':
+          $ref: '#/components/responses/AuthenticationFailed'
+        '403':
+          $ref: '#/components/responses/CsrfRejected'
   /api/v1/iam/local-auth/password-policy/validate:
     post:
-      tags: [IAM / Local authentication]
+      tags:
+      - IAM / Local authentication
       operationId: validateLocalPasswordPolicy
       summary: Validate a candidate password without storing it
       security: []
@@ -94,9 +116,14 @@ paths:
             schema:
               type: object
               additionalProperties: false
-              required: [password]
+              required:
+              - password
               properties:
-                password: {type: string, minLength: 1, maxLength: 128, writeOnly: true}
+                password:
+                  type: string
+                  minLength: 1
+                  maxLength: 128
+                  writeOnly: true
       responses:
         '200':
           description: Policy validation result.
@@ -104,11 +131,18 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [valid, violations]
+                required:
+                - valid
+                - violations
                 properties:
-                  valid: {type: boolean}
-                  violations: {type: array, items: {type: string}}
-        '400': {$ref: '#/components/responses/BadRequest'}
+                  valid:
+                    type: boolean
+                  violations:
+                    type: array
+                    items:
+                      type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
 components:
   securitySchemes:
     LocalSessionCookie:
@@ -121,57 +155,122 @@ components:
       in: header
       required: true
       description: Double-submit token matching the INX_XSRF browser cookie.
-      schema: {type: string, minLength: 1, maxLength: 512}
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 512
   schemas:
     LoginRequest:
       type: object
       additionalProperties: false
-      required: [username, password]
+      required:
+      - username
+      - password
       properties:
-        username: {type: string, minLength: 1, maxLength: 128}
-        password: {type: string, minLength: 1, maxLength: 128, writeOnly: true}
+        username:
+          type: string
+          minLength: 1
+          maxLength: 128
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+          writeOnly: true
     PasswordChangeRequest:
       type: object
       additionalProperties: false
-      required: [currentPassword, newPassword]
+      required:
+      - currentPassword
+      - newPassword
       properties:
-        currentPassword: {type: string, minLength: 1, maxLength: 128, writeOnly: true}
-        newPassword: {type: string, minLength: 1, maxLength: 128, writeOnly: true}
+        currentPassword:
+          type: string
+          minLength: 1
+          maxLength: 128
+          writeOnly: true
+        newPassword:
+          type: string
+          minLength: 1
+          maxLength: 128
+          writeOnly: true
     Session:
       type: object
       additionalProperties: false
-      required: [sessionId, accountId, username, displayName, mustChange, idleExpiresAt, absoluteExpiresAt]
+      required:
+      - sessionId
+      - accountId
+      - username
+      - displayName
+      - mustChange
+      - idleExpiresAt
+      - absoluteExpiresAt
       properties:
-        sessionId: {type: string, format: uuid}
-        accountId: {type: string, format: uuid}
-        username: {type: string}
-        displayName: {type: string}
-        mustChange: {type: boolean}
-        idleExpiresAt: {type: string, format: date-time}
-        absoluteExpiresAt: {type: string, format: date-time}
+        sessionId:
+          type: string
+          format: uuid
+        accountId:
+          type: string
+          format: uuid
+        username:
+          type: string
+        displayName:
+          type: string
+        mustChange:
+          type: boolean
+        idleExpiresAt:
+          type: string
+          format: date-time
+        absoluteExpiresAt:
+          type: string
+          format: date-time
     Problem:
       type: object
       additionalProperties: true
-      required: [code, message, correlation_id, timestamp]
+      required:
+      - code
+      - message
+      - correlation_id
+      - timestamp
       properties:
-        code: {type: string}
-        message: {type: string}
-        correlation_id: {type: string}
-        details: {type: object}
-        timestamp: {type: string, format: date-time}
+        code:
+          type: string
+        message:
+          type: string
+        correlation_id:
+          type: string
+        details:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
   responses:
     BadRequest:
       description: Invalid request.
-      content: {application/json: {schema: {$ref: '#/components/schemas/Problem'}}}
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
     AuthenticationFailed:
       description: Generic authentication failure. Account existence is never disclosed.
-      content: {application/json: {schema: {$ref: '#/components/schemas/Problem'}}}
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
     InvalidSession:
       description: Session is missing, expired, revoked or invalid.
-      content: {application/json: {schema: {$ref: '#/components/schemas/Problem'}}}
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
     CsrfRejected:
       description: CSRF validation failed.
-      content: {application/json: {schema: {$ref: '#/components/schemas/Problem'}}}
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
     PasswordPolicy:
       description: Candidate password violates the authoritative local password policy.
-      content: {application/json: {schema: {$ref: '#/components/schemas/Problem'}}}
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'

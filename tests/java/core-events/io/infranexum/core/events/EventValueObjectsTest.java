@@ -37,6 +37,8 @@ class EventValueObjectsTest {
 
         EventType created = new EventType("  core.asset.created.v1  ");
         EventType updated = new EventType("core.asset.updated.v1");
+        EventType approvedIam = new EventType("iam.user.membership_changed.v1");
+        assertEquals("iam.user.membership_changed.v1", approvedIam.value());
         assertEquals("core.asset.created.v1", created.toString());
         assertTrue(created.compareTo(updated) < 0);
         assertEquals(0, created.compareTo(new EventType("core.asset.created.v1")));

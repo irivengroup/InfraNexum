@@ -18,14 +18,14 @@ import org.springframework.http.MediaType;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Local-authentication boundary for Server APIs while RBAC is not yet installed.
+ * Local-authentication boundary that establishes the actor consumed by the downstream RBAC PEP.
  *
  * <p>The filter authenticates every v1 API except the local-authentication endpoints themselves.
  * Bootstrap credentials are intentionally restricted to password replacement until the mandatory
  * change has completed. Browser mutations additionally require the double-submit CSRF token.
  */
 public final class LocalAuthenticationFilter extends OncePerRequestFilter implements Ordered {
-    static final String ACCOUNT_ATTRIBUTE = LocalAuthenticationFilter.class.getName() + ".account";
+    public static final String ACCOUNT_ATTRIBUTE = LocalAuthenticationFilter.class.getName() + ".account";
     private static final String API_PREFIX = "/api/v1/";
     private static final String AUTH_PREFIX = "/api/v1/iam/local-auth";
     private static final String PUBLIC_BUILD_PATH = "/api/v1/system/build";

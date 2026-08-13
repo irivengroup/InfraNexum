@@ -1,0 +1,2006 @@
+openapi: 3.1.0
+info:
+  title: InfraNexum Identity Access RBAC API
+  version: 2.0.0-alpha.0.68
+  description: PGM-03-E03 RBAC foundation for users, memberships, groups, roles, permissions, temporal scoped assignments
+    and explainable permission evaluation. Local authentication establishes the actor; the Server RBAC PEP denies unregistered
+    protected routes by default.
+tags:
+- name: IAM / Access / Users
+- name: IAM / Access / Groups
+- name: IAM / Access / Roles
+- name: IAM / Access / Permissions
+x-tagGroups:
+- name: IAM
+  tags:
+  - IAM / Access / Users
+  - IAM / Access / Groups
+  - IAM / Access / Roles
+  - IAM / Access / Permissions
+x-infranexum-rbac-deny-by-default: true
+security:
+- LocalSessionCookie: []
+paths:
+  /api/v1/iam/users:
+    parameters:
+    - &id001
+      $ref: '#/components/parameters/CorrelationId'
+    get:
+      tags:
+      - IAM / Access / Users
+      operationId: searchIamUsers
+      summary: Search IAM users with bounded pagination
+      parameters:
+      - &id004
+        $ref: '#/components/parameters/Offset'
+      - &id005
+        $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Request completed.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    post:
+      tags:
+      - IAM / Access / Users
+      operationId: createIamUser
+      summary: Create an IAM user
+      parameters:
+      - &id002
+        $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUser'
+      responses:
+        '201':
+          description: Resource created.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/iam/users/{userId}:
+    parameters:
+    - *id001
+    - &id003
+      $ref: '#/components/parameters/UserId'
+    get:
+      tags:
+      - IAM / Access / Users
+      operationId: getIamUser
+      summary: Read one IAM user
+      responses:
+        '200':
+          description: Request completed.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    patch:
+      tags:
+      - IAM / Access / Users
+      operationId: updateIamUser
+      summary: Update mutable IAM user attributes
+      parameters:
+      - *id002
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUser'
+      responses:
+        '200':
+          description: Request completed.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    delete:
+      tags:
+      - IAM / Access / Users
+      operationId: deleteIamUser
+      summary: Soft-delete an IAM user
+      parameters:
+      - *id002
+      - name: reason
+        in: query
+        required: false
+        schema:
+          type: string
+          maxLength: 1024
+      responses:
+        '200':
+          description: Request completed.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/iam/users/{userId}/activate:
+    parameters:
+    - *id001
+    - *id003
+    post:
+      tags:
+      - IAM / Access / Users
+      operationId: activateIamUser
+      summary: Activate an IAM user
+      parameters:
+      - *id002
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reason'
+      responses:
+        '200':
+          description: Request completed.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/iam/users/{userId}/suspend:
+    parameters:
+    - *id001
+    - *id003
+    post:
+      tags:
+      - IAM / Access / Users
+      operationId: suspendIamUser
+      summary: Suspend an IAM user
+      parameters:
+      - *id002
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reason'
+      responses:
+        '200':
+          description: Request completed.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/iam/users/{userId}/memberships:
+    parameters:
+    - *id001
+    - *id003
+    get:
+      tags:
+      - IAM / Access / Users
+      operationId: listIamUserMemberships
+      summary: List organization and subdivision memberships for a user
+      responses:
+        '200':
+          description: Request completed.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Membership'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    post:
+      tags:
+      - IAM / Access / Users
+      operationId: createIamUserMembership
+      summary: Create a temporal IAM membership
+      parameters:
+      - *id002
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipRequest'
+      responses:
+        '201':
+          description: Resource created.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Membership'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/iam/users/{userId}/roles:
+    parameters:
+    - *id001
+    - *id003
+    post:
+      tags:
+      - IAM / Access / Users
+      operationId: assignIamUserRole
+      summary: Assign a role directly to a user at an explicit scope
+      parameters:
+      - *id002
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRoleRequest'
+      responses:
+        '201':
+          description: Resource created.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleAssignment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/iam/groups/{groupId}/effective-members:
+    parameters:
+    - *id001
+    - &id007
+      $ref: '#/components/parameters/GroupId'
+    get:
+      tags:
+      - IAM / Access / Groups
+      operationId: getIamGroupEffectiveMembers
+      summary: Resolve direct and inherited effective user members
+      responses:
+        '200':
+          description: Request completed.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EffectiveMembers'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/organizations/{orgId}/groups:
+    parameters:
+    - *id001
+    - &id006
+      $ref: '#/components/parameters/OrganizationId'
+    get:
+      tags:
+      - IAM / Access / Groups
+      operationId: searchIamGroups
+      summary: Search groups in one organization
+      parameters:
+      - *id004
+      - *id005
+      responses:
+        '200':
+          description: Request completed.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Group'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    post:
+      tags:
+      - IAM / Access / Groups
+      operationId: createIamGroup
+      summary: Create an IAM group in one organization
+      parameters:
+      - *id002
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGroup'
+      responses:
+        '201':
+          description: Resource created.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/organizations/{orgId}/groups/{groupId}:
+    parameters:
+    - *id001
+    - *id006
+    - *id007
+    get:
+      tags:
+      - IAM / Access / Groups
+      operationId: getIamGroup
+      summary: Read one IAM group
+      responses:
+        '200':
+          description: Request completed.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    patch:
+      tags:
+      - IAM / Access / Groups
+      operationId: updateIamGroup
+      summary: Update an IAM group display name
+      parameters:
+      - *id002
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGroup'
+      responses:
+        '200':
+          description: Request completed.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    delete:
+      tags:
+      - IAM / Access / Groups
+      operationId: deleteIamGroup
+      summary: Soft-delete an empty IAM group
+      parameters:
+      - *id002
+      - name: reason
+        in: query
+        required: false
+        schema:
+          type: string
+          maxLength: 1024
+      responses:
+        '200':
+          description: Request completed.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/organizations/{orgId}/groups/{groupId}/members:
+    parameters:
+    - *id001
+    - *id006
+    - *id007
+    post:
+      tags:
+      - IAM / Access / Groups
+      operationId: addIamGroupMember
+      summary: Add a user or nested group member
+      parameters:
+      - *id002
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupMemberRequest'
+      responses:
+        '204':
+          description: Mutation completed; no response body.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/organizations/{orgId}/groups/{groupId}/members/{memberId}:
+    parameters:
+    - *id001
+    - *id006
+    - *id007
+    - $ref: '#/components/parameters/MemberId'
+    delete:
+      tags:
+      - IAM / Access / Groups
+      operationId: removeIamGroupMember
+      summary: Remove a user or nested group member
+      parameters:
+      - *id002
+      - name: memberType
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - USER
+          - GROUP
+          default: USER
+      - name: reason
+        in: query
+        required: false
+        schema:
+          type: string
+          maxLength: 1024
+      responses:
+        '204':
+          description: Mutation completed; no response body.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/organizations/{orgId}/groups/{groupId}/roles:
+    parameters:
+    - *id001
+    - *id006
+    - *id007
+    post:
+      tags:
+      - IAM / Access / Groups
+      operationId: assignIamGroupRole
+      summary: Assign a role to a group
+      parameters:
+      - *id002
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupRoleRequest'
+      responses:
+        '201':
+          description: Resource created.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleAssignment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/organizations/{orgId}/roles:
+    parameters:
+    - *id001
+    - *id006
+    get:
+      tags:
+      - IAM / Access / Roles
+      operationId: searchIamRoles
+      summary: Search organization and visible system roles
+      parameters:
+      - *id004
+      - *id005
+      responses:
+        '200':
+          description: Request completed.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Role'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    post:
+      tags:
+      - IAM / Access / Roles
+      operationId: createIamRole
+      summary: Create an organization-owned role
+      parameters:
+      - *id002
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRole'
+      responses:
+        '201':
+          description: Resource created.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/organizations/{orgId}/roles/{roleId}:
+    parameters:
+    - *id001
+    - *id006
+    - &id008
+      $ref: '#/components/parameters/RoleId'
+    get:
+      tags:
+      - IAM / Access / Roles
+      operationId: getIamRole
+      summary: Read one organization or system role
+      responses:
+        '200':
+          description: Request completed.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    patch:
+      tags:
+      - IAM / Access / Roles
+      operationId: updateIamRole
+      summary: Update a mutable organization role
+      parameters:
+      - *id002
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRole'
+      responses:
+        '200':
+          description: Request completed.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    delete:
+      tags:
+      - IAM / Access / Roles
+      operationId: deleteIamRole
+      summary: Soft-delete a role with explicit forced handling for active assignments
+      parameters:
+      - *id002
+      - name: force
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+      - name: reason
+        in: query
+        required: false
+        schema:
+          type: string
+          maxLength: 1024
+      responses:
+        '200':
+          description: Request completed.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/organizations/{orgId}/roles/{roleId}/assignments:
+    parameters:
+    - *id001
+    - *id006
+    - *id008
+    get:
+      tags:
+      - IAM / Access / Roles
+      operationId: listIamRoleAssignments
+      summary: List direct role assignments
+      responses:
+        '200':
+          description: Request completed.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RoleAssignment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    post:
+      tags:
+      - IAM / Access / Roles
+      operationId: createIamRoleAssignment
+      summary: Create a temporal scoped role assignment
+      parameters:
+      - *id002
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleAssignmentRequest'
+      responses:
+        '201':
+          description: Resource created.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleAssignment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/organizations/{orgId}/roles/{roleId}/assignments/{assignmentId}:
+    parameters:
+    - *id001
+    - *id006
+    - *id008
+    - $ref: '#/components/parameters/AssignmentId'
+    delete:
+      tags:
+      - IAM / Access / Roles
+      operationId: revokeIamRoleAssignment
+      summary: Revoke one role assignment owned by the requested role
+      parameters:
+      - *id002
+      - name: reason
+        in: query
+        required: false
+        schema:
+          type: string
+          maxLength: 1024
+      responses:
+        '204':
+          description: Mutation completed; no response body.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/organizations/{orgId}/permissions:
+    parameters:
+    - *id001
+    - *id006
+    get:
+      tags:
+      - IAM / Access / Permissions
+      operationId: searchIamPermissions
+      summary: Search organization and visible system permissions
+      parameters:
+      - *id004
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 100
+      responses:
+        '200':
+          description: Request completed.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Permission'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    post:
+      tags:
+      - IAM / Access / Permissions
+      operationId: createIamPermission
+      summary: Create an organization-owned atomic permission
+      parameters:
+      - *id002
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePermission'
+      responses:
+        '201':
+          description: Resource created.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Permission'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/organizations/{orgId}/permissions/effective:
+    parameters:
+    - *id001
+    - *id006
+    get:
+      tags:
+      - IAM / Access / Permissions
+      operationId: getIamEffectivePermissions
+      summary: Resolve effective permissions for one actor and scope
+      parameters:
+      - name: actorId
+        in: query
+        required: true
+        schema: &id009
+          $ref: '#/components/schemas/UuidV7'
+      - name: subdivisionId
+        in: query
+        required: false
+        schema: *id009
+      responses:
+        '200':
+          description: Request completed.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EffectivePermissions'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/organizations/{orgId}/permissions/validate:
+    parameters:
+    - *id001
+    - *id006
+    post:
+      tags:
+      - IAM / Access / Permissions
+      operationId: validateIamPermission
+      summary: Evaluate one permission for an actor and organization/subdivision scope
+      parameters:
+      - *id002
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PermissionValidationRequest'
+      responses:
+        '200':
+          description: Request completed.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionValidation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/organizations/{orgId}/permissions/{permissionId}:
+    parameters:
+    - *id001
+    - *id006
+    - $ref: '#/components/parameters/PermissionId'
+    get:
+      tags:
+      - IAM / Access / Permissions
+      operationId: getIamPermission
+      summary: Read one organization or system permission
+      responses:
+        '200':
+          description: Request completed.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Permission'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    patch:
+      tags:
+      - IAM / Access / Permissions
+      operationId: updateIamPermission
+      summary: Update a mutable organization permission
+      parameters:
+      - *id002
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePermission'
+      responses:
+        '200':
+          description: Request completed.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Permission'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    delete:
+      tags:
+      - IAM / Access / Permissions
+      operationId: deleteIamPermission
+      summary: Soft-delete a mutable organization permission
+      parameters:
+      - *id002
+      - name: reason
+        in: query
+        required: false
+        schema:
+          type: string
+          maxLength: 1024
+      responses:
+        '200':
+          description: Request completed.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Permission'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+components:
+  securitySchemes:
+    LocalSessionCookie:
+      type: apiKey
+      in: cookie
+      name: INX_SESSION
+  parameters:
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: false
+      description: Optional canonical lowercase RFC 9562 UUIDv7 correlation identifier; Server generates one when omitted
+        or invalid.
+      schema: *id009
+    CsrfToken:
+      name: X-CSRF-Token
+      in: header
+      required: true
+      description: Double-submit token matching the INX_XSRF browser cookie for every non-safe authenticated request.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 512
+    Offset:
+      name: offset
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+    OrganizationId:
+      name: orgId
+      in: path
+      required: true
+      schema: *id009
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema: *id009
+    GroupId:
+      name: groupId
+      in: path
+      required: true
+      schema: *id009
+    RoleId:
+      name: roleId
+      in: path
+      required: true
+      schema: *id009
+    PermissionId:
+      name: permissionId
+      in: path
+      required: true
+      schema: *id009
+    AssignmentId:
+      name: assignmentId
+      in: path
+      required: true
+      schema: *id009
+    MemberId:
+      name: memberId
+      in: path
+      required: true
+      schema: *id009
+  headers:
+    CorrelationId:
+      description: Canonical request correlation identifier.
+      schema: *id009
+  responses:
+    BadRequest:
+      description: Malformed UUID, query, JSON or validation input.
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: A valid local session is required.
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: CSRF or RBAC authorization denied the request.
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Requested IAM resource was not found.
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: The requested mutation conflicts with an IAM invariant such as active assignments, uniqueness or group
+        topology.
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UnprocessableEntity:
+      description: The request is syntactically valid but violates an IAM domain invariant.
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    InternalFailure:
+      description: The request failed closed; internal persistence details are not exposed.
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    UuidV7:
+      type: string
+      format: uuid
+      pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+    ScopeKind:
+      type: string
+      enum:
+      - PLATFORM
+      - ORGANIZATION
+      - SUBDIVISION
+    ActorType:
+      type: string
+      enum:
+      - USER
+      - GROUP
+    Reason:
+      type: object
+      additionalProperties: false
+      properties:
+        reason: &id010
+          type:
+          - string
+          - 'null'
+          maxLength: 1024
+    CreateUser:
+      type: object
+      additionalProperties: false
+      required:
+      - login
+      - displayName
+      properties:
+        login:
+          type: string
+          minLength: 1
+          maxLength: 128
+        email:
+          type:
+          - string
+          - 'null'
+          format: email
+          maxLength: 320
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        activate:
+          type: boolean
+          default: false
+        reason: *id010
+    UpdateUser:
+      type: object
+      additionalProperties: false
+      required:
+      - displayName
+      properties:
+        email:
+          type:
+          - string
+          - 'null'
+          format: email
+          maxLength: 320
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        reason: *id010
+    MembershipRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - organizationId
+      properties:
+        organizationId: *id009
+        subdivisionId:
+          oneOf:
+          - *id009
+          - type: 'null'
+        effectiveFrom: &id011
+          type:
+          - string
+          - 'null'
+          format: date-time
+        effectiveTo: *id011
+        reason: *id010
+    UserRoleRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - roleId
+      - scopeKind
+      properties:
+        roleId: *id009
+        scopeKind:
+          $ref: '#/components/schemas/ScopeKind'
+        organizationId:
+          oneOf:
+          - *id009
+          - type: 'null'
+        subdivisionId:
+          oneOf:
+          - *id009
+          - type: 'null'
+        effectiveFrom: *id011
+        effectiveTo: *id011
+        reason: *id010
+    CreateGroup:
+      type: object
+      additionalProperties: false
+      required:
+      - code
+      - displayName
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 96
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        reason: *id010
+    UpdateGroup:
+      type: object
+      additionalProperties: false
+      required:
+      - displayName
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        reason: *id010
+    GroupMemberRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - memberType
+      - memberId
+      properties:
+        memberType:
+          $ref: '#/components/schemas/ActorType'
+        memberId: *id009
+        reason: *id010
+    GroupRoleRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - roleId
+      - scopeKind
+      properties:
+        roleId: *id009
+        scopeKind:
+          $ref: '#/components/schemas/ScopeKind'
+        subdivisionId:
+          oneOf:
+          - *id009
+          - type: 'null'
+        effectiveFrom: *id011
+        effectiveTo: *id011
+        reason: *id010
+    CreateRole:
+      type: object
+      additionalProperties: false
+      required:
+      - code
+      - displayName
+      - scopeKind
+      - permissionCodes
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 160
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        scopeKind:
+          $ref: '#/components/schemas/ScopeKind'
+        permissionCodes:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            type: string
+            minLength: 1
+            maxLength: 160
+        reason: *id010
+    UpdateRole:
+      type: object
+      additionalProperties: false
+      required:
+      - code
+      - displayName
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 160
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        permissionCodes:
+          type:
+          - array
+          - 'null'
+          uniqueItems: true
+          items:
+            type: string
+            minLength: 1
+            maxLength: 160
+        reason: *id010
+    RoleAssignmentRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - actorType
+      - actorId
+      - scopeKind
+      properties:
+        actorType:
+          $ref: '#/components/schemas/ActorType'
+        actorId: *id009
+        scopeKind:
+          $ref: '#/components/schemas/ScopeKind'
+        subdivisionId:
+          oneOf:
+          - *id009
+          - type: 'null'
+        effectiveFrom: *id011
+        effectiveTo: *id011
+        reason: *id010
+    CreatePermission:
+      type: object
+      additionalProperties: false
+      required:
+      - code
+      - resourceType
+      - action
+      - sensitivity
+      - scopeKind
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 160
+        resourceType:
+          type: string
+          minLength: 1
+          maxLength: 64
+        action:
+          type: string
+          minLength: 1
+          maxLength: 64
+        sensitivity:
+          type: string
+          minLength: 1
+          maxLength: 16
+        scopeKind:
+          $ref: '#/components/schemas/ScopeKind'
+        reason: *id010
+    UpdatePermission:
+      type: object
+      additionalProperties: false
+      required:
+      - resourceType
+      - action
+      - sensitivity
+      - scopeKind
+      - active
+      properties:
+        resourceType:
+          type: string
+          minLength: 1
+          maxLength: 64
+        action:
+          type: string
+          minLength: 1
+          maxLength: 64
+        sensitivity:
+          type: string
+          minLength: 1
+          maxLength: 16
+        scopeKind:
+          $ref: '#/components/schemas/ScopeKind'
+        active:
+          type: boolean
+        reason: *id010
+    PermissionValidationRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - actorId
+      - permissionCode
+      - scopeKind
+      properties:
+        actorId: *id009
+        permissionCode:
+          type: string
+          minLength: 1
+          maxLength: 160
+        scopeKind:
+          type: string
+          enum:
+          - ORGANIZATION
+          - SUBDIVISION
+        subdivisionId:
+          oneOf:
+          - *id009
+          - type: 'null'
+    User:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - login
+      - displayName
+      - status
+      - createdAt
+      - updatedAt
+      properties:
+        id: *id009
+        login:
+          type: string
+        email:
+          type:
+          - string
+          - 'null'
+        displayName:
+          type: string
+        status:
+          type: string
+          enum:
+          - pending
+          - active
+          - suspended
+          - deleted
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt: *id011
+    Membership:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - userId
+      - organizationId
+      - effectiveFrom
+      properties:
+        id: *id009
+        userId: *id009
+        organizationId: *id009
+        subdivisionId:
+          oneOf:
+          - *id009
+          - type: 'null'
+        effectiveFrom:
+          type: string
+          format: date-time
+        effectiveTo: *id011
+        revokedAt: *id011
+    Group:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - organizationId
+      - code
+      - displayName
+      - systemGroup
+      - createdAt
+      - updatedAt
+      properties:
+        id: *id009
+        organizationId: *id009
+        code:
+          type: string
+        displayName:
+          type: string
+        systemGroup:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt: *id011
+    Role:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - code
+      - displayName
+      - scopeKind
+      - systemRole
+      - active
+      - createdAt
+      - updatedAt
+      properties:
+        id: *id009
+        organizationId:
+          oneOf:
+          - *id009
+          - type: 'null'
+        code:
+          type: string
+        displayName:
+          type: string
+        scopeKind:
+          $ref: '#/components/schemas/ScopeKind'
+        systemRole:
+          type: boolean
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt: *id011
+    Permission:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - code
+      - resourceType
+      - action
+      - sensitivity
+      - scopeKind
+      - systemDefined
+      - active
+      - createdAt
+      - updatedAt
+      properties:
+        id: *id009
+        organizationId:
+          oneOf:
+          - *id009
+          - type: 'null'
+        code:
+          type: string
+        resourceType:
+          type: string
+        action:
+          type: string
+        sensitivity:
+          type: string
+        scopeKind:
+          $ref: '#/components/schemas/ScopeKind'
+        systemDefined:
+          type: boolean
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt: *id011
+    RoleAssignment:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - roleId
+      - actorType
+      - actorId
+      - scopeKind
+      - effectiveFrom
+      properties:
+        id: *id009
+        roleId: *id009
+        actorType:
+          $ref: '#/components/schemas/ActorType'
+        actorId: *id009
+        scopeKind:
+          $ref: '#/components/schemas/ScopeKind'
+        organizationId:
+          oneOf:
+          - *id009
+          - type: 'null'
+        subdivisionId:
+          oneOf:
+          - *id009
+          - type: 'null'
+        effectiveFrom:
+          type: string
+          format: date-time
+        effectiveTo: *id011
+        revokedAt: *id011
+        revokedBy:
+          oneOf:
+          - *id009
+          - type: 'null'
+    EffectiveMembers:
+      type: object
+      additionalProperties: false
+      required:
+      - groupId
+      - userIds
+      properties:
+        groupId: *id009
+        userIds:
+          type: array
+          uniqueItems: true
+          items: *id009
+    EffectivePermissions:
+      type: object
+      additionalProperties: false
+      required:
+      - actorId
+      - scopeKind
+      - organizationId
+      - permissionCodes
+      properties:
+        actorId: *id009
+        scopeKind:
+          type: string
+          enum:
+          - ORGANIZATION
+          - SUBDIVISION
+        organizationId: *id009
+        subdivisionId:
+          oneOf:
+          - *id009
+          - type: 'null'
+        permissionCodes:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+    PermissionValidation:
+      type: object
+      additionalProperties: false
+      required:
+      - actorId
+      - permissionCode
+      - scopeKind
+      - organizationId
+      - allowed
+      - decisionCode
+      - explanation
+      properties:
+        actorId: *id009
+        permissionCode:
+          type: string
+        scopeKind:
+          type: string
+          enum:
+          - ORGANIZATION
+          - SUBDIVISION
+        organizationId: *id009
+        subdivisionId:
+          oneOf:
+          - *id009
+          - type: 'null'
+        allowed:
+          type: boolean
+        decisionCode:
+          type: string
+        explanation:
+          type: string
+    Problem:
+      type: object
+      additionalProperties: true
+      required:
+      - status
+      - title
+      - code
+      properties:
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        title:
+          type: string
+        detail:
+          type:
+          - string
+          - 'null'
+        code:
+          type: string
+        correlation_id:
+          type:
+          - string
+          - 'null'
+        trace_id:
+          type:
+          - string
+          - 'null'
+        metadata:
+          type: object
+          additionalProperties: true

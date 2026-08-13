@@ -23,33 +23,52 @@ public final class JdbcAuditJournal implements AuditJournal {
     private final DataSource dataSource;
     private final JdbcDatabaseDialect dialect;
     private final int transactionIsolation;
+    private final JdbcConnectionAccess transaction;
 
     public JdbcAuditJournal(DataSource dataSource, JdbcDatabaseDialect dialect) {
-        this(dataSource, dialect, Connection.TRANSACTION_READ_COMMITTED);
+        this(dataSource, dialect, Connection.TRANSACTION_READ_COMMITTED, null);
     }
 
     public JdbcAuditJournal(DataSource dataSource, JdbcDatabaseDialect dialect, int transactionIsolation) {
+        this(dataSource, dialect, transactionIsolation, null);
+    }
+
+    /** Creates a journal that joins the current JDBC unit of work when one is active. */
+    public JdbcAuditJournal(DataSource dataSource, JdbcDatabaseDialect dialect, JdbcConnectionAccess transaction) {
+        this(dataSource, dialect, Connection.TRANSACTION_READ_COMMITTED, Objects.requireNonNull(transaction, "transaction"));
+    }
+
+    public JdbcAuditJournal(
+            DataSource dataSource,
+            JdbcDatabaseDialect dialect,
+            int transactionIsolation,
+            JdbcConnectionAccess transaction) {
         this.dataSource = Objects.requireNonNull(dataSource, "dataSource");
         this.dialect = Objects.requireNonNull(dialect, "dialect");
         if (transactionIsolation == Connection.TRANSACTION_NONE) {
             throw new IllegalArgumentException("audit persistence requires transactional isolation");
         }
         this.transactionIsolation = transactionIsolation;
+        this.transaction = transaction;
     }
 
     /** Appends one record while holding the scope chain-head row lock. */
     @Override
     public AuditRecord append(AuditEntry entry) {
         Objects.requireNonNull(entry, "entry");
+        Connection shared = currentConnectionOrNull();
+        if (shared != null) {
+            try {
+                return appendOnConnection(shared, entry);
+            } catch (SQLException failure) {
+                // The owning business unit of work performs the rollback; the journal must never
+                // independently commit or roll back a connection it does not own.
+                throw new JdbcPersistenceException("append audit entry", failure);
+            }
+        }
         try (Connection connection = openConnection()) {
             try {
-                ensureHead(connection, entry.scope());
-                Head head = lockHead(connection, entry.scope());
-                long sequence = Math.addExact(head.sequence(), 1L);
-                String hash = AuditCanonicalizer.hash(sequence, head.hash(), entry);
-                AuditRecord record = new AuditRecord(sequence, entry, head.hash(), hash);
-                insertEntry(connection, record);
-                updateHead(connection, entry.scope(), head, record);
+                AuditRecord record = appendOnConnection(connection, entry);
                 connection.commit();
                 return record;
             } catch (SQLException | RuntimeException failure) {
@@ -59,6 +78,26 @@ public final class JdbcAuditJournal implements AuditJournal {
             }
         } catch (SQLException failure) {
             throw new JdbcPersistenceException("append audit entry", failure);
+        }
+    }
+
+    private AuditRecord appendOnConnection(Connection connection, AuditEntry entry) throws SQLException {
+        ensureHead(connection, entry.scope());
+        Head head = lockHead(connection, entry.scope());
+        long sequence = Math.addExact(head.sequence(), 1L);
+        String hash = AuditCanonicalizer.hash(sequence, head.hash(), entry);
+        AuditRecord record = new AuditRecord(sequence, entry, head.hash(), hash);
+        insertEntry(connection, record);
+        updateHead(connection, entry.scope(), head, record);
+        return record;
+    }
+
+    private Connection currentConnectionOrNull() {
+        if (transaction == null) return null;
+        try {
+            return transaction.requireCurrentConnection();
+        } catch (IllegalStateException noTransaction) {
+            return null;
         }
     }
 

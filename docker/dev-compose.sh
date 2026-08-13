@@ -93,17 +93,21 @@ smoke() {
   curl --fail --silent --show-error "http://127.0.0.1:$web_port/health/ready" | grep -q '"status":"UP"'
   curl --fail --silent --show-error "http://127.0.0.1:$web_port/runtime-config.json" > "$tmp"
   grep -Fq '"component":"web"' "$tmp"
-  grep -Fq '"version":"2.0.0-alpha.0.67"' "$tmp"
+  grep -Fq '"version":"2.0.0-alpha.0.68"' "$tmp"
   grep -Fq '"apiBaseUrl":"/api"' "$tmp"
   rm -f "$tmp"; trap - EXIT HUP INT TERM
-  iam_history=$(application_admin_db_scalar "SELECT count(*) FROM infranexum_core.schema_history WHERE migration_id IN ('0011','0012')")
-  test "$iam_history" -eq 2 || { echo "Local identity migration history is incomplete; expected 0011 and 0012, observed $iam_history" >&2; exit 69; }
+  iam_history=$(application_admin_db_scalar "SELECT count(*) FROM infranexum_core.schema_history WHERE migration_id IN ('0011','0012','0013')")
+  test "$iam_history" -eq 3 || { echo "IAM migration history is incomplete; expected 0011, 0012 and 0013, observed $iam_history" >&2; exit 69; }
   account_table=$(application_admin_db_scalar "SELECT CASE WHEN to_regclass('infranexum_iam.local_account') IS NOT NULL THEN 1 ELSE 0 END")
   test "$account_table" -eq 1 || { echo 'Local identity account table is missing after repair migration 0012' >&2; exit 69; }
   session_table=$(application_admin_db_scalar "SELECT CASE WHEN to_regclass('infranexum_iam.local_session') IS NOT NULL THEN 1 ELSE 0 END")
   test "$session_table" -eq 1 || { echo 'Local identity session table is missing after repair migration 0012' >&2; exit 69; }
   account_count=$(application_admin_db_scalar 'SELECT count(*) FROM infranexum_iam.local_account')
   test "$account_count" -ge 1 || { echo 'Local identity bootstrap account is missing after schema repair and Server bootstrap' >&2; exit 69; }
+  rbac_user_table=$(application_admin_db_scalar "SELECT CASE WHEN to_regclass('infranexum_iam.iam_user') IS NOT NULL THEN 1 ELSE 0 END")
+  test "$rbac_user_table" -eq 1 || { echo 'RBAC IAM user table is missing after migration 0013' >&2; exit 69; }
+  platform_admin_count=$(application_admin_db_scalar "SELECT count(*) FROM infranexum_iam.role_assignment ra JOIN infranexum_iam.role r ON r.id=ra.role_id WHERE ra.actor_type='USER' AND ra.scope_kind='PLATFORM' AND ra.revoked_at IS NULL AND r.code='system.platform_admin' AND r.system_role=TRUE AND r.active=TRUE AND r.deleted_at IS NULL")
+  test "$platform_admin_count" -ge 1 || { echo 'RBAC bootstrap platform administrator assignment is missing after migration 0013/Server bootstrap' >&2; exit 69; }
   credential_login=$(test_local_credential_login "$web_port")
   organization_headers=$(mktemp); organization_body=$(mktemp); trap 'rm -f "$organization_headers" "$organization_body"' EXIT HUP INT TERM
   organization_status=$(curl --silent --show-error --output "$organization_body" --dump-header "$organization_headers" --write-out '%{http_code}' --header "X-Correlation-ID: $correlation_id" "http://127.0.0.1:$web_port/api/v1/iam/organizations?limit=1")

@@ -114,7 +114,9 @@ class AuditCheckerTest(unittest.TestCase):
             self.reset(relative)
 
     def test_jdbc_append_only_contract_is_enforced(self) -> None:
-        self.mutate(FILES[15], "TRANSACTION_READ_COMMITTED")
+        # Remove every accepted constructor occurrence so the mutation actually eliminates the
+        # isolation invariant even when the journal offers multiple transaction-aware constructors.
+        self.mutate_all(FILES[15], "TRANSACTION_READ_COMMITTED")
         self.assertIn("CHECK-AUD-JDBC-002", self.ids())
         self.reset(FILES[15])
         with (self.root / FILES[15]).open("a", encoding="utf-8") as stream:

@@ -21,6 +21,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(LocalAuthRuntimeProperties.class)
@@ -62,6 +63,7 @@ public class LocalAuthRuntimeConfiguration {
     }
 
     @Bean
+    @Order(100)
     ApplicationRunner localIdentityBootstrap(
             LocalAuthenticationService service,
             JdbcLocalIdentityRepository identities,

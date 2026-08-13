@@ -99,7 +99,7 @@ public final class ActivationManifestJsonCodec implements ActivationManifestCode
         if (node == null || !node.isString()) {
             throw new IllegalArgumentException(field + " must be a JSON string");
         }
-        return node.asText();
+        return node.asString();
     }
 
     private static long integer(ObjectNode object, String field) {
@@ -116,7 +116,7 @@ public final class ActivationManifestJsonCodec implements ActivationManifestCode
         }
         Set<String> values = new HashSet<>();
         for (JsonNode value : node) {
-            if (!value.isString() || !values.add(value.asText())) {
+            if (!value.isString() || !values.add(value.asString())) {
                 throw new IllegalArgumentException(field + " must contain unique strings");
             }
         }

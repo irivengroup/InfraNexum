@@ -5,7 +5,7 @@ import test from 'node:test';
 
 import { WebRuntimeConfiguration } from '../../src/applications/web/runtime/config.mjs';
 
-const options = { version: '2.0.0-alpha.0.67', baseDirectory: os.tmpdir() };
+const options = { version: '2.0.0-alpha.0.68', baseDirectory: os.tmpdir() };
 
 test('configuration applies safe defaults and exposes only public values', () => {
   const configuration = WebRuntimeConfiguration.fromEnvironment({}, options);
@@ -27,6 +27,7 @@ test('configuration applies safe defaults and exposes only public values', () =>
     apiBaseUrl: '/api',
     organizationFoundationEnabled: false,
     localAuthEnabled: false,
+    identityAccessEnabled: false,
   });
   assert.equal(Object.isFrozen(configuration), true);
   assert.equal(Object.isFrozen(configuration.publicConfiguration()), true);
@@ -127,4 +128,30 @@ test('local authentication publication accepts explicit true and rejects malform
   assert.equal(enabled.localAuthEnabled, true);
   assert.equal(enabled.publicConfiguration().localAuthEnabled, true);
   assert.throws(() => WebRuntimeConfiguration.fromEnvironment({ INFRANEXUM_WEB_LOCAL_AUTH_ENABLED: 'yes' }, options), /LOCAL_AUTH_ENABLED/);
+});
+
+
+test('identity-access publication is fail-closed and requires auth plus organization foundation', () => {
+  assert.throws(() => WebRuntimeConfiguration.fromEnvironment({
+    INFRANEXUM_WEB_IDENTITY_ACCESS_ENABLED: 'true',
+  }, options), /requires organization foundation and local authentication/);
+  assert.throws(() => WebRuntimeConfiguration.fromEnvironment({
+    INFRANEXUM_WEB_ORGANIZATION_FOUNDATION_ENABLED: 'true',
+    INFRANEXUM_WEB_IDENTITY_ACCESS_ENABLED: 'true',
+  }, options), /requires organization foundation and local authentication/);
+  assert.throws(() => WebRuntimeConfiguration.fromEnvironment({
+    INFRANEXUM_WEB_LOCAL_AUTH_ENABLED: 'true',
+    INFRANEXUM_WEB_IDENTITY_ACCESS_ENABLED: 'true',
+  }, options), /requires organization foundation and local authentication/);
+  const enabled = WebRuntimeConfiguration.fromEnvironment({
+    INFRANEXUM_WEB_ENVIRONMENT: 'production',
+    INFRANEXUM_WEB_ORGANIZATION_FOUNDATION_ENABLED: 'true',
+    INFRANEXUM_WEB_LOCAL_AUTH_ENABLED: 'true',
+    INFRANEXUM_WEB_IDENTITY_ACCESS_ENABLED: 'true',
+  }, options);
+  assert.equal(enabled.identityAccessEnabled, true);
+  assert.equal(enabled.publicConfiguration().identityAccessEnabled, true);
+  assert.throws(() => WebRuntimeConfiguration.fromEnvironment({
+    INFRANEXUM_WEB_IDENTITY_ACCESS_ENABLED: 'yes',
+  }, options), /IDENTITY_ACCESS_ENABLED/);
 });
