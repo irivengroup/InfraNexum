@@ -5,7 +5,7 @@ import test from 'node:test';
 
 import { WebRuntimeConfiguration } from '../../src/applications/web/runtime/config.mjs';
 
-const options = { version: '2.0.0-alpha.0.81', baseDirectory: os.tmpdir() };
+const options = { version: '2.0.0-alpha.0.83', baseDirectory: os.tmpdir() };
 
 test('configuration applies safe defaults and exposes only public values', () => {
   const configuration = WebRuntimeConfiguration.fromEnvironment({}, options);
@@ -34,6 +34,8 @@ test('configuration applies safe defaults and exposes only public values', () =>
     itamAssetsEnabled: false,
     itamComplianceEnabled: false,
   dcimFacilitiesEnabled: false,
+    dcimPhysicalEnabled: false,
+    ddiIpamEnabled: false,
   });
   assert.equal(Object.isFrozen(configuration), true);
   assert.equal(Object.isFrozen(configuration.publicConfiguration()), true);
@@ -237,4 +239,22 @@ test('DCIM Facility publication is fail-closed and validates explicit booleans',
   assert.equal(enabled.dcimFacilitiesEnabled, true);
   assert.equal(enabled.publicConfiguration().dcimFacilitiesEnabled, true);
   assert.throws(() => WebRuntimeConfiguration.fromEnvironment({ INFRANEXUM_WEB_DCIM_FACILITIES_ENABLED: 'yes' }, options), /DCIM_FACILITIES_ENABLED/);
+});
+
+
+test('DCIM Physical publication is fail-closed and requires Facilities', () => {
+  assert.equal(WebRuntimeConfiguration.fromEnvironment({}, options).dcimPhysicalEnabled, false);
+  assert.throws(() => WebRuntimeConfiguration.fromEnvironment({ INFRANEXUM_WEB_DCIM_PHYSICAL_ENABLED: 'true' }, options), /requires the Facilities hierarchy/);
+  const cfg=WebRuntimeConfiguration.fromEnvironment({ INFRANEXUM_WEB_DCIM_FACILITIES_ENABLED: 'true', INFRANEXUM_WEB_DCIM_PHYSICAL_ENABLED: 'true' }, options);
+  assert.equal(cfg.dcimPhysicalEnabled,true);
+});
+
+
+test('DDI/IPAM publication is fail-closed and requires DCIM Facilities', () => {
+  assert.equal(WebRuntimeConfiguration.fromEnvironment({}, options).ddiIpamEnabled, false);
+  assert.throws(() => WebRuntimeConfiguration.fromEnvironment({ INFRANEXUM_WEB_DDI_IPAM_ENABLED: 'true' }, options), /requires the DCIM Facilities capability/);
+  const cfg = WebRuntimeConfiguration.fromEnvironment({ INFRANEXUM_WEB_DCIM_FACILITIES_ENABLED: 'true', INFRANEXUM_WEB_DDI_IPAM_ENABLED: 'true' }, options);
+  assert.equal(cfg.ddiIpamEnabled, true);
+  assert.equal(cfg.publicConfiguration().ddiIpamEnabled, true);
+  assert.throws(() => WebRuntimeConfiguration.fromEnvironment({ INFRANEXUM_WEB_DDI_IPAM_ENABLED: 'yes' }, options), /true or false/);
 });

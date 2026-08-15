@@ -1,3 +1,16 @@
+# InfraNexum 2.0.0-alpha.0.83 — PGM-08-E01 DDI/IPAM
+
+`alpha.0.83` implements the DDI parent component's IPAM foundation: VRFs, VLAN/VXLANs, address blocks/prefixes/subnets, pools, explicit reservations and address allocation. Allocation is serialized transactionally; overlap checks use indexed fixed-width address keys and never rely on bounded catalogue scans. API, CLI and the real `#/ddi` Web workspace are delivered in the same increment. DNS and DHCP are intentionally not part of E01. See `docs/ddi-ipam.md`.
+
+
+`alpha.0.82` implements **PGM-07-E05** as a same-release vertical slice for multi-vendor equipment models, racks, rack-unit occupancy, installed equipment, physical ports and point-to-point cabling. DCIM owns physical placement and connectivity while RSOT, ITAM, Partner and Organization remain external authorities referenced through validated weak references. Equipment ports are instantiated from governed model templates rather than entered ad hoc.
+
+The slice adds capability `dcim.physical`, 17 organization-scoped atomic permissions, paired PostgreSQL/Oracle migrations `0028`/`0029`, JDBC persistence with transactional rack/port locking, idempotency/outbox, HTTP/OpenAPI 3.1 with 14 native operations, Server CLI and **real Web administration in the same release**. The Web workspace extends DCIM with governed selectors for manufacturers, rooms, racks, models, RSOT objects, ITAM assets and cable endpoints; model/rack lifecycle and equipment move/install/cabling workflows are usable without free-form business UUIDs.
+
+See `docs/dcim-physical-infrastructure.md`, `docs/dcim-facility-hierarchy.md`, `docs/web-functional-parity.md` and `docs/implementation-status.md`. Target-runtime promotion gates remain mandatory where the delivery environment cannot execute them.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.81 — PGM-07-E04 DCIM physical facilities hierarchy
 
 `alpha.0.81` implements **PGM-07-E04** as a same-release vertical slice for Sites, Buildings, Floors, Rooms and technical Zones. The DCIM aggregate enforces hierarchy, kind-specific metadata, optimistic concurrency, idempotency and lifecycle while Organization/Subdivision remain weak cross-context references. Sites now carry the structured address required by the CDC (line 1, postal code, city, ISO country and IANA timezone), and Site archival/deletion is blocked only by active Buildings.

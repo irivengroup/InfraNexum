@@ -1,0 +1,29 @@
+schema: infranexum.migration/v1
+id: '0028'
+name: dcim-rack-equipment-cabling
+owner_context: dcim
+dependencies:
+- '0027'
+preconditions:
+- dcim-facility-hierarchy-created
+- rsot-authority-declared
+- itam-asset-lifecycle-created
+- itam-partner-catalogue-created
+postconditions:
+- dcim-physical-models-racks-equipment-ports-cabling-created
+- dcim-rack-occupancy-indexed
+- dcim-port-connection-uniqueness-enforced
+recovery: rerun-idempotent-ddl-after-correcting-database-connectivity
+rollback: drops-only-dcim-physical-owned-objects
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 45
+checksums:
+  postgresql.sql: 608dd28a9e14c33149b1216fb5ecaf27ee9ac20e7855b36fba5174f251a7197a
+  oracle.sql: 6497e8234ba4db46e4400b60c8f69fe35e1c87cea256c8060e39b4527ed29d0b
+  rollback/postgresql.sql: 10c2fed70145c3a031d8c2512b34a39872258a45ab310ab4ae42951ef9a186cb
+  rollback/oracle.sql: d540eee00b6038167ff1dbd6a851e57d9b42876b7b2b3a7434bc0b4bf7b8ea58
+  logical-model.json: 228b4fda39c6d018c6212d3927c44b463882b0282fb37d4fff950a67844f907c
+  verify.sql.yaml: 2fbcd7c758acf8ba291aec8441e2ed21b4a5a30915c12bf2241208c69d84489d

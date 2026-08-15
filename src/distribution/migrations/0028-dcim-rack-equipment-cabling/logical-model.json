@@ -1,0 +1,62 @@
+{
+  "schema": "infranexum.logical-model/v1",
+  "context": "dcim",
+  "objects": [
+    {
+      "name": "equipment_model",
+      "kind": "table",
+      "authority": "dcim",
+      "weak_references": [
+        "organization_id",
+        "manufacturer_partner_id"
+      ]
+    },
+    {
+      "name": "model_port_template",
+      "kind": "table",
+      "foreign_keys": [
+        "model_id->equipment_model.id"
+      ]
+    },
+    {
+      "name": "rack",
+      "kind": "table",
+      "weak_references": [
+        "organization_id",
+        "subdivision_id",
+        "room_id"
+      ]
+    },
+    {
+      "name": "equipment",
+      "kind": "table",
+      "foreign_keys": [
+        "rack_id->rack.id",
+        "model_id->equipment_model.id"
+      ],
+      "weak_references": [
+        "rsot_object_id",
+        "itam_asset_id"
+      ]
+    },
+    {
+      "name": "physical_port",
+      "kind": "table",
+      "foreign_keys": [
+        "equipment_id->equipment.id"
+      ]
+    },
+    {
+      "name": "cable_connection",
+      "kind": "table",
+      "foreign_keys": [
+        "port_a_id->physical_port.id",
+        "port_b_id->physical_port.id"
+      ]
+    },
+    {
+      "name": "physical_command_dedup",
+      "kind": "table"
+    }
+  ]
+}

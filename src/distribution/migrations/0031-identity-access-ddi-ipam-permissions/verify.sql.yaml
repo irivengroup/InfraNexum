@@ -1,0 +1,5 @@
+schema: infranexum.verify/v1
+checks:
+- id: ddi-ipam-permissions
+  postgresql: "SELECT COUNT(*)=12 FROM infranexum_iam.permission WHERE organization_id IS NULL AND code LIKE 'ddi.ipam.%'"
+  oracle: "SELECT COUNT(*)=12 FROM INFRANEXUM_IAM_PERMISSION WHERE ORGANIZATION_ID IS NULL AND CODE LIKE 'ddi.ipam.%'"

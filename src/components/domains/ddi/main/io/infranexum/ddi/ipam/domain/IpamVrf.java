@@ -1,0 +1,8 @@
+package io.infranexum.ddi.ipam.domain;
+
+import io.infranexum.core.contracts.DomainIdentifier;
+import java.time.Instant;
+import java.util.Objects;
+
+/** Routing environment that defines IP uniqueness boundaries. */
+public record IpamVrf(DomainIdentifier id,DomainIdentifier organizationId,String code,String displayName,String routeDistinguisher,IpamStatus status,long version,Instant createdAt,Instant updatedAt){public IpamVrf{Objects.requireNonNull(id);Objects.requireNonNull(organizationId);code=require(code,"code",64);displayName=require(displayName,"displayName",160);routeDistinguisher=optional(routeDistinguisher,128);Objects.requireNonNull(status);if(version<1)throw new IllegalArgumentException("version must be positive");Objects.requireNonNull(createdAt);Objects.requireNonNull(updatedAt);} public static IpamVrf draft(DomainIdentifier id,DomainIdentifier org,String code,String name,String rd,Instant now){return new IpamVrf(id,org,code,name,rd,IpamStatus.DRAFT,1,now,now);} public IpamVrf status(IpamStatus target,Instant now){if(status==IpamStatus.RETIRED)throw new IpamConflictException("DDI_VRF_TERMINAL","retired VRF is terminal");if(target==IpamStatus.DRAFT)throw new IpamConflictException("DDI_VRF_TRANSITION","cannot transition back to draft");return new IpamVrf(id,organizationId,code,displayName,routeDistinguisher,target,version+1,createdAt,now);} private static String require(String v,String n,int m){String x=Objects.requireNonNull(v,n).strip();if(x.isEmpty()||x.length()>m)throw new IllegalArgumentException(n+" length invalid");return x;}private static String optional(String v,int m){if(v==null)return null;String x=v.strip();if(x.isEmpty())return null;if(x.length()>m)throw new IllegalArgumentException("value too long");return x;}}

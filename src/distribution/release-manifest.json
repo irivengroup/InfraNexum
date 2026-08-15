@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.81",
-  "profile": "alpha081-pgm07e04-dcim-physical-facilities-pro-ha-local-development",
+  "version": "2.0.0-alpha.0.83",
+  "profile": "alpha083-pgm08e01-ddi-ipam-pro-ha-local-development",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -14,7 +14,7 @@
     },
     {
       "id": "infranexum-server",
-      "status": "source-server-alpha074-temporal-request-contract-backward-compatible-expansion-local-datetime-server-zone-resolution-rbac-abac-permissions-and-migrations-unchanged-target-jdk25-maven-jacoco-docker-runtime-pending"
+      "status": "source-server-alpha083-ddi-ipam-api-cli-jdbc-rbac-abac-atomic-allocation-indexed-overlap-audit-target-jdk25-maven-jacoco-docker-runtime-pending"
     },
     {
       "id": "infranexum-agent",
@@ -22,7 +22,7 @@
     },
     {
       "id": "infranexum-web",
-      "status": "alpha080-real-rsot-itam-capability-gated-routes-workspaces-governed-entity-selects-temporal-controls-de-en-es-fr-it-full-interaction-tests-target-node24-and-docker-runtime-pending"
+      "status": "alpha083-real-ddi-ipam-first-level-workspace-vrf-vlan-networks-pools-addresses-governed-selects-de-en-es-fr-it-full-interaction-tests-target-node24-and-docker-runtime-pending"
     },
     {
       "id": "source-integrity-v1",
@@ -37,8 +37,8 @@
       "status": "postgresql-oracle-jdbc-workers-local-identity-session-persistence-security-epoch-transient-connectivity-classification-durable-nullable-uuidv7-correlation-entitlements-revocations-json-binding-and-contextual-domain-errors-hosted-jdk25-jacoco-proof-pending"
     },
     {
-      "id": "migration-catalogue-0001-0025",
-      "status": "paired-catalogue-postgresql-oracle-through-0025-including-0025-organization-scoped-rsot-read-permission-for-canonical-object-web-selectors"
+      "id": "migration-catalogue-0001-0031",
+      "status": "paired-catalogue-postgresql-oracle-through-0031-including-0030-ddi-ipam-foundation-and-0031-organization-scoped-ddi-ipam-permissions"
     },
     {
       "id": "ci-foundation",
@@ -99,21 +99,29 @@
     {
       "id": "dcim-physical-facilities-v1",
       "status": "pgm-07-e04-site-building-floor-room-zone-hierarchy-structured-site-addresses-kind-specific-coherence-weak-organization-scope-optimistic-versioning-idempotency-rbac-abac-api-cli-same-release-web-postgresql-oracle-migrations0026-0027"
+    },
+    {
+      "id": "dcim-physical-infrastructure-v1",
+      "status": "pgm-07-e05-multi-vendor-equipment-model-footprints-rack-u-occupancy-installed-equipment-physical-ports-point-to-point-cabling-transactional-rack-port-locks-weak-cross-context-references-rbac-abac-api-cli-same-release-web-postgresql-oracle-migrations0028-0029"
+    },
+    {
+      "id": "ddi-ipam-v1",
+      "status": "pgm-08-e01-ddi-parent-ipam-subdomain-vrf-vlan-network-pool-address-atomic-pool-cursor-allocation-indexed-cidr-overlap-explicit-reservation-audit-weak-rsot-dcim-references-rbac-abac-api-cli-same-release-web-postgresql-oracle-migrations0030-0031"
     }
   ],
   "validation_reports": [],
   "validation_summary": {
-    "source_inventory_paths": 1104,
+    "source_inventory_paths": 1213,
     "source_integrity_tests": 45,
     "source_integrity_coverage_percent": 100,
     "source_integrity_violations": 0,
-    "python_tests": 427,
-    "architecture_tests": 140,
+    "python_tests": 437,
+    "architecture_tests": 151,
     "architecture_violations": 0,
     "toolchain_tests": 25,
     "toolchain_coverage_percent": 99,
     "toolchain_violations": 0,
-    "migration_tests": 104,
+    "migration_tests": 114,
     "migration_coverage_percent": 99,
     "migration_violations": 0,
     "eventing_tests": 10,
@@ -131,15 +139,15 @@
     "audit_tests": 8,
     "audit_coverage_percent": 100,
     "audit_violations": 0,
-    "java_offline_smoke_targets": 18,
+    "java_offline_smoke_targets": 20,
     "workers_module_tests_defined": 52,
     "jdbc_workers_scripted_contract_groups": 11,
     "jdbc_workers_junit_tests_defined": 11,
     "jdbc_workers_postgresql_live_tests_defined": 5,
     "agent_local_coverage_percent": 98.4,
-    "web_tests": 144,
-    "web_line_coverage_percent": 99.71,
-    "web_branch_coverage_percent": 98.49,
+    "web_tests": 153,
+    "web_line_coverage_percent": 99.73,
+    "web_branch_coverage_percent": 98.53,
     "web_function_coverage_percent": 100,
     "repository_syntax_counts": {
       "python": 75,
@@ -158,8 +166,8 @@
     "archive_compatibility_max_member_path": 148,
     "entitlements_module_tests_defined": 49,
     "audit_module_tests_defined": 21,
-    "architecture_coverage_status": "NON_EXECUTED_ALPHA081_FRAGMENTED_INSTRUMENTATION_RUNNER_TIMEOUT_FUNCTIONAL_140_OF_140_PASS_ARCHITECTURE_CHECK_PASS",
-    "architecture_functional_tests": 140,
+    "architecture_coverage_status": "NON_EXECUTED_ALPHA082_INSTRUMENTED_RUNNER_TIMEOUT_120S_AFTER_13_TESTS_FUNCTIONAL_145_OF_145_PASS_ARCHITECTURE_CHECK_PASS",
+    "architecture_functional_tests": 145,
     "jdbc_module_tests_defined": 73,
     "jdbc_postgresql_live_tests_defined": 18,
     "server_module_tests_defined": 121,
@@ -421,7 +429,7 @@
     "oracle_live_migration_alpha076": "NON_EXECUTED_LOCAL_ORACLE_UNAVAILABLE_0017_0018_APPLY_VERIFY_ROLLBACK_REQUIRED",
     "source_integrity_alpha076": "EXECUTED_45_OF_45_100_PERCENT_STAGED_SNAPSHOT_870_GIT_BLOB_CHECKSUMS_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
     "archive_compatibility_alpha076": "EXECUTED_12_OF_12_100_PERCENT_CANDIDATE_GIT_ARCHIVE_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
-    "architecture_coverage_percent": 100,
+    "architecture_coverage_percent": null,
     "itam_module_tests_defined": 36,
     "itam_asset_module_tests_defined": 14,
     "pgm07e02_itam_asset_lifecycle_alpha078": "EXECUTED_DOMAIN_JDBC_API_CLI_WEB_MIGRATION_ARCHITECTURE_AND_OFFLINE_SMOKE_TARGET_JDK25_MAVEN_AND_LIVE_DATABASES_PENDING",
@@ -484,20 +492,21 @@
   "source_integrity": {
     "canonical_inventory": "source-inventory.json",
     "git_blob_checksums": "source-files.sha256",
-    "tracked_files": 1107,
-    "source_recorded_files": 1106,
+    "tracked_files": 1159,
+    "source_recorded_files": 1158,
     "staged_snapshot_required": true,
     "pre_commit_hook": ".githooks/pre-commit"
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.81",
-    "archive_entries": 1107,
+    "prefix": "infranexum-2.0.0-alpha.0.83",
+    "archive_entries": 1216,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
-    "source_recorded_files": 1106,
-    "release_checksum_manifest": "../../artifacts/validation/release-files.sha256"
+    "source_recorded_files": 1215,
+    "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
+    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.83-validation-evidence.zip"
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.81-validation-evidence.zip",
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.83-validation-evidence.zip",
   "runtime_validation": {
     "web_local_runtime_alpha058": "EXECUTED_38_OF_38_LINE_99_67_BRANCH_98_33_FUNCTION_100_PROCESS_SMOKE_PASS_LOCAL_NODE22_BOOTSTRAP5_3_6_PROFESSIONAL_ADMIN_DASHBOARD_THEME_TOGGLE_TRUTHFUL_KPI_SAME_ORIGIN_ORGANIZATION_UI",
     "architecture_functional_alpha058": "EXECUTED_57_OF_57",
@@ -782,7 +791,63 @@
     "packaging_tracked_files_alpha081": 1107,
     "source_integrity_alpha081": "EXECUTED_45_OF_45_100_PERCENT_STAGED_SNAPSHOT_1106_GIT_BLOB_CHECKSUMS_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
     "archive_compatibility_alpha081": "EXECUTED_12_OF_12_100_PERCENT_CANDIDATE_GIT_ARCHIVE_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
-    "archive_compatibility_unit_alpha081": "EXECUTED_12_OF_12_100_PERCENT"
+    "archive_compatibility_unit_alpha081": "EXECUTED_12_OF_12_100_PERCENT",
+    "pgm07e05_dcim_physical_alpha082": "EXECUTED_DOMAIN_JDBC_API_CLI_WEB_MIGRATION_ARCHITECTURE_AND_OFFLINE_SMOKE_TARGET_JDK25_MAVEN_AND_LIVE_DATABASES_PENDING",
+    "architecture_functional_alpha082": "EXECUTED_145_OF_145_SPLIT_DETERMINISTIC_GROUPS",
+    "architecture_check_alpha082": "EXECUTED_PASS_ZERO_VIOLATIONS",
+    "architecture_coverage_alpha082": "NON_EXECUTED_INSTRUMENTED_RUNNER_TIMEOUT_120S_AFTER_13_TESTS_NO_ASSERTION_FAILURE_FUNCTIONAL_145_OF_145_PASS_ARCHITECTURE_CHECK_PASS",
+    "migration_alpha082": "EXECUTED_109_OF_109_99_PERCENT_ZERO_VIOLATIONS_0028_0029_LIVE_POSTGRESQL_ORACLE_PENDING",
+    "web_local_runtime_alpha082": "EXECUTED_LOCAL_NODE22_16_0_149_OF_149_LINE99_72_BRANCH98_51_FUNCTION100_PROCESS_SMOKE_PASS_TARGET_NODE24_18_1_PENDING",
+    "java_offline_smokes_alpha082": "EXECUTED_19_OF_19_TARGETS_EXIT_ZERO_LOCAL_JAVA21_XLINT_ALL_WERROR",
+    "toolchain_alpha082": "EXECUTED_25_OF_25_99_PERCENT_ZERO_VIOLATIONS",
+    "eventing_alpha082": "EXECUTED_10_OF_10_100_PERCENT_ZERO_VIOLATIONS",
+    "persistence_alpha082": "EXECUTED_12_OF_12_98_PERCENT_ZERO_VIOLATIONS",
+    "capabilities_alpha082": "EXECUTED_10_OF_10_99_PERCENT_ZERO_VIOLATIONS_CAPABILITIES27_QUOTAS119",
+    "entitlements_alpha082": "EXECUTED_10_OF_10_100_PERCENT_ZERO_VIOLATIONS",
+    "audit_alpha082": "EXECUTED_8_OF_8_100_PERCENT_ZERO_VIOLATIONS",
+    "compose_contract_alpha082": "EXECUTED_63_OF_63",
+    "maven_target_jdk25_alpha082": "NON_EXECUTED_LOCAL_JDK21_0_11_MAVEN_UNAVAILABLE_PROJECT_REQUIRES_JDK25_MVNW_EXIT_2",
+    "agent_target_go1265_alpha082": "FAILED_TOOLCHAIN_ACQUISITION_GO1_26_5_DOWNLOAD_BLOCKED_BY_DISABLED_NETWORK_PROXY_GOLANG_ORG_LOCAL_GO1_23_2_VALIDATED_SEPARATELY",
+    "web_target_node24_alpha082": "NON_EXECUTED_LOCAL_NODE22_16_0_TARGET_NODE24_18_1_REQUIRED",
+    "docker_runtime_alpha082": "NON_EXECUTED_LOCAL_DOCKER_COMMAND_UNAVAILABLE_PRO_UP_SMOKE_HA_SMOKE_REQUIRED",
+    "postgresql_live_migration_alpha082": "NON_EXECUTED_LOCAL_DOCKER_UNAVAILABLE_0028_0029_APPLY_VERIFY_ROLLBACK_REQUIRED",
+    "oracle_live_migration_alpha082": "NON_EXECUTED_LOCAL_ORACLE_UNAVAILABLE_0028_0029_APPLY_VERIFY_ROLLBACK_REQUIRED",
+    "dcim_junit_syntax_alpha082": "EXECUTED_LOCAL_JAVA21_XLINT_ALL_WERROR_WITH_TEMPORARY_JUNIT_TEST_ANNOTATION_STUB_REAL_MAVEN_JUNIT_JACOCO_EXECUTION_PENDING",
+    "agent_local_alpha082": "EXECUTED_GOTOOLCHAIN_LOCAL_GO1_23_2_VET_RACE_TEST_BUILD_COVERAGE98_4_PERCENT",
+    "powershell_runtime_alpha082": "NON_EXECUTED_LOCAL_PWSH_UNAVAILABLE",
+    "source_integrity_prepack_alpha082": "EXECUTED_45_OF_45_100_PERCENT_ZERO_VIOLATIONS_CANONICAL_INVENTORY_1156_PATHS",
+    "packaging_tracked_files_alpha082": 1159,
+    "source_integrity_alpha082": "EXECUTED_45_OF_45_100_PERCENT_STAGED_SNAPSHOT_1158_GIT_BLOB_CHECKSUMS_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
+    "archive_compatibility_unit_alpha082": "EXECUTED_12_OF_12_100_PERCENT",
+    "archive_compatibility_alpha082": "EXECUTED_12_OF_12_100_PERCENT_CANDIDATE_GIT_ARCHIVE_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT"
   },
-  "runtime_validation_note": "alpha.0.81 implements PGM-07-E04 DCIM physical facilities as a same-release vertical slice: governed Site/Building/Floor/Room/Zone hierarchy, mandatory structured Site addresses, kind-specific coherence, capability/RBAC/ABAC, JDBC/outbox, PostgreSQL/Oracle migrations 0026-0027, 25-operation OpenAPI, Server CLI and real five-locale Web administration with governed cascading selectors. Exact JDK25 Maven/JaCoCo, Go1.26.5, Node24, Docker Desktop PRO/HA and PostgreSQL/Oracle live execution remain mandatory before promotion where not executed in the delivery environment."
+  "runtime_validation_note": "alpha.0.83 implements PGM-08-E01 DDI/IPAM as a same-release vertical slice under the DDI parent: organization-scoped VRF/VLAN/network/pool/address governance, atomic pool-cursor allocation, indexed unbounded CIDR overlap checks, explicit reservation/release lifecycle, audit/outbox, weak RSOT/DCIM references, capability/RBAC/ABAC, PostgreSQL/Oracle migrations 0030-0031, 15-operation OpenAPI, Server CLI and real five-locale Web administration with governed selectors. Exact JDK25 Maven/JaCoCo, Go1.26.5, Node24, Docker Desktop PRO/HA and PostgreSQL/Oracle live execution remain mandatory before promotion where not executed in the delivery environment.",
+  "pgm08e01_ddi_ipam_alpha083": "EXECUTED_DOMAIN_JDBC_API_CLI_WEB_MIGRATION_ARCHITECTURE_AND_OFFLINE_SMOKE_TARGET_JDK25_MAVEN_AND_LIVE_DATABASES_PENDING",
+  "architecture_functional_alpha083": "EXECUTED_151_OF_151_SPLIT_DETERMINISTIC_GROUPS",
+  "architecture_check_alpha083": "EXECUTED_PASS_ZERO_VIOLATIONS",
+  "architecture_coverage_alpha083": "NON_EXECUTED_COMPLETELY_INSTRUMENTED_RUNNER_TIMEOUT_NO_ASSERTION_FAILURE_FUNCTIONAL_151_OF_151_PASS_ARCHITECTURE_CHECK_PASS",
+  "migration_alpha083": "EXECUTED_114_OF_114_99_PERCENT_ZERO_VIOLATIONS_0030_0031_LIVE_POSTGRESQL_ORACLE_PENDING",
+  "web_local_runtime_alpha083": "EXECUTED_LOCAL_NODE22_16_0_153_OF_153_LINE99_73_BRANCH98_53_FUNCTION100_PROCESS_SMOKE_PASS_TARGET_NODE24_18_1_PENDING",
+  "java_offline_smokes_alpha083": "EXECUTED_20_OF_20_TARGETS_EXIT_ZERO_LOCAL_JAVA21_XLINT_ALL_WERROR",
+  "ddi_junit_syntax_alpha083": "EXECUTED_LOCAL_JAVA21_XLINT_ALL_WERROR_WITH_TEMPORARY_JUNIT_TEST_ANNOTATION_STUB_REAL_MAVEN_JUNIT_JACOCO_EXECUTION_PENDING",
+  "toolchain_alpha083": "EXECUTED_25_OF_25_99_PERCENT_ZERO_VIOLATIONS",
+  "eventing_alpha083": "EXECUTED_10_OF_10_100_PERCENT_ZERO_VIOLATIONS",
+  "persistence_alpha083": "EXECUTED_12_OF_12_98_PERCENT_ZERO_VIOLATIONS",
+  "capabilities_alpha083": "EXECUTED_10_OF_10_99_PERCENT_ZERO_VIOLATIONS_CAPABILITIES28_QUOTAS119",
+  "entitlements_alpha083": "EXECUTED_10_OF_10_100_PERCENT_ZERO_VIOLATIONS",
+  "audit_alpha083": "EXECUTED_8_OF_8_100_PERCENT_ZERO_VIOLATIONS",
+  "compose_contract_alpha083": "EXECUTED_63_OF_63",
+  "maven_target_jdk25_alpha083": "NON_EXECUTED_LOCAL_JDK21_0_11_MAVEN_UNAVAILABLE_PROJECT_REQUIRES_JDK25_MVNW_EXIT_2",
+  "agent_target_go1265_alpha083": "FAILED_TOOLCHAIN_ACQUISITION_GO1_26_5_DOWNLOAD_BLOCKED_BY_DISABLED_NETWORK_PROXY_GOLANG_ORG_LOCAL_GO1_23_2_VALIDATED_SEPARATELY",
+  "web_target_node24_alpha083": "NON_EXECUTED_LOCAL_NODE22_16_0_TARGET_NODE24_18_1_REQUIRED",
+  "docker_runtime_alpha083": "NON_EXECUTED_LOCAL_DOCKER_COMMAND_UNAVAILABLE_PRO_UP_SMOKE_HA_SMOKE_REQUIRED",
+  "postgresql_live_migration_alpha083": "NON_EXECUTED_LOCAL_DOCKER_UNAVAILABLE_0030_0031_APPLY_VERIFY_ROLLBACK_REQUIRED",
+  "oracle_live_migration_alpha083": "NON_EXECUTED_LOCAL_ORACLE_UNAVAILABLE_0030_0031_APPLY_VERIFY_ROLLBACK_REQUIRED",
+  "powershell_runtime_alpha083": "NON_EXECUTED_LOCAL_PWSH_UNAVAILABLE",
+  "agent_local_alpha083": "EXECUTED_GOTOOLCHAIN_LOCAL_GO1_23_2_VET_RACE_TEST_BUILD_COVERAGE98_4_PERCENT",
+  "source_integrity_prepack_alpha083": "EXECUTED_45_OF_45_100_PERCENT_ZERO_VIOLATIONS_CANONICAL_INVENTORY_1213_PATHS",
+  "packaging_tracked_files_alpha083": 1216,
+  "source_integrity_alpha083": "EXECUTED_45_OF_45_100_PERCENT_STAGED_SNAPSHOT_1215_GIT_BLOB_CHECKSUMS_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
+  "archive_compatibility_unit_alpha083": "EXECUTED_12_OF_12_100_PERCENT",
+  "archive_compatibility_alpha083": "EXECUTED_12_OF_12_100_PERCENT_CANDIDATE_GIT_ARCHIVE_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT"
 }

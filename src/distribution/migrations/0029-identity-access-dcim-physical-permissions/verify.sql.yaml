@@ -1,0 +1,5 @@
+schema: infranexum.verify/v1
+checks:
+- id: dcim-physical-permissions
+  postgresql: "SELECT COUNT(*)=17 FROM infranexum_iam.permission WHERE organization_id IS NULL AND code IN ('dcim.model.read','dcim.model.create','dcim.model.update','dcim.model.archive','dcim.rack.read','dcim.rack.create','dcim.rack.update','dcim.rack.decommission','dcim.equipment.read','dcim.equipment.create','dcim.equipment.update','dcim.equipment.move','dcim.equipment.decommission','dcim.port.read','dcim.cable.read','dcim.cable.create','dcim.cable.disconnect')"
+  oracle: "SELECT COUNT(*)=17 FROM INFRANEXUM_IAM_PERMISSION WHERE ORGANIZATION_ID IS NULL AND CODE IN ('dcim.model.read','dcim.model.create','dcim.model.update','dcim.model.archive','dcim.rack.read','dcim.rack.create','dcim.rack.update','dcim.rack.decommission','dcim.equipment.read','dcim.equipment.create','dcim.equipment.update','dcim.equipment.move','dcim.equipment.decommission','dcim.port.read','dcim.cable.read','dcim.cable.create','dcim.cable.disconnect')"

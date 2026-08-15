@@ -1,0 +1,5 @@
+schema: infranexum.verify/v1
+checks:
+- id: dcim-physical-storage
+  postgresql: "SELECT COUNT(*)=7 FROM information_schema.tables WHERE table_schema='infranexum_dcim' AND table_name IN ('equipment_model','model_port_template','rack','equipment','physical_port','cable_connection','physical_command_dedup')"
+  oracle: "SELECT COUNT(*)=7 FROM user_tables WHERE table_name IN ('INFRANEXUM_DCIM_MODEL','INFRANEXUM_DCIM_MODEL_PORT','INFRANEXUM_DCIM_RACK','INFRANEXUM_DCIM_EQUIP','INFRANEXUM_DCIM_PORT','INFRANEXUM_DCIM_CABLE','INFRANEXUM_DCIM_PHY_DEDUP')"

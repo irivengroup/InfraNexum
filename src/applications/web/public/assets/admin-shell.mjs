@@ -7,6 +7,7 @@ const ROUTES = Object.freeze({
   rsot: Object.freeze({ viewId: 'rsot-workspace', labelKey: 'nav.rsot', titleKey: 'topbar.rsot' }),
   itam: Object.freeze({ viewId: 'itam-workspace', labelKey: 'nav.itam', titleKey: 'topbar.itam' }),
   dcim: Object.freeze({ viewId: 'dcim-workspace', labelKey: 'nav.dcim', titleKey: 'topbar.dcim' }),
+  ddi: Object.freeze({ viewId: 'ddi-workspace', labelKey: 'nav.ddi', titleKey: 'topbar.ddi' }),
 });
 
 export function normalizeRoute(value) {
@@ -67,6 +68,10 @@ export function setDcimAvailability(documentObject, enabled, windowObject = glob
   setCapabilityRouteAvailability(documentObject, 'dcim', enabled, windowObject);
 }
 
+export function setDdiAvailability(documentObject, enabled, windowObject = globalThis.window) {
+  setCapabilityRouteAvailability(documentObject, 'ddi', enabled, windowObject);
+}
+
 function setCapabilityRouteAvailability(documentObject, route, enabled, windowObject) {
   const available = enabled === true;
   const link = documentObject?.getElementById?.(`nav-${route}`);
@@ -114,6 +119,7 @@ export function applyRoute(
   if (route === 'rsot' && !capabilityRouteAvailable(documentObject, 'rsot')) route = 'overview';
   if (route === 'itam' && !capabilityRouteAvailable(documentObject, 'itam')) route = 'overview';
   if (route === 'dcim' && !capabilityRouteAvailable(documentObject, 'dcim')) route = 'overview';
+  if (route === 'ddi' && !capabilityRouteAvailable(documentObject, 'ddi')) route = 'overview';
 
   for (const [name, definition] of Object.entries(ROUTES)) {
     const view = documentObject?.getElementById?.(definition.viewId);
@@ -196,6 +202,11 @@ export function buildCommands(documentObject, windowObject = globalThis.window) 
   if (capabilityRouteAvailable(documentObject, 'itam')) {
     commands.splice(1, 0, command('itam', 'command.category.workspace', 'command.itam.title', 'command.itam.description', () => {
       applyRoute(documentObject, 'itam', windowObject);
+    }));
+  }
+  if (capabilityRouteAvailable(documentObject, 'ddi')) {
+    commands.splice(1, 0, command('ddi', 'command.category.workspace', 'command.ddi.title', 'command.ddi.description', () => {
+      applyRoute(documentObject, 'ddi', windowObject);
     }));
   }
   if (capabilityRouteAvailable(documentObject, 'dcim')) {

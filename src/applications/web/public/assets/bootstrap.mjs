@@ -1,4 +1,4 @@
-import { initializeAdminShell, setDcimAvailability, setIdentityAccessAvailability, setItamAvailability, setOrganizationAvailability, setRsotAvailability } from './admin-shell.mjs';
+import { initializeAdminShell, setDcimAvailability, setDdiAvailability, setIdentityAccessAvailability, setItamAvailability, setOrganizationAvailability, setRsotAvailability } from './admin-shell.mjs';
 import { initializeLocalAuthentication } from './auth.mjs';
 import { initializeIdentityAccess } from './identity-access.mjs';
 import { initializePolicyAuthorization } from './policy-authorization.mjs';
@@ -10,6 +10,7 @@ import { initializeTemporalPickers } from './temporal-picker.mjs';
 import { initializeRsotWorkspace } from './rsot-workspace.mjs';
 import { initializeItamWorkspace } from './itam-workspace.mjs';
 import { initializeDcimWorkspace } from './dcim-workspace.mjs';
+import { initializeDdiIpamWorkspace } from './ddi-ipam-workspace.mjs';
 import {
   initializeLocalization,
   setLocalizedAriaLabel,
@@ -65,6 +66,12 @@ export function validatePublicConfiguration(value) {
   if (typeof value.dcimFacilitiesEnabled !== 'boolean') {
     throw new Error('Runtime configuration dcimFacilitiesEnabled is invalid');
   }
+  if (typeof value.dcimPhysicalEnabled !== 'boolean') {
+    throw new Error('Runtime configuration dcimPhysicalEnabled is invalid');
+  }
+  if (typeof value.ddiIpamEnabled !== 'boolean') {
+    throw new Error('Runtime configuration ddiIpamEnabled is invalid');
+  }
   if (value.itamAssetsEnabled && !value.itamPartnersEnabled) {
     throw new Error('Runtime configuration ITAM assets require ITAM partners');
   }
@@ -73,6 +80,12 @@ export function validatePublicConfiguration(value) {
   }
   if (value.advancedAuthorizationEnabled && !value.identityAccessEnabled) {
     throw new Error('Runtime configuration advanced authorization requires identity access');
+  }
+  if (value.dcimPhysicalEnabled && !value.dcimFacilitiesEnabled) {
+    throw new Error('Runtime configuration DCIM physical requires DCIM facilities');
+  }
+  if (value.ddiIpamEnabled && !value.dcimFacilitiesEnabled) {
+    throw new Error('Runtime configuration DDI/IPAM requires DCIM facilities');
   }
   if (
     value.schema !== REQUIRED_SCHEMA
@@ -112,6 +125,7 @@ export function renderRuntimeConfiguration(documentObject, configuration) {
   setRsotAvailability(documentObject, configuration.rsotCoreEnabled);
   setItamAvailability(documentObject, configuration.itamPartnersEnabled || configuration.itamAssetsEnabled || configuration.itamComplianceEnabled);
   setDcimAvailability(documentObject, configuration.dcimFacilitiesEnabled);
+  setDdiAvailability(documentObject, configuration.ddiIpamEnabled);
   if (configuration.organizationFoundationEnabled) {
     void loadOrganizations(documentObject, configuration);
   } else {
@@ -130,6 +144,7 @@ export function renderRuntimeFailure(documentObject) {
   setRsotAvailability(documentObject, false);
   setItamAvailability(documentObject, false);
   setDcimAvailability(documentObject, false);
+  setDdiAvailability(documentObject, false);
 }
 
 export function initializeTheme(documentObject = document, storageObject = globalThis.localStorage) {
@@ -345,6 +360,7 @@ if (typeof document !== 'undefined') {
     try { await initializeRsotWorkspace(document, configuration, fetch); } catch (error) { console.error('RSOT workspace initialization failed', error); }
     try { await initializeItamWorkspace(document, configuration, fetch); } catch (error) { console.error('ITAM workspace initialization failed', error); }
     try { await initializeDcimWorkspace(document, configuration, fetch); } catch (error) { console.error('DCIM workspace initialization failed', error); }
+    try { await initializeDdiIpamWorkspace(document, configuration, fetch); } catch (error) { console.error('DDI/IPAM workspace initialization failed', error); }
     try { preferenceController = initializePreferences(document); } catch { /* non-critical */ }
     try { initializeStableSelects(document); } catch { /* native selects remain as safe fallback */ }
     try { initializeTemporalPickers(document); } catch { /* native temporal inputs remain as safe fallback */ }

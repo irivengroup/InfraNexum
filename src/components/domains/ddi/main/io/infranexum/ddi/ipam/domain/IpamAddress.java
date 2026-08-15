@@ -1,0 +1,8 @@
+package io.infranexum.ddi.ipam.domain;
+
+import io.infranexum.core.contracts.DomainIdentifier;
+import java.time.Instant;
+import java.util.Objects;
+
+/** Atomic IP allocation/reservation within one VRF. */
+public record IpamAddress(DomainIdentifier id,DomainIdentifier organizationId,DomainIdentifier vrfId,DomainIdentifier networkId,DomainIdentifier poolId,String address,AddressStatus status,String hostname,DomainIdentifier rsotObjectId,DomainIdentifier dcimEquipmentId,String purpose,long version,Instant createdAt,Instant updatedAt){public IpamAddress{Objects.requireNonNull(id);Objects.requireNonNull(organizationId);Objects.requireNonNull(vrfId);Objects.requireNonNull(networkId);address=IpCidr.canonicalAddress(address);Objects.requireNonNull(status);hostname=optional(hostname,253);purpose=optional(purpose,512);if(version<1)throw new IllegalArgumentException("version must be positive");}public static IpamAddress assigned(DomainIdentifier id,DomainIdentifier org,DomainIdentifier vrf,DomainIdentifier net,DomainIdentifier pool,String address,boolean reservation,String hostname,DomainIdentifier rsot,DomainIdentifier equipment,String purpose,Instant now){return new IpamAddress(id,org,vrf,net,pool,address,reservation?AddressStatus.RESERVED:AddressStatus.ALLOCATED,hostname,rsot,equipment,purpose,1,now,now);}public IpamAddress release(Instant now){if(status==AddressStatus.RELEASED)return this;return new IpamAddress(id,organizationId,vrfId,networkId,poolId,address,AddressStatus.RELEASED,hostname,rsotObjectId,dcimEquipmentId,purpose,version+1,createdAt,now);}private static String optional(String v,int max){if(v==null)return null;String x=v.strip();if(x.isEmpty())return null;if(x.length()>max)throw new IllegalArgumentException("value too long");return x;}}

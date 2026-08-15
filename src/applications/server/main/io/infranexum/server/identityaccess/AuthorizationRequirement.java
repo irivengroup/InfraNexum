@@ -73,6 +73,14 @@ record AuthorizationRequirement(
             return rsotSchemaRequirement(verb, normalized.substring("/api/v1/rsot/schema-profiles/".length()), true, normalized);
         }
 
+        if (normalized.equals("/api/v1/ddi/ipam/vrfs") || normalized.startsWith("/api/v1/ddi/ipam/vrfs/")
+                || normalized.equals("/api/v1/ddi/ipam/vlans") || normalized.startsWith("/api/v1/ddi/ipam/vlans/")
+                || normalized.equals("/api/v1/ddi/ipam/networks") || normalized.startsWith("/api/v1/ddi/ipam/networks/")
+                || normalized.equals("/api/v1/ddi/ipam/pools") || normalized.startsWith("/api/v1/ddi/ipam/pools/")
+                || normalized.equals("/api/v1/ddi/ipam/addresses") || normalized.startsWith("/api/v1/ddi/ipam/addresses/")) {
+            return controllerScoped("ddi-ipam", normalized);
+        }
+
         if (normalized.equals("/api/v1/dcim/sites") || normalized.startsWith("/api/v1/dcim/sites/")
                 || normalized.equals("/api/v1/dcim/buildings") || normalized.startsWith("/api/v1/dcim/buildings/")
                 || normalized.equals("/api/v1/dcim/floors") || normalized.startsWith("/api/v1/dcim/floors/")

@@ -1,0 +1,25 @@
+schema: infranexum.migration/v1
+id: '0029'
+name: identity-access-dcim-physical-permissions
+owner_context: identity-access
+dependencies:
+- '0028'
+preconditions:
+- identity-access-rbac-foundation-created
+postconditions:
+- dcim-physical-permissions-declared
+- platform-admin-dcim-physical-bootstrap-granted
+recovery: rerun-idempotent-permission-seeding-after-correcting-database-connectivity
+rollback: removes-only-dcim-physical-permissions-and-bootstrap-grants
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 45
+checksums:
+  postgresql.sql: d07cc95118bf347f4b417660cb6b946f03f76f4784e8f3ed449e3551a5393153
+  oracle.sql: 341479182f204d7640f9d73df399f5c999b5e9d2f60dffeafc07e26f7f95a1ba
+  rollback/postgresql.sql: 93ef114b9f98388d72dbef562e417b8af9e5fe7131f19caa84fe884a269c0746
+  rollback/oracle.sql: 157aecaaf93789b1c91c23d63500ad422ab54ad33b2266a5b2848d612b3d88db
+  logical-model.json: 36473828d6db19a40ed7b92a2b2c36d0eb3bcfce4b3b63d106a82d892fb87f17
+  verify.sql.yaml: 5ad422188faa41e8a8861c0f33cf9c79e7ca8a7187d490c473555bf3b8c9f518

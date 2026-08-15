@@ -1,3 +1,26 @@
+# InfraNexum 2.0.0-alpha.0.83 — état d’implémentation
+
+## alpha.0.83 — PGM-08-E01 DDI/IPAM
+
+Implemented in this snapshot: Organisation-scoped VRF/VLAN/network/pool/address model, atomic pool allocation and reservations, CIDR/pool overlap protection, weak RSOT/DCIM links, 12 RBAC permissions, migrations `0030/0031`, 15-operation OpenAPI surface, CLI and full DE/EN/ES/FR/IT Web administration under `#/ddi`. DNS/DHCP remain pending their own roadmap epics.
+
+
+## alpha.0.82 — PGM-07-E05 racks, équipements, empreintes, ports et câblage
+
+`alpha.0.82` implémente le gate roadmap **« occupation, connectivité physique et modèles multi-constructeurs »**. DCIM possède désormais les modèles d’équipement et leurs templates de ports, les racks, l’occupation en unités U, les équipements installés, les ports physiques et les liaisons point-à-point. Partner/RSOT/ITAM/Organization restent des autorités externes référencées sans FK inter-bounded-context.
+
+L’installation vérifie modèle/rack actifs, dimensions compatibles, plage U, absence de chevauchement, unicité du numéro de série et quotas. Placement et déplacement verrouillent le Rack transactionnellement ; le câblage verrouille les deux ports dans un ordre déterministe avant de réévaluer leur disponibilité. Les connexions exigent des équipements distincts, des types de ports compatibles ainsi que le même média/connecteur, et un équipement encore câblé ne peut pas être décommissionné/archivé.
+
+La tranche comprend capability `dcim.physical`, 17 permissions organisation-scoped, migrations PostgreSQL/Oracle `0028/0029`, JDBC/outbox/idempotence/version optimiste, API/OpenAPI 3.1 avec 14 opérations explicites, CLI Server et parité Web immédiate. Le workspace DCIM expose modèles/racks/équipements/ports/câbles, activation/archivage/décommission, installation/déplacement et connexion/déconnexion avec des sélecteurs gouvernés ; aucun UUID métier n’est saisi librement. DE/EN/ES/FR/IT restent supportées.
+
+**EXÉCUTÉ sur le snapshot versionné** — Source Integrity **45/45 à 100 %**, 0 violation ; Architecture fonctionnelle **145/145** et Architecture-as-Code `PASS` ; migrations **109/109**, couverture **99 %**, 0 violation ; Web **149/149**, couverture **99,72 % lignes / 98,51 % branches / 100 % fonctions**, process smoke `passed` ; **19** targets Java dependency-free, dont JDBC et E05 ; compilation syntaxique JUnit E05 sous `javac -Xlint:all -Werror` ; Toolchains **25/25** (99 %), Eventing **10/10** (100 %), Persistence **12/12** (98 %), Capabilities **10/10** (99 %), Entitlements **10/10** (100 %), Audit **8/8** (100 %), tous les checkers à 0 violation ; Compose **63/63** ; Agent local Go 1.23.2 `vet + race + tests + build`, couverture **98,4 %**.
+
+**NON EXÉCUTÉ complètement** — couverture Architecture instrumentée : l’exécution finale a dépassé la limite du runner à 120 s après 13 tests, sans assertion en échec ; les 145 tests fonctionnels et le checker restent distinctement exécutés. Maven/JUnit/JaCoCo cible exige JDK25 alors que le runner fournit JDK 21.0.11 et aucun Maven système ; `./mvnw --version` sort 2. Go 1.26.5 exact tente son téléchargement mais le réseau bloque `proxy.golang.org`; Node cible 24.18.1 n’est pas disponible (Node local 22.16.0). Docker Desktop/CLI et `pwsh` sont absents ; les apply/verify/rollback PostgreSQL/Oracle live de `0028/0029`, `smoke` et `ha-smoke` restent des gates de promotion.
+
+Voir `docs/dcim-physical-infrastructure.md`.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.81 — état d’implémentation
 
 ## alpha.0.81 — PGM-07-E04 sites, bâtiments, étages, salles et zones

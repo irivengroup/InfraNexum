@@ -1,0 +1,5 @@
+schema: infranexum.verify/v1
+checks:
+- id: ddi-ipam-storage
+  postgresql: "SELECT COUNT(*)=6 FROM information_schema.tables WHERE table_schema='infranexum_ddi' AND table_name IN ('ipam_vrf','ipam_vlan','ipam_network','ipam_pool','ipam_address','ipam_command_dedup')"
+  oracle: "SELECT COUNT(*)=6 FROM user_tables WHERE table_name IN ('INFRANEXUM_DDI_VRF','INFRANEXUM_DDI_VLAN','INFRANEXUM_DDI_NETWORK','INFRANEXUM_DDI_POOL','INFRANEXUM_DDI_ADDRESS','INFRANEXUM_DDI_DEDUP')"

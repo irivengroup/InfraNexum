@@ -1,5 +1,6 @@
 import { applyTranslations, localeFromDocument, translate } from './i18n.mjs';
 import { DcimFacilityClient } from './dcim-facilities.mjs';
+import { initializeDcimPhysicalWorkspace } from './dcim-physical-workspace.mjs';
 import { initializeStableSelects } from './stable-select.mjs';
 import {
   bindTabSet,
@@ -39,6 +40,7 @@ export async function initializeDcimWorkspace(documentObject = document, configu
   for(const resource of RESOURCES) bindResource(documentObject,client,state,resource);
   documentObject.getElementById('dcim-refresh')?.addEventListener('click',()=>void refreshHierarchy(documentObject,client,state));
   documentObject.addEventListener?.('infranexum:locale-change',()=>renderAll(documentObject,state));
+  const physicalPromise=initializeDcimPhysicalWorkspace(documentObject,configuration,fetchFunction);
 
   try {
     setWorkspaceStatus(documentObject,'dcim-status','workspace.loading');
@@ -48,6 +50,7 @@ export async function initializeDcimWorkspace(documentObject = document, configu
   } catch(error) {
     setWorkspaceStatus(documentObject,'dcim-status','workspace.directoryUnavailable','error');
   }
+  await physicalPromise;
   return Object.freeze({ enabled:true, refresh:()=>refreshHierarchy(documentObject,client,state) });
 }
 
@@ -75,6 +78,7 @@ export function dcimWorkspaceTemplate(){
     ${panel('floors',floorFields())}
     ${panel('rooms',roomFields())}
     ${panel('zones',zoneFields())}
+    <div id="dcim-physical-extension" class="mt-4"></div>
   `;
 }
 

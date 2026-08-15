@@ -1,0 +1,29 @@
+{
+  "schema": "infranexum.logical-model/v1",
+  "context": "identity-access",
+  "objects": [
+    {
+      "name": "dcim-physical-permissions",
+      "kind": "permission_seed",
+      "permissions": [
+        "dcim.model.read",
+        "dcim.model.create",
+        "dcim.model.update",
+        "dcim.model.archive",
+        "dcim.rack.read",
+        "dcim.rack.create",
+        "dcim.rack.update",
+        "dcim.rack.decommission",
+        "dcim.equipment.read",
+        "dcim.equipment.create",
+        "dcim.equipment.update",
+        "dcim.equipment.move",
+        "dcim.equipment.decommission",
+        "dcim.port.read",
+        "dcim.cable.read",
+        "dcim.cable.create",
+        "dcim.cable.disconnect"
+      ]
+    }
+  ]
+}

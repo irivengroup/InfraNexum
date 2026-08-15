@@ -1,0 +1,25 @@
+schema: infranexum.migration/v1
+id: '0031'
+name: identity-access-ddi-ipam-permissions
+owner_context: identity-access
+dependencies:
+- '0030'
+preconditions:
+- identity-access-rbac-foundation-created
+postconditions:
+- ddi-ipam-permissions-declared
+- platform-admin-ddi-ipam-bootstrap-granted
+recovery: rerun-idempotent-permission-seeding-after-correcting-database-connectivity
+rollback: removes-only-ddi-ipam-permissions-and-bootstrap-grants
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 45
+checksums:
+  postgresql.sql: 4d2d1f8f435b10f97acf4687ee13ea62a1d0e02f7f779e8cc17f5fc55965ee26
+  oracle.sql: ed6b01226b9d86065db7e1285f3d4f5b0330c59ab0a8ed024b4d0f6febb23b5f
+  rollback/postgresql.sql: 5a09b7151c778c3b9f2b9ac5da62454ff0d20174df286fb05a3a219f9495f5e4
+  rollback/oracle.sql: 66c0f3d2ee070de2d31640f50f41f8c7b33c8c9884357bbde852cc2facfeb0b2
+  logical-model.json: 8fb0461a21c364caa27684046e8d92d6a8e98ae069eea8e3954f02fae966a14a
+  verify.sql.yaml: 8967892ad3d883ca674704f5a516e6f72131cd406c6340674bbf7606174dd478

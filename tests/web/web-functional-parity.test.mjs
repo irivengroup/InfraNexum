@@ -23,6 +23,8 @@ function configuration(overrides = {}) {
     itamAssetsEnabled: true,
     itamComplianceEnabled: true,
     dcimFacilitiesEnabled: true,
+    dcimPhysicalEnabled: true,
+    ddiIpamEnabled: true,
     ...overrides,
   };
 }
@@ -41,7 +43,7 @@ test('RSOT, ITAM and DCIM are real first-level administration routes with concre
   const shell = await readFile(path.join(PUBLIC, 'assets/admin-shell.mjs'), 'utf8');
   const bootstrap = await readFile(path.join(PUBLIC, 'assets/bootstrap.mjs'), 'utf8');
 
-  for (const route of ['rsot', 'itam', 'dcim']) {
+  for (const route of ['rsot', 'itam', 'dcim', 'ddi']) {
     assert.match(html, new RegExp(`id="nav-${route}"[^>]+data-route="${route}"`));
     assert.match(html, new RegExp(`id="${route}-workspace"[^>]+data-view="${route}"`));
     assert.match(shell, new RegExp(`${route}: Object\\.freeze`));
@@ -52,6 +54,8 @@ test('RSOT, ITAM and DCIM are real first-level administration routes with concre
   assert.match(bootstrap, /setRsotAvailability\(documentObject, configuration\.rsotCoreEnabled\)/);
   assert.match(bootstrap, /setItamAvailability\(documentObject, configuration\.itamPartnersEnabled \|\| configuration\.itamAssetsEnabled \|\| configuration\.itamComplianceEnabled\)/);
   assert.match(bootstrap, /setDcimAvailability\(documentObject, configuration\.dcimFacilitiesEnabled\)/);
+  assert.match(bootstrap, /initializeDdiIpamWorkspace\(document, configuration, fetch\)/);
+  assert.match(bootstrap, /setDdiAvailability\(documentObject, configuration\.ddiIpamEnabled\)/);
 });
 
 test('functional workspaces expose lists, create workflows and governed lifecycle actions', () => {

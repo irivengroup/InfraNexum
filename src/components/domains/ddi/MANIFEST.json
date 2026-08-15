@@ -1,0 +1,19 @@
+{
+  "schema": "infranexum.component-manifest/v1",
+  "id": "components.domains.ddi",
+  "kind": "component",
+  "owner": "team.edge-platform",
+  "lifecycle": "active",
+  "languages": [
+    "java"
+  ],
+  "dependencies": [
+    "components.core.contracts",
+    "components.core.events"
+  ],
+  "source_baseline": [
+    "CDC-DDI",
+    "CDC DDI/IPAM address management",
+    "PGM-08-E01"
+  ]
+}

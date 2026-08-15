@@ -27,6 +27,8 @@ export class WebRuntimeConfiguration {
   #itamAssetsEnabled;
   #itamComplianceEnabled;
   #dcimFacilitiesEnabled;
+  #dcimPhysicalEnabled;
+  #ddiIpamEnabled;
 
   constructor({
     listenHost,
@@ -46,6 +48,8 @@ export class WebRuntimeConfiguration {
     itamAssetsEnabled,
     itamComplianceEnabled,
     dcimFacilitiesEnabled,
+    dcimPhysicalEnabled,
+    ddiIpamEnabled,
   }) {
     this.#listenHost = listenHost;
     this.#listenPort = listenPort;
@@ -64,6 +68,8 @@ export class WebRuntimeConfiguration {
     this.#itamAssetsEnabled = itamAssetsEnabled;
     this.#itamComplianceEnabled = itamComplianceEnabled;
     this.#dcimFacilitiesEnabled = dcimFacilitiesEnabled;
+    this.#dcimPhysicalEnabled = dcimPhysicalEnabled;
+    this.#ddiIpamEnabled = ddiIpamEnabled;
     Object.freeze(this);
   }
 
@@ -162,6 +168,22 @@ export class WebRuntimeConfiguration {
       'INFRANEXUM_WEB_DCIM_FACILITIES_ENABLED',
       false,
     );
+    const dcimPhysicalEnabled = readBoolean(
+      environment,
+      'INFRANEXUM_WEB_DCIM_PHYSICAL_ENABLED',
+      false,
+    );
+    if (dcimPhysicalEnabled && !dcimFacilitiesEnabled) {
+      throw new Error('DCIM Physical UI requires the Facilities hierarchy capability');
+    }
+    const ddiIpamEnabled = readBoolean(
+      environment,
+      'INFRANEXUM_WEB_DDI_IPAM_ENABLED',
+      false,
+    );
+    if (ddiIpamEnabled && !dcimFacilitiesEnabled) {
+      throw new Error('DDI/IPAM UI requires the DCIM Facilities capability for site scoping');
+    }
     if (itamComplianceEnabled && (!itamPartnersEnabled || !itamAssetsEnabled)) {
       throw new Error('ITAM Compliance UI requires Partner catalogue and Asset lifecycle capabilities');
     }
@@ -187,6 +209,8 @@ export class WebRuntimeConfiguration {
       itamAssetsEnabled,
       itamComplianceEnabled,
       dcimFacilitiesEnabled,
+      dcimPhysicalEnabled,
+      ddiIpamEnabled,
     });
   }
 
@@ -207,6 +231,8 @@ export class WebRuntimeConfiguration {
   get itamAssetsEnabled() { return this.#itamAssetsEnabled; }
   get itamComplianceEnabled() { return this.#itamComplianceEnabled; }
   get dcimFacilitiesEnabled() { return this.#dcimFacilitiesEnabled; }
+  get dcimPhysicalEnabled() { return this.#dcimPhysicalEnabled; }
+  get ddiIpamEnabled() { return this.#ddiIpamEnabled; }
 
   publicConfiguration() {
     return Object.freeze({
@@ -226,6 +252,8 @@ export class WebRuntimeConfiguration {
       itamAssetsEnabled: this.#itamAssetsEnabled,
       itamComplianceEnabled: this.#itamComplianceEnabled,
       dcimFacilitiesEnabled: this.#dcimFacilitiesEnabled,
+      dcimPhysicalEnabled: this.#dcimPhysicalEnabled,
+      ddiIpamEnabled: this.#ddiIpamEnabled,
     });
   }
 }

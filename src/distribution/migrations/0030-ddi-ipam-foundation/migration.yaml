@@ -1,0 +1,26 @@
+schema: infranexum.migration/v1
+id: '0030'
+name: ddi-ipam-foundation
+owner_context: ddi
+dependencies:
+- '0029'
+preconditions:
+- organization-foundation-created
+- dcim-facility-hierarchy-created
+postconditions:
+- ddi-ipam-routing-spaces-created
+- ddi-ipam-atomic-allocation-storage-created
+recovery: rerun-idempotent-ddl-after-correcting-database-connectivity
+rollback: drops-only-ddi-owned-ipam-objects
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 45
+checksums:
+  postgresql.sql: 62ccb6cd9865dc5a557311926de7ff0bd505386b5f3f66a063f6b9f4eadb814b
+  oracle.sql: 3c524df9fe9a3c1932a75c3a0d441aed1de9b40e123ea18ca4953f12462cce85
+  rollback/postgresql.sql: d133098c7371799bfd087cd3bdc4cef11fbad9bb3f4f17691beba5c7eac19283
+  rollback/oracle.sql: 9953be7c563e2f9cf7e02d56100e525d4d690c67fc26637c0cb852a5bba2a4e4
+  logical-model.json: c0a4ebd3f220a1a159d26d045124da98a21ad75e0e2b57b8aaca6449a8d3dfd7
+  verify.sql.yaml: 8f8462f5e7aa8774ee647f71c17ad749472ffabc63aafac4f0fdb38a1186c4ad
