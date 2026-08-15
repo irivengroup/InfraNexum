@@ -2566,7 +2566,7 @@ export function applyTranslations(documentObject, locale) {
 
   // Keep language controls synchronized without rebuilding them. Replacing a native
   // <select> or its parent while its popup is open makes Chromium/Windows close the
-  // picker. The stable listbox switcher below therefore updates attributes/text only.
+  // picker. The Bootstrap listbox switcher below therefore updates attributes/text only.
   const selector = documentObject?.getElementById?.('language-select');
   if (selector) selector.value = selected;
   const current = documentObject?.getElementById?.('language-current');
@@ -2598,7 +2598,7 @@ export function initializeLocalization(
   };
 
   // Legacy/native fallback for embedded or older shells. The current dashboard uses
-  // the stable custom switcher initialized below.
+  // the Bootstrap dropdown switcher initialized below.
   const selector = documentObject?.getElementById?.('language-select');
   selector?.addEventListener?.('change', () => { commitLocale(selector.value); });
   initializeLanguageSwitcher(documentObject, commitLocale);
@@ -2622,10 +2622,14 @@ export function initializeLanguageSwitcher(documentObject, commitLocale) {
   const focusOption = (index) => options[((index % options.length) + options.length) % options.length]?.focus?.();
   const open = ({ focusSelected = false } = {}) => {
     menu.hidden = false;
+    menu.classList?.add?.('show');
+    trigger.classList?.add?.('show');
     trigger.setAttribute?.('aria-expanded', 'true');
     if (focusSelected) focusOption(selectedIndex());
   };
   const close = ({ returnFocus = false } = {}) => {
+    menu.classList?.remove?.('show');
+    trigger.classList?.remove?.('show');
     menu.hidden = true;
     trigger.setAttribute?.('aria-expanded', 'false');
     if (returnFocus) trigger.focus?.();

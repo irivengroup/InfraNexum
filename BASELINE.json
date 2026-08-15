@@ -1,9 +1,9 @@
 {
   "schema": "infranexum.source-baseline/v1",
   "product": "InfraNexum — Infrastructure Control & Governance Platform",
-  "implementation_version": "2.0.0-alpha.0.83",
+  "implementation_version": "2.0.0-alpha.0.84",
   "architecture_baseline": "2.0.0-draft.21",
-  "roadmap_baseline": "1.0.0-draft.1",
+  "roadmap_baseline": "2.0.0-draft.21",
   "architecture_archive_sha256": "372cf19929f8ea3b7586c3af3e7c5004e590cf746ff2d6d59d4d0b88912aea64",
   "implemented_scope": [
     "PGM-01-E01 src-contained product monorepo with external tests, shortened Java physical source roots and enforced 120-character repository path budget",
@@ -81,7 +81,8 @@
     "Web Functional Parity alpha.0.80: RSOT and ITAM administration routes/workspaces are now real capability-gated UI surfaces, governed entity selectors replace free-form UUID entry, canonical RSOT objects gain organization-scoped rsot.read query access via paired migration 0025, ITAM Compliance gains governed support-authorization/detail reads, OpenAPI Compliance DTO schemas are corrected, DE/EN/ES/FR/IT workspace vocabulary is complete, and browser NUL-byte regression checks ensure Web support means route + navigation + workspace + real workflow + interaction tests rather than a client module alone.",
     "PGM-07-E04 DCIM physical facilities hierarchy alpha.0.81: canonical Site/Building/Floor/Room/Zone hierarchy with structured Site addresses, kind-specific coherence, lifecycle and optimistic versioning, weak Organization/Subdivision governance references, internal DCIM parent integrity, transactional outbox/idempotency, capability dcim.facilities, 26 organization-scoped atomic permissions, HTTP/OpenAPI, Server CLI, same-release Web administration with governed cascading selectors and five-locale UX, paired PostgreSQL/Oracle migrations 0026-0027.",
     "PGM-07-E05 DCIM racks/equipment/ports/cabling alpha.0.82: multi-vendor EquipmentModel footprints with governed port templates, Rack U occupancy, installed Equipment linked by weak references to RSOT/ITAM/Partner/Organization authorities, deterministic transactional rack/port locking against concurrent overlap/double-connect races, point-to-point cabling compatibility and no-decommission-while-cabled invariants, capability dcim.physical, 17 organization-scoped atomic permissions, HTTP/OpenAPI 3.1, Server CLI, same-release Web administration with governed selectors, and paired PostgreSQL/Oracle migrations 0028-0029.",
-    "PGM-08-E01 DDI/IPAM foundation alpha.0.83: organization-scoped VRF/VLAN/network/pool/address hierarchy, indexed CIDR overlap prevention, transactionally serialized atomic pool allocation/reservations, weak RSOT/DCIM references, RBAC/ABAC, API/CLI and same-release Web administration, paired PostgreSQL/Oracle migrations 0030-0031."
+    "PGM-08-E01 DDI/IPAM foundation alpha.0.83: organization-scoped VRF/VLAN/network/pool/address hierarchy, indexed CIDR overlap prevention, transactionally serialized atomic pool allocation/reservations, weak RSOT/DCIM references, RBAC/ABAC, API/CLI and same-release Web administration, paired PostgreSQL/Oracle migrations 0030-0031.",
+    "alpha.0.84 corrective stabilization: malformed Java CLI text blocks repaired; Compose health diagnostics distinguish absent containers after failed build from unhealthy running services; Web presentation realigned on native Bootstrap 5.3.6 components/tokens only, with Bootstrap alerts, native form-select controls and native date/datetime-local inputs; no new business epic, next dependency prerequisite is PGM-05-E01 before PGM-10-E05 and DNS/DHCP."
   ],
   "roadmap_archive_sha256": "11db7d27bbc79f688cd1fda31a24aaf31b56a56db36b6487b64154c148ab54d3",
   "engineering_governance_sha256": "f24357051a5401f598c3d77bbe5814d3759a176095537659243658ba3ff109c7"

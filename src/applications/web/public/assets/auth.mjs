@@ -82,9 +82,9 @@ export async function initializeLocalAuthentication(
   configuration,
   fetchFunction = fetch,
 ) {
-  const body = documentObject.body;
+  const appShell = documentObject.getElementById('app-shell');
   if (!configuration.localAuthEnabled) {
-    body?.classList?.remove('inx-auth-pending');
+    if (appShell) appShell.hidden = false;
     return Object.freeze({ enabled: false, session: null });
   }
 
@@ -193,8 +193,8 @@ export async function initializeLocalAuthentication(
   markAuthWired(loginForm, loginSubmit, passwordForm, passwordSubmit);
 
   // The gate is made interactive only after all critical listeners exist.
+  if (appShell) appShell.hidden = true;
   gate.hidden = false;
-  body?.classList?.add('inx-auth-required');
   showLogin(documentObject);
   setAuthServiceState(documentObject, 'checking');
 
@@ -217,7 +217,7 @@ export async function initializeLocalAuthentication(
   });
   renderAuthenticated(documentObject, session);
   gate.hidden = true;
-  body?.classList?.remove('inx-auth-required', 'inx-auth-pending');
+  if (appShell) appShell.hidden = false;
   wireLogout(documentObject, configuration, fetchFunction);
   return Object.freeze({ enabled: true, session });
 }
@@ -305,6 +305,7 @@ function setAuthMessage(documentObject, key, error) {
   const element = documentObject.getElementById('auth-message');
   if (!element) return;
   element.setAttribute('data-i18n', key);
+  element.className = `alert ${error ? 'alert-danger' : 'alert-info'} mt-3 mb-2`;
   element.setAttribute('data-state', error ? 'error' : 'info');
   setLocalizedElementText(documentObject, element, key);
 }
@@ -314,6 +315,8 @@ function setAuthServiceState(documentObject, state) {
   const text = documentObject.getElementById('auth-service-state-text');
   if (!container || !text) return;
   const normalized = ['checking', 'ready', 'unavailable'].includes(state) ? state : 'unavailable';
+  const contextual = normalized === 'unavailable' ? 'danger' : normalized === 'ready' ? 'success' : 'secondary';
+  container.className = `alert alert-${contextual} d-flex align-items-center gap-2 py-2`;
   container.setAttribute('data-state', normalized);
   setLocalizedElementText(documentObject, text, `auth.service.${normalized}`);
   const visible = normalized === 'unavailable';

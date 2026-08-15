@@ -36,9 +36,8 @@ class Element {
 }
 function authenticatedDocument(cookie = 'INX_XSRF=csrf-value') {
   const body = { classList: new ClassList() };
-  body.classList.add('inx-auth-pending');
   const elements = new Map([
-    ['auth-gate', new Element()], ['auth-login-form', new Element()], ['auth-password-form', new Element()],
+    ['auth-gate', new Element()], ['app-shell', new Element()], ['auth-login-form', new Element()], ['auth-password-form', new Element()],
     ['auth-login-view', new Element()], ['auth-password-view', new Element()], ['auth-login-submit', new Element()], ['auth-password-submit', new Element()],
     ['auth-username', new Element()], ['auth-password', new Element()], ['auth-message', new Element()],
     ['auth-service-state', new Element()], ['auth-service-state-text', new Element()],
@@ -172,7 +171,7 @@ test('authentication gate releases immediately when disabled or when a valid ses
   const disabled = authenticatedDocument();
   const disabledResult = await initializeLocalAuthentication(disabled, { ...configuration, localAuthEnabled: false }, async () => { throw new Error('must not fetch'); });
   assert.equal(disabledResult.enabled, false);
-  assert.equal(disabled.body.classList.contains('inx-auth-pending'), false);
+  assert.equal(disabled.elements.get('app-shell').hidden, false);
 
   const documentObject = authenticatedDocument();
   const result = await initializeLocalAuthentication(documentObject, configuration, async () => jsonResponse(200, session));
@@ -181,7 +180,7 @@ test('authentication gate releases immediately when disabled or when a valid ses
   assert.equal(documentObject.elements.get('session-identity').textContent, 'Local Administrator');
   assert.equal(documentObject.elements.get('session-avatar').textContent, 'LA');
   assert.equal(documentObject.elements.get('session-logout').hidden, false);
-  assert.equal(documentObject.body.classList.contains('inx-auth-pending'), false);
+  assert.equal(documentObject.elements.get('app-shell').hidden, false);
 });
 
 

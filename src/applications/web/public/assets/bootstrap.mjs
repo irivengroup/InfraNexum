@@ -134,8 +134,12 @@ export function renderRuntimeConfiguration(documentObject, configuration) {
 }
 
 export function renderRuntimeFailure(documentObject) {
+  const appShell = documentObject.getElementById('app-shell');
+  if (appShell) appShell.hidden = false;
   setLocalizedText(documentObject, 'runtime-message', 'runtime.loadFailure');
-  documentObject.getElementById('runtime-message')?.setAttribute('data-state', 'error');
+  const runtimeMessage = documentObject.getElementById('runtime-message');
+  if (runtimeMessage) runtimeMessage.className = 'alert alert-danger py-2 mb-0';
+  runtimeMessage?.setAttribute('data-state', 'error');
   setLocalizedText(documentObject, 'dashboard-runtime', 'runtime.unavailable');
   setLocalizedText(documentObject, 'sidebar-runtime-state', 'runtime.unavailable');
   setLocalizedBadge(documentObject, 'runtime-health-badge', 'common.down', 'text-bg-danger');
@@ -187,6 +191,8 @@ function applyTheme(documentObject, root, button, theme, explicit) {
   if (explicit) root.setAttribute('data-theme-user', 'true');
   else root.removeAttribute?.('data-theme-user');
   button.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+  const icon = documentObject.getElementById('theme-toggle-icon');
+  if (icon) icon.textContent = theme === 'dark' ? '☀' : '◐';
   setLocalizedAriaLabel(documentObject, button, theme === 'dark' ? 'theme.toLight' : 'theme.toDark');
 }
 
@@ -284,7 +290,7 @@ export async function loadSubdivisions(documentObject, configuration, organizati
 
 function organizationRow(documentObject, item, configuration, fetchFunction) {
   const row = documentObject.createElement('tr');
-  appendPillCell(documentObject, row, item.code, 'inx-code-pill');
+  appendPillCell(documentObject, row, item.code, 'badge text-bg-light border font-monospace');
   appendTextCell(documentObject, row, item.displayName);
   appendTextCell(documentObject, row, item.countryCode);
   appendStateCell(documentObject, row, item.status);
@@ -304,7 +310,7 @@ function organizationRow(documentObject, item, configuration, fetchFunction) {
 
 function subdivisionRow(documentObject, item) {
   const row = documentObject.createElement('tr');
-  appendPillCell(documentObject, row, item.code, 'inx-code-pill');
+  appendPillCell(documentObject, row, item.code, 'badge text-bg-light border font-monospace');
   appendTextCell(documentObject, row, item.displayName);
   appendTextCell(documentObject, row, item.type);
   appendStateCell(documentObject, row, item.status);
@@ -329,8 +335,8 @@ function appendPillCell(documentObject, row, value, className) {
 
 function appendStateCell(documentObject, row, value) {
   const normalized = typeof value === 'string' ? value.toLowerCase() : 'unknown';
-  const classSuffix = ['active', 'suspended'].includes(normalized) ? normalized : 'default';
-  appendPillCell(documentObject, row, value, `inx-state-pill inx-state-${classSuffix}`);
+  const contextual = normalized === 'active' ? 'text-bg-success' : normalized === 'suspended' ? 'text-bg-warning' : 'text-bg-secondary';
+  appendPillCell(documentObject, row, value, `badge rounded-pill ${contextual}`);
 }
 
 function setText(documentObject, id, value) {

@@ -265,7 +265,7 @@ function initializeCommandPalette(documentObject, windowObject) {
     if (rendered.length === 0) {
       const empty = documentObject.createElement?.('div');
       if (empty) {
-        empty.className = 'inx-command-empty';
+        empty.className = 'list-group-item text-body-secondary text-center py-4';
         empty.textContent = translate(locale, 'command.empty');
         results.replaceChildren?.(empty);
       }
@@ -323,17 +323,17 @@ function commandElement(documentObject, item, index, locale, onClick, active) {
   const button = documentObject.createElement('button');
   button.type = 'button';
   button.id = `command-option-${index}`;
-  button.className = `inx-command-item${active ? ' active' : ''}`;
+  button.className = `list-group-item list-group-item-action d-flex align-items-center gap-3${active ? ' active' : ''}`;
   button.setAttribute('role', 'option');
   button.setAttribute('aria-selected', active ? 'true' : 'false');
 
   const icon = documentObject.createElement('span');
-  icon.className = 'inx-command-item-icon';
+  icon.className = 'badge text-bg-primary';
   icon.setAttribute('aria-hidden', 'true');
   icon.textContent = item.id === 'theme' ? '◐' : item.id === 'organizations' ? '◎' : item.id === 'access' ? '⚿' : item.id === 'runtime' ? '◇' : '◫';
 
   const copy = documentObject.createElement('span');
-  copy.className = 'inx-command-item-copy';
+  copy.className = 'd-flex flex-column flex-grow-1';
   const title = documentObject.createElement('strong');
   title.textContent = translate(locale, item.titleKey);
   const description = documentObject.createElement('span');
@@ -341,7 +341,7 @@ function commandElement(documentObject, item, index, locale, onClick, active) {
   copy.append(title, description);
 
   const category = documentObject.createElement('span');
-  category.className = 'inx-command-item-category';
+  category.className = 'badge text-bg-light text-body-secondary';
   category.textContent = translate(locale, item.categoryKey);
 
   button.append(icon, copy, category);

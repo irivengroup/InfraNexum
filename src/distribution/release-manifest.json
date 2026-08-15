@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.83",
-  "profile": "alpha083-pgm08e01-ddi-ipam-pro-ha-local-development",
+  "version": "2.0.0-alpha.0.84",
+  "profile": "alpha084-corrective-bootstrap5-native-build-stabilization-pro-ha-local-development",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -14,7 +14,7 @@
     },
     {
       "id": "infranexum-server",
-      "status": "source-server-alpha083-ddi-ipam-api-cli-jdbc-rbac-abac-atomic-allocation-indexed-overlap-audit-target-jdk25-maven-jacoco-docker-runtime-pending"
+      "status": "alpha084-corrective-java-cli-text-block-syntax-repaired-regression-gated-pgm08e01-api-cli-jdbc-rbac-abac-preserved-target-jdk25-maven-jacoco-docker-runtime-pending"
     },
     {
       "id": "infranexum-agent",
@@ -22,7 +22,7 @@
     },
     {
       "id": "infranexum-web",
-      "status": "alpha083-real-ddi-ipam-first-level-workspace-vrf-vlan-networks-pools-addresses-governed-selects-de-en-es-fr-it-full-interaction-tests-target-node24-and-docker-runtime-pending"
+      "status": "alpha084-bootstrap5.3.6-native-presentation-only-no-infranexum-presentation-classes-bootstrap-alerts-native-form-select-date-datetime-local-i18n-de-en-es-fr-it-web-tests-and-smoke-local-node22-pass-target-node24-and-docker-runtime-pending"
     },
     {
       "id": "source-integrity-v1",
@@ -58,7 +58,7 @@
     },
     {
       "id": "web-admin-dashboard-v1",
-      "status": "professional-responsive-fluid-admin-shell-freeipa-inspired-iam-information-architecture-entity-driven-dependent-selects-deterministic-calendar-theme-enriched-with-ionos-inspired-navy-cyan-orange-accents-i18n-de-en-es-fr-it-bootstrap5.3.6-no-bootstrap-js"
+      "status": "professional-responsive-fluid-admin-shell-freeipa-inspired-iam-information-architecture-entity-driven-dependent-native-form-selects-native-date-datetime-local-controls-bootstrap5.3.6-only-presentation-theme-through-bs-tokens-and-native-component-overrides-i18n-de-en-es-fr-it-no-bootstrap-js"
     },
     {
       "id": "local-identity-authentication-v1",
@@ -66,7 +66,7 @@
     },
     {
       "id": "identity-access-rbac-v1",
-      "status": "pgm-03-e03-rbac-and-pgm-03-e04-advanced-authorization-contracts-preserved; alpha075-replaces-structured-uuid-entry-with-authorized-dependent-entity-selects-and-deterministic-calendar-ui-without-permission-or-schema-change"
+      "status": "pgm-03-e03-rbac-and-pgm-03-e04-advanced-authorization-contracts-preserved; alpha084-retains-authorized-dependent-entity-selects-while-removing-proprietary-visual-select-calendar-clones-in-favor-of-native-bootstrap-form-controls-without-permission-or-schema-change"
     },
     {
       "id": "rsot-authority-foundation-v1",
@@ -111,12 +111,12 @@
   ],
   "validation_reports": [],
   "validation_summary": {
-    "source_inventory_paths": 1213,
+    "source_inventory_paths": 1215,
     "source_integrity_tests": 45,
     "source_integrity_coverage_percent": 100,
     "source_integrity_violations": 0,
-    "python_tests": 437,
-    "architecture_tests": 151,
+    "python_tests": 466,
+    "architecture_tests": 156,
     "architecture_violations": 0,
     "toolchain_tests": 25,
     "toolchain_coverage_percent": 99,
@@ -145,12 +145,12 @@
     "jdbc_workers_junit_tests_defined": 11,
     "jdbc_workers_postgresql_live_tests_defined": 5,
     "agent_local_coverage_percent": 98.4,
-    "web_tests": 153,
+    "web_tests": 155,
     "web_line_coverage_percent": 99.73,
     "web_branch_coverage_percent": 98.53,
     "web_function_coverage_percent": 100,
     "repository_syntax_counts": {
-      "python": 75,
+      "python": 77,
       "json": 69,
       "yaml": 67,
       "xml": 16,
@@ -166,8 +166,8 @@
     "archive_compatibility_max_member_path": 148,
     "entitlements_module_tests_defined": 49,
     "audit_module_tests_defined": 21,
-    "architecture_coverage_status": "NON_EXECUTED_ALPHA082_INSTRUMENTED_RUNNER_TIMEOUT_120S_AFTER_13_TESTS_FUNCTIONAL_145_OF_145_PASS_ARCHITECTURE_CHECK_PASS",
-    "architecture_functional_tests": 145,
+    "architecture_coverage_status": "NON_EXECUTED_ALPHA084_INSTRUMENTED_RUNNER_TIMEOUT_CHECKER_PASS_TARGETED_BOOTSTRAP_IAM_JAVA_TEXT_BLOCK_AND_COMPOSE_TESTS_PASS",
+    "architecture_functional_tests": "PARTIAL_TARGETED_82_PASS_FULL_SUITE_RUNNER_TIMEOUT",
     "jdbc_module_tests_defined": 73,
     "jdbc_postgresql_live_tests_defined": 18,
     "server_module_tests_defined": 121,
@@ -177,7 +177,7 @@
     "jdbc_explicit_source_branch_gaps_diagnostic": 0,
     "server_workers_runtime_tests_defined": 10,
     "server_workers_runtime_strict_harness": "EXECUTED_JAVA21_STUBBED_SPRING_DIAGNOSTIC",
-    "compose_contract_tests": 63,
+    "compose_contract_tests": 64,
     "server_clock_framework_autoconfiguration_regression": "DEFINED_REQUIRES_JDK25_MAVEN_EXECUTION",
     "server_workers_observability_regressions": "DEFINED_HEALTH_METRICS_LIVE_LOOP_REQUIRES_JDK25_MAVEN_EXECUTION",
     "server_observability_regressions": "DEFINED_HTTP_DURABLE_WORKER_CORRELATION_MDC_TRACING_AND_SENSITIVE_STRUCTURED_LOG_REDACTION_REQUIRES_JDK25_MAVEN_EXECUTION",
@@ -498,15 +498,15 @@
     "pre_commit_hook": ".githooks/pre-commit"
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.83",
-    "archive_entries": 1216,
+    "prefix": "infranexum-2.0.0-alpha.0.84",
+    "archive_entries": 1218,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
-    "source_recorded_files": 1215,
+    "source_recorded_files": 1217,
     "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
-    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.83-validation-evidence.zip"
+    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.84-validation-evidence.zip"
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.83-validation-evidence.zip",
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.84-validation-evidence.zip",
   "runtime_validation": {
     "web_local_runtime_alpha058": "EXECUTED_38_OF_38_LINE_99_67_BRANCH_98_33_FUNCTION_100_PROCESS_SMOKE_PASS_LOCAL_NODE22_BOOTSTRAP5_3_6_PROFESSIONAL_ADMIN_DASHBOARD_THEME_TOGGLE_TRUTHFUL_KPI_SAME_ORIGIN_ORGANIZATION_UI",
     "architecture_functional_alpha058": "EXECUTED_57_OF_57",
@@ -821,7 +821,7 @@
     "archive_compatibility_unit_alpha082": "EXECUTED_12_OF_12_100_PERCENT",
     "archive_compatibility_alpha082": "EXECUTED_12_OF_12_100_PERCENT_CANDIDATE_GIT_ARCHIVE_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT"
   },
-  "runtime_validation_note": "alpha.0.83 implements PGM-08-E01 DDI/IPAM as a same-release vertical slice under the DDI parent: organization-scoped VRF/VLAN/network/pool/address governance, atomic pool-cursor allocation, indexed unbounded CIDR overlap checks, explicit reservation/release lifecycle, audit/outbox, weak RSOT/DCIM references, capability/RBAC/ABAC, PostgreSQL/Oracle migrations 0030-0031, 15-operation OpenAPI, Server CLI and real five-locale Web administration with governed selectors. Exact JDK25 Maven/JaCoCo, Go1.26.5, Node24, Docker Desktop PRO/HA and PostgreSQL/Oracle live execution remain mandatory before promotion where not executed in the delivery environment.",
+  "runtime_validation_note": "alpha.0.84 is a corrective stabilization release over the alpha.0.83 PGM-08-E01 baseline: malformed Java text-block openings in DCIM Physical and DDI/IPAM Server CLIs are repaired and regression-gated; developer Compose diagnostics distinguish absent containers after failed build/start from unhealthy running containers; Web presentation is realigned on Bootstrap 5.3.6 native classes/components and --bs-* tokens only, with Bootstrap alerts, native form-select controls and native date/datetime-local inputs. No new business epic is claimed. Exact JDK25 Maven/JUnit/JaCoCo, Node24.18.1/pnpm11.17.0 and Docker Desktop PRO up/smoke/ha-smoke remain promotion gates.",
   "pgm08e01_ddi_ipam_alpha083": "EXECUTED_DOMAIN_JDBC_API_CLI_WEB_MIGRATION_ARCHITECTURE_AND_OFFLINE_SMOKE_TARGET_JDK25_MAVEN_AND_LIVE_DATABASES_PENDING",
   "architecture_functional_alpha083": "EXECUTED_151_OF_151_SPLIT_DETERMINISTIC_GROUPS",
   "architecture_check_alpha083": "EXECUTED_PASS_ZERO_VIOLATIONS",
@@ -849,5 +849,29 @@
   "packaging_tracked_files_alpha083": 1216,
   "source_integrity_alpha083": "EXECUTED_45_OF_45_100_PERCENT_STAGED_SNAPSHOT_1215_GIT_BLOB_CHECKSUMS_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
   "archive_compatibility_unit_alpha083": "EXECUTED_12_OF_12_100_PERCENT",
-  "archive_compatibility_alpha083": "EXECUTED_12_OF_12_100_PERCENT_CANDIDATE_GIT_ARCHIVE_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT"
+  "archive_compatibility_alpha083": "EXECUTED_12_OF_12_100_PERCENT_CANDIDATE_GIT_ARCHIVE_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
+  "corrective_stabilization_alpha084": "EXECUTED_JAVA_TEXT_BLOCK_REPAIR_COMPOSE_DIAGNOSTIC_HARDENING_BOOTSTRAP5_NATIVE_PRESENTATION_NO_NEW_BUSINESS_EPIC",
+  "bootstrap_iam_compose_targeted_alpha084": "EXECUTED_83_OF_83",
+  "architecture_check_alpha084": "EXECUTED_PASS_ZERO_VIOLATIONS",
+  "architecture_coverage_alpha084": "NON_EXECUTED_INSTRUMENTED_RUNNER_TIMEOUT_TARGETED_83_OF_83_PASS_ARCHITECTURE_CHECK_PASS",
+  "migration_alpha084": "EXECUTED_114_OF_114_99_PERCENT_ZERO_VIOLATIONS_NO_MIGRATION_CHANGE",
+  "web_local_runtime_alpha084": "EXECUTED_LOCAL_NODE22_16_0_155_OF_155_LINE99_73_BRANCH98_53_FUNCTION100_PROCESS_SMOKE_PASS_TARGET_NODE24_18_1_PENDING",
+  "java_offline_smokes_alpha084": "EXECUTED_20_OF_20_TARGETS_EXIT_ZERO_LOCAL_JAVA21_XLINT_ALL_WERROR",
+  "java_text_block_regression_alpha084": "EXECUTED_GLOBAL_SOURCE_GATE_REJECTS_INLINE_RETURN_TEXT_BLOCK_OPENINGS",
+  "toolchain_alpha084": "EXECUTED_25_OF_25_99_PERCENT_ZERO_VIOLATIONS",
+  "eventing_alpha084": "EXECUTED_10_OF_10_100_PERCENT_ZERO_VIOLATIONS",
+  "persistence_alpha084": "EXECUTED_12_OF_12_98_PERCENT_ZERO_VIOLATIONS",
+  "capabilities_alpha084": "EXECUTED_10_OF_10_99_PERCENT_ZERO_VIOLATIONS",
+  "entitlements_alpha084": "EXECUTED_10_OF_10_100_PERCENT_ZERO_VIOLATIONS",
+  "audit_alpha084": "EXECUTED_8_OF_8_100_PERCENT_ZERO_VIOLATIONS",
+  "compose_contract_alpha084": "EXECUTED_64_OF_64",
+  "source_integrity_prepack_alpha084": "EXECUTED_45_OF_45_100_PERCENT_ZERO_VIOLATIONS_CANONICAL_INVENTORY_1215_PATHS",
+  "source_integrity_alpha084": "EXECUTED_45_OF_45_100_PERCENT_STAGED_SNAPSHOT_1218_TRACKED_PATHS_1217_GIT_BLOB_CHECKSUMS_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
+  "archive_compatibility_unit_alpha084": "EXECUTED_12_OF_12_100_PERCENT",
+  "archive_compatibility_alpha084": "EXECUTED_GIT_ARCHIVE_ZERO_VIOLATIONS_AND_GIT_ARCHIVE_PARITY",
+  "archive_extraction_alpha084": "EXECUTED_SOURCE_INTEGRITY_ZERO_VIOLATIONS_ARCHITECTURE_PASS_COMPOSE64_OF_64_WEB155_OF_155",
+  "maven_target_jdk25_alpha084": "NON_EXECUTED_LOCAL_JDK21_0_11_TARGET_TEMURIN25_0_4_DOWNLOAD_FAILED_DNS_GITHUB_COM",
+  "web_target_node24_alpha084": "NON_EXECUTED_LOCAL_NODE22_16_0_TARGET_NODE24_18_1_PNPM11_17_0_REQUIRED",
+  "docker_runtime_alpha084": "NON_EXECUTED_LOCAL_DOCKER_AND_PWSH_UNAVAILABLE_PRO_UP_SMOKE_HA_SMOKE_REQUIRED",
+  "roadmap_next_alpha084": "PGM05E01_THEN_PGM10E05_THEN_PGM08E02_PGM08E03"
 }

@@ -1,3 +1,17 @@
+# InfraNexum 2.0.0-alpha.0.84 — build stabilization and Bootstrap 5 Web contract
+
+**Nature : correction de non-régression, sans nouvel epic métier.** La baseline fonctionnelle reste PGM-08-E01 livrée en `alpha.0.83`. Cette révision corrige deux text blocks Java invalides dans les CLI DCIM Physical et DDI/IPAM qui faisaient échouer la compilation Server du build Docker Java 25. Un gate statique parcourt désormais toutes les sources Java et refuse un `return """` dont le contenu commence avant le saut de ligne obligatoire. Le diagnostic PowerShell Compose distingue aussi explicitement un service sans conteneur — typiquement après un build avorté — d'un conteneur réellement démarré mais unhealthy.
+
+**Web Bootstrap 5 natif :** Bootstrap 5.3.6 devient l'unique contrat de présentation. La feuille InfraNexum ne définit plus aucune classe `.inx-*` ni variable `--inx-*`; elle surcharge uniquement des variables `--bs-*` et des composants/classes Bootstrap existants. Les surfaces de feedback utilisent les composants `alert alert-*`; les sélecteurs métier restent de vrais `select.form-select`; les dates/datetimes restent de vrais `input.form-control` de type `date`/`datetime-local`. Les clones visuels JavaScript de combobox et calendrier sont retirés, sans modifier les valeurs FormData, les filtres d'entités, l'autorisation, les routes ou les contrats API.
+
+**EXÉCUTÉ** — Bootstrap/IAM/Compose ciblé : 83/83; Source Integrity : 45/45, couverture 100 %, 0 violation; Web : 155/155, couverture runtime 99,73 % lignes / 98,53 % branches / 100 % fonctions, smoke `passed`; Compose contract : 64/64; Architecture-as-Code CLI : 0 violation; Toolchains : 25/25 (99 %); Migrations : 114/114 (99 %); Eventing : 10/10 (100 %); Persistence : 12/12 (98 %); Capabilities : 10/10 (99 %); Entitlements : 10/10 (100 %); Audit : 8/8 (100 %). Les smokes Java autonomes exécutables avec le JDK local passent, notamment DCIM Physical, DDI/IPAM, Policy et JDBC Workers.
+
+**NON EXÉCUTÉ** — build Maven/JUnit/JaCoCo cible sous Temurin 25.0.4+7 : le runner fournit Java 21.0.11 et la tentative de téléchargement du JDK exact échoue sur la résolution DNS de `github.com`. Node cible 24.18.1/pnpm 11.17.0 n'est pas disponible; les tests Web ci-dessus ont été exécutés avec Node 22.16.0. Docker Desktop/Compose et PowerShell ne sont pas disponibles dans le runner, donc `up`, `smoke` et `ha-smoke` PRO réels restent des gates de promotion. La couverture Architecture agrégée reste NON EXÉCUTÉE car le runner dépasse sa limite pendant les copies/scans instrumentés; le checker du dépôt passe séparément à 0 violation.
+
+**Dépendance roadmap suivante :** PGM-08-E02 DNS et PGM-08-E03 DHCP dépendent de PGM-10-E05. PGM-10-E05 dépend de PGM-02-E03 et PGM-05-E01; PGM-02-E03 est déjà livré, PGM-05-E01 reste le prochain prerequisite non livré. Le prochain incrément métier doit donc être PGM-05-E01 (standard REST/OpenAPI, erreurs, pagination et idempotence), avant PGM-10-E05 puis DNS/DHCP.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.83 — état d’implémentation
 
 ## alpha.0.83 — PGM-08-E01 DDI/IPAM

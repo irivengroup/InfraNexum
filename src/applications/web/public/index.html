@@ -10,293 +10,281 @@
     <link rel="stylesheet" href="/assets/infranexum-theme.css" />
     <script type="module" src="/assets/bootstrap.mjs"></script>
   </head>
-  <body class="inx-app-body inx-auth-pending">
-    <a class="skip-link" href="#main" data-i18n="app.skip">Skip to content</a>
+  <body class="bg-body text-body">
+    <a class="visually-hidden-focusable position-fixed top-0 start-0 z-3 btn btn-light m-2" href="#main" data-i18n="app.skip">Skip to content</a>
 
 
-    <section id="auth-gate" class="inx-auth-gate" aria-labelledby="auth-title" hidden>
-      <div class="inx-auth-backdrop" aria-hidden="true">
-        <span class="inx-auth-orbit inx-auth-orbit-a"></span>
-        <span class="inx-auth-orbit inx-auth-orbit-b"></span>
-        <span class="inx-auth-orbit inx-auth-orbit-c"></span>
-      </div>
-      <div class="inx-auth-layout">
-        <aside class="inx-auth-brand-panel">
-          <div class="inx-auth-brand">
-            <span class="inx-auth-brand-mark" aria-hidden="true">IN</span>
+    <section id="auth-gate" class="position-fixed top-0 start-0 vw-100 vh-100 bg-body z-3 overflow-auto" aria-labelledby="auth-title" hidden>
+      <div class="container-fluid p-0"><div class="row g-0 min-vh-100">
+        <aside class="col-lg-6 text-bg-primary p-4 p-xl-5 d-flex flex-column justify-content-center">
+          <div class="d-flex align-items-center gap-3 mb-4">
+            <span class="badge text-bg-light text-primary fs-5 p-3" aria-hidden="true">IN</span>
             <div><strong>InfraNexum</strong><span>Infrastructure Control &amp; Governance Platform</span></div>
           </div>
-          <div class="inx-auth-brand-copy">
-            <p class="inx-eyebrow" data-i18n="auth.eyebrow">Secure local access</p>
+          <div class="mb-4">
+            <p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="auth.eyebrow">Secure local access</p>
             <h1 data-i18n="auth.brandTitle">Sign in to InfraNexum</h1>
             <p data-i18n="auth.subtitle">Use the local administrator credential provisioned for this installation.</p>
           </div>
-          <div class="inx-auth-security-note">
+          <div class="alert alert-light border d-flex gap-2 mt-4">
             <span aria-hidden="true">◆</span>
             <div><strong>Local security boundary</strong><span>Opaque server-side session · HttpOnly cookie · CSRF protected mutations</span></div>
           </div>
         </aside>
-        <div class="inx-auth-card-wrap">
-          <div class="inx-auth-card">
+        <div class="col-lg-6 p-4 p-xl-5 d-flex align-items-center">
+          <div class="card shadow-lg border-0 w-100"><div class="card-body p-4 p-xl-5">
             <div id="auth-login-view">
               <h2 id="auth-title" data-i18n="auth.title">Secure Area</h2>
-              <div id="auth-service-state" class="inx-auth-service-state" data-state="checking" role="status" aria-live="polite" hidden>
-                <span class="inx-auth-service-dot" aria-hidden="true"></span>
+              <div id="auth-service-state" class="alert alert-secondary d-flex align-items-center gap-2 py-2" data-state="checking" role="status" aria-live="polite" hidden>
+                <span class="spinner-grow spinner-grow-sm text-primary" aria-hidden="true"></span>
                 <span id="auth-service-state-text" data-i18n="auth.service.checking">Checking authentication service…</span>
               </div>
-              <form id="auth-login-form" class="inx-auth-form" autocomplete="on">
+              <form id="auth-login-form" class="d-grid gap-3" autocomplete="on">
                 <label for="auth-username" data-i18n="auth.username">Username</label>
                 <input id="auth-username" name="username" class="form-control" type="text" autocomplete="username" maxlength="128" required />
                 <label for="auth-password" data-i18n="auth.password">Password</label>
                 <input id="auth-password" name="password" class="form-control" type="password" autocomplete="current-password" maxlength="128" required />
-                <button id="auth-login-submit" class="btn btn-primary inx-auth-submit" type="submit" data-i18n="auth.signIn" data-auth-wired="false" aria-disabled="true" disabled>Sign in</button>
+                <button id="auth-login-submit" class="btn btn-primary w-100" type="submit" data-i18n="auth.signIn" data-auth-wired="false" aria-disabled="true" disabled>Sign in</button>
               </form>
             </div>
             <div id="auth-password-view" hidden>
-              <p class="inx-eyebrow" data-i18n="auth.eyebrow">Secure local access</p>
+              <p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="auth.eyebrow">Secure local access</p>
               <h2 data-i18n="auth.password.title">Change your bootstrap password</h2>
-              <p class="inx-auth-lead" data-i18n="auth.password.subtitle">The bootstrap credential must be replaced before the administration workspace can be used.</p>
-              <div class="inx-auth-account"><span data-i18n="session.signedInAs">Signed in as</span><strong id="auth-account-name">—</strong></div>
-              <form id="auth-password-form" class="inx-auth-form" autocomplete="off">
+              <p class="text-body-secondary" data-i18n="auth.password.subtitle">The bootstrap credential must be replaced before the administration workspace can be used.</p>
+              <div class="alert alert-light border d-flex justify-content-between align-items-center py-2"><span data-i18n="session.signedInAs">Signed in as</span><strong id="auth-account-name">—</strong></div>
+              <form id="auth-password-form" class="d-grid gap-3" autocomplete="off">
                 <label for="auth-current-password" data-i18n="auth.currentPassword">Current password</label>
                 <input id="auth-current-password" class="form-control" type="password" autocomplete="current-password" maxlength="128" required />
                 <label for="auth-new-password" data-i18n="auth.newPassword">New password</label>
                 <input id="auth-new-password" class="form-control" type="password" autocomplete="new-password" minlength="12" maxlength="128" required />
                 <label for="auth-confirm-password" data-i18n="auth.confirmPassword">Confirm new password</label>
                 <input id="auth-confirm-password" class="form-control" type="password" autocomplete="new-password" minlength="12" maxlength="128" required />
-                <p class="inx-auth-policy" data-i18n="auth.policy">12–128 characters, with uppercase, lowercase, digit and special character.</p>
-                <button id="auth-password-submit" class="btn btn-primary inx-auth-submit" type="submit" data-i18n="auth.changePassword" data-auth-wired="false" aria-disabled="true" disabled>Change password and continue</button>
+                <p class="form-text" data-i18n="auth.policy">12–128 characters, with uppercase, lowercase, digit and special character.</p>
+                <button id="auth-password-submit" class="btn btn-primary w-100" type="submit" data-i18n="auth.changePassword" data-auth-wired="false" aria-disabled="true" disabled>Change password and continue</button>
               </form>
             </div>
-            <p id="auth-message" class="inx-auth-message" role="status" aria-live="polite" data-state="info" data-i18n="auth.login.prompt">Authentication is required to open the administration workspace.</p>
-            <p class="inx-auth-bootstrap-hint" data-i18n="auth.bootstrapHint">Docker development credentials are available through the dev-compose credentials command.</p>
-          </div>
+            <p id="auth-message" class="alert alert-info mt-3 mb-2" role="status" aria-live="polite" data-state="info" data-i18n="auth.login.prompt">Authentication is required to open the administration workspace.</p>
+            <p class="form-text" data-i18n="auth.bootstrapHint">Docker development credentials are available through the dev-compose credentials command.</p>
+          </div></div>
         </div>
-      </div>
+      </div></div>
     </section>
 
-    <div class="inx-app-shell">
-      <aside class="inx-sidebar" aria-label="Primary navigation">
-        <div class="inx-brand-block">
-          <div class="inx-brand-mark" aria-hidden="true">IN</div>
-          <div class="inx-brand-copy">
+    <div id="app-shell" class="container-fluid px-0" hidden><div class="row g-0 min-vh-100">
+      <aside class="col-12 col-lg-2 bg-primary text-white p-3 d-flex flex-column sticky-lg-top align-self-lg-start" aria-label="Primary navigation">
+        <div class="d-flex align-items-center gap-2 mb-4">
+          <div class="badge text-bg-light text-primary p-2" aria-hidden="true">IN</div>
+          <div class="d-flex flex-column">
             <strong>InfraNexum</strong>
             <span data-i18n="brand.subtitle">Control &amp; Governance</span>
           </div>
         </div>
 
-        <nav class="inx-nav" aria-label="Product areas">
-          <p class="inx-nav-label" data-i18n="nav.workspace">Workspace</p>
-          <a id="nav-overview" class="inx-nav-link active" href="#/overview" data-route="overview" aria-current="page">
-            <span class="inx-nav-icon" aria-hidden="true">◫</span>
+        <nav class="nav nav-pills flex-column gap-1" aria-label="Product areas">
+          <p class="small text-uppercase fw-bold text-white-50 px-2 mt-2 mb-1" data-i18n="nav.workspace">Workspace</p>
+          <a id="nav-overview" class="nav-link text-white active" href="#/overview" data-route="overview" aria-current="page">
+            <span class="d-inline-flex justify-content-center" aria-hidden="true">◫</span>
             <span data-i18n="nav.overview">Overview</span>
           </a>
-          <a id="nav-organizations" class="inx-nav-link" href="#/organizations" data-route="organizations" aria-disabled="true" data-capability-enabled="false" hidden>
-            <span class="inx-nav-icon" aria-hidden="true">◎</span>
+          <a id="nav-organizations" class="nav-link text-white" href="#/organizations" data-route="organizations" aria-disabled="true" data-capability-enabled="false" hidden>
+            <span class="d-inline-flex justify-content-center" aria-hidden="true">◎</span>
             <span data-i18n="nav.organizations">Organizations</span>
           </a>
-          <a id="nav-access" class="inx-nav-link" href="#/access" data-route="access" aria-disabled="true" data-capability-enabled="false" hidden>
-            <span class="inx-nav-icon" aria-hidden="true">⚿</span>
+          <a id="nav-access" class="nav-link text-white" href="#/access" data-route="access" aria-disabled="true" data-capability-enabled="false" hidden>
+            <span class="d-inline-flex justify-content-center" aria-hidden="true">⚿</span>
             <span data-i18n="nav.access">Identity &amp; access</span>
           </a>
-          <p class="inx-nav-label mt-4" data-i18n="nav.platform">Platform</p>
-          <a id="nav-rsot" class="inx-nav-link" href="#/rsot" data-route="rsot" aria-disabled="true" data-capability-enabled="false" hidden>
-            <span class="inx-nav-icon" aria-hidden="true">◇</span>
+          <p class="small text-uppercase fw-bold text-white-50 px-2 mt-2 mb-1 mt-4" data-i18n="nav.platform">Platform</p>
+          <a id="nav-rsot" class="nav-link text-white" href="#/rsot" data-route="rsot" aria-disabled="true" data-capability-enabled="false" hidden>
+            <span class="d-inline-flex justify-content-center" aria-hidden="true">◇</span>
             <span data-i18n="nav.rsot">RSOT</span>
           </a>
-          <a id="nav-itam" class="inx-nav-link" href="#/itam" data-route="itam" aria-disabled="true" data-capability-enabled="false" hidden>
-            <span class="inx-nav-icon" aria-hidden="true">▦</span>
+          <a id="nav-itam" class="nav-link text-white" href="#/itam" data-route="itam" aria-disabled="true" data-capability-enabled="false" hidden>
+            <span class="d-inline-flex justify-content-center" aria-hidden="true">▦</span>
             <span data-i18n="nav.itam">ITAM</span>
           </a>
-          <a id="nav-dcim" class="inx-nav-link" href="#/dcim" data-route="dcim" aria-disabled="true" data-capability-enabled="false" hidden>
-            <span class="inx-nav-icon" aria-hidden="true">⌂</span>
+          <a id="nav-dcim" class="nav-link text-white" href="#/dcim" data-route="dcim" aria-disabled="true" data-capability-enabled="false" hidden>
+            <span class="d-inline-flex justify-content-center" aria-hidden="true">⌂</span>
             <span data-i18n="nav.dcim">DCIM</span>
           </a>
-          <a id="nav-ddi" class="inx-nav-link" href="#/ddi" data-route="ddi" aria-disabled="true" data-capability-enabled="false" hidden>
-            <span class="inx-nav-icon" aria-hidden="true">⌁</span>
+          <a id="nav-ddi" class="nav-link text-white" href="#/ddi" data-route="ddi" aria-disabled="true" data-capability-enabled="false" hidden>
+            <span class="d-inline-flex justify-content-center" aria-hidden="true">⌁</span>
             <span data-i18n="nav.ddi">DDI / IPAM</span>
           </a>
-          <span class="inx-nav-link disabled" aria-disabled="true">
-            <span class="inx-nav-icon" aria-hidden="true">⌁</span>
+          <span class="nav-link text-white disabled" aria-disabled="true">
+            <span class="d-inline-flex justify-content-center" aria-hidden="true">⌁</span>
             <span data-i18n="nav.discovery">Discovery</span>
-            <span class="inx-nav-soon" data-i18n="nav.soon">Soon</span>
+            <span class="badge rounded-pill text-bg-light ms-auto" data-i18n="nav.soon">Soon</span>
           </span>
-          <span class="inx-nav-link disabled" aria-disabled="true">
-            <span class="inx-nav-icon" aria-hidden="true">⬡</span>
+          <span class="nav-link text-white disabled" aria-disabled="true">
+            <span class="d-inline-flex justify-content-center" aria-hidden="true">⬡</span>
             <span data-i18n="nav.governance">Governance</span>
-            <span class="inx-nav-soon" data-i18n="nav.soon">Soon</span>
+            <span class="badge rounded-pill text-bg-light ms-auto" data-i18n="nav.soon">Soon</span>
           </span>
         </nav>
 
-        <div class="inx-sidebar-footer">
-          <div class="inx-runtime-pill">
-            <span class="inx-status-dot" aria-hidden="true"></span>
+        <div class="mt-auto pt-3">
+          <div class="d-flex align-items-center gap-2 p-2 border rounded bg-dark bg-opacity-25">
+            <span class="badge rounded-pill text-bg-success p-1" aria-hidden="true"></span>
             <div>
-              <span class="inx-runtime-pill-label" data-i18n="runtime.label">Runtime</span>
+              <span class="small text-white-50" data-i18n="runtime.label">Runtime</span>
               <strong id="sidebar-runtime-state" data-i18n="runtime.connecting">Connecting…</strong>
             </div>
           </div>
-          <span id="sidebar-version" class="inx-sidebar-version">Version —</span>
+          <span id="sidebar-version" class="small text-white-50 mt-2">Version —</span>
         </div>
       </aside>
 
-      <div class="inx-content-shell">
-        <header class="inx-topbar" aria-label="InfraNexum product header">
-          <div class="inx-topbar-context">
-            <p class="inx-topbar-eyebrow" data-i18n="topbar.eyebrow">Infrastructure Control &amp; Governance Platform</p>
-            <h1 id="topbar-page-title" class="inx-topbar-title" data-i18n="topbar.dashboard">Administration dashboard</h1>
-            <nav class="inx-breadcrumb" aria-label="Breadcrumb">
+      <div class="col-12 col-lg-10">
+        <header class="navbar sticky-top bg-body border-bottom px-3 py-2" aria-label="InfraNexum product header">
+          <div class="d-flex flex-column">
+            <p class="small text-body-secondary mb-0" data-i18n="topbar.eyebrow">Infrastructure Control &amp; Governance Platform</p>
+            <h1 id="topbar-page-title" class="h5 mb-0" data-i18n="topbar.dashboard">Administration dashboard</h1>
+            <nav class="d-flex align-items-center gap-2 small text-body-secondary" aria-label="Breadcrumb">
               <span data-i18n="breadcrumb.home">InfraNexum</span>
               <span aria-hidden="true">/</span>
               <strong id="breadcrumb-current" data-i18n="nav.overview">Overview</strong>
             </nav>
           </div>
-          <div class="inx-topbar-actions">
-            <button id="command-palette-trigger" class="btn inx-command-trigger" type="button" data-i18n-aria-label="command.open" aria-haspopup="dialog" aria-controls="command-palette" aria-expanded="false">
-              <span class="inx-command-trigger-icon" aria-hidden="true">⌕</span>
-              <span class="inx-command-trigger-label" data-i18n="command.short">Search</span>
+          <div class="d-flex align-items-center gap-2 ms-auto">
+            <button id="command-palette-trigger" class="btn btn-outline-secondary d-flex align-items-center gap-2" type="button" data-i18n-aria-label="command.open" aria-haspopup="dialog" aria-controls="command-palette" aria-expanded="false">
+              <span class="text-body-secondary" aria-hidden="true">⌕</span>
+              <span class="d-none d-xl-inline" data-i18n="command.short">Search</span>
               <kbd>Ctrl K</kbd>
             </button>
-            <div id="language-switcher" class="inx-language-switcher">
-              <button id="language-trigger" class="btn inx-language-trigger" type="button"
+            <div id="language-switcher" class="dropdown">
+              <button id="language-trigger" class="btn btn-outline-secondary dropdown-toggle" type="button"
                       data-i18n-aria-label="language.label" aria-label="Interface language"
                       aria-haspopup="listbox" aria-controls="language-menu" aria-expanded="false">
-                <span id="language-current" class="inx-language-current" aria-hidden="true">EN</span>
-                <span class="inx-language-chevron" aria-hidden="true">⌄</span>
+                <span id="language-current" class="fw-semibold" aria-hidden="true">EN</span>
+                <span class="ms-1" aria-hidden="true">⌄</span>
               </button>
-              <div id="language-menu" class="inx-language-menu" role="listbox"
+              <div id="language-menu" class="dropdown-menu dropdown-menu-end shadow" role="listbox"
                    data-i18n-aria-label="language.label" aria-label="Interface language" hidden>
-                <button class="inx-language-option" type="button" role="option" data-locale="de" aria-selected="false"><span>Deutsch</span><span>DE</span></button>
-                <button class="inx-language-option" type="button" role="option" data-locale="en" aria-selected="true"><span>English</span><span>EN</span></button>
-                <button class="inx-language-option" type="button" role="option" data-locale="es" aria-selected="false"><span>Español</span><span>ES</span></button>
-                <button class="inx-language-option" type="button" role="option" data-locale="fr" aria-selected="false"><span>Français</span><span>FR</span></button>
-                <button class="inx-language-option" type="button" role="option" data-locale="it" aria-selected="false"><span>Italiano</span><span>IT</span></button>
+                <button class="dropdown-item" type="button" role="option" data-locale="de" aria-selected="false"><span>Deutsch</span><span>DE</span></button>
+                <button class="dropdown-item" type="button" role="option" data-locale="en" aria-selected="true"><span>English</span><span>EN</span></button>
+                <button class="dropdown-item" type="button" role="option" data-locale="es" aria-selected="false"><span>Español</span><span>ES</span></button>
+                <button class="dropdown-item" type="button" role="option" data-locale="fr" aria-selected="false"><span>Français</span><span>FR</span></button>
+                <button class="dropdown-item" type="button" role="option" data-locale="it" aria-selected="false"><span>Italiano</span><span>IT</span></button>
               </div>
             </div>
-            <span id="topbar-environment" class="inx-environment-chip">Environment —</span>
-            <button id="notification-trigger" class="btn inx-icon-button inx-notification-trigger" type="button" data-i18n-aria-label="notification.open" aria-haspopup="dialog" aria-controls="notification-center" aria-expanded="false">
+            <span id="topbar-environment" class="badge rounded-pill text-bg-light border">Environment —</span>
+            <button id="notification-trigger" class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center position-relative" type="button" data-i18n-aria-label="notification.open" aria-haspopup="dialog" aria-controls="notification-center" aria-expanded="false">
               <span aria-hidden="true">♢</span>
-              <span id="notification-count" class="inx-notification-count" hidden>0</span>
+              <span id="notification-count" class="badge rounded-pill text-bg-danger position-absolute top-0 start-100 translate-middle" hidden>0</span>
             </button>
-            <button id="preferences-trigger" class="btn inx-icon-button" type="button" data-i18n-aria-label="preference.open" aria-haspopup="dialog" aria-controls="preferences-dialog" aria-expanded="false">
+            <button id="preferences-trigger" class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center" type="button" data-i18n-aria-label="preference.open" aria-haspopup="dialog" aria-controls="preferences-dialog" aria-expanded="false">
               <span aria-hidden="true">⚙</span>
             </button>
-            <button id="theme-toggle" class="btn inx-icon-button" type="button" data-i18n-aria-label="theme.switch" aria-pressed="false">
-              <span class="inx-theme-light" aria-hidden="true">☀</span>
-              <span class="inx-theme-dark" aria-hidden="true">◐</span>
+            <button id="theme-toggle" class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center" type="button" data-i18n-aria-label="theme.switch" aria-pressed="false">
+              <span id="theme-toggle-icon" aria-hidden="true">◐</span>
             </button>
-            <div class="inx-session-chip" data-i18n-aria-label="session.localAdmin" aria-label="Local administrator session">
-              <div id="session-avatar" class="inx-user-avatar" aria-hidden="true">AD</div>
-              <div class="inx-session-copy"><span data-i18n="session.signedInAs">Signed in as</span><strong id="session-identity">Local Administrator</strong></div>
+            <div class="d-flex align-items-center gap-2" data-i18n-aria-label="session.localAdmin" aria-label="Local administrator session">
+              <div id="session-avatar" class="badge text-bg-primary rounded-circle p-2" aria-hidden="true">AD</div>
+              <div class="d-flex flex-column"><span data-i18n="session.signedInAs">Signed in as</span><strong id="session-identity">Local Administrator</strong></div>
             </div>
-            <button id="session-logout" class="btn inx-session-logout" type="button" data-i18n="session.logout" hidden>Sign out</button>
+            <button id="session-logout" class="btn btn-sm btn-outline-danger" type="button" data-i18n="session.logout" hidden>Sign out</button>
           </div>
         </header>
 
-        <main id="main" class="inx-main" tabindex="-1">
+        <main id="main" class="container-fluid py-4 px-3 px-xl-4" tabindex="-1">
           <div id="overview-view" data-view="overview">
-            <section class="inx-hero" aria-labelledby="overview-title">
-              <div class="inx-hero-copy">
-                <p class="inx-eyebrow" data-i18n="hero.eyebrow">Control plane</p>
+            <section class="card text-bg-primary border-0 shadow-lg mb-4" aria-labelledby="overview-title">
+              <div class="card-body p-4 p-xl-5">
+                <p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="hero.eyebrow">Control plane</p>
                 <h2 id="overview-title" data-i18n="hero.title">Operate infrastructure with clarity.</h2>
-                <p class="inx-hero-lead" data-i18n="hero.lead">A unified operational view for governance, topology, inventory and lifecycle decisions.</p>
-                <div class="inx-hero-actions">
-                  <a id="hero-organization-action" class="btn btn-light inx-primary-action" href="#/organizations" data-route="organizations" data-i18n="hero.action" hidden>Open organization workspace</a>
-                  <span id="runtime-message" class="inx-inline-status" role="status" aria-live="polite" data-i18n="hero.loading">Loading validated public configuration…</span>
+                <p class="lead opacity-75" data-i18n="hero.lead">A unified operational view for governance, topology, inventory and lifecycle decisions.</p>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                  <a id="hero-organization-action" class="btn btn-light" href="#/organizations" data-route="organizations" data-i18n="hero.action" hidden>Open organization workspace</a>
+                  <span id="runtime-message" class="alert alert-light py-2 mb-0" role="status" aria-live="polite" data-i18n="hero.loading">Loading validated public configuration…</span>
                 </div>
               </div>
-              <div class="inx-hero-visual" aria-hidden="true">
-                <span class="inx-orbit orbit-a"></span>
-                <span class="inx-orbit orbit-b"></span>
-                <span class="inx-orbit orbit-c"></span>
-                <div class="inx-hero-node node-core">IN</div>
-                <div class="inx-hero-node node-a"></div>
-                <div class="inx-hero-node node-b"></div>
-                <div class="inx-hero-node node-c"></div>
+            </section>
+
+            <section class="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-3" aria-label="Platform overview">
+              <article class="col card card-body shadow-sm h-100">
+                <div class="badge rounded-pill text-bg-primary border-primary" aria-hidden="true">◈</div>
+                <div><span class="small text-body-secondary" data-i18n="kpi.runtime">Runtime</span><strong id="dashboard-runtime" class="fs-3 fw-bold" data-i18n="runtime.connecting">Connecting…</strong><span class="small text-body-secondary" data-i18n="kpi.runtimeMeta">Web control plane</span></div>
+              </article>
+              <article class="col card card-body shadow-sm h-100">
+                <div class="badge rounded-pill text-bg-primary border-success" aria-hidden="true">◎</div>
+                <div><span class="small text-body-secondary" data-i18n="kpi.organizations">Organizations</span><strong id="dashboard-organization-count" class="fs-3 fw-bold">—</strong><span class="small text-body-secondary" data-i18n="kpi.organizationsMeta">Authoritative scopes</span></div>
+              </article>
+              <article class="col card card-body shadow-sm h-100">
+                <div class="badge rounded-pill text-bg-primary border-info" aria-hidden="true">⬡</div>
+                <div><span class="small text-body-secondary" data-i18n="kpi.foundation">Foundation</span><strong id="dashboard-foundation" class="fs-3 fw-bold" data-i18n="common.checking">Checking</strong><span class="small text-body-secondary" data-i18n="kpi.foundationMeta">Organization capability</span></div>
+              </article>
+              <article class="col card card-body shadow-sm h-100">
+                <div class="badge rounded-pill text-bg-primary border-warning" aria-hidden="true">◇</div>
+                <div><span class="small text-body-secondary" data-i18n="kpi.environment">Environment</span><strong id="dashboard-environment" class="fs-3 fw-bold">—</strong><span id="dashboard-version" class="small text-body-secondary">Version —</span></div>
+              </article>
+            </section>
+
+            <section class="row g-3 mb-4" aria-label="Control plane status">
+              <div class="col-12 col-xl-7">
+                <article class="card shadow-sm h-100">
+                  <div class="card-header d-flex justify-content-between align-items-start gap-3">
+                    <div><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="status.eyebrow">Operational posture</p><h2 class="h5 mb-1" data-i18n="status.title">Control plane status</h2></div>
+                    <span class="badge rounded-pill text-bg-success" data-i18n="common.live">Live</span>
+                  </div>
+                  <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex justify-content-between align-items-center gap-3"><div><strong class="d-block" data-i18n="status.webRuntime">Web runtime</strong><span class="small text-body-secondary" data-i18n="status.webRuntimeMeta">Static shell and runtime configuration</span></div><span id="runtime-health-badge" class="badge rounded-pill text-bg-secondary" data-i18n="common.checking">Checking</span></div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center gap-3"><div><strong class="d-block" data-i18n="status.serverApi">Server API</strong><span id="runtime-api" class="small text-body-secondary">—</span></div><span id="api-health-badge" class="badge rounded-pill text-bg-secondary" data-i18n="common.configured">Configured</span></div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center gap-3"><div><strong class="d-block" data-i18n="status.foundation">Organization foundation</strong><span class="small text-body-secondary" data-i18n="status.foundationMeta">Authoritative organization hierarchy</span></div><span id="foundation-health-badge" class="badge rounded-pill text-bg-secondary" data-i18n="common.checking">Checking</span></div>
+                  </div>
+                </article>
+              </div>
+              <div class="col-12 col-xl-5">
+                <article class="card shadow-sm h-100" aria-labelledby="runtime-title">
+                  <div class="card-header"><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="deployment.eyebrow">Runtime</p><h2 id="runtime-title" class="h5 mb-1" tabindex="-1" data-i18n="deployment.title">Deployment context</h2></div>
+                  <dl class="list-group list-group-flush mb-0">
+                    <div class="list-group-item"><dt data-i18n="deployment.version">Version</dt><dd id="runtime-version" class="mb-0 text-body-secondary">—</dd></div>
+                    <div class="list-group-item"><dt data-i18n="deployment.environment">Environment</dt><dd id="runtime-environment" class="mb-0 text-body-secondary">—</dd></div>
+                    <div class="list-group-item"><dt data-i18n="deployment.api">API entrypoint</dt><dd id="runtime-api-detail" class="mb-0 text-body-secondary text-break">—</dd></div>
+                    <div class="list-group-item"><dt data-i18n="deployment.architecture">Architecture</dt><dd id="runtime-architecture" class="mb-0 text-body-secondary">—</dd></div>
+                  </dl>
+                </article>
               </div>
             </section>
 
-            <section class="inx-kpi-grid" aria-label="Platform overview">
-              <article class="inx-kpi-card">
-                <div class="inx-kpi-icon inx-kpi-blue" aria-hidden="true">◈</div>
-                <div><span class="inx-kpi-label" data-i18n="kpi.runtime">Runtime</span><strong id="dashboard-runtime" class="inx-kpi-value" data-i18n="runtime.connecting">Connecting…</strong><span class="inx-kpi-meta" data-i18n="kpi.runtimeMeta">Web control plane</span></div>
-              </article>
-              <article class="inx-kpi-card">
-                <div class="inx-kpi-icon inx-kpi-teal" aria-hidden="true">◎</div>
-                <div><span class="inx-kpi-label" data-i18n="kpi.organizations">Organizations</span><strong id="dashboard-organization-count" class="inx-kpi-value">—</strong><span class="inx-kpi-meta" data-i18n="kpi.organizationsMeta">Authoritative scopes</span></div>
-              </article>
-              <article class="inx-kpi-card">
-                <div class="inx-kpi-icon inx-kpi-violet" aria-hidden="true">⬡</div>
-                <div><span class="inx-kpi-label" data-i18n="kpi.foundation">Foundation</span><strong id="dashboard-foundation" class="inx-kpi-value" data-i18n="common.checking">Checking</strong><span class="inx-kpi-meta" data-i18n="kpi.foundationMeta">Organization capability</span></div>
-              </article>
-              <article class="inx-kpi-card">
-                <div class="inx-kpi-icon inx-kpi-amber" aria-hidden="true">◇</div>
-                <div><span class="inx-kpi-label" data-i18n="kpi.environment">Environment</span><strong id="dashboard-environment" class="inx-kpi-value">—</strong><span id="dashboard-version" class="inx-kpi-meta">Version —</span></div>
-              </article>
-            </section>
-
-            <section class="inx-dashboard-grid" aria-label="Control plane status">
-              <article class="inx-panel inx-panel-status">
-                <div class="inx-panel-heading">
-                  <div><p class="inx-eyebrow" data-i18n="status.eyebrow">Operational posture</p><h2 class="inx-panel-title" data-i18n="status.title">Control plane status</h2></div>
-                  <span class="inx-health-badge"><span class="inx-status-dot"></span><span data-i18n="common.live">Live</span></span>
-                </div>
-                <div class="inx-status-list">
-                  <div class="inx-status-row"><div><strong data-i18n="status.webRuntime">Web runtime</strong><span data-i18n="status.webRuntimeMeta">Static shell and runtime configuration</span></div><span id="runtime-health-badge" class="badge rounded-pill text-bg-secondary" data-i18n="common.checking">Checking</span></div>
-                  <div class="inx-status-row"><div><strong data-i18n="status.serverApi">Server API</strong><span id="runtime-api">—</span></div><span id="api-health-badge" class="badge rounded-pill text-bg-secondary" data-i18n="common.configured">Configured</span></div>
-                  <div class="inx-status-row"><div><strong data-i18n="status.foundation">Organization foundation</strong><span data-i18n="status.foundationMeta">Authoritative organization hierarchy</span></div><span id="foundation-health-badge" class="badge rounded-pill text-bg-secondary" data-i18n="common.checking">Checking</span></div>
-                </div>
-              </article>
-
-              <article class="inx-panel inx-panel-runtime" aria-labelledby="runtime-title">
-                <div class="inx-panel-heading"><div><p class="inx-eyebrow" data-i18n="deployment.eyebrow">Runtime</p><h2 id="runtime-title" class="inx-panel-title" tabindex="-1" data-i18n="deployment.title">Deployment context</h2></div></div>
-                <dl class="inx-runtime-list">
-                  <div><dt data-i18n="deployment.version">Version</dt><dd id="runtime-version">—</dd></div>
-                  <div><dt data-i18n="deployment.environment">Environment</dt><dd id="runtime-environment">—</dd></div>
-                  <div><dt data-i18n="deployment.api">API entrypoint</dt><dd id="runtime-api-detail">—</dd></div>
-                  <div><dt data-i18n="deployment.architecture">Architecture</dt><dd id="runtime-architecture">—</dd></div>
-                </dl>
-              </article>
-            </section>
-
-            <section class="inx-platform-section" aria-labelledby="platform-insights-title">
-              <div class="inx-section-heading">
+            <section class="mb-4" aria-labelledby="platform-insights-title">
+              <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
                 <div>
-                  <p class="inx-eyebrow" data-i18n="platform.eyebrow">Effective platform contract</p>
-                  <h2 id="platform-insights-title" class="inx-panel-title" data-i18n="platform.title">Profile, capabilities &amp; capacity</h2>
-                  <p class="inx-section-description" data-i18n="platform.description">Live, secret-free decisions published by the Server capability and quota APIs.</p>
+                  <p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="platform.eyebrow">Effective platform contract</p>
+                  <h2 id="platform-insights-title" class="h5 mb-1" data-i18n="platform.title">Profile, capabilities &amp; capacity</h2>
+                  <p class="text-body-secondary" data-i18n="platform.description">Live, secret-free decisions published by the Server capability and quota APIs.</p>
                 </div>
-                <span id="platform-insights-state" class="inx-health-badge" role="status" aria-live="polite" data-i18n="common.checking">Checking</span>
+                <span id="platform-insights-state" class="badge rounded-pill" role="status" aria-live="polite" data-i18n="common.checking">Checking</span>
               </div>
-              <div class="inx-insight-grid">
-                <article class="inx-insight-card"><span class="inx-insight-label" data-i18n="platform.profile">Installation profile</span><strong id="platform-profile">—</strong><span data-i18n="platform.profileMeta">Effective runtime profile</span></article>
-                <article class="inx-insight-card"><span class="inx-insight-label" data-i18n="platform.tier">Allocation tier</span><strong id="platform-tier">—</strong><span data-i18n="platform.tierMeta">Effective quota tier</span></article>
-                <article class="inx-insight-card"><span class="inx-insight-label" data-i18n="platform.capabilities">Capabilities</span><strong id="platform-capabilities">—</strong><span data-i18n="platform.capabilitiesMeta">Available / evaluated</span></article>
-                <article class="inx-insight-card"><span class="inx-insight-label" data-i18n="platform.catalog">Catalog</span><strong id="platform-catalog-version">—</strong><span data-i18n="platform.catalogMeta">Capability catalog version</span></article>
+              <div class="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-3">
+                <article class="col card card-body shadow-sm h-100"><span class="small text-body-secondary" data-i18n="platform.profile">Installation profile</span><strong id="platform-profile">—</strong><span data-i18n="platform.profileMeta">Effective runtime profile</span></article>
+                <article class="col card card-body shadow-sm h-100"><span class="small text-body-secondary" data-i18n="platform.tier">Allocation tier</span><strong id="platform-tier">—</strong><span data-i18n="platform.tierMeta">Effective quota tier</span></article>
+                <article class="col card card-body shadow-sm h-100"><span class="small text-body-secondary" data-i18n="platform.capabilities">Capabilities</span><strong id="platform-capabilities">—</strong><span data-i18n="platform.capabilitiesMeta">Available / evaluated</span></article>
+                <article class="col card card-body shadow-sm h-100"><span class="small text-body-secondary" data-i18n="platform.catalog">Catalog</span><strong id="platform-catalog-version">—</strong><span data-i18n="platform.catalogMeta">Capability catalog version</span></article>
               </div>
-              <div class="inx-capacity-grid">
-                <article class="inx-capacity-card"><div><span class="inx-capacity-icon" aria-hidden="true">HA</span><div><strong data-i18n="platform.ha">High availability</strong><span data-i18n="platform.haMeta">Deployment capability</span></div></div><span id="platform-ha" class="inx-capacity-value">—</span></article>
-                <article class="inx-capacity-card"><div><span class="inx-capacity-icon" aria-hidden="true">SW</span><div><strong data-i18n="platform.splitWeb">Split Web</strong><span data-i18n="platform.splitWebMeta">Dedicated Web tier</span></div></div><span id="platform-split-web" class="inx-capacity-value">—</span></article>
-                <article class="inx-capacity-card"><div><span class="inx-capacity-icon" aria-hidden="true">OR</span><div><strong data-i18n="platform.orgLimit">Organizations</strong><span data-i18n="platform.limitMeta">Effective maximum</span></div></div><span id="platform-org-limit" class="inx-capacity-value">—</span></article>
-                <article class="inx-capacity-card"><div><span class="inx-capacity-icon" aria-hidden="true">SV</span><div><strong data-i18n="platform.serverLimit">Server nodes</strong><span data-i18n="platform.limitMeta">Effective maximum</span></div></div><span id="platform-server-limit" class="inx-capacity-value">—</span></article>
-                <article class="inx-capacity-card"><div><span class="inx-capacity-icon" aria-hidden="true">WB</span><div><strong data-i18n="platform.webLimit">Web nodes</strong><span data-i18n="platform.limitMeta">Effective maximum</span></div></div><span id="platform-web-limit" class="inx-capacity-value">—</span></article>
+              <div class="row row-cols-1 row-cols-md-2 row-cols-xl-5 g-3">
+                <article class="col card card-body shadow-sm h-100"><div><span class="badge rounded-pill text-bg-primary" aria-hidden="true">HA</span><div><strong data-i18n="platform.ha">High availability</strong><span data-i18n="platform.haMeta">Deployment capability</span></div></div><span id="platform-ha" class="fs-4 fw-bold">—</span></article>
+                <article class="col card card-body shadow-sm h-100"><div><span class="badge rounded-pill text-bg-primary" aria-hidden="true">SW</span><div><strong data-i18n="platform.splitWeb">Split Web</strong><span data-i18n="platform.splitWebMeta">Dedicated Web tier</span></div></div><span id="platform-split-web" class="fs-4 fw-bold">—</span></article>
+                <article class="col card card-body shadow-sm h-100"><div><span class="badge rounded-pill text-bg-primary" aria-hidden="true">OR</span><div><strong data-i18n="platform.orgLimit">Organizations</strong><span data-i18n="platform.limitMeta">Effective maximum</span></div></div><span id="platform-org-limit" class="fs-4 fw-bold">—</span></article>
+                <article class="col card card-body shadow-sm h-100"><div><span class="badge rounded-pill text-bg-primary" aria-hidden="true">SV</span><div><strong data-i18n="platform.serverLimit">Server nodes</strong><span data-i18n="platform.limitMeta">Effective maximum</span></div></div><span id="platform-server-limit" class="fs-4 fw-bold">—</span></article>
+                <article class="col card card-body shadow-sm h-100"><div><span class="badge rounded-pill text-bg-primary" aria-hidden="true">WB</span><div><strong data-i18n="platform.webLimit">Web nodes</strong><span data-i18n="platform.limitMeta">Effective maximum</span></div></div><span id="platform-web-limit" class="fs-4 fw-bold">—</span></article>
               </div>
             </section>
           </div>
 
-          <section id="organization-workspace" class="inx-panel inx-organization-panel inx-page-panel" data-view="organizations" data-capability-enabled="false" aria-labelledby="organization-title" hidden>
-            <div class="inx-page-intro">
+          <section id="organization-workspace" class="card shadow-sm card-body mb-4" data-view="organizations" data-capability-enabled="false" aria-labelledby="organization-title" hidden>
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
               <div>
-                <p class="inx-eyebrow" data-i18n="organization.eyebrow">Governance workspace</p>
-                <h2 id="organization-title" class="inx-page-title" data-i18n="organization.title">Organizations &amp; subdivisions</h2>
-                <p class="inx-page-description" data-i18n="organization.description">Authoritative organizational boundaries used to scope infrastructure, ownership and governance.</p>
+                <p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="organization.eyebrow">Governance workspace</p>
+                <h2 id="organization-title" class="h2 mb-1" data-i18n="organization.title">Organizations &amp; subdivisions</h2>
+                <p class="text-body-secondary" data-i18n="organization.description">Authoritative organizational boundaries used to scope infrastructure, ownership and governance.</p>
               </div>
               <span id="organization-status" class="badge rounded-pill text-bg-secondary" role="status" aria-live="polite" data-i18n="organization.loading">Loading…</span>
             </div>
 
-            <div class="inx-table-shell">
+            <div class="border rounded overflow-hidden mb-3">
               <div class="table-responsive">
-                <table class="table inx-data-table align-middle mb-0">
+                <table class="table table-hover align-middle mb-0">
                   <caption class="visually-hidden">Organizations visible in the local development foundation</caption>
                   <thead><tr><th scope="col" data-i18n="organization.code">Code</th><th scope="col" data-i18n="organization.name">Organization</th><th scope="col" data-i18n="organization.country">Country</th><th scope="col" data-i18n="organization.state">State</th><th scope="col" data-i18n="organization.version">Version</th><th scope="col"><span class="visually-hidden" data-i18n="organization.actions">Actions</span></th></tr></thead>
                   <tbody id="organization-rows"></tbody>
@@ -304,14 +292,14 @@
               </div>
             </div>
 
-            <section id="subdivision-panel" class="inx-subdivision-panel" aria-labelledby="subdivision-title" hidden>
-              <div class="inx-panel-heading inx-panel-heading-wrap">
-                <div><p class="inx-eyebrow" data-i18n="subdivision.eyebrow">Hierarchy</p><h3 id="subdivision-title" class="inx-panel-title inx-panel-title-sm" data-i18n="subdivision.title">Subdivisions</h3></div>
+            <section id="subdivision-panel" class="card shadow-sm" aria-labelledby="subdivision-title" hidden>
+              <div class="card-header d-flex justify-content-between align-items-start gap-3 align-items-center gap-2">
+                <div><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="subdivision.eyebrow">Hierarchy</p><h3 id="subdivision-title" class="h5 mb-1 h6" data-i18n="subdivision.title">Subdivisions</h3></div>
                 <span id="subdivision-status" class="badge rounded-pill text-bg-secondary" role="status" aria-live="polite">—</span>
               </div>
-              <div class="inx-table-shell">
+              <div class="border rounded overflow-hidden mb-3">
                 <div class="table-responsive">
-                  <table class="table inx-data-table align-middle mb-0">
+                  <table class="table table-hover align-middle mb-0">
                     <caption class="visually-hidden">Subdivisions of the selected organization</caption>
                     <thead><tr><th scope="col" data-i18n="subdivision.code">Code</th><th scope="col" data-i18n="subdivision.name">Subdivision</th><th scope="col" data-i18n="subdivision.type">Type</th><th scope="col" data-i18n="subdivision.state">State</th><th scope="col" data-i18n="subdivision.version">Version</th></tr></thead>
                     <tbody id="subdivision-rows"></tbody>
@@ -322,9 +310,9 @@
           </section>
 
 
-                    <section aria-labelledby="iam-title" class="inx-panel inx-page-panel" data-capability-enabled="false" data-view="access" hidden="" id="identity-access-workspace">
-          <div class="inx-page-intro">
-          <div><p class="inx-eyebrow" data-i18n="iam.eyebrow">Identity governance</p><h2 class="inx-page-title" data-i18n="iam.title" id="iam-title">Identity &amp; Access</h2><p class="inx-page-description" data-i18n="iam.description">Manage identities and access control through a FreeIPA-inspired list-and-detail administration model.</p></div>
+                    <section aria-labelledby="iam-title" class="card shadow-sm card-body mb-4" data-capability-enabled="false" data-view="access" hidden="" id="identity-access-workspace">
+          <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+          <div><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="iam.eyebrow">Identity governance</p><h2 class="h2 mb-1" data-i18n="iam.title" id="iam-title">Identity &amp; Access</h2><p class="text-body-secondary" data-i18n="iam.description">Manage identities and access control through a FreeIPA-inspired list-and-detail administration model.</p></div>
           <span aria-live="polite" class="badge rounded-pill text-bg-secondary" data-i18n="iam.loading" id="iam-status" role="status">Loading…</span>
           </div>
           <div class="row g-3 align-items-end mb-4">
@@ -332,42 +320,42 @@
           <div class="col-lg-5"><p class="small text-body-secondary mb-2" data-i18n="iam.scopeHint">All group, role and custom-permission operations are evaluated in this organization scope.</p></div>
           </div>
           <div aria-live="polite" class="alert alert-info mb-3" hidden="" id="iam-feedback" role="status"></div>
-          <div class="inx-iam-shell">
-          <aside aria-label="Identity and access navigation" class="inx-iam-navigation" data-i18n-aria-label="iam.navigation">
-          <nav aria-orientation="vertical" class="inx-iam-nav" role="tablist">
-          <div class="inx-iam-nav-group" data-iam-nav-group="identity"><p class="inx-iam-nav-heading" data-i18n="iam.nav.identity">Identity</p>
-          <button aria-controls="iam-users-section" aria-selected="true" class="inx-iam-nav-item active" data-i18n="iam.users" data-iam-section="users" id="iam-tab-users" role="tab" tabindex="0" type="button">Users</button>
-          <button aria-controls="iam-groups-section" aria-selected="false" class="inx-iam-nav-item" data-i18n="iam.groups" data-iam-section="groups" id="iam-tab-groups" role="tab" tabindex="-1" type="button">Groups</button>
+          <div class="row g-4">
+          <aside aria-label="Identity and access navigation" class="col-lg-3" data-i18n-aria-label="iam.navigation">
+          <nav aria-orientation="vertical" class="nav nav-pills flex-column gap-1" role="tablist">
+          <div class="mb-3" data-iam-nav-group="identity"><p class="small text-uppercase fw-bold text-body-secondary px-2 mb-1" data-i18n="iam.nav.identity">Identity</p>
+          <button aria-controls="iam-users-section" aria-selected="true" class="nav-link text-start active" data-i18n="iam.users" data-iam-section="users" id="iam-tab-users" role="tab" tabindex="0" type="button">Users</button>
+          <button aria-controls="iam-groups-section" aria-selected="false" class="nav-link text-start" data-i18n="iam.groups" data-iam-section="groups" id="iam-tab-groups" role="tab" tabindex="-1" type="button">Groups</button>
           </div>
-          <div class="inx-iam-nav-group" data-iam-nav-group="access-control"><p class="inx-iam-nav-heading" data-i18n="iam.nav.accessControl">Access control</p>
-          <button aria-controls="iam-roles-section" aria-selected="false" class="inx-iam-nav-item" data-i18n="iam.roles" data-iam-section="roles" id="iam-tab-roles" role="tab" tabindex="-1" type="button">Roles</button>
-          <button aria-controls="iam-permissions-section" aria-selected="false" class="inx-iam-nav-item" data-i18n="iam.permissions" data-iam-section="permissions" id="iam-tab-permissions" role="tab" tabindex="-1" type="button">Permissions</button>
+          <div class="mb-3" data-iam-nav-group="access-control"><p class="small text-uppercase fw-bold text-body-secondary px-2 mb-1" data-i18n="iam.nav.accessControl">Access control</p>
+          <button aria-controls="iam-roles-section" aria-selected="false" class="nav-link text-start" data-i18n="iam.roles" data-iam-section="roles" id="iam-tab-roles" role="tab" tabindex="-1" type="button">Roles</button>
+          <button aria-controls="iam-permissions-section" aria-selected="false" class="nav-link text-start" data-i18n="iam.permissions" data-iam-section="permissions" id="iam-tab-permissions" role="tab" tabindex="-1" type="button">Permissions</button>
           </div>
-          <div class="inx-iam-nav-group" data-iam-nav-group="policy"><p class="inx-iam-nav-heading" data-i18n="iam.nav.authorization">Authorization policy</p>
-          <button aria-controls="iam-policy-workspace" aria-selected="false" class="inx-iam-nav-item" data-i18n="policy.title" data-iam-section="policies" hidden="" id="iam-tab-policies" role="tab" tabindex="-1" type="button">Policies</button>
+          <div class="mb-3" data-iam-nav-group="policy"><p class="small text-uppercase fw-bold text-body-secondary px-2 mb-1" data-i18n="iam.nav.authorization">Authorization policy</p>
+          <button aria-controls="iam-policy-workspace" aria-selected="false" class="nav-link text-start" data-i18n="policy.title" data-iam-section="policies" hidden="" id="iam-tab-policies" role="tab" tabindex="-1" type="button">Policies</button>
           </div>
           </nav>
           </aside>
-          <div class="inx-iam-main">
-          <section aria-hidden="false" aria-labelledby="iam-tab-users" class="inx-iam-section active" data-iam-panel="users" id="iam-users-section" role="tabpanel">
-          <header class="inx-iam-facet-header"><div class="inx-iam-facet-copy"><p class="inx-eyebrow" data-i18n="iam.facetEyebrow">Identity &amp; Access</p><h3 class="inx-iam-facet-title" data-i18n="iam.users">Users</h3><p class="inx-iam-facet-description" data-i18n="iam.usersDescription">Accounts, memberships and direct role assignments.</p></div></header>
-          <div aria-label="List controls" class="inx-iam-toolbar" data-i18n-aria-label="iam.listControls" role="group">
-          <div class="inx-iam-search"><input aria-label="Filter current list" autocomplete="off" class="form-control form-control-sm" data-i18n-aria-label="iam.filterPlaceholder" data-i18n-placeholder="iam.filterPlaceholder" data-iam-filter="users" placeholder="Filter current list" type="search"/></div>
-          <div class="inx-iam-toolbar-actions"><button class="btn btn-sm btn-outline-secondary" data-i18n="iam.refresh" data-iam-refresh="users" type="button">Refresh</button><button class="btn btn-sm btn-primary" data-i18n="iam.addNew" data-iam-open-workflow="users:create" type="button">Add</button></div>
+          <div class="col-lg-9">
+          <section aria-hidden="false" aria-labelledby="iam-tab-users" class="tab-pane active" data-iam-panel="users" id="iam-users-section" role="tabpanel">
+          <header class="d-flex justify-content-between align-items-start gap-2 mb-3"><div class="d-flex flex-column"><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="iam.facetEyebrow">Identity &amp; Access</p><h3 class="h5 mb-1" data-i18n="iam.users">Users</h3><p class="small text-body-secondary" data-i18n="iam.usersDescription">Accounts, memberships and direct role assignments.</p></div></header>
+          <div aria-label="List controls" class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-3" data-i18n-aria-label="iam.listControls" role="group">
+          <div class="flex-grow-1"><input aria-label="Filter current list" autocomplete="off" class="form-control form-control-sm" data-i18n-aria-label="iam.filterPlaceholder" data-i18n-placeholder="iam.filterPlaceholder" data-iam-filter="users" placeholder="Filter current list" type="search"/></div>
+          <div class="d-flex flex-wrap gap-2"><button class="btn btn-sm btn-outline-secondary" data-i18n="iam.refresh" data-iam-refresh="users" type="button">Refresh</button><button class="btn btn-sm btn-primary" data-i18n="iam.addNew" data-iam-open-workflow="users:create" type="button">Add</button></div>
           </div>
-          <div class="inx-iam-list-shell"><table class="table inx-data-table align-middle"><caption class="visually-hidden" data-i18n="iam.users">Users</caption><thead><tr><th data-i18n="iam.id">ID</th><th data-i18n="iam.login">Login</th><th data-i18n="iam.email">Email</th><th data-i18n="iam.displayName">Display name</th><th data-i18n="iam.status">Status</th><th data-i18n="iam.actions">Actions</th></tr></thead><tbody id="iam-user-rows"></tbody></table></div>
-          <section aria-label="Object actions" class="inx-iam-action-shell" data-i18n-aria-label="iam.objectActions">
-          <div class="inx-iam-action-header"><h4 class="inx-iam-action-title" data-i18n="iam.objectActions">Details &amp; actions</h4><p class="inx-iam-action-description" data-i18n="iam.objectActionsHint">Select an object from the list, then choose the operation to perform.</p></div>
-          <div aria-label="Object action views" class="inx-iam-workflow-tabs" data-i18n-aria-label="iam.workflowViews" role="tablist">
-          <button aria-controls="iam-users-workflow-create" aria-selected="true" class="inx-iam-workflow-tab active" data-i18n="iam.userCreate" data-iam-workflow="users:create" role="tab" tabindex="0" type="button">Add user</button>
-          <button aria-controls="iam-users-workflow-settings" aria-selected="false" class="inx-iam-workflow-tab" data-i18n="iam.workflow.settings" data-iam-workflow="users:settings" role="tab" tabindex="-1" type="button">Settings</button>
-          <button aria-controls="iam-users-workflow-memberships" aria-selected="false" class="inx-iam-workflow-tab" data-i18n="iam.workflow.memberships" data-iam-workflow="users:memberships" role="tab" tabindex="-1" type="button">Memberships</button>
-          <button aria-controls="iam-users-workflow-roles" aria-selected="false" class="inx-iam-workflow-tab" data-i18n="iam.workflow.roleAssignments" data-iam-workflow="users:roles" role="tab" tabindex="-1" type="button">Role assignments</button>
+          <div class="table-responsive border rounded mb-3"><table class="table table-hover align-middle mb-0"><caption class="visually-hidden" data-i18n="iam.users">Users</caption><thead><tr><th data-i18n="iam.id">ID</th><th data-i18n="iam.login">Login</th><th data-i18n="iam.email">Email</th><th data-i18n="iam.displayName">Display name</th><th data-i18n="iam.status">Status</th><th data-i18n="iam.actions">Actions</th></tr></thead><tbody id="iam-user-rows"></tbody></table></div>
+          <section aria-label="Object actions" class="card card-body border" data-i18n-aria-label="iam.objectActions">
+          <div class="d-flex justify-content-between align-items-start gap-2 mb-3"><h4 class="h6 mb-1" data-i18n="iam.objectActions">Details &amp; actions</h4><p class="small text-body-secondary" data-i18n="iam.objectActionsHint">Select an object from the list, then choose the operation to perform.</p></div>
+          <div aria-label="Object action views" class="nav nav-tabs mb-3" data-i18n-aria-label="iam.workflowViews" role="tablist">
+          <button aria-controls="iam-users-workflow-create" aria-selected="true" class="nav-link active" data-i18n="iam.userCreate" data-iam-workflow="users:create" role="tab" tabindex="0" type="button">Add user</button>
+          <button aria-controls="iam-users-workflow-settings" aria-selected="false" class="nav-link" data-i18n="iam.workflow.settings" data-iam-workflow="users:settings" role="tab" tabindex="-1" type="button">Settings</button>
+          <button aria-controls="iam-users-workflow-memberships" aria-selected="false" class="nav-link" data-i18n="iam.workflow.memberships" data-iam-workflow="users:memberships" role="tab" tabindex="-1" type="button">Memberships</button>
+          <button aria-controls="iam-users-workflow-roles" aria-selected="false" class="nav-link" data-i18n="iam.workflow.roleAssignments" data-iam-workflow="users:roles" role="tab" tabindex="-1" type="button">Role assignments</button>
           </div>
-          <div class="inx-iam-workflow-panels">
-          <div aria-hidden="false" class="inx-iam-workflow-panel active" data-iam-workflow-panel="users:create" id="iam-users-workflow-create" role="tabpanel">
+          <div class="tab-content">
+          <div aria-hidden="false" class="tab-pane active" data-iam-workflow-panel="users:create" id="iam-users-workflow-create" role="tabpanel">
           <form class="row g-2" id="iam-user-create-form">
-          <h3 class="h6" data-i18n="iam.userCreate">Create user</h3>
+          <h3 class="col-12 h6" data-i18n="iam.userCreate">Create user</h3>
           <div class="col-md-6"><label class="form-label" data-i18n="iam.login" for="iam-user-login">Login</label><input class="form-control" id="iam-user-login" maxlength="128" name="login" required=""/></div>
           <div class="col-md-6"><label class="form-label" data-i18n="iam.email" for="iam-user-email">Email</label><input class="form-control" id="iam-user-email" maxlength="320" name="email" required="" type="email"/></div>
           <div class="col-md-8"><label class="form-label" data-i18n="iam.displayName" for="iam-user-name">Display name</label><input class="form-control" id="iam-user-name" maxlength="200" name="displayName" required=""/></div>
@@ -377,9 +365,9 @@
           <div class="col-12"><button class="btn btn-primary" data-i18n="iam.create" type="submit">Create</button></div>
           </form>
           </div>
-          <div aria-hidden="true" class="inx-iam-workflow-panel" data-iam-workflow-panel="users:settings" id="iam-users-workflow-settings" role="tabpanel">
+          <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="users:settings" id="iam-users-workflow-settings" role="tabpanel">
           <form class="row g-2" id="iam-user-update-form">
-          <h3 class="h6" data-i18n="iam.userUpdate">Update user</h3>
+          <h3 class="col-12 h6" data-i18n="iam.userUpdate">Update user</h3>
           <div class="col-12"><select class="form-select" data-i18n-aria-label="iam.userId" data-i18n-placeholder="iam.userId" data-inx-entity="user" name="userId" required=""><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.email" data-i18n-placeholder="iam.email" maxlength="320" name="email" placeholder="Email" required="" type="email"/></div>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.displayName" data-i18n-placeholder="iam.displayName" maxlength="200" name="displayName" placeholder="Display name" required=""/></div>
@@ -387,28 +375,28 @@
           <div class="col-12"><button class="btn btn-outline-primary" data-i18n="iam.update" type="submit">Update</button></div>
           </form>
           </div>
-          <div aria-hidden="true" class="inx-iam-workflow-panel" data-iam-workflow-panel="users:memberships" id="iam-users-workflow-memberships" role="tabpanel">
+          <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="users:memberships" id="iam-users-workflow-memberships" role="tabpanel">
           <form class="row g-2" id="iam-membership-form">
-          <h3 class="h6" data-i18n="iam.membershipAdd">Add temporal membership</h3>
+          <h3 class="col-12 h6" data-i18n="iam.membershipAdd">Add temporal membership</h3>
           <div class="col-12"><label class="form-label" data-i18n="iam.userId" for="iam-membership-user">User</label><select class="form-select" data-inx-entity="user" id="iam-membership-user" name="userId" required=""><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-12"><label class="form-label" data-i18n="iam.subdivisionOptional" for="iam-membership-subdivision">Subdivision</label><select class="form-select" data-inx-entity="subdivision" id="iam-membership-subdivision" name="subdivisionId"><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-md-6"><label class="form-label" data-i18n="iam.effectiveFrom" for="iam-membership-from">Effective from</label><input class="form-control" data-inx-temporal="datetime" id="iam-membership-from" name="effectiveFrom" step="60" type="datetime-local"/></div>
           <div class="col-md-6"><label class="form-label" data-i18n="iam.effectiveTo" for="iam-membership-to">Effective to</label><input class="form-control" data-inx-temporal="datetime" id="iam-membership-to" name="effectiveTo" step="60" type="datetime-local"/></div>
-          <div class="col-12 form-text inx-temporal-hint" data-i18n="temporal.serverTimezoneHint">Timezone omitted: Server timezone is used.</div>
+          <div class="col-12 form-text" data-i18n="temporal.serverTimezoneHint">Timezone omitted: Server timezone is used.</div>
           <div class="col-12"><input class="form-control" data-i18n-aria-label="iam.reason" data-i18n-placeholder="iam.reason" maxlength="1024" name="reason" placeholder="Audit reason"/></div>
           <div class="col-12"><button class="btn btn-outline-primary" data-i18n="iam.addMembership" type="submit">Add membership</button></div>
           </form>
           </div>
-          <div aria-hidden="true" class="inx-iam-workflow-panel" data-iam-workflow-panel="users:roles" id="iam-users-workflow-roles" role="tabpanel">
+          <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="users:roles" id="iam-users-workflow-roles" role="tabpanel">
           <form class="row g-2" id="iam-user-role-form">
-          <h3 class="h6" data-i18n="iam.userRoleAssign">Assign role to user</h3>
+          <h3 class="col-12 h6" data-i18n="iam.userRoleAssign">Assign role to user</h3>
           <div class="col-12"><select class="form-select" data-i18n-aria-label="iam.userId" data-i18n-placeholder="iam.userId" data-inx-entity="user" name="userId" required=""><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-12"><select class="form-select" data-i18n-aria-label="iam.roleId" data-i18n-placeholder="iam.roleId" data-inx-entity="role" name="roleId" required=""><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-md-6"><select class="form-select" data-i18n-aria-label="iam.scope" id="iam-user-role-scope" name="scopeKind"><option value="ORGANIZATION">ORGANIZATION</option><option value="SUBDIVISION">SUBDIVISION</option><option value="PLATFORM">PLATFORM</option></select></div>
           <div class="col-md-6"><select class="form-select" data-i18n-aria-label="iam.subdivisionOptional" data-i18n-placeholder="iam.subdivisionOptional" data-inx-entity="subdivision" data-inx-scope-source="iam-user-role-scope" name="subdivisionId"><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.effectiveFrom" data-inx-temporal="datetime" name="effectiveFrom" step="60" type="datetime-local"/></div>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.effectiveTo" data-inx-temporal="datetime" name="effectiveTo" step="60" type="datetime-local"/></div>
-          <div class="col-12 form-text inx-temporal-hint" data-i18n="temporal.serverTimezoneHint">Timezone omitted: Server timezone is used.</div>
+          <div class="col-12 form-text" data-i18n="temporal.serverTimezoneHint">Timezone omitted: Server timezone is used.</div>
           <div class="col-12"><input class="form-control" data-i18n-aria-label="iam.reason" data-i18n-placeholder="iam.reason" maxlength="1024" name="reason" placeholder="Audit reason"/></div>
           <div class="col-12"><button class="btn btn-outline-primary" data-i18n="iam.assign" type="submit">Assign</button></div>
           </form>
@@ -416,45 +404,45 @@
           </div>
           </section>
           </section>
-          <section aria-hidden="true" aria-labelledby="iam-tab-groups" class="inx-iam-section" data-iam-panel="groups" id="iam-groups-section" role="tabpanel">
-          <header class="inx-iam-facet-header"><div class="inx-iam-facet-copy"><p class="inx-eyebrow" data-i18n="iam.facetEyebrow">Identity &amp; Access</p><h3 class="inx-iam-facet-title" data-i18n="iam.groups">Groups</h3><p class="inx-iam-facet-description" data-i18n="iam.groupsDescription">User groups, nested membership and group role assignments.</p></div></header>
-          <div aria-label="List controls" class="inx-iam-toolbar" data-i18n-aria-label="iam.listControls" role="group">
-          <div class="inx-iam-search"><input aria-label="Filter current list" autocomplete="off" class="form-control form-control-sm" data-i18n-aria-label="iam.filterPlaceholder" data-i18n-placeholder="iam.filterPlaceholder" data-iam-filter="groups" placeholder="Filter current list" type="search"/></div>
-          <div class="inx-iam-toolbar-actions"><button class="btn btn-sm btn-outline-secondary" data-i18n="iam.refresh" data-iam-refresh="groups" type="button">Refresh</button><button class="btn btn-sm btn-primary" data-i18n="iam.addNew" data-iam-open-workflow="groups:create" type="button">Add</button></div>
+          <section aria-hidden="true" aria-labelledby="iam-tab-groups" class="tab-pane" data-iam-panel="groups" id="iam-groups-section" role="tabpanel">
+          <header class="d-flex justify-content-between align-items-start gap-2 mb-3"><div class="d-flex flex-column"><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="iam.facetEyebrow">Identity &amp; Access</p><h3 class="h5 mb-1" data-i18n="iam.groups">Groups</h3><p class="small text-body-secondary" data-i18n="iam.groupsDescription">User groups, nested membership and group role assignments.</p></div></header>
+          <div aria-label="List controls" class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-3" data-i18n-aria-label="iam.listControls" role="group">
+          <div class="flex-grow-1"><input aria-label="Filter current list" autocomplete="off" class="form-control form-control-sm" data-i18n-aria-label="iam.filterPlaceholder" data-i18n-placeholder="iam.filterPlaceholder" data-iam-filter="groups" placeholder="Filter current list" type="search"/></div>
+          <div class="d-flex flex-wrap gap-2"><button class="btn btn-sm btn-outline-secondary" data-i18n="iam.refresh" data-iam-refresh="groups" type="button">Refresh</button><button class="btn btn-sm btn-primary" data-i18n="iam.addNew" data-iam-open-workflow="groups:create" type="button">Add</button></div>
           </div>
-          <div class="inx-iam-list-shell"><table class="table inx-data-table align-middle"><caption class="visually-hidden" data-i18n="iam.groups">Groups</caption><thead><tr><th data-i18n="iam.id">ID</th><th data-i18n="iam.code">Code</th><th data-i18n="iam.displayName">Display name</th><th data-i18n="iam.actions">Actions</th></tr></thead><tbody id="iam-group-rows"></tbody></table></div>
-          <section aria-label="Object actions" class="inx-iam-action-shell" data-i18n-aria-label="iam.objectActions">
-          <div class="inx-iam-action-header"><h4 class="inx-iam-action-title" data-i18n="iam.objectActions">Details &amp; actions</h4><p class="inx-iam-action-description" data-i18n="iam.objectActionsHint">Select an object from the list, then choose the operation to perform.</p></div>
-          <div aria-label="Object action views" class="inx-iam-workflow-tabs" data-i18n-aria-label="iam.workflowViews" role="tablist">
-          <button aria-controls="iam-groups-workflow-create" aria-selected="true" class="inx-iam-workflow-tab active" data-i18n="iam.groupCreate" data-iam-workflow="groups:create" role="tab" tabindex="0" type="button">Add group</button>
-          <button aria-controls="iam-groups-workflow-settings" aria-selected="false" class="inx-iam-workflow-tab" data-i18n="iam.workflow.settings" data-iam-workflow="groups:settings" role="tab" tabindex="-1" type="button">Settings</button>
-          <button aria-controls="iam-groups-workflow-members" aria-selected="false" class="inx-iam-workflow-tab" data-i18n="iam.groupMemberAdd" data-iam-workflow="groups:members" role="tab" tabindex="-1" type="button">Add member</button>
-          <button aria-controls="iam-groups-workflow-remove-member" aria-selected="false" class="inx-iam-workflow-tab" data-i18n="iam.groupMemberRemove" data-iam-workflow="groups:remove-member" role="tab" tabindex="-1" type="button">Remove member</button>
-          <button aria-controls="iam-groups-workflow-roles" aria-selected="false" class="inx-iam-workflow-tab" data-i18n="iam.workflow.roleAssignments" data-iam-workflow="groups:roles" role="tab" tabindex="-1" type="button">Role assignments</button>
-          <button aria-controls="iam-groups-workflow-effective" aria-selected="false" class="inx-iam-workflow-tab" data-i18n="iam.effectiveMembers" data-iam-workflow="groups:effective" role="tab" tabindex="-1" type="button">Effective members</button>
+          <div class="table-responsive border rounded mb-3"><table class="table table-hover align-middle mb-0"><caption class="visually-hidden" data-i18n="iam.groups">Groups</caption><thead><tr><th data-i18n="iam.id">ID</th><th data-i18n="iam.code">Code</th><th data-i18n="iam.displayName">Display name</th><th data-i18n="iam.actions">Actions</th></tr></thead><tbody id="iam-group-rows"></tbody></table></div>
+          <section aria-label="Object actions" class="card card-body border" data-i18n-aria-label="iam.objectActions">
+          <div class="d-flex justify-content-between align-items-start gap-2 mb-3"><h4 class="h6 mb-1" data-i18n="iam.objectActions">Details &amp; actions</h4><p class="small text-body-secondary" data-i18n="iam.objectActionsHint">Select an object from the list, then choose the operation to perform.</p></div>
+          <div aria-label="Object action views" class="nav nav-tabs mb-3" data-i18n-aria-label="iam.workflowViews" role="tablist">
+          <button aria-controls="iam-groups-workflow-create" aria-selected="true" class="nav-link active" data-i18n="iam.groupCreate" data-iam-workflow="groups:create" role="tab" tabindex="0" type="button">Add group</button>
+          <button aria-controls="iam-groups-workflow-settings" aria-selected="false" class="nav-link" data-i18n="iam.workflow.settings" data-iam-workflow="groups:settings" role="tab" tabindex="-1" type="button">Settings</button>
+          <button aria-controls="iam-groups-workflow-members" aria-selected="false" class="nav-link" data-i18n="iam.groupMemberAdd" data-iam-workflow="groups:members" role="tab" tabindex="-1" type="button">Add member</button>
+          <button aria-controls="iam-groups-workflow-remove-member" aria-selected="false" class="nav-link" data-i18n="iam.groupMemberRemove" data-iam-workflow="groups:remove-member" role="tab" tabindex="-1" type="button">Remove member</button>
+          <button aria-controls="iam-groups-workflow-roles" aria-selected="false" class="nav-link" data-i18n="iam.workflow.roleAssignments" data-iam-workflow="groups:roles" role="tab" tabindex="-1" type="button">Role assignments</button>
+          <button aria-controls="iam-groups-workflow-effective" aria-selected="false" class="nav-link" data-i18n="iam.effectiveMembers" data-iam-workflow="groups:effective" role="tab" tabindex="-1" type="button">Effective members</button>
           </div>
-          <div class="inx-iam-workflow-panels">
-          <div aria-hidden="false" class="inx-iam-workflow-panel active" data-iam-workflow-panel="groups:create" id="iam-groups-workflow-create" role="tabpanel">
+          <div class="tab-content">
+          <div aria-hidden="false" class="tab-pane active" data-iam-workflow-panel="groups:create" id="iam-groups-workflow-create" role="tabpanel">
           <form class="row g-2" id="iam-group-create-form">
-          <h3 class="h6" data-i18n="iam.groupCreate">Create group</h3>
+          <h3 class="col-12 h6" data-i18n="iam.groupCreate">Create group</h3>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.code" data-i18n-placeholder="iam.code" maxlength="96" name="code" placeholder="Code" required=""/></div>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.displayName" data-i18n-placeholder="iam.displayName" maxlength="200" name="displayName" placeholder="Display name" required=""/></div>
           <div class="col-12"><input class="form-control" data-i18n-aria-label="iam.reason" data-i18n-placeholder="iam.reason" maxlength="1024" name="reason" placeholder="Audit reason"/></div>
           <div class="col-12"><button class="btn btn-primary" data-i18n="iam.create" type="submit">Create</button></div>
           </form>
           </div>
-          <div aria-hidden="true" class="inx-iam-workflow-panel" data-iam-workflow-panel="groups:settings" id="iam-groups-workflow-settings" role="tabpanel">
+          <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="groups:settings" id="iam-groups-workflow-settings" role="tabpanel">
           <form class="row g-2" id="iam-group-update-form">
-          <h3 class="h6" data-i18n="iam.groupUpdate">Update group</h3>
+          <h3 class="col-12 h6" data-i18n="iam.groupUpdate">Update group</h3>
           <div class="col-md-6"><select class="form-select" data-i18n-aria-label="iam.groupId" data-i18n-placeholder="iam.groupId" data-inx-entity="group" name="groupId" required=""><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.displayName" data-i18n-placeholder="iam.displayName" maxlength="200" name="displayName" placeholder="Display name" required=""/></div>
           <div class="col-12"><input class="form-control" data-i18n-aria-label="iam.reason" data-i18n-placeholder="iam.reason" maxlength="1024" name="reason" placeholder="Audit reason"/></div>
           <div class="col-12"><button class="btn btn-outline-primary" data-i18n="iam.update" type="submit">Update</button></div>
           </form>
           </div>
-          <div aria-hidden="true" class="inx-iam-workflow-panel" data-iam-workflow-panel="groups:members" id="iam-groups-workflow-members" role="tabpanel">
+          <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="groups:members" id="iam-groups-workflow-members" role="tabpanel">
           <form class="row g-2" id="iam-group-member-form">
-          <h3 class="h6" data-i18n="iam.groupMemberAdd">Add group member</h3>
+          <h3 class="col-12 h6" data-i18n="iam.groupMemberAdd">Add group member</h3>
           <div class="col-12"><select class="form-select" data-i18n-aria-label="iam.groupId" data-i18n-placeholder="iam.groupId" data-inx-entity="group" name="groupId" required=""><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-md-5"><select class="form-select" data-i18n-aria-label="iam.memberType" id="iam-group-member-type" name="memberType"><option value="USER">USER</option><option value="GROUP">GROUP</option></select></div>
           <div class="col-md-7"><select class="form-select" data-i18n-aria-label="iam.memberId" data-i18n-placeholder="iam.memberId" data-inx-entity="actor" data-inx-type-source="iam-group-member-type" name="memberId" required=""><option disabled="" selected="" value="">—</option></select></div>
@@ -462,9 +450,9 @@
           <div class="col-12"><button class="btn btn-outline-primary" data-i18n="iam.add" type="submit">Add</button></div>
           </form>
           </div>
-          <div aria-hidden="true" class="inx-iam-workflow-panel" data-iam-workflow-panel="groups:remove-member" id="iam-groups-workflow-remove-member" role="tabpanel">
+          <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="groups:remove-member" id="iam-groups-workflow-remove-member" role="tabpanel">
           <form class="row g-2" id="iam-group-member-remove-form">
-          <h3 class="h6" data-i18n="iam.groupMemberRemove">Remove group member</h3>
+          <h3 class="col-12 h6" data-i18n="iam.groupMemberRemove">Remove group member</h3>
           <div class="col-12"><select class="form-select" data-i18n-aria-label="iam.groupId" data-i18n-placeholder="iam.groupId" data-inx-entity="group" name="groupId" required=""><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-md-5"><select class="form-select" data-i18n-aria-label="iam.memberType" id="iam-group-member-remove-type" name="memberType"><option value="USER">USER</option><option value="GROUP">GROUP</option></select></div>
           <div class="col-md-7"><select class="form-select" data-i18n-aria-label="iam.memberId" data-i18n-placeholder="iam.memberId" data-inx-entity="actor" data-inx-type-source="iam-group-member-remove-type" name="memberId" required=""><option disabled="" selected="" value="">—</option></select></div>
@@ -472,45 +460,45 @@
           <div class="col-12"><button class="btn btn-outline-danger" data-i18n="iam.remove" type="submit">Remove</button></div>
           </form>
           </div>
-          <div aria-hidden="true" class="inx-iam-workflow-panel" data-iam-workflow-panel="groups:roles" id="iam-groups-workflow-roles" role="tabpanel">
+          <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="groups:roles" id="iam-groups-workflow-roles" role="tabpanel">
           <form class="row g-2" id="iam-group-role-form">
-          <h3 class="h6" data-i18n="iam.groupRoleAssign">Assign role to group</h3>
+          <h3 class="col-12 h6" data-i18n="iam.groupRoleAssign">Assign role to group</h3>
           <div class="col-12"><select class="form-select" data-i18n-aria-label="iam.groupId" data-i18n-placeholder="iam.groupId" data-inx-entity="group" name="groupId" required=""><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-12"><select class="form-select" data-i18n-aria-label="iam.roleId" data-i18n-placeholder="iam.roleId" data-inx-entity="role" name="roleId" required=""><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-md-6"><select class="form-select" data-i18n-aria-label="iam.scope" id="iam-group-role-scope" name="scopeKind"><option value="ORGANIZATION">ORGANIZATION</option><option value="SUBDIVISION">SUBDIVISION</option></select></div>
           <div class="col-md-6"><select class="form-select" data-i18n-aria-label="iam.subdivisionOptional" data-i18n-placeholder="iam.subdivisionOptional" data-inx-entity="subdivision" data-inx-scope-source="iam-group-role-scope" name="subdivisionId"><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.effectiveFrom" data-inx-temporal="datetime" name="effectiveFrom" step="60" type="datetime-local"/></div>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.effectiveTo" data-inx-temporal="datetime" name="effectiveTo" step="60" type="datetime-local"/></div>
-          <div class="col-12 form-text inx-temporal-hint" data-i18n="temporal.serverTimezoneHint">Timezone omitted: Server timezone is used.</div>
+          <div class="col-12 form-text" data-i18n="temporal.serverTimezoneHint">Timezone omitted: Server timezone is used.</div>
           <div class="col-12"><input class="form-control" data-i18n-aria-label="iam.reason" data-i18n-placeholder="iam.reason" maxlength="1024" name="reason" placeholder="Audit reason"/></div>
           <div class="col-12"><button class="btn btn-outline-primary" data-i18n="iam.assign" type="submit">Assign</button></div>
           </form>
           </div>
-          <div aria-hidden="true" class="inx-iam-workflow-panel" data-iam-workflow-panel="groups:effective" id="iam-groups-workflow-effective" role="tabpanel">
+          <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="groups:effective" id="iam-groups-workflow-effective" role="tabpanel">
           <p class="small text-body-secondary" data-i18n="iam.effectiveMembersHint">Effective group membership resolved through nested groups.</p><pre aria-live="polite" class="p-3 rounded border bg-body-tertiary mb-0" id="iam-effective-group-members">—</pre>
           </div>
           </div>
           </section>
           </section>
-          <section aria-hidden="true" aria-labelledby="iam-tab-roles" class="inx-iam-section" data-iam-panel="roles" id="iam-roles-section" role="tabpanel">
-          <header class="inx-iam-facet-header"><div class="inx-iam-facet-copy"><p class="inx-eyebrow" data-i18n="iam.facetEyebrow">Identity &amp; Access</p><h3 class="inx-iam-facet-title" data-i18n="iam.roles">Roles</h3><p class="inx-iam-facet-description" data-i18n="iam.rolesDescription">RBAC roles, permission composition and scoped assignments.</p></div></header>
-          <div aria-label="List controls" class="inx-iam-toolbar" data-i18n-aria-label="iam.listControls" role="group">
-          <div class="inx-iam-search"><input aria-label="Filter current list" autocomplete="off" class="form-control form-control-sm" data-i18n-aria-label="iam.filterPlaceholder" data-i18n-placeholder="iam.filterPlaceholder" data-iam-filter="roles" placeholder="Filter current list" type="search"/></div>
-          <div class="inx-iam-toolbar-actions"><button class="btn btn-sm btn-outline-secondary" data-i18n="iam.refresh" data-iam-refresh="roles" type="button">Refresh</button><button class="btn btn-sm btn-primary" data-i18n="iam.addNew" data-iam-open-workflow="roles:create" type="button">Add</button></div>
+          <section aria-hidden="true" aria-labelledby="iam-tab-roles" class="tab-pane" data-iam-panel="roles" id="iam-roles-section" role="tabpanel">
+          <header class="d-flex justify-content-between align-items-start gap-2 mb-3"><div class="d-flex flex-column"><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="iam.facetEyebrow">Identity &amp; Access</p><h3 class="h5 mb-1" data-i18n="iam.roles">Roles</h3><p class="small text-body-secondary" data-i18n="iam.rolesDescription">RBAC roles, permission composition and scoped assignments.</p></div></header>
+          <div aria-label="List controls" class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-3" data-i18n-aria-label="iam.listControls" role="group">
+          <div class="flex-grow-1"><input aria-label="Filter current list" autocomplete="off" class="form-control form-control-sm" data-i18n-aria-label="iam.filterPlaceholder" data-i18n-placeholder="iam.filterPlaceholder" data-iam-filter="roles" placeholder="Filter current list" type="search"/></div>
+          <div class="d-flex flex-wrap gap-2"><button class="btn btn-sm btn-outline-secondary" data-i18n="iam.refresh" data-iam-refresh="roles" type="button">Refresh</button><button class="btn btn-sm btn-primary" data-i18n="iam.addNew" data-iam-open-workflow="roles:create" type="button">Add</button></div>
           </div>
-          <div class="inx-iam-list-shell"><table class="table inx-data-table align-middle"><caption class="visually-hidden" data-i18n="iam.roles">Roles</caption><thead><tr><th data-i18n="iam.id">ID</th><th data-i18n="iam.code">Code</th><th data-i18n="iam.displayName">Display name</th><th data-i18n="iam.scope">Scope</th><th data-i18n="iam.type">Type</th><th data-i18n="iam.actions">Actions</th></tr></thead><tbody id="iam-role-rows"></tbody></table></div>
-          <section aria-label="Object actions" class="inx-iam-action-shell" data-i18n-aria-label="iam.objectActions">
-          <div class="inx-iam-action-header"><h4 class="inx-iam-action-title" data-i18n="iam.objectActions">Details &amp; actions</h4><p class="inx-iam-action-description" data-i18n="iam.objectActionsHint">Select an object from the list, then choose the operation to perform.</p></div>
-          <div aria-label="Object action views" class="inx-iam-workflow-tabs" data-i18n-aria-label="iam.workflowViews" role="tablist">
-          <button aria-controls="iam-roles-workflow-create" aria-selected="true" class="inx-iam-workflow-tab active" data-i18n="iam.roleCreate" data-iam-workflow="roles:create" role="tab" tabindex="0" type="button">Add role</button>
-          <button aria-controls="iam-roles-workflow-settings" aria-selected="false" class="inx-iam-workflow-tab" data-i18n="iam.workflow.settings" data-iam-workflow="roles:settings" role="tab" tabindex="-1" type="button">Settings</button>
-          <button aria-controls="iam-roles-workflow-assignments" aria-selected="false" class="inx-iam-workflow-tab" data-i18n="iam.workflow.assignments" data-iam-workflow="roles:assignments" role="tab" tabindex="-1" type="button">Assignments</button>
-          <button aria-controls="iam-roles-workflow-revoke" aria-selected="false" class="inx-iam-workflow-tab" data-i18n="iam.roleRevoke" data-iam-workflow="roles:revoke" role="tab" tabindex="-1" type="button">Revoke assignment</button>
+          <div class="table-responsive border rounded mb-3"><table class="table table-hover align-middle mb-0"><caption class="visually-hidden" data-i18n="iam.roles">Roles</caption><thead><tr><th data-i18n="iam.id">ID</th><th data-i18n="iam.code">Code</th><th data-i18n="iam.displayName">Display name</th><th data-i18n="iam.scope">Scope</th><th data-i18n="iam.type">Type</th><th data-i18n="iam.actions">Actions</th></tr></thead><tbody id="iam-role-rows"></tbody></table></div>
+          <section aria-label="Object actions" class="card card-body border" data-i18n-aria-label="iam.objectActions">
+          <div class="d-flex justify-content-between align-items-start gap-2 mb-3"><h4 class="h6 mb-1" data-i18n="iam.objectActions">Details &amp; actions</h4><p class="small text-body-secondary" data-i18n="iam.objectActionsHint">Select an object from the list, then choose the operation to perform.</p></div>
+          <div aria-label="Object action views" class="nav nav-tabs mb-3" data-i18n-aria-label="iam.workflowViews" role="tablist">
+          <button aria-controls="iam-roles-workflow-create" aria-selected="true" class="nav-link active" data-i18n="iam.roleCreate" data-iam-workflow="roles:create" role="tab" tabindex="0" type="button">Add role</button>
+          <button aria-controls="iam-roles-workflow-settings" aria-selected="false" class="nav-link" data-i18n="iam.workflow.settings" data-iam-workflow="roles:settings" role="tab" tabindex="-1" type="button">Settings</button>
+          <button aria-controls="iam-roles-workflow-assignments" aria-selected="false" class="nav-link" data-i18n="iam.workflow.assignments" data-iam-workflow="roles:assignments" role="tab" tabindex="-1" type="button">Assignments</button>
+          <button aria-controls="iam-roles-workflow-revoke" aria-selected="false" class="nav-link" data-i18n="iam.roleRevoke" data-iam-workflow="roles:revoke" role="tab" tabindex="-1" type="button">Revoke assignment</button>
           </div>
-          <div class="inx-iam-workflow-panels">
-          <div aria-hidden="false" class="inx-iam-workflow-panel active" data-iam-workflow-panel="roles:create" id="iam-roles-workflow-create" role="tabpanel">
+          <div class="tab-content">
+          <div aria-hidden="false" class="tab-pane active" data-iam-workflow-panel="roles:create" id="iam-roles-workflow-create" role="tabpanel">
           <form class="row g-2" id="iam-role-create-form">
-          <h3 class="h6" data-i18n="iam.roleCreate">Create role</h3>
+          <h3 class="col-12 h6" data-i18n="iam.roleCreate">Create role</h3>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.code" data-i18n-placeholder="iam.code" maxlength="160" name="code" placeholder="Code" required=""/></div>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.displayName" data-i18n-placeholder="iam.displayName" maxlength="200" name="displayName" placeholder="Display name" required=""/></div>
           <div class="col-md-5"><select class="form-select" data-i18n-aria-label="iam.scope" name="scopeKind"><option value="ORGANIZATION">ORGANIZATION</option><option value="SUBDIVISION">SUBDIVISION</option></select></div>
@@ -519,9 +507,9 @@
           <div class="col-12"><button class="btn btn-primary" data-i18n="iam.create" type="submit">Create</button></div>
           </form>
           </div>
-          <div aria-hidden="true" class="inx-iam-workflow-panel" data-iam-workflow-panel="roles:settings" id="iam-roles-workflow-settings" role="tabpanel">
+          <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="roles:settings" id="iam-roles-workflow-settings" role="tabpanel">
           <form class="row g-2" id="iam-role-update-form">
-          <h3 class="h6" data-i18n="iam.roleUpdate">Update role</h3>
+          <h3 class="col-12 h6" data-i18n="iam.roleUpdate">Update role</h3>
           <div class="col-12"><select class="form-select" data-i18n-aria-label="iam.roleId" data-i18n-placeholder="iam.roleId" data-inx-entity="role" name="roleId" required=""><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.code" data-i18n-placeholder="iam.code" maxlength="160" name="code" placeholder="Code" required=""/></div>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.displayName" data-i18n-placeholder="iam.displayName" maxlength="200" name="displayName" placeholder="Display name" required=""/></div>
@@ -530,9 +518,9 @@
           <div class="col-12"><button class="btn btn-outline-primary" data-i18n="iam.update" type="submit">Update</button></div>
           </form>
           </div>
-          <div aria-hidden="true" class="inx-iam-workflow-panel" data-iam-workflow-panel="roles:assignments" id="iam-roles-workflow-assignments" role="tabpanel">
+          <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="roles:assignments" id="iam-roles-workflow-assignments" role="tabpanel">
           <form class="row g-2" id="iam-role-assignment-form">
-          <h3 class="h6" data-i18n="iam.roleAssign">Assign role</h3>
+          <h3 class="col-12 h6" data-i18n="iam.roleAssign">Assign role</h3>
           <div class="col-12"><select class="form-select" data-i18n-aria-label="iam.roleId" data-i18n-placeholder="iam.roleId" data-inx-entity="role" name="roleId" required=""><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-md-5"><select class="form-select" data-i18n-aria-label="iam.actorType" id="iam-role-assignment-actor-type" name="actorType"><option value="USER">USER</option><option value="GROUP">GROUP</option></select></div>
           <div class="col-md-7"><select class="form-select" data-i18n-aria-label="iam.actorId" data-i18n-placeholder="iam.actorId" data-inx-entity="actor" data-inx-type-source="iam-role-assignment-actor-type" name="actorId" required=""><option disabled="" selected="" value="">—</option></select></div>
@@ -540,14 +528,14 @@
           <div class="col-md-6"><select class="form-select" data-i18n-aria-label="iam.subdivisionOptional" data-i18n-placeholder="iam.subdivisionOptional" data-inx-entity="subdivision" data-inx-scope-source="iam-role-assignment-scope" name="subdivisionId"><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.effectiveFrom" data-inx-temporal="datetime" name="effectiveFrom" step="60" type="datetime-local"/></div>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.effectiveTo" data-inx-temporal="datetime" name="effectiveTo" step="60" type="datetime-local"/></div>
-          <div class="col-12 form-text inx-temporal-hint" data-i18n="temporal.serverTimezoneHint">Timezone omitted: Server timezone is used.</div>
+          <div class="col-12 form-text" data-i18n="temporal.serverTimezoneHint">Timezone omitted: Server timezone is used.</div>
           <div class="col-12"><input class="form-control" data-i18n-aria-label="iam.reason" data-i18n-placeholder="iam.reason" maxlength="1024" name="reason" placeholder="Audit reason"/></div>
           <div class="col-12"><button class="btn btn-outline-primary" data-i18n="iam.assign" type="submit">Assign</button></div>
           </form>
           </div>
-          <div aria-hidden="true" class="inx-iam-workflow-panel" data-iam-workflow-panel="roles:revoke" id="iam-roles-workflow-revoke" role="tabpanel">
+          <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="roles:revoke" id="iam-roles-workflow-revoke" role="tabpanel">
           <form class="row g-2" id="iam-role-revoke-form">
-          <h3 class="h6" data-i18n="iam.roleRevoke">Revoke assignment</h3>
+          <h3 class="col-12 h6" data-i18n="iam.roleRevoke">Revoke assignment</h3>
           <div class="col-md-6"><select class="form-select" data-i18n-aria-label="iam.roleId" data-i18n-placeholder="iam.roleId" data-inx-entity="role" id="iam-role-revoke-role" name="roleId" required=""><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-md-6"><select class="form-select" data-i18n-aria-label="iam.assignmentId" data-i18n-placeholder="iam.assignmentId" data-inx-entity="assignment" data-inx-role-source="iam-role-revoke-role" name="assignmentId" required=""><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-12"><input class="form-control" data-i18n-aria-label="iam.reason" data-i18n-placeholder="iam.reason" maxlength="1024" name="reason" placeholder="Audit reason"/></div>
@@ -557,24 +545,24 @@
           </div>
           </section>
           </section>
-          <section aria-hidden="true" aria-labelledby="iam-tab-permissions" class="inx-iam-section" data-iam-panel="permissions" id="iam-permissions-section" role="tabpanel">
-          <header class="inx-iam-facet-header"><div class="inx-iam-facet-copy"><p class="inx-eyebrow" data-i18n="iam.facetEyebrow">Identity &amp; Access</p><h3 class="inx-iam-facet-title" data-i18n="iam.permissions">Permissions</h3><p class="inx-iam-facet-description" data-i18n="iam.permissionsDescription">Atomic permissions and effective-permission evaluation.</p></div></header>
-          <div aria-label="List controls" class="inx-iam-toolbar" data-i18n-aria-label="iam.listControls" role="group">
-          <div class="inx-iam-search"><input aria-label="Filter current list" autocomplete="off" class="form-control form-control-sm" data-i18n-aria-label="iam.filterPlaceholder" data-i18n-placeholder="iam.filterPlaceholder" data-iam-filter="permissions" placeholder="Filter current list" type="search"/></div>
-          <div class="inx-iam-toolbar-actions"><button class="btn btn-sm btn-outline-secondary" data-i18n="iam.refresh" data-iam-refresh="permissions" type="button">Refresh</button><button class="btn btn-sm btn-primary" data-i18n="iam.addNew" data-iam-open-workflow="permissions:create" type="button">Add</button></div>
+          <section aria-hidden="true" aria-labelledby="iam-tab-permissions" class="tab-pane" data-iam-panel="permissions" id="iam-permissions-section" role="tabpanel">
+          <header class="d-flex justify-content-between align-items-start gap-2 mb-3"><div class="d-flex flex-column"><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="iam.facetEyebrow">Identity &amp; Access</p><h3 class="h5 mb-1" data-i18n="iam.permissions">Permissions</h3><p class="small text-body-secondary" data-i18n="iam.permissionsDescription">Atomic permissions and effective-permission evaluation.</p></div></header>
+          <div aria-label="List controls" class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-3" data-i18n-aria-label="iam.listControls" role="group">
+          <div class="flex-grow-1"><input aria-label="Filter current list" autocomplete="off" class="form-control form-control-sm" data-i18n-aria-label="iam.filterPlaceholder" data-i18n-placeholder="iam.filterPlaceholder" data-iam-filter="permissions" placeholder="Filter current list" type="search"/></div>
+          <div class="d-flex flex-wrap gap-2"><button class="btn btn-sm btn-outline-secondary" data-i18n="iam.refresh" data-iam-refresh="permissions" type="button">Refresh</button><button class="btn btn-sm btn-primary" data-i18n="iam.addNew" data-iam-open-workflow="permissions:create" type="button">Add</button></div>
           </div>
-          <div class="inx-iam-list-shell"><table class="table inx-data-table align-middle"><caption class="visually-hidden" data-i18n="iam.permissions">Permissions</caption><thead><tr><th data-i18n="iam.id">ID</th><th data-i18n="iam.code">Code</th><th data-i18n="iam.resource">Resource</th><th data-i18n="iam.action">Action</th><th data-i18n="iam.sensitivity">Sensitivity</th><th data-i18n="iam.scope">Scope</th><th data-i18n="iam.type">Type</th><th data-i18n="iam.actions">Actions</th></tr></thead><tbody id="iam-permission-rows"></tbody></table></div>
-          <section aria-label="Object actions" class="inx-iam-action-shell" data-i18n-aria-label="iam.objectActions">
-          <div class="inx-iam-action-header"><h4 class="inx-iam-action-title" data-i18n="iam.objectActions">Details &amp; actions</h4><p class="inx-iam-action-description" data-i18n="iam.objectActionsHint">Select an object from the list, then choose the operation to perform.</p></div>
-          <div aria-label="Object action views" class="inx-iam-workflow-tabs" data-i18n-aria-label="iam.workflowViews" role="tablist">
-          <button aria-controls="iam-permissions-workflow-create" aria-selected="true" class="inx-iam-workflow-tab active" data-i18n="iam.permissionCreate" data-iam-workflow="permissions:create" role="tab" tabindex="0" type="button">Add permission</button>
-          <button aria-controls="iam-permissions-workflow-settings" aria-selected="false" class="inx-iam-workflow-tab" data-i18n="iam.workflow.settings" data-iam-workflow="permissions:settings" role="tab" tabindex="-1" type="button">Settings</button>
-          <button aria-controls="iam-permissions-workflow-effective" aria-selected="false" class="inx-iam-workflow-tab" data-i18n="iam.permissionEvaluate" data-iam-workflow="permissions:effective" role="tab" tabindex="-1" type="button">Effective permissions</button>
+          <div class="table-responsive border rounded mb-3"><table class="table table-hover align-middle mb-0"><caption class="visually-hidden" data-i18n="iam.permissions">Permissions</caption><thead><tr><th data-i18n="iam.id">ID</th><th data-i18n="iam.code">Code</th><th data-i18n="iam.resource">Resource</th><th data-i18n="iam.action">Action</th><th data-i18n="iam.sensitivity">Sensitivity</th><th data-i18n="iam.scope">Scope</th><th data-i18n="iam.type">Type</th><th data-i18n="iam.actions">Actions</th></tr></thead><tbody id="iam-permission-rows"></tbody></table></div>
+          <section aria-label="Object actions" class="card card-body border" data-i18n-aria-label="iam.objectActions">
+          <div class="d-flex justify-content-between align-items-start gap-2 mb-3"><h4 class="h6 mb-1" data-i18n="iam.objectActions">Details &amp; actions</h4><p class="small text-body-secondary" data-i18n="iam.objectActionsHint">Select an object from the list, then choose the operation to perform.</p></div>
+          <div aria-label="Object action views" class="nav nav-tabs mb-3" data-i18n-aria-label="iam.workflowViews" role="tablist">
+          <button aria-controls="iam-permissions-workflow-create" aria-selected="true" class="nav-link active" data-i18n="iam.permissionCreate" data-iam-workflow="permissions:create" role="tab" tabindex="0" type="button">Add permission</button>
+          <button aria-controls="iam-permissions-workflow-settings" aria-selected="false" class="nav-link" data-i18n="iam.workflow.settings" data-iam-workflow="permissions:settings" role="tab" tabindex="-1" type="button">Settings</button>
+          <button aria-controls="iam-permissions-workflow-effective" aria-selected="false" class="nav-link" data-i18n="iam.permissionEvaluate" data-iam-workflow="permissions:effective" role="tab" tabindex="-1" type="button">Effective permissions</button>
           </div>
-          <div class="inx-iam-workflow-panels">
-          <div aria-hidden="false" class="inx-iam-workflow-panel active" data-iam-workflow-panel="permissions:create" id="iam-permissions-workflow-create" role="tabpanel">
+          <div class="tab-content">
+          <div aria-hidden="false" class="tab-pane active" data-iam-workflow-panel="permissions:create" id="iam-permissions-workflow-create" role="tabpanel">
           <form class="row g-2" id="iam-permission-create-form">
-          <h3 class="h6" data-i18n="iam.permissionCreate">Create custom permission</h3>
+          <h3 class="col-12 h6" data-i18n="iam.permissionCreate">Create custom permission</h3>
           <div class="col-12"><input class="form-control" data-i18n-aria-label="iam.code" data-i18n-placeholder="iam.code" maxlength="160" name="code" placeholder="Code" required=""/></div>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.resource" data-i18n-placeholder="iam.resource" maxlength="64" name="resourceType" placeholder="Resource" required=""/></div>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.action" data-i18n-placeholder="iam.action" maxlength="64" name="action" placeholder="Action" required=""/></div>
@@ -584,9 +572,9 @@
           <div class="col-12"><button class="btn btn-primary" data-i18n="iam.create" type="submit">Create</button></div>
           </form>
           </div>
-          <div aria-hidden="true" class="inx-iam-workflow-panel" data-iam-workflow-panel="permissions:settings" id="iam-permissions-workflow-settings" role="tabpanel">
+          <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="permissions:settings" id="iam-permissions-workflow-settings" role="tabpanel">
           <form class="row g-2" id="iam-permission-update-form">
-          <h3 class="h6" data-i18n="iam.permissionUpdate">Update permission</h3>
+          <h3 class="col-12 h6" data-i18n="iam.permissionUpdate">Update permission</h3>
           <div class="col-12"><select class="form-select" data-i18n-aria-label="iam.permissionId" data-i18n-placeholder="iam.permissionId" data-inx-entity="permission" name="permissionId" required=""><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.resource" data-i18n-placeholder="iam.resource" maxlength="64" name="resourceType" placeholder="Resource" required=""/></div>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.action" data-i18n-placeholder="iam.action" maxlength="64" name="action" placeholder="Action" required=""/></div>
@@ -597,9 +585,9 @@
           <div class="col-12"><button class="btn btn-outline-primary" data-i18n="iam.update" type="submit">Update</button></div>
           </form>
           </div>
-          <div aria-hidden="true" class="inx-iam-workflow-panel" data-iam-workflow-panel="permissions:effective" id="iam-permissions-workflow-effective" role="tabpanel">
+          <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="permissions:effective" id="iam-permissions-workflow-effective" role="tabpanel">
           <form class="row g-2" id="iam-permission-evaluate-form">
-          <h3 class="h6" data-i18n="iam.permissionEvaluate">Effective permissions</h3>
+          <h3 class="col-12 h6" data-i18n="iam.permissionEvaluate">Effective permissions</h3>
           <div class="col-12"><select class="form-select" data-i18n-aria-label="iam.actorId" data-i18n-placeholder="iam.actorId" data-inx-entity="user" name="actorId" required=""><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-12"><select class="form-select" data-i18n-aria-label="iam.subdivisionOptional" data-i18n-placeholder="iam.subdivisionOptional" data-inx-entity="subdivision" name="subdivisionId"><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-12"><button class="btn btn-outline-primary" data-i18n="iam.evaluate" type="submit">Evaluate</button></div>
@@ -610,20 +598,20 @@
           </div>
           </section>
           </section>
-          <section aria-hidden="true" aria-labelledby="iam-tab-policies" class="inx-iam-section" data-iam-panel="policies" hidden="" id="iam-policy-workspace" role="tabpanel">
-          <header class="inx-iam-facet-header"><div class="inx-iam-facet-copy"><p class="inx-eyebrow" data-i18n="iam.facetEyebrow">Identity &amp; Access</p><h3 class="inx-iam-facet-title" data-i18n="policy.title">Advanced authorization policies</h3><p class="inx-iam-facet-description" data-i18n="policy.description">Create, approve, activate and evaluate deterministic ABAC policies.</p></div></header>
-          <div class="inx-iam-policy-note"><div aria-live="polite" class="alert alert-secondary mb-3" data-i18n="policy.ready" id="iam-policy-status" role="status">Advanced authorization ready</div></div>
-          <section aria-label="Object actions" class="inx-iam-action-shell" data-i18n-aria-label="iam.objectActions">
-          <div class="inx-iam-action-header"><h4 class="inx-iam-action-title" data-i18n="iam.objectActions">Details &amp; actions</h4><p class="inx-iam-action-description" data-i18n="iam.objectActionsHint">Select an object from the list, then choose the operation to perform.</p></div>
-          <div aria-label="Object action views" class="inx-iam-workflow-tabs" data-i18n-aria-label="iam.workflowViews" role="tablist">
-          <button aria-controls="iam-policies-workflow-create" aria-selected="true" class="inx-iam-workflow-tab active" data-i18n="policy.createTitle" data-iam-workflow="policies:create" role="tab" tabindex="0" type="button">Create version</button>
-          <button aria-controls="iam-policies-workflow-lifecycle" aria-selected="false" class="inx-iam-workflow-tab" data-i18n="policy.lifecycleTitle" data-iam-workflow="policies:lifecycle" role="tab" tabindex="-1" type="button">Lifecycle</button>
-          <button aria-controls="iam-policies-workflow-simulation" aria-selected="false" class="inx-iam-workflow-tab" data-i18n="policy.decisionTitle" data-iam-workflow="policies:simulation" role="tab" tabindex="-1" type="button">Decision simulation</button>
+          <section aria-hidden="true" aria-labelledby="iam-tab-policies" class="tab-pane" data-iam-panel="policies" hidden="" id="iam-policy-workspace" role="tabpanel">
+          <header class="d-flex justify-content-between align-items-start gap-2 mb-3"><div class="d-flex flex-column"><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="iam.facetEyebrow">Identity &amp; Access</p><h3 class="h5 mb-1" data-i18n="policy.title">Advanced authorization policies</h3><p class="small text-body-secondary" data-i18n="policy.description">Create, approve, activate and evaluate deterministic ABAC policies.</p></div></header>
+          <div class="alert alert-info"><div aria-live="polite" class="alert alert-secondary mb-3" data-i18n="policy.ready" id="iam-policy-status" role="status">Advanced authorization ready</div></div>
+          <section aria-label="Object actions" class="card card-body border" data-i18n-aria-label="iam.objectActions">
+          <div class="d-flex justify-content-between align-items-start gap-2 mb-3"><h4 class="h6 mb-1" data-i18n="iam.objectActions">Details &amp; actions</h4><p class="small text-body-secondary" data-i18n="iam.objectActionsHint">Select an object from the list, then choose the operation to perform.</p></div>
+          <div aria-label="Object action views" class="nav nav-tabs mb-3" data-i18n-aria-label="iam.workflowViews" role="tablist">
+          <button aria-controls="iam-policies-workflow-create" aria-selected="true" class="nav-link active" data-i18n="policy.createTitle" data-iam-workflow="policies:create" role="tab" tabindex="0" type="button">Create version</button>
+          <button aria-controls="iam-policies-workflow-lifecycle" aria-selected="false" class="nav-link" data-i18n="policy.lifecycleTitle" data-iam-workflow="policies:lifecycle" role="tab" tabindex="-1" type="button">Lifecycle</button>
+          <button aria-controls="iam-policies-workflow-simulation" aria-selected="false" class="nav-link" data-i18n="policy.decisionTitle" data-iam-workflow="policies:simulation" role="tab" tabindex="-1" type="button">Decision simulation</button>
           </div>
-          <div class="inx-iam-workflow-panels">
-          <div aria-hidden="false" class="inx-iam-workflow-panel active" data-iam-workflow-panel="policies:create" id="iam-policies-workflow-create" role="tabpanel">
+          <div class="tab-content">
+          <div aria-hidden="false" class="tab-pane active" data-iam-workflow-panel="policies:create" id="iam-policies-workflow-create" role="tabpanel">
           <form class="row g-2" id="iam-policy-create-form">
-          <h3 class="h6" data-i18n="policy.createTitle">Create policy version</h3>
+          <h3 class="col-12 h6" data-i18n="policy.createTitle">Create policy version</h3>
           <div class="col-md-7"><label class="form-label" data-i18n="policy.code" for="iam-policy-code">Policy code</label><input autocomplete="off" class="form-control" id="iam-policy-code" maxlength="128" name="code" placeholder="operations.server-change" required=""/></div>
           <div class="col-md-5"><label class="form-label" data-i18n="policy.priority" for="iam-policy-priority">Priority</label><input class="form-control" id="iam-policy-priority" max="10000" min="0" name="priority" required="" type="number" value="100"/></div>
           <div class="col-12"><label class="form-label" data-i18n="policy.purpose" for="iam-policy-purpose">Purpose</label><input class="form-control" id="iam-policy-purpose" maxlength="500" name="purpose" required=""/></div>
@@ -631,24 +619,24 @@
           <div class="col-md-4"><label class="form-label" data-i18n="policy.organizationId" for="iam-policy-organization">Organization</label><select class="form-select" data-inx-entity="organization" data-inx-scope-source="iam-policy-scope" id="iam-policy-organization" name="organizationId"><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-md-4"><label class="form-label" data-i18n="policy.subdivisionId" for="iam-policy-subdivision">Subdivision</label><select class="form-select" data-inx-entity="subdivision" data-inx-organization-source="iam-policy-organization" data-inx-scope-source="iam-policy-scope" id="iam-policy-subdivision" name="subdivisionId"><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-12"><label class="form-label" data-i18n="policy.effectiveFrom" for="iam-policy-effective-from">Effective from</label><input class="form-control" data-inx-temporal="datetime" id="iam-policy-effective-from" name="effectiveFrom" step="60" type="datetime-local"/></div>
-          <div class="col-12 form-text inx-temporal-hint" data-i18n="temporal.serverTimezoneHint">Timezone omitted: Server timezone is used.</div>
+          <div class="col-12 form-text" data-i18n="temporal.serverTimezoneHint">Timezone omitted: Server timezone is used.</div>
           <div class="col-12"><label class="form-label" data-i18n="policy.rules" for="iam-policy-rules">Rules (JSON)</label><textarea class="form-control font-monospace" id="iam-policy-rules" name="rules" required="" rows="10" spellcheck="false">[{"effect":"DENY","action":"iam.user.assign_role","resourceType":"iam.user","conditions":[{"source":"AUTHENTICATION","attribute":"method","operator":"NOT_EQUALS","expectedValue":"MFA"}],"obligations":[],"advice":"Use a strongly authenticated session."}]</textarea><div class="form-text" data-i18n="policy.rulesHint">Closed declarative JSON only; executable expressions are not accepted.</div></div>
           <div class="col-12"><label class="form-label" data-i18n="policy.sod" for="iam-policy-sod">Static SoD constraints (JSON, optional)</label><textarea class="form-control font-monospace" id="iam-policy-sod" name="sodConstraints" rows="4" spellcheck="false">[]</textarea><div class="form-text" data-i18n="policy.sodHint">Each constraint contains firstRoleId, secondRoleId and reason.</div></div>
           <div class="col-12"><label class="form-label" data-i18n="policy.reason" for="iam-policy-create-reason">Audit reason</label><input class="form-control" id="iam-policy-create-reason" maxlength="1024" name="reason" required=""/></div>
           <div class="col-12"><button class="btn btn-primary" data-i18n="policy.create" type="submit">Create version</button></div>
           </form>
           </div>
-          <div aria-hidden="true" class="inx-iam-workflow-panel" data-iam-workflow-panel="policies:lifecycle" id="iam-policies-workflow-lifecycle" role="tabpanel">
+          <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="policies:lifecycle" id="iam-policies-workflow-lifecycle" role="tabpanel">
           <form class="row g-2 mb-4" id="iam-policy-lifecycle-form">
-          <h3 class="h6" data-i18n="policy.lifecycleTitle">Policy lifecycle</h3>
+          <h3 class="col-12 h6" data-i18n="policy.lifecycleTitle">Policy lifecycle</h3>
           <div class="col-12"><label class="form-label" data-i18n="policy.policyId" for="iam-policy-lifecycle-id">Policy</label><select class="form-select" data-inx-entity="policy" id="iam-policy-lifecycle-id" name="policyId" required=""><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-12"><label class="form-label" data-i18n="policy.reason" for="iam-policy-lifecycle-reason">Audit reason</label><input class="form-control" id="iam-policy-lifecycle-reason" maxlength="1024" name="reason" required=""/></div>
           <div class="col-12 d-flex flex-wrap gap-2"><button class="btn btn-outline-primary" data-i18n="policy.validate" type="submit" value="validate">Validate</button><button class="btn btn-outline-primary" data-i18n="policy.approve" type="submit" value="approve">Approve</button><button class="btn btn-outline-success" data-i18n="policy.activate" type="submit" value="activate">Activate / rollback</button></div>
           </form>
           </div>
-          <div aria-hidden="true" class="inx-iam-workflow-panel" data-iam-workflow-panel="policies:simulation" id="iam-policies-workflow-simulation" role="tabpanel">
+          <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="policies:simulation" id="iam-policies-workflow-simulation" role="tabpanel">
           <form class="row g-2" id="iam-policy-decision-form">
-          <h3 class="h6" data-i18n="policy.decisionTitle">Decision simulation</h3>
+          <h3 class="col-12 h6" data-i18n="policy.decisionTitle">Decision simulation</h3>
           <div class="col-12"><label class="form-label" data-i18n="policy.subjectId" for="iam-policy-subject">Subject</label><select class="form-select" data-inx-entity="user" id="iam-policy-subject" name="subjectId" required=""><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-md-6"><label class="form-label" data-i18n="policy.action" for="iam-policy-action">Action / RBAC permission code</label><input class="form-control" id="iam-policy-action" maxlength="128" name="action" required=""/></div>
           <div class="col-md-6"><label class="form-label" data-i18n="policy.resourceType" for="iam-policy-resource-type">Resource type</label><input class="form-control" id="iam-policy-resource-type" maxlength="80" name="resourceType" required=""/></div>
@@ -662,38 +650,38 @@
           </form>
           </div>
           </div>
-          <div class="inx-iam-policy-result"><h4 class="h6" data-i18n="policy.result">Result</h4><pre aria-live="polite" class="p-3 rounded border bg-body-tertiary mb-0" id="iam-policy-result">—</pre></div>
+          <div class="mt-3"><h4 class="h6" data-i18n="policy.result">Result</h4><pre aria-live="polite" class="p-3 rounded border bg-body-tertiary mb-0" id="iam-policy-result">—</pre></div>
           </section>
           </section>
           </div>
           </div>
           </section>
 
-          <section id="rsot-workspace" class="inx-panel inx-page-panel inx-domain-workspace" data-view="rsot" data-capability-enabled="false" aria-labelledby="rsot-workspace-title" hidden></section>
+          <section id="rsot-workspace" class="card shadow-sm card-body mb-4 border-0" data-view="rsot" data-capability-enabled="false" aria-labelledby="rsot-workspace-title" hidden></section>
 
-          <section id="itam-workspace" class="inx-panel inx-page-panel inx-domain-workspace" data-view="itam" data-capability-enabled="false" aria-labelledby="itam-workspace-title" hidden></section>
+          <section id="itam-workspace" class="card shadow-sm card-body mb-4 border-0" data-view="itam" data-capability-enabled="false" aria-labelledby="itam-workspace-title" hidden></section>
 
-          <section id="dcim-workspace" class="inx-panel inx-page-panel inx-domain-workspace" data-view="dcim" data-capability-enabled="false" aria-labelledby="dcim-workspace-title" hidden></section>
+          <section id="dcim-workspace" class="card shadow-sm card-body mb-4 border-0" data-view="dcim" data-capability-enabled="false" aria-labelledby="dcim-workspace-title" hidden></section>
 
-          <section id="ddi-workspace" class="inx-panel inx-page-panel inx-domain-workspace" data-view="ddi" data-capability-enabled="false" aria-labelledby="ddi-workspace-title" hidden></section>
+          <section id="ddi-workspace" class="card shadow-sm card-body mb-4 border-0" data-view="ddi" data-capability-enabled="false" aria-labelledby="ddi-workspace-title" hidden></section>
 
-          <footer class="inx-footer"><span data-i18n="footer.product">InfraNexum — Infrastructure Control &amp; Governance Platform</span><span id="footer-version">Version —</span></footer>
+          <footer class="d-flex flex-wrap justify-content-between gap-2 border-top pt-3 mt-4 small text-body-secondary"><span data-i18n="footer.product">InfraNexum — Infrastructure Control &amp; Governance Platform</span><span id="footer-version">Version —</span></footer>
         </main>
       </div>
-    </div>
+    </div></div>
 
-    <dialog id="command-palette" class="inx-command-dialog" aria-labelledby="command-palette-title">
-      <div class="inx-command-card">
-        <div class="inx-command-header">
-          <div><p class="inx-eyebrow" data-i18n="command.open">Search &amp; commands</p><h2 id="command-palette-title" data-i18n="command.title">Command palette</h2><p data-i18n="command.subtitle">Navigate the control plane and run available interface actions.</p></div>
-          <button id="command-palette-close" class="btn inx-icon-button" type="button" data-i18n-aria-label="command.close" aria-label="Close command palette">×</button>
+    <dialog id="command-palette" class="border-0 rounded-4 shadow-lg p-0" aria-labelledby="command-palette-title">
+      <div class="card shadow-lg border-0">
+        <div class="card-header d-flex justify-content-between align-items-start gap-3">
+          <div><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="command.open">Search &amp; commands</p><h2 id="command-palette-title" data-i18n="command.title">Command palette</h2><p data-i18n="command.subtitle">Navigate the control plane and run available interface actions.</p></div>
+          <button id="command-palette-close" class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center" type="button" data-i18n-aria-label="command.close" aria-label="Close command palette">×</button>
         </div>
-        <div class="inx-command-search-wrap">
+        <div class="card-body input-group">
           <span aria-hidden="true">⌕</span>
           <input id="command-search" class="form-control" type="search" role="combobox" aria-autocomplete="list" aria-expanded="true" aria-controls="command-results" autocomplete="off" data-i18n-placeholder="command.placeholder" placeholder="Search commands…" />
         </div>
-        <div id="command-results" class="inx-command-results" role="listbox"></div>
-        <div class="inx-command-footer" aria-hidden="true">
+        <div id="command-results" class="list-group list-group-flush" role="listbox"></div>
+        <div class="card-footer d-flex flex-wrap gap-3 small text-body-secondary" aria-hidden="true">
           <span><kbd>↑↓</kbd> <span data-i18n="command.hint.navigate">Navigate</span></span>
           <span><kbd>Enter</kbd> <span data-i18n="command.hint.select">Select</span></span>
           <span><kbd>Esc</kbd> <span data-i18n="command.hint.close">Close</span></span>
@@ -701,36 +689,36 @@
       </div>
     </dialog>
 
-    <dialog id="notification-center" class="inx-side-dialog" aria-labelledby="notification-title">
-      <div class="inx-side-dialog-card">
-        <div class="inx-side-dialog-header">
-          <div><p class="inx-eyebrow" data-i18n="notification.eyebrow">Observed events</p><h2 id="notification-title" data-i18n="notification.title">Operational notifications</h2><p data-i18n="notification.subtitle">Only facts observed by this browser session are shown here.</p></div>
-          <button id="notification-close" class="btn inx-icon-button" type="button" data-i18n-aria-label="notification.close" aria-label="Close notifications">×</button>
+    <dialog id="notification-center" class="border-0 rounded-4 shadow-lg p-0 w-100 mw-100" aria-labelledby="notification-title">
+      <div class="card border-0">
+        <div class="card-header d-flex justify-content-between align-items-start gap-3">
+          <div><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="notification.eyebrow">Observed events</p><h2 id="notification-title" data-i18n="notification.title">Operational notifications</h2><p data-i18n="notification.subtitle">Only facts observed by this browser session are shown here.</p></div>
+          <button id="notification-close" class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center" type="button" data-i18n-aria-label="notification.close" aria-label="Close notifications">×</button>
         </div>
-        <div class="inx-side-dialog-toolbar">
+        <div class="card-body d-flex justify-content-between align-items-center gap-2 border-bottom">
           <span data-i18n="notification.scope">Current browser session</span>
           <button id="notification-mark-read" class="btn btn-sm btn-outline-primary" type="button" data-i18n="notification.markRead">Mark all read</button>
         </div>
-        <div id="notification-list" class="inx-notification-list" aria-live="polite"></div>
+        <div id="notification-list" class="list-group list-group-flush" aria-live="polite"></div>
       </div>
     </dialog>
 
-    <dialog id="preferences-dialog" class="inx-side-dialog" aria-labelledby="preferences-title">
-      <form id="preferences-form" class="inx-side-dialog-card" method="dialog">
-        <div class="inx-side-dialog-header">
-          <div><p class="inx-eyebrow" data-i18n="preference.eyebrow">Local operator experience</p><h2 id="preferences-title" data-i18n="preference.title">Dashboard preferences</h2><p data-i18n="preference.subtitle">Stored in this browser until IAM-backed user preferences are available.</p></div>
-          <button id="preferences-close" class="btn inx-icon-button" type="button" data-i18n-aria-label="preference.close" aria-label="Close preferences">×</button>
+    <dialog id="preferences-dialog" class="border-0 rounded-4 shadow-lg p-0 w-100 mw-100" aria-labelledby="preferences-title">
+      <form id="preferences-form" class="card border-0" method="dialog">
+        <div class="card-header d-flex justify-content-between align-items-start gap-3">
+          <div><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="preference.eyebrow">Local operator experience</p><h2 id="preferences-title" data-i18n="preference.title">Dashboard preferences</h2><p data-i18n="preference.subtitle">Stored in this browser until IAM-backed user preferences are available.</p></div>
+          <button id="preferences-close" class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center" type="button" data-i18n-aria-label="preference.close" aria-label="Close preferences">×</button>
         </div>
-        <div class="inx-preference-fields">
-          <label class="inx-preference-field" for="preference-density"><span data-i18n="preference.density">Information density</span><select id="preference-density" class="form-select"><option value="comfortable" data-i18n="preference.density.comfortable">Comfortable</option><option value="compact" data-i18n="preference.density.compact">Compact</option></select></label>
-          <label class="inx-preference-field" for="preference-navigation"><span data-i18n="preference.navigation">Sidebar mode</span><select id="preference-navigation" class="form-select"><option value="auto" data-i18n="preference.navigation.auto">Responsive</option><option value="expanded" data-i18n="preference.navigation.expanded">Expanded</option><option value="compact" data-i18n="preference.navigation.compact">Compact</option></select></label>
-          <label class="inx-preference-field" for="preference-refresh"><span data-i18n="preference.refresh">Operational data refresh</span><select id="preference-refresh" class="form-select"><option value="0" data-i18n="preference.refresh.off">Off</option><option value="30" data-i18n="preference.refresh.30">Every 30 seconds</option><option value="60" data-i18n="preference.refresh.60">Every minute</option><option value="300" data-i18n="preference.refresh.300">Every 5 minutes</option></select></label>
+        <div class="card-body d-grid gap-3">
+          <label class="form-label d-grid gap-1" for="preference-density"><span data-i18n="preference.density">Information density</span><select id="preference-density" class="form-select"><option value="comfortable" data-i18n="preference.density.comfortable">Comfortable</option><option value="compact" data-i18n="preference.density.compact">Compact</option></select></label>
+          <label class="form-label d-grid gap-1" for="preference-navigation"><span data-i18n="preference.navigation">Sidebar mode</span><select id="preference-navigation" class="form-select"><option value="auto" data-i18n="preference.navigation.auto">Responsive</option><option value="expanded" data-i18n="preference.navigation.expanded">Expanded</option><option value="compact" data-i18n="preference.navigation.compact">Compact</option></select></label>
+          <label class="form-label d-grid gap-1" for="preference-refresh"><span data-i18n="preference.refresh">Operational data refresh</span><select id="preference-refresh" class="form-select"><option value="0" data-i18n="preference.refresh.off">Off</option><option value="30" data-i18n="preference.refresh.30">Every 30 seconds</option><option value="60" data-i18n="preference.refresh.60">Every minute</option><option value="300" data-i18n="preference.refresh.300">Every 5 minutes</option></select></label>
         </div>
-        <div class="inx-preference-note"><strong data-i18n="preference.noteTitle">Scope</strong><span data-i18n="preference.note">Language and color theme remain independently persisted in the top bar.</span></div>
-        <div class="inx-side-dialog-footer"><button id="preferences-reset" class="btn btn-outline-secondary" type="button" data-i18n="preference.reset">Reset defaults</button><button class="btn btn-primary" type="submit" data-i18n="preference.save">Save preferences</button></div>
+        <div class="alert alert-info"><strong data-i18n="preference.noteTitle">Scope</strong><span data-i18n="preference.note">Language and color theme remain independently persisted in the top bar.</span></div>
+        <div class="card-footer d-flex justify-content-end gap-2"><button id="preferences-reset" class="btn btn-outline-secondary" type="button" data-i18n="preference.reset">Reset defaults</button><button class="btn btn-primary" type="submit" data-i18n="preference.save">Save preferences</button></div>
       </form>
     </dialog>
 
-    <noscript><div class="container py-4" role="alert" data-i18n="noscript">JavaScript is required to initialize the InfraNexum Web interface.</div></noscript>
+    <noscript><div class="container my-4 alert alert-warning" role="alert" data-i18n="noscript">JavaScript is required to initialize the InfraNexum Web interface.</div></noscript>
   </body>
 </html>

@@ -28,7 +28,7 @@ export function initializeNotificationCenter(documentObject = document, clock = 
     if (ordered.length === 0) {
       const empty = documentObject.createElement?.('div');
       if (empty) {
-        empty.className = 'inx-notification-empty';
+        empty.className = 'list-group-item text-body-secondary text-center py-4';
         empty.textContent = translate(locale, 'notification.empty');
         list.replaceChildren?.(empty);
       }
@@ -96,24 +96,30 @@ export function normalizeNotice(value, clock = () => Date.now()) {
 }
 
 function noticeElement(documentObject, notice, locale) {
+  const contextual = Object.freeze({ info: 'info', success: 'success', warning: 'warning', error: 'danger' });
+  const bootstrapContext = contextual[notice.severity] ?? 'info';
   const article = documentObject.createElement('article');
-  article.className = `inx-notification-item severity-${notice.severity}`;
+  article.className = `alert alert-${bootstrapContext} d-flex align-items-start gap-2 mb-2`;
   article.setAttribute('data-severity', notice.severity);
 
   const marker = documentObject.createElement('span');
-  marker.className = 'inx-notification-marker';
+  marker.className = `badge rounded-pill text-bg-${bootstrapContext}`;
   marker.setAttribute('aria-hidden', 'true');
+  marker.textContent = '•';
 
   const copy = documentObject.createElement('div');
+  copy.className = 'flex-grow-1';
   const title = documentObject.createElement('strong');
+  title.className = 'd-block';
   const body = documentObject.createElement('p');
+  body.className = 'mb-0 small';
   title.textContent = translate(locale, notice.titleKey, notice.parameters);
   body.textContent = translate(locale, notice.bodyKey, notice.parameters);
   copy.appendChild(title);
   copy.appendChild(body);
 
   const severity = documentObject.createElement('span');
-  severity.className = 'inx-notification-severity';
+  severity.className = `badge rounded-pill text-bg-${bootstrapContext}`;
   severity.textContent = translate(locale, `notification.severity.${notice.severity}`);
 
   article.appendChild(marker);

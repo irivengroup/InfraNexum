@@ -441,7 +441,7 @@ function renderSectionMessage(documentObject, section, key, permission = null, e
   row.setAttribute?.('data-iam-list-state', permission ? 'restricted' : 'failed');
   const cell = documentObject.createElement('td');
   cell.colSpan = 20;
-  cell.className = `inx-table-state ${permission ? 'inx-table-state-restricted' : 'inx-table-state-error'}`;
+  cell.className = `small ${permission ? 'text-warning' : 'text-danger'}`;
   const locale = localeFromDocument(documentObject);
   const detail = permission
     ? translate(locale, key, { permission })

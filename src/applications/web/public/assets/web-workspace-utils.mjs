@@ -53,7 +53,9 @@ export function optionalField(form, name) { return nullable(field(form, name)); 
 export function setWorkspaceStatus(documentObject, id, key, state = 'info', parameters = {}) {
   const element = documentObject?.getElementById?.(id);
   if (!element) return;
+  const contextual = Object.freeze({ info: 'info', success: 'success', warning: 'warning', error: 'danger' });
   element.textContent = translate(localeFromDocument(documentObject), key, parameters);
+  element.className = `alert alert-${contextual[state] ?? 'info'} py-2`;
   element.setAttribute?.('data-state', state);
   element.setAttribute?.('data-i18n-dynamic', key);
   element.setAttribute?.('data-i18n-params', JSON.stringify(parameters));
@@ -80,7 +82,7 @@ export function replaceRows(documentObject, tbody, rows, cellValues, onSelect) {
   if (!tbody) return;
   if (!rows.length) {
     const tr = documentObject.createElement('tr'); const td = documentObject.createElement('td');
-    td.colSpan = Math.max(1, cellValues.length); td.className = 'inx-empty-row'; td.textContent = translate(localeFromDocument(documentObject), 'common.emptyList');
+    td.colSpan = Math.max(1, cellValues.length); td.className = 'text-body-secondary text-center py-4'; td.textContent = translate(localeFromDocument(documentObject), 'common.emptyList');
     tr.appendChild(td); tbody.replaceChildren(tr); return;
   }
   const nodes = rows.map((row) => {

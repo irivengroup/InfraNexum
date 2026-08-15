@@ -36,7 +36,8 @@ class IdentityAccessWebWorkflowTest(unittest.TestCase):
         self.assertIn('role="tablist"', self.html)
         self.assertIn("initializeIamSectionNavigation", self.iam)
         self.assertIn("ArrowRight", self.iam)
-        self.assertIn(".inx-iam-section.active", self.css)
+        self.assertIn('class="nav nav-pills flex-column gap-1"', self.html)
+        self.assertNotIn(".inx-", self.css)
 
     def test_identity_workspace_uses_freeipa_inspired_functional_navigation_and_list_first_facets(self) -> None:
         for group in ("identity", "access-control", "policy"):
@@ -45,13 +46,12 @@ class IdentityAccessWebWorkflowTest(unittest.TestCase):
             self.assertIn(f'data-iam-filter="{section}"', self.html)
             self.assertIn(f'data-iam-refresh="{section}"', self.html)
             self.assertIn(f'data-iam-open-workflow="{section}:create"', self.html)
-        self.assertNotIn('<div class="accordion inx-iam-sections"', self.html)
         self.assertNotIn('<details id="iam-users-section"', self.html)
         self.assertIn("initializeIamWorkflowNavigation", self.iam)
         self.assertIn("applyTableFilter", self.iam)
-        self.assertIn(".inx-iam-navigation", self.css)
-        self.assertIn(".inx-iam-list-shell", self.css)
-        self.assertIn(".inx-iam-workflow-panel.active", self.css)
+        self.assertIn('class="nav nav-pills flex-column gap-1"', self.html)
+        self.assertIn('class="table table-hover align-middle mb-0"', self.html)
+        self.assertIn('class="nav nav-tabs mb-3"', self.html)
 
     def test_identity_workspace_preserves_all_existing_mutation_form_contracts(self) -> None:
         form_ids = (
@@ -90,27 +90,24 @@ class IdentityAccessWebWorkflowTest(unittest.TestCase):
         self.assertIn("iam.listRestricted", self.iam)
         self.assertNotIn("await Promise.all(['users', 'groups', 'roles', 'permissions'].map((section) => refreshSection", self.iam)
 
-    def test_all_bootstrap_selects_use_the_stable_theme_native_combobox_layer(self) -> None:
+    def test_all_bootstrap_selects_remain_native_authoritative_form_controls(self) -> None:
         stable = (self.ROOT / "src/applications/web/public/assets/stable-select.mjs").read_text(encoding="utf-8")
         bootstrap = (self.ROOT / "src/applications/web/public/assets/bootstrap.mjs").read_text(encoding="utf-8")
         self.assertIn("initializeStableSelects", bootstrap)
         self.assertIn("select.form-select", stable)
-        self.assertIn("role', 'combobox", stable)
-        self.assertIn("role', 'listbox", stable)
-        self.assertIn("dispatchChange", stable)
-        self.assertIn("pointerdown", stable)
-        self.assertIn(".inx-stable-select-trigger", self.css)
-        self.assertIn(".inx-stable-select-menu", self.css)
-        self.assertIn(".inx-stable-select-option", self.css)
+        self.assertIn("normalizeNativeSelect", stable)
+        self.assertNotIn("role', 'combobox", stable)
+        self.assertNotIn("role', 'listbox", stable)
+        self.assertNotIn("createElement('button')", stable)
+        self.assertNotIn(".inx-", self.css)
 
-    def test_administration_canvas_and_data_tables_use_the_full_available_width_and_theme(self) -> None:
-        self.assertIn(".inx-main {", self.css)
-        self.assertIn("max-width: none", self.css)
-        self.assertIn("width: 100%", self.css)
-        self.assertIn(".inx-data-table tbody tr:nth-child(even)", self.css)
-        self.assertIn(".inx-data-table tbody tr:hover td", self.css)
-        self.assertIn(".inx-iam-workflow-panel form { max-width: none; }", self.css)
-        self.assertIn(".inx-table-state-restricted", self.css)
+    def test_administration_canvas_and_data_tables_use_bootstrap_grid_and_table_contracts(self) -> None:
+        self.assertIn('id="app-shell" class="container-fluid px-0"', self.html)
+        self.assertIn('class="row g-0 min-vh-100"', self.html)
+        self.assertIn('class="col-12 col-lg-10"', self.html)
+        self.assertIn('class="table table-hover align-middle mb-0"', self.html)
+        self.assertIn('.table > thead', self.css)
+        self.assertNotIn(".inx-", self.css)
 
 
     def test_structured_iam_identifiers_are_entity_selectors_with_hierarchical_dependencies(self) -> None:
@@ -128,25 +125,26 @@ class IdentityAccessWebWorkflowTest(unittest.TestCase):
         self.assertIn("actorKindFor", self.entity_selects)
         self.assertIn("infranexum:entity-sync", self.entity_selects)
 
-    def test_calendar_is_a_deterministic_theme_component_not_a_native_popup_dependency(self) -> None:
+    def test_calendar_inputs_are_native_bootstrap_controls_without_custom_popup_dependency(self) -> None:
         bootstrap = (self.ROOT / "src/applications/web/public/assets/bootstrap.mjs").read_text(encoding="utf-8")
         self.assertIn("initializeTemporalPickers", bootstrap)
         self.assertIn("input[data-inx-temporal]", self.temporal_picker)
-        self.assertIn("inx-temporal-popover", self.temporal_picker)
-        self.assertIn("input.addEventListener?.('click'", self.temporal_picker)
-        self.assertNotIn("showPicker", self.temporal_picker)
-        self.assertIn(".inx-temporal-popover", self.css)
-        self.assertIn("z-index: 1200", self.css)
-        self.assertIn(".inx-temporal-day[aria-selected=\"true\"]", self.css)
+        self.assertIn("datetime-local", self.temporal_picker)
+        self.assertIn("input.showPicker?.()", self.temporal_picker)
+        self.assertNotIn("createElement('div')", self.temporal_picker)
+        self.assertNotIn("createElement('button')", self.temporal_picker)
+        self.assertNotIn(".inx-", self.css)
 
-    def test_visual_palette_keeps_infranexum_primary_and_adds_ionos_inspired_accents(self) -> None:
-        self.assertIn("--inx-primary: #003d8f", self.css)
-        self.assertIn("--inx-midnight: #001b41", self.css)
-        self.assertIn("--inx-cyan: #11c7e6", self.css)
-        self.assertIn("--inx-orange: #ffaa00", self.css)
-        self.assertIn(".inx-data-table thead th", self.css)
-        self.assertIn(".inx-iam-list-shell thead th", self.css)
-        self.assertIn("var(--inx-header-text)", self.css)
+    def test_visual_palette_is_applied_through_bootstrap_tokens_and_components(self) -> None:
+        self.assertIn("--bs-primary: #003d8f", self.css)
+        self.assertIn("--bs-dark: #001b41", self.css)
+        self.assertIn("--bs-warning: #ffaa00", self.css)
+        self.assertIn("--bs-info: #006f75", self.css)
+        self.assertIn(".btn-primary", self.css)
+        self.assertIn(".table > thead", self.css)
+        self.assertIn(".alert", self.css)
+        self.assertNotIn("--inx-", self.css)
+
 
     def test_temporal_fields_use_calendar_controls_and_server_side_timezone_resolution(self) -> None:
         self.assertEqual(self.html.count('name="effectiveFrom"'), len(re.findall(r'<input[^>]*name="effectiveFrom"[^>]*type="datetime-local"|<input[^>]*type="datetime-local"[^>]*name="effectiveFrom"', self.html)))

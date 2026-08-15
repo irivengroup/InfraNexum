@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>io.infranexum</groupId><artifactId>infranexum-parent</artifactId>
-    <version>2.0.0-alpha.0.83</version><relativePath>../../../../pom.xml</relativePath>
+    <version>2.0.0-alpha.0.84</version><relativePath>../../../../pom.xml</relativePath>
   </parent>
   <artifactId>infranexum-domain-identity-access</artifactId>
   <name>InfraNexum Identity Access Domain</name>

@@ -1,7 +1,14 @@
-# InfraNexum 2.0.0-alpha.0.83 — PGM-08-E01 DDI/IPAM
+# InfraNexum 2.0.0-alpha.0.84 — build stabilization and Bootstrap 5 Web contract
 
-`alpha.0.83` implements the DDI parent component's IPAM foundation: VRFs, VLAN/VXLANs, address blocks/prefixes/subnets, pools, explicit reservations and address allocation. Allocation is serialized transactionally; overlap checks use indexed fixed-width address keys and never rely on bounded catalogue scans. API, CLI and the real `#/ddi` Web workspace are delivered in the same increment. DNS and DHCP are intentionally not part of E01. See `docs/ddi-ipam.md`.
+`alpha.0.84` is a corrective release over the `alpha.0.83` PGM-08-E01 DDI/IPAM baseline. It repairs malformed Java text-block openings in the DCIM Physical and DDI/IPAM Server CLIs that prevented the Java 25 Docker build from compiling, and hardens the developer Compose diagnostics so a build/start failure with no container is reported as such instead of being misreported as `health=unknown`.
 
+The Web presentation layer is realigned on **Bootstrap 5.3.6 as the sole presentation contract**. InfraNexum-specific presentation classes and CSS variables are removed; the visual identity is applied only by overriding Bootstrap design tokens and native Bootstrap components. Alerts use Bootstrap contextual `alert` components, entity selectors remain authoritative native `<select class="form-select">` controls, and temporal values use native `date`/`datetime-local` inputs with `form-control`. The previous cloned combobox/calendar presentation layers are removed while existing API payloads, FormData semantics, dependent entity filtering, accessibility, capability gating and DE/EN/ES/FR/IT behavior remain intact.
+
+No new business epic is claimed by this corrective release. The roadmap dependency chain remains **PGM-05-E01 → PGM-10-E05 → PGM-08-E02/PGM-08-E03** because PGM-10-E05 requires both PGM-02-E03 (already delivered) and PGM-05-E01 (still pending). DNS and DHCP therefore remain intentionally blocked.
+
+`alpha.0.83` remains the implementation baseline for PGM-08-E01: VRFs, VLAN/VXLANs, address blocks/prefixes/subnets, pools, explicit reservations and atomic address allocation. See `docs/ddi-ipam.md` and `docs/implementation-status.md`.
+
+---
 
 `alpha.0.82` implements **PGM-07-E05** as a same-release vertical slice for multi-vendor equipment models, racks, rack-unit occupancy, installed equipment, physical ports and point-to-point cabling. DCIM owns physical placement and connectivity while RSOT, ITAM, Partner and Organization remain external authorities referenced through validated weak references. Equipment ports are instantiated from governed model templates rather than entered ad hoc.
 
