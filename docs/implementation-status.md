@@ -1,3 +1,25 @@
+# InfraNexum 2.0.0-alpha.0.80 — état d’implémentation
+
+## alpha.0.80 — parité fonctionnelle Web RSOT / ITAM
+
+`alpha.0.80` est une tranche corrective d’intégration verticale, sans nouvel epic métier. Elle ferme l’écart identifié après `alpha.0.79` : RSOT et ITAM disposaient de domaines, persistence, API/CLI et clients HTTP navigateur, mais leurs fonctions administrables n’étaient pas réellement montées dans le shell Web. Désormais, une fonctionnalité administrable n’est considérée comme supportée par l’IHM que si elle possède une route publiée, une navigation capability-gated, un workspace utilisable, les workflows opérateur nécessaires et des tests d’interaction correspondants.
+
+RSOT et ITAM deviennent des routes de premier niveau `#/rsot` et `#/itam`. RSOT expose les objets canoniques en lecture organisation-scoped, le Schema Registry et les profils composables. ITAM expose Partners, Assets et Compliance avec vues liste/détail, formulaires et transitions déjà supportées par les contrats serveur. Les relations métier sont choisies depuis les catalogues gouvernés plutôt que par saisie d’UUID : Organization filtre Subdivision et, par transitivité, objets RSOT, partenaires, actifs, constructeurs/éditeurs/fournisseurs/supports, autorisations et gardiens disponibles. Les dates/datetimes utilisent les contrôles temporels InfraNexum et les cinq locales DE/EN/ES/FR/IT couvrent les nouveaux workspaces.
+
+Deux surfaces de lecture minimales ont été ajoutées au Server parce qu’elles sont nécessaires à une UI correcte sans créer de nouvelle autorité : consultation des objets RSOT canoniques et consultation/détail des autorisations/contrats Compliance. La lecture RSOT est protégée par la permission normative organisation-scoped `rsot.read`, ajoutée par la migration paire PostgreSQL/Oracle `0025-identity-access-rsot-read-permission`. Les schémas de réponse OpenAPI Compliance ont aussi été alignés exactement sur les DTO Java afin d’éliminer une divergence de contrat héritée.
+
+Le navigateur reste fail-closed : une capability absente retire route et navigation; une navigation directe vers une route indisponible revient vers Overview. Le Server conserve l’autorité RBAC/ABAC; l’IHM n’invente pas de droit client. Une propriété JSON inconnue reste rejetée côté Server et les secrets de licence restent interdits tant que `PGM-13-E02` n’est pas livré. Un octet NUL découvert dans `itam-assets.mjs` a été supprimé et un test parcourt désormais les assets navigateur pour bloquer toute régression similaire.
+
+### Validation alpha.0.80
+
+**EXÉCUTÉ à ce stade** — Web **136/136**, couverture **99,71 % lignes / 98,48 % branches / 100 % fonctions**, process smoke `passed`; migrations **98/98**, couverture **99 %**, checker 0 violation; Architecture fonctionnelle **134/134** et Architecture-as-Code `PASS`; **17** targets Java dependency-free sans échec; Source Integrity **45/45** à **100 %**; Toolchains **25/25** (99 %), Eventing **10/10** (100 %), Persistence **12/12** (98 %), Capabilities **10/10** (99 %), Entitlements **10/10** (100 %) et Audit **8/8** (100 %), tous les checkers à 0 violation; Compose **63/63**. La collecte de couverture Architecture de cette baseline reste à distinguer des 134 tests fonctionnels : l’instrumentation agrégée dépasse la limite du runner et ne sera pas présentée comme exécutée tant qu’une collecte complète n’est pas obtenue.
+
+Les gates exacts JDK25/Maven, Go 1.26.5, Node 24.18.1, Docker Desktop PRO/HA et migrations PostgreSQL/Oracle live restent obligatoires avant promotion lorsqu’ils ne peuvent pas être exécutés dans l’environnement de livraison.
+
+Voir `docs/web-functional-parity.md`.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.79 — état d’implémentation
 
 ## alpha.0.79 — PGM-07-E03 garanties, supports et licences ITAM

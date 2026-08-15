@@ -14,6 +14,8 @@ public interface RsotRepository {
 
     List<CanonicalObject> listCanonicalObjects(int offset, int limit);
 
+    List<CanonicalObject> listCanonicalObjects(DomainIdentifier organizationId, int offset, int limit);
+
     List<AttributeAuthorityPolicy> authorityPolicies();
 
     List<AuthorityMatrixEntry> authorityMatrix();

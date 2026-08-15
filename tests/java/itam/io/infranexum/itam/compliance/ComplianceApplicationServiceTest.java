@@ -296,6 +296,9 @@ final class ComplianceApplicationServiceTest {
         @Override public void updateLicense(SoftwareLicenseContract value, long expectedVersion) { version(licenses.get(value.id()), expectedVersion, SoftwareLicenseContract::version); licenses.put(value.id(), value); revision("license", value.id(), value.version(), value.status(), value.proofReference(), value.lastReason(), value.updatedAt(), value.updatedBy()); }
 
         @Override public Optional<SupportProviderAuthorization> findSupportAuthorization(DomainIdentifier id) { return Optional.ofNullable(authorizations.get(id)); }
+        @Override public List<SupportProviderAuthorization> supportAuthorizations(DomainIdentifier organizationId) {
+            return authorizations.values().stream().filter(a -> a.organizationId().equals(organizationId)).toList();
+        }
         @Override public Optional<SupportProviderAuthorization> findActiveSupportAuthorization(DomainIdentifier providerId, DomainIdentifier organizationId, LocalDate effectiveOn) {
             return authorizations.values().stream().filter(a -> a.providerPartnerId().equals(providerId) && a.organizationId().equals(organizationId) && a.selectableOn(effectiveOn)).findFirst();
         }

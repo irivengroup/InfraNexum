@@ -51,6 +51,11 @@ record AuthorizationRequirement(
             return permission(PermissionCodes.PLATFORM_PROFILE_READ, AuthorizationScope.platform(), "platform", "evaluation-status");
         }
 
+        if (normalized.equals("/api/v1/rsot/canonical-objects") || normalized.startsWith("/api/v1/rsot/canonical-objects/")) {
+            if (verb.equals("GET")) return controllerScoped("rsot-object", normalized);
+            return unregistered(normalized);
+        }
+
         if (normalized.equals("/api/v1/rsot/schemas")) {
             if (verb.equals("GET")) return permission(PermissionCodes.RSOT_SCHEMA_READ, AuthorizationScope.platform(), "rsot-schema", "collection");
             if (verb.equals("POST")) return permission(PermissionCodes.RSOT_SCHEMA_CREATE, AuthorizationScope.platform(), "rsot-schema", "collection");

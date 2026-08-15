@@ -1,3 +1,15 @@
+# InfraNexum 2.0.0-alpha.0.80 — Web Functional Parity for RSOT and ITAM
+
+`alpha.0.80` is a corrective vertical-integration release. It does not add a new PGM business epic: it closes the Web delivery gap discovered after `alpha.0.79`, where RSOT and ITAM had domain, persistence, API/CLI and browser HTTP clients but no real administration routes, navigation or operator workspaces. A feature intended for administration is no longer counted as Web-supported merely because a JavaScript API client exists.
+
+RSOT and ITAM are now first-level capability-gated workspaces (`#/rsot`, `#/itam`) with list/detail/create and governed lifecycle actions for the functionality already delivered by PGM-06-E03 and PGM-07-E01/E02/E03. Entity relationships are selected from governed catalogues instead of accepting free-form UUIDs; Organization filters Subdivision and downstream catalogues; dates and datetimes use the InfraNexum temporal controls; loading, empty, success, restricted and error states are explicit; DE/EN/ES/FR/IT are first-class. Direct navigation to an unavailable capability fails closed.
+
+The release also closes two backend read gaps required by a correct UI rather than introducing duplicate authorities: organization-scoped canonical RSOT reads protected by the normative `rsot.read` permission, and governed support-authorization/detail reads consumed by ITAM Compliance selectors. Paired migration `0025-identity-access-rsot-read-permission` adds `rsot.read` for PostgreSQL and Oracle. OpenAPI Compliance response schemas are corrected to match the Java DTO contracts exactly, and browser assets are guarded against embedded NUL bytes after one was found in the prior ITAM Asset client.
+
+See `docs/web-functional-parity.md` and `docs/implementation-status.md`. `PGM-07-E04` remains the next business epic after this parity correction and target-runtime promotion gates.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.79 — PGM-07-E03 ITAM warranty, support and license compliance
 
 `alpha.0.79` implements **PGM-07-E03** on top of the canonical Partner and Asset contexts. Hardware warranties, software-license contracts, third-party support authorizations/coverages, governed warranty types, append-only contractual revisions and deterministic deadline alerts are now first-class ITAM state. The E02 `AssetOperationalReadinessPolicy` is backed by real compliance evidence: hardware must match its canonical manufacturer and verified warranty/support coverage; software must match its canonical publisher and verified license contract.

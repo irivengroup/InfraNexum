@@ -229,6 +229,7 @@ public final class ComplianceApplicationService {
     public Warranty getWarranty(DomainIdentifier id){requireEnabled();return repository.findWarranty(Objects.requireNonNull(id,"id")).orElseThrow(ComplianceNotFoundException::new);}
     public SoftwareLicenseContract getLicense(DomainIdentifier id){requireEnabled();return repository.findLicense(Objects.requireNonNull(id,"id")).orElseThrow(ComplianceNotFoundException::new);}
     public SupportProviderAuthorization getSupportAuthorization(DomainIdentifier id){requireEnabled();return repository.findSupportAuthorization(Objects.requireNonNull(id,"id")).orElseThrow(ComplianceNotFoundException::new);}
+    public List<SupportProviderAuthorization> supportAuthorizations(DomainIdentifier organizationId){requireEnabled();return repository.supportAuthorizations(Objects.requireNonNull(organizationId,"organizationId"));}
     public SupportCoverage getSupportCoverage(DomainIdentifier id){requireEnabled();return repository.findSupportCoverage(Objects.requireNonNull(id,"id")).orElseThrow(ComplianceNotFoundException::new);}
 
     public List<Warranty> warranties(DomainIdentifier assetId){requireEnabled();requireAsset(assetId,null);return repository.warrantiesForAsset(assetId);}

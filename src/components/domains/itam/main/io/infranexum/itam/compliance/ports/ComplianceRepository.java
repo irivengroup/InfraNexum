@@ -16,6 +16,7 @@ public interface ComplianceRepository {
     List<SoftwareLicenseContract> licensePage(DomainIdentifier assetId,DomainIdentifier afterId,int limit);
     void insertLicense(SoftwareLicenseContract license); void updateLicense(SoftwareLicenseContract license,long expectedVersion);
     Optional<SupportProviderAuthorization> findSupportAuthorization(DomainIdentifier id);
+    List<SupportProviderAuthorization> supportAuthorizations(DomainIdentifier organizationId);
     Optional<SupportProviderAuthorization> findActiveSupportAuthorization(DomainIdentifier providerId,DomainIdentifier organizationId,LocalDate effectiveOn);
     void insertSupportAuthorization(SupportProviderAuthorization authorization); void updateSupportAuthorization(SupportProviderAuthorization authorization,long expectedVersion);
     Optional<SupportCoverage> findSupportCoverage(DomainIdentifier id); List<SupportCoverage> supportCoveragesForAsset(DomainIdentifier assetId);

@@ -1,0 +1,210 @@
+openapi: 3.1.0
+info:
+  title: InfraNexum RSOT Canonical Object API
+  version: 2.0.0-alpha.0.80
+x-tagGroups:
+- name: RSOT
+  tags:
+  - RSOT / Canonical Objects
+paths:
+  /api/v1/rsot/canonical-objects:
+    get:
+      tags:
+      - RSOT / Canonical Objects
+      operationId: listRsotCanonicalObjects
+      summary: List canonical RSOT objects visible to governance
+      parameters:
+      - name: organization_id
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 100
+      responses:
+        '200':
+          description: Canonical objects ordered by most recent update.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CanonicalObject'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+      x-infranexum-permission: rsot.read
+      x-infranexum-capability: rsot.core
+      x-infranexum-minimum-installation-profile: lite
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+  /api/v1/rsot/canonical-objects/{canonicalId}:
+    get:
+      tags:
+      - RSOT / Canonical Objects
+      operationId: getRsotCanonicalObject
+      summary: Read one canonical RSOT object
+      parameters:
+      - name: canonicalId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Canonical object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CanonicalObject'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+      x-infranexum-permission: rsot.read
+      x-infranexum-capability: rsot.core
+      x-infranexum-minimum-installation-profile: lite
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+components:
+  schemas:
+    CanonicalObject:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - objectType
+      - version
+      - organizationId
+      - schemaVersion
+      - status
+      - effectiveFrom
+      - createdAt
+      - updatedAt
+      properties:
+        id:
+          $ref: '#/components/schemas/UuidV7'
+        objectType:
+          type: string
+        version:
+          type: integer
+          minimum: 1
+        organizationId:
+          $ref: '#/components/schemas/UuidV7'
+        schemaVersion:
+          type: string
+        status:
+          type: string
+          enum:
+          - proposed
+          - validated
+          - reconciled
+          - deprecated
+          - archived
+        statusReason:
+          type:
+          - string
+          - 'null'
+        effectiveFrom:
+          type: string
+          format: date-time
+        effectiveUntil:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        archivedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        archivedBy:
+          oneOf:
+          - $ref: '#/components/schemas/UuidV7'
+          - type: 'null'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Problem:
+      type: object
+      additionalProperties: true
+      properties:
+        code:
+          type: string
+        detail:
+          type: string
+    UuidV7:
+      type: string
+      format: uuid
+      pattern: ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
+  responses:
+    Unauthorized:
+      description: Authentication required.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: Permission or capability denied.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Canonical object not found.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    BadRequest:
+      description: Invalid identifier or pagination request.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  securitySchemes:
+    LocalSessionCookie:
+      type: apiKey
+      in: cookie
+      name: INX_SESSION
+  parameters:
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: false
+      schema:
+        type: string
+        format: uuid
+        pattern: ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
+servers:
+- url: /
+security:
+- LocalSessionCookie: []
+tags:
+- name: RSOT / Canonical Objects
+  description: Read-only governed projection of canonical RSOT objects for administration and dependent selectors.

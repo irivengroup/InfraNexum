@@ -74,8 +74,8 @@ class ItamComplianceArchitectureTest(unittest.TestCase):
         operations = []
         for item in spec["paths"].values():
             operations.extend(value for key, value in item.items() if key.lower() in {"get", "post", "put", "patch", "delete"})
-        self.assertEqual(23, len(operations))
-        self.assertEqual(23, len({operation["operationId"] for operation in operations}))
+        self.assertEqual(27, len(operations))
+        self.assertEqual(27, len({operation["operationId"] for operation in operations}))
         for operation in operations:
             self.assertEqual("itam.compliance", operation["x-infranexum-capability"])
             self.assertTrue(operation["x-infranexum-permission"].startswith("itam."))
@@ -83,6 +83,16 @@ class ItamComplianceArchitectureTest(unittest.TestCase):
         self.assertNotIn("license_key", raw)
         self.assertNotIn("#/components/pathItems/", raw)
         self.assertNotIn("placeholder", raw.lower())
+        expected_response_fields = {
+            "Warranty": {"id", "assetId", "manufacturerPartnerId", "warrantyTypeId", "coverageLevel", "warrantyStartDate", "warrantyEndDate", "manufacturerSupportEndDate", "contractOrCertificateNumber", "proofReference", "source", "status", "verifiedAt", "verifiedBy", "version", "createdAt", "updatedAt"},
+            "License": {"id", "assetId", "publisherPartnerId", "contractNumber", "licenseModel", "usageRights", "entitlementQuantity", "startsOn", "endsOn", "publisherSupportEndDate", "proofReference", "source", "status", "verifiedAt", "verifiedBy", "version", "createdAt", "updatedAt"},
+            "SupportCoverage": {"id", "assetId", "providerPartnerId", "authorizationId", "contractReference", "coverageType", "serviceLevel", "startsOn", "endsOn", "supportedManufacturerId", "supportedObjectType", "organizationId", "subdivisionId", "proofReference", "status", "version", "createdAt", "updatedAt"},
+            "SupportAuthorization": {"id", "providerPartnerId", "organizationId", "supportedManufacturerIds", "supportedObjectTypes", "subdivisionScopes", "serviceHours", "timeZoneId", "serviceLevels", "escalationContactTypes", "validFrom", "validUntil", "status", "version", "createdAt", "updatedAt"},
+            "WarrantyType": {"id", "code", "displayName", "active", "createdAt", "createdBy"},
+        }
+        for name, fields in expected_response_fields.items():
+            self.assertEqual(fields, set(spec["components"]["schemas"][name]["properties"]), name)
+        self.assertNotIn("assetId", spec["components"]["schemas"]["SupportAuthorization"]["properties"])
 
     def test_http_cli_web_share_scoped_rbac_and_fail_closed_capability_chain(self) -> None:
         controller = (self.SERVER / "main/io/infranexum/server/itam/ItamComplianceController.java").read_text(encoding="utf-8")

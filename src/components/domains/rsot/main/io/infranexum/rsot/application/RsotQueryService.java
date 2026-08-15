@@ -29,6 +29,15 @@ public final class RsotQueryService {
                 .toList();
     }
 
+    /** Lists canonical objects inside one authoritative organization scope. */
+    public List<CanonicalObject> list(DomainIdentifier organizationId, int offset, int limit, boolean governanceView) {
+        Objects.requireNonNull(organizationId, "organizationId");
+        page(offset, limit);
+        return repository.listCanonicalObjects(organizationId, offset, limit).stream()
+                .filter(object -> governanceView || object.lifecycle().status().consumerReadable())
+                .toList();
+    }
+
     private static void requireReadable(CanonicalObject object, boolean governanceView) {
         if (!governanceView && !object.lifecycle().status().consumerReadable()) {
             throw new RsotException("RSOT_CANONICAL_OBJECT_NOT_READABLE", "canonical object is not in a consumer-readable state");

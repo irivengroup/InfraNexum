@@ -1,4 +1,4 @@
-import { initializeAdminShell, setIdentityAccessAvailability, setOrganizationAvailability } from './admin-shell.mjs';
+import { initializeAdminShell, setIdentityAccessAvailability, setItamAvailability, setOrganizationAvailability, setRsotAvailability } from './admin-shell.mjs';
 import { initializeLocalAuthentication } from './auth.mjs';
 import { initializeIdentityAccess } from './identity-access.mjs';
 import { initializePolicyAuthorization } from './policy-authorization.mjs';
@@ -7,6 +7,8 @@ import { initializePlatformAutoRefresh, loadPlatformInsights } from './platform-
 import { initializePreferences } from './preferences.mjs';
 import { initializeStableSelects } from './stable-select.mjs';
 import { initializeTemporalPickers } from './temporal-picker.mjs';
+import { initializeRsotWorkspace } from './rsot-workspace.mjs';
+import { initializeItamWorkspace } from './itam-workspace.mjs';
 import {
   initializeLocalization,
   setLocalizedAriaLabel,
@@ -103,6 +105,8 @@ export function renderRuntimeConfiguration(documentObject, configuration) {
   );
 
   setOrganizationAvailability(documentObject, configuration.organizationFoundationEnabled);
+  setRsotAvailability(documentObject, configuration.rsotCoreEnabled);
+  setItamAvailability(documentObject, configuration.itamPartnersEnabled || configuration.itamAssetsEnabled || configuration.itamComplianceEnabled);
   if (configuration.organizationFoundationEnabled) {
     void loadOrganizations(documentObject, configuration);
   } else {
@@ -118,6 +122,8 @@ export function renderRuntimeFailure(documentObject) {
   setLocalizedBadge(documentObject, 'runtime-health-badge', 'common.down', 'text-bg-danger');
   setOrganizationAvailability(documentObject, false);
   setIdentityAccessAvailability(documentObject, false);
+  setRsotAvailability(documentObject, false);
+  setItamAvailability(documentObject, false);
 }
 
 export function initializeTheme(documentObject = document, storageObject = globalThis.localStorage) {
@@ -325,11 +331,13 @@ if (typeof document !== 'undefined') {
   try { initializeLocalization(document); } catch { /* auth must remain available */ }
   try { initializeTheme(document); } catch { /* auth must remain available */ }
 
-  void bootstrap().then((configuration) => {
+  void bootstrap().then(async (configuration) => {
     if (!configuration) return;
 
     let preferenceController = null;
     let notificationCenter = null;
+    try { await initializeRsotWorkspace(document, configuration, fetch); } catch (error) { console.error('RSOT workspace initialization failed', error); }
+    try { await initializeItamWorkspace(document, configuration, fetch); } catch (error) { console.error('ITAM workspace initialization failed', error); }
     try { preferenceController = initializePreferences(document); } catch { /* non-critical */ }
     try { initializeStableSelects(document); } catch { /* native selects remain as safe fallback */ }
     try { initializeTemporalPickers(document); } catch { /* native temporal inputs remain as safe fallback */ }

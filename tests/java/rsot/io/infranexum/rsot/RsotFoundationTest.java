@@ -325,6 +325,16 @@ class RsotFoundationTest {
         }
 
         @Override
+        public List<CanonicalObject> listCanonicalObjects(
+                DomainIdentifier organizationId, int offset, int limit) {
+            return objects.stream()
+                    .filter(object -> object.organizationId().equals(organizationId))
+                    .skip(offset)
+                    .limit(limit)
+                    .toList();
+        }
+
+        @Override
         public List<AttributeAuthorityPolicy> authorityPolicies() {
             return List.copyOf(policies);
         }

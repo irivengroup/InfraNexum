@@ -4,6 +4,8 @@ const ROUTES = Object.freeze({
   overview: Object.freeze({ viewId: 'overview-view', labelKey: 'nav.overview', titleKey: 'topbar.dashboard' }),
   organizations: Object.freeze({ viewId: 'organization-workspace', labelKey: 'nav.organizations', titleKey: 'topbar.organizations' }),
   access: Object.freeze({ viewId: 'identity-access-workspace', labelKey: 'nav.access', titleKey: 'topbar.access' }),
+  rsot: Object.freeze({ viewId: 'rsot-workspace', labelKey: 'nav.rsot', titleKey: 'topbar.rsot' }),
+  itam: Object.freeze({ viewId: 'itam-workspace', labelKey: 'nav.itam', titleKey: 'topbar.itam' }),
 });
 
 export function normalizeRoute(value) {
@@ -52,6 +54,32 @@ export function setOrganizationAvailability(documentObject, enabled, windowObjec
 }
 
 
+export function setRsotAvailability(documentObject, enabled, windowObject = globalThis.window) {
+  setCapabilityRouteAvailability(documentObject, 'rsot', enabled, windowObject);
+}
+
+export function setItamAvailability(documentObject, enabled, windowObject = globalThis.window) {
+  setCapabilityRouteAvailability(documentObject, 'itam', enabled, windowObject);
+}
+
+function setCapabilityRouteAvailability(documentObject, route, enabled, windowObject) {
+  const available = enabled === true;
+  const link = documentObject?.getElementById?.(`nav-${route}`);
+  if (link) {
+    link.hidden = !available;
+    link.setAttribute?.('aria-disabled', available ? 'false' : 'true');
+    link.setAttribute?.('data-capability-enabled', String(available));
+  }
+  const definition = ROUTES[route];
+  const workspace = definition ? documentObject?.getElementById?.(definition.viewId) : null;
+  workspace?.setAttribute?.('data-capability-enabled', String(available));
+  if (!available && currentRoute(documentObject) === route) {
+    applyRoute(documentObject, 'overview', windowObject, { replaceHash: true });
+  } else {
+    applyRoute(documentObject, currentRoute(documentObject), windowObject, { replaceHash: false });
+  }
+}
+
 export function setIdentityAccessAvailability(documentObject, enabled, windowObject = globalThis.window) {
   const available = enabled === true;
   const link = documentObject?.getElementById?.('nav-access');
@@ -78,6 +106,8 @@ export function applyRoute(
   let route = normalizeRoute(requestedRoute);
   if (route === 'organizations' && !organizationsAvailable(documentObject)) route = 'overview';
   if (route === 'access' && !identityAccessAvailable(documentObject)) route = 'overview';
+  if (route === 'rsot' && !capabilityRouteAvailable(documentObject, 'rsot')) route = 'overview';
+  if (route === 'itam' && !capabilityRouteAvailable(documentObject, 'itam')) route = 'overview';
 
   for (const [name, definition] of Object.entries(ROUTES)) {
     const view = documentObject?.getElementById?.(definition.viewId);
@@ -157,6 +187,16 @@ export function buildCommands(documentObject, windowObject = globalThis.window) 
       documentObject?.getElementById?.('notification-trigger')?.click?.();
     }),
   ];
+  if (capabilityRouteAvailable(documentObject, 'itam')) {
+    commands.splice(1, 0, command('itam', 'command.category.workspace', 'command.itam.title', 'command.itam.description', () => {
+      applyRoute(documentObject, 'itam', windowObject);
+    }));
+  }
+  if (capabilityRouteAvailable(documentObject, 'rsot')) {
+    commands.splice(1, 0, command('rsot', 'command.category.workspace', 'command.rsot.title', 'command.rsot.description', () => {
+      applyRoute(documentObject, 'rsot', windowObject);
+    }));
+  }
   if (organizationsAvailable(documentObject)) {
     commands.splice(1, 0, command('organizations', 'command.category.workspace', 'command.organizations.title', 'command.organizations.description', () => {
       applyRoute(documentObject, 'organizations', windowObject);
@@ -298,6 +338,10 @@ function searchable(value) {
     .replace(/\p{Diacritic}/gu, '')
     .toLowerCase()
     .trim();
+}
+
+function capabilityRouteAvailable(documentObject, route) {
+  return documentObject?.getElementById?.(`nav-${route}`)?.getAttribute?.('data-capability-enabled') === 'true';
 }
 
 function organizationsAvailable(documentObject) {

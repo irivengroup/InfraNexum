@@ -8,7 +8,9 @@ import {
   normalizeRoute,
   routeForHash,
   setIdentityAccessAvailability,
+  setItamAvailability,
   setOrganizationAvailability,
+  setRsotAvailability,
 } from '../../src/applications/web/public/assets/admin-shell.mjs';
 
 class ClassList {
@@ -31,16 +33,22 @@ class Element {
   click() { this.clicked = true; }
 }
 
-function shellDocument({ organizations = false, access = false } = {}) {
+function shellDocument({ organizations = false, access = false, rsot = false, itam = false } = {}) {
   const root = new Element({ lang: 'en', 'data-route': 'overview' });
   const overviewView = new Element();
   const workspace = new Element({ 'data-capability-enabled': String(organizations) });
   const accessWorkspace = new Element({ 'data-capability-enabled': String(access) });
+  const rsotWorkspace = new Element({ 'data-capability-enabled': String(rsot) });
+  const itamWorkspace = new Element({ 'data-capability-enabled': String(itam) });
   const overviewLink = new Element({ 'data-route': 'overview', class: 'inx-nav-link active' });
   const organizationsLink = new Element({ 'data-route': 'organizations', class: 'inx-nav-link' });
   organizationsLink.hidden = !organizations;
   const accessLink = new Element({ 'data-route': 'access', class: 'inx-nav-link' });
   accessLink.hidden = !access;
+  const rsotLink = new Element({ 'data-route': 'rsot', 'data-capability-enabled': String(rsot), class: 'inx-nav-link' });
+  rsotLink.hidden = !rsot;
+  const itamLink = new Element({ 'data-route': 'itam', 'data-capability-enabled': String(itam), class: 'inx-nav-link' });
+  itamLink.hidden = !itam;
   const breadcrumb = new Element();
   const title = new Element();
   const runtimeTitle = new Element();
@@ -51,8 +59,12 @@ function shellDocument({ organizations = false, access = false } = {}) {
     ['overview-view', overviewView],
     ['organization-workspace', workspace],
     ['identity-access-workspace', accessWorkspace],
+    ['rsot-workspace', rsotWorkspace],
+    ['itam-workspace', itamWorkspace],
     ['nav-organizations', organizationsLink],
     ['nav-access', accessLink],
+    ['nav-rsot', rsotLink],
+    ['nav-itam', itamLink],
     ['breadcrumb-current', breadcrumb],
     ['topbar-page-title', title],
     ['runtime-title', runtimeTitle],
@@ -64,13 +76,17 @@ function shellDocument({ organizations = false, access = false } = {}) {
     documentElement: root,
     title: '',
     getElementById: (id) => byId.get(id),
-    querySelectorAll: (selector) => selector === '[data-route]' ? [overviewLink, organizationsLink, accessLink] : [],
+    querySelectorAll: (selector) => selector === '[data-route]' ? [overviewLink, organizationsLink, accessLink, rsotLink, itamLink] : [],
     overviewView,
     workspace,
     accessWorkspace,
+    rsotWorkspace,
+    itamWorkspace,
     overviewLink,
     organizationsLink,
     accessLink,
+    rsotLink,
+    itamLink,
     breadcrumb,
     topbarTitle: title,
     runtimeTitle,
@@ -95,8 +111,12 @@ function windowFixture(hash = '') {
 test('route parser accepts only known administration routes', () => {
   assert.equal(normalizeRoute('organizations'), 'organizations');
   assert.equal(normalizeRoute('access'), 'access');
+  assert.equal(normalizeRoute('rsot'), 'rsot');
+  assert.equal(normalizeRoute('itam'), 'itam');
   assert.equal(routeForHash('#/access'), 'access');
   assert.equal(routeForHash('#/organizations'), 'organizations');
+  assert.equal(routeForHash('#/rsot'), 'rsot');
+  assert.equal(routeForHash('#/itam'), 'itam');
   assert.equal(routeForHash('#overview'), 'overview');
   assert.equal(routeForHash('#/unknown'), 'overview');
 });
@@ -136,6 +156,29 @@ test('identity-access route is fail-closed until its capability is explicitly av
   assert.equal(documentObject.topbarTitle.textContent, 'Identity & access');
 });
 
+
+test('RSOT and ITAM routes are fail-closed and become navigable only when their capabilities are available', () => {
+  const documentObject = shellDocument();
+  const windowObject = windowFixture('#/rsot');
+  assert.equal(applyRoute(documentObject, 'rsot', windowObject, { replaceHash: true }), 'overview');
+  assert.equal(documentObject.rsotWorkspace.hidden, true);
+
+  setRsotAvailability(documentObject, true, windowObject);
+  assert.equal(documentObject.rsotLink.hidden, false);
+  assert.equal(applyRoute(documentObject, 'rsot', windowObject), 'rsot');
+  assert.equal(documentObject.rsotWorkspace.hidden, false);
+  assert.equal(documentObject.topbarTitle.textContent, 'RSOT & schema governance');
+
+  setItamAvailability(documentObject, true, windowObject);
+  assert.equal(documentObject.itamLink.hidden, false);
+  assert.equal(applyRoute(documentObject, 'itam', windowObject), 'itam');
+  assert.equal(documentObject.itamWorkspace.hidden, false);
+  assert.equal(documentObject.topbarTitle.textContent, 'IT asset management');
+
+  setRsotAvailability(documentObject, false, windowObject);
+  assert.equal(documentObject.rsotLink.hidden, true);
+});
+
 test('command catalogue exposes only actionable capabilities', () => {
   const documentObject = shellDocument({ organizations: false });
   const windowObject = windowFixture();
@@ -144,6 +187,9 @@ test('command catalogue exposes only actionable capabilities', () => {
   assert.deepEqual(buildCommands(documentObject, windowObject).map((item) => item.id), ['overview', 'organizations', 'runtime', 'theme', 'preferences', 'notifications']);
   setIdentityAccessAvailability(documentObject, true, windowObject);
   assert.deepEqual(buildCommands(documentObject, windowObject).map((item) => item.id), ['overview', 'access', 'organizations', 'runtime', 'theme', 'preferences', 'notifications']);
+  setRsotAvailability(documentObject, true, windowObject);
+  setItamAvailability(documentObject, true, windowObject);
+  assert.deepEqual(buildCommands(documentObject, windowObject).map((item) => item.id), ['overview', 'access', 'organizations', 'rsot', 'itam', 'runtime', 'theme', 'preferences', 'notifications']);
 });
 
 test('command search is localized, case-insensitive and accent-insensitive', () => {

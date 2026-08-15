@@ -27,23 +27,27 @@ export class ItamComplianceClient {
   }
 
   warranties(assetId, options = {}) { return this.request(`/v1/itam/assets/${uuid(assetId, 'assetId')}/warranties${pageQuery(options)}`); }
+  getWarranty(id) { return this.request(`/v1/itam/warranties/${uuid(id, 'warrantyId')}`); }
   createWarranty(assetId, body, key) { return this.request(`/v1/itam/assets/${uuid(assetId, 'assetId')}/warranties`, { method: 'POST', body: mutationBody(body), idempotencyKey: key }); }
   reviseWarranty(id, version, body, key) { return this.request(`/v1/itam/warranties/${uuid(id, 'warrantyId')}`, { method: 'PATCH', body: mutationBody(body), version, idempotencyKey: key }); }
   activateWarranty(id, version, reason, key) { return this.lifecycle('warranties', id, 'activate', version, reason, key); }
   expireWarranty(id, version, reason, key) { return this.lifecycle('warranties', id, 'expire', version, reason, key); }
 
   licenses(assetId, options = {}) { return this.request(`/v1/itam/assets/${uuid(assetId, 'assetId')}/licenses${pageQuery(options)}`); }
+  getLicense(id) { return this.request(`/v1/itam/licenses/${uuid(id, 'licenseId')}`); }
   createLicense(assetId, body, key) { rejectRawLicenseKeys(body); return this.request(`/v1/itam/assets/${uuid(assetId, 'assetId')}/licenses`, { method: 'POST', body: mutationBody(body), idempotencyKey: key }); }
   reviseLicense(id, version, body, key) { rejectRawLicenseKeys(body); return this.request(`/v1/itam/licenses/${uuid(id, 'licenseId')}`, { method: 'PATCH', body: mutationBody(body), version, idempotencyKey: key }); }
   activateLicense(id, version, reason, key) { return this.lifecycle('licenses', id, 'activate', version, reason, key); }
   expireLicense(id, version, reason, key) { return this.lifecycle('licenses', id, 'expire', version, reason, key); }
 
   supportCoverages(assetId, options = {}) { return this.request(`/v1/itam/assets/${uuid(assetId, 'assetId')}/support-coverages${pageQuery(options)}`); }
+  getSupportCoverage(id) { return this.request(`/v1/itam/support-coverages/${uuid(id, 'coverageId')}`); }
   createSupportCoverage(assetId, body, key) { return this.request(`/v1/itam/assets/${uuid(assetId, 'assetId')}/support-coverages`, { method: 'POST', body: mutationBody(body), idempotencyKey: key }); }
   reviseSupportCoverage(id, version, body, key) { return this.request(`/v1/itam/support-coverages/${uuid(id, 'coverageId')}`, { method: 'PATCH', body: mutationBody(body), version, idempotencyKey: key }); }
   activateSupportCoverage(id, version, reason, key) { return this.lifecycle('support-coverages', id, 'activate', version, reason, key); }
   expireSupportCoverage(id, version, reason, key) { return this.lifecycle('support-coverages', id, 'expire', version, reason, key); }
 
+  listSupportAuthorizations(organizationId) { return this.request(`/v1/itam/support-authorizations?organization_id=${encodeURIComponent(uuid(organizationId, 'organizationId'))}`); }
   createSupportAuthorization(body, key) { return this.request('/v1/itam/support-authorizations', { method: 'POST', body: mutationBody(body), idempotencyKey: key }); }
   supportAuthorization(id) { return this.request(`/v1/itam/support-authorizations/${uuid(id, 'authorizationId')}`); }
   activateSupportAuthorization(id, version, reason, key) { return this.lifecycle('support-authorizations', id, 'activate', version, reason, key); }

@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>io.infranexum</groupId><artifactId>infranexum-parent</artifactId>
-    <version>2.0.0-alpha.0.79</version><relativePath>../../../../pom.xml</relativePath>
+    <version>2.0.0-alpha.0.80</version><relativePath>../../../../pom.xml</relativePath>
   </parent>
   <artifactId>infranexum-adapter-security</artifactId>
   <name>InfraNexum Security Adapter</name>

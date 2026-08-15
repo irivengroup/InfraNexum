@@ -100,11 +100,14 @@
             <span data-i18n="nav.access">Identity &amp; access</span>
           </a>
           <p class="inx-nav-label mt-4" data-i18n="nav.platform">Platform</p>
-          <span class="inx-nav-link disabled" aria-disabled="true">
+          <a id="nav-rsot" class="inx-nav-link" href="#/rsot" data-route="rsot" aria-disabled="true" data-capability-enabled="false" hidden>
             <span class="inx-nav-icon" aria-hidden="true">◇</span>
-            <span data-i18n="nav.infrastructure">Infrastructure</span>
-            <span class="inx-nav-soon" data-i18n="nav.soon">Soon</span>
-          </span>
+            <span data-i18n="nav.rsot">RSOT</span>
+          </a>
+          <a id="nav-itam" class="inx-nav-link" href="#/itam" data-route="itam" aria-disabled="true" data-capability-enabled="false" hidden>
+            <span class="inx-nav-icon" aria-hidden="true">▦</span>
+            <span data-i18n="nav.itam">ITAM</span>
+          </a>
           <span class="inx-nav-link disabled" aria-disabled="true">
             <span class="inx-nav-icon" aria-hidden="true">⌁</span>
             <span data-i18n="nav.discovery">Discovery</span>
@@ -657,6 +660,11 @@
           </div>
           </div>
           </section>
+
+          <section id="rsot-workspace" class="inx-panel inx-page-panel inx-domain-workspace" data-view="rsot" data-capability-enabled="false" aria-labelledby="rsot-workspace-title" hidden></section>
+
+          <section id="itam-workspace" class="inx-panel inx-page-panel inx-domain-workspace" data-view="itam" data-capability-enabled="false" aria-labelledby="itam-workspace-title" hidden></section>
+
           <footer class="inx-footer"><span data-i18n="footer.product">InfraNexum — Infrastructure Control &amp; Governance Platform</span><span id="footer-version">Version —</span></footer>
         </main>
       </div>

@@ -75,6 +75,33 @@ public final class JdbcRsotRepository implements RsotRepository {
     }
 
     @Override
+    public List<CanonicalObject> listCanonicalObjects(DomainIdentifier organizationId, int offset, int limit) {
+        Objects.requireNonNull(organizationId, "organizationId");
+        String pagination = dialect == JdbcDatabaseDialect.POSTGRESQL
+                ? "LIMIT ? OFFSET ?" : "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+        String sql = "SELECT " + CANONICAL_COLUMNS + " FROM " + table("canonical_object")
+                + " WHERE organization_id=? ORDER BY updated_at DESC,id " + pagination;
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)) {
+            dialect.bindIdentifier(statement, 1, organizationId);
+            if (dialect == JdbcDatabaseDialect.POSTGRESQL) {
+                statement.setInt(2, limit);
+                statement.setInt(3, offset);
+            } else {
+                statement.setInt(2, offset);
+                statement.setInt(3, limit);
+            }
+            try (ResultSet resultSet = statement.executeQuery()) {
+                List<CanonicalObject> result = new ArrayList<>();
+                while (resultSet.next()) result.add(readCanonicalObject(resultSet));
+                return List.copyOf(result);
+            }
+        } catch (SQLException failure) {
+            throw fail("list RSOT canonical objects by organization", failure);
+        }
+    }
+
+    @Override
     public List<AttributeAuthorityPolicy> authorityPolicies() {
         String sql = "SELECT id,object_type,attribute_path,authority_context,source_priority,effective_from,"
                 + "effective_until,policy_version,approval_ref FROM " + table("attribute_authority_policy")

@@ -2,6 +2,7 @@ package io.infranexum.server.rsot;
 
 import io.infranexum.core.compatibility.SchemaRegistryException;
 import io.infranexum.core.capabilities.CapabilityUnavailableException;
+import io.infranexum.rsot.domain.RsotException;
 import io.infranexum.server.observability.CorrelationContext;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
@@ -21,7 +22,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /** RFC 9457 problem translation dedicated to schema-registry failures. */
 @Order(Ordered.HIGHEST_PRECEDENCE + 50)
-@RestControllerAdvice(assignableTypes = RsotSchemaController.class)
+@RestControllerAdvice(assignableTypes = {RsotSchemaController.class, RsotObjectController.class})
 public final class RsotSchemaExceptionHandler {
     private final Clock clock;
 
@@ -42,6 +43,12 @@ public final class RsotSchemaExceptionHandler {
         return problem(status, failure.code(), safe(failure.getMessage()), request);
     }
 
+
+    @ExceptionHandler(RsotException.class)
+    ResponseEntity<Problem> canonical(RsotException failure, HttpServletRequest request) {
+        HttpStatus status = "RSOT_CANONICAL_OBJECT_NOT_FOUND".equals(failure.code()) ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
+        return problem(status, failure.code(), safe(failure.getMessage()), request);
+    }
 
     @ExceptionHandler(CapabilityUnavailableException.class)
     ResponseEntity<Problem> capability(CapabilityUnavailableException failure, HttpServletRequest request) {

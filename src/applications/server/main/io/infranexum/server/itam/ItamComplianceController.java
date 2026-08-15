@@ -62,6 +62,11 @@ public final class ItamComplianceController {
         return ResponseEntity.status(HttpStatus.CREATED).eTag(etag(warranty.version())).body(WarrantyResponse.from(warranty));
     }
 
+    @GetMapping("/warranties/{warrantyId}")
+    ResponseEntity<WarrantyResponse> getWarranty(@PathVariable String warrantyId,HttpServletRequest request,HttpServletResponse response){
+        Warranty current=compliance.getWarranty(id(warrantyId));requireAsset(current.assetId().toString(),PermissionCodes.ITAM_WARRANTY_READ,request,response);return ok(current.version(),WarrantyResponse.from(current));
+    }
+
     @PatchMapping("/warranties/{warrantyId}")
     ResponseEntity<WarrantyResponse> reviseWarranty(@PathVariable String warrantyId,@RequestHeader(HttpHeaders.IF_MATCH) String ifMatch,
             @RequestHeader("Idempotency-Key") String key,@Valid @RequestBody WarrantyRequest body,HttpServletRequest request,HttpServletResponse response){
@@ -89,6 +94,11 @@ public final class ItamComplianceController {
     ResponseEntity<LicenseResponse> createLicense(@PathVariable String assetId,@RequestHeader("Idempotency-Key") String key,
             @Valid @RequestBody LicenseRequest body,HttpServletRequest request,HttpServletResponse response){Asset asset=requireAsset(assetId,PermissionCodes.ITAM_LICENSE_MANAGE,request,response);SoftwareLicenseContract license=compliance.createLicense(licenseCommand(asset.id(),body),context(request,key,body.reason()));return ResponseEntity.status(HttpStatus.CREATED).eTag(etag(license.version())).body(LicenseResponse.from(license));}
 
+    @GetMapping("/licenses/{licenseId}")
+    ResponseEntity<LicenseResponse> getLicense(@PathVariable String licenseId,HttpServletRequest request,HttpServletResponse response){
+        SoftwareLicenseContract current=compliance.getLicense(id(licenseId));requireAsset(current.assetId().toString(),PermissionCodes.ITAM_LICENSE_READ,request,response);return ok(current.version(),LicenseResponse.from(current));
+    }
+
     @PatchMapping("/licenses/{licenseId}")
     ResponseEntity<LicenseResponse> reviseLicense(@PathVariable String licenseId,@RequestHeader(HttpHeaders.IF_MATCH) String ifMatch,
             @RequestHeader("Idempotency-Key") String key,@Valid @RequestBody LicenseRequest body,HttpServletRequest request,HttpServletResponse response){SoftwareLicenseContract current=compliance.getLicense(id(licenseId));Asset asset=requireAsset(current.assetId().toString(),PermissionCodes.ITAM_LICENSE_MANAGE,request,response);SoftwareLicenseContract changed=compliance.reviseLicense(current.id(),version(ifMatch),licenseCommand(asset.id(),body),context(request,key,body.reason()));return ok(changed.version(),LicenseResponse.from(changed));}
@@ -109,6 +119,11 @@ public final class ItamComplianceController {
     ResponseEntity<SupportCoverageResponse> createSupportCoverage(@PathVariable String assetId,@RequestHeader("Idempotency-Key") String key,
             @Valid @RequestBody SupportCoverageRequest body,HttpServletRequest request,HttpServletResponse response){Asset asset=requireAsset(assetId,PermissionCodes.ITAM_SUPPORT_COVERAGE_MANAGE,request,response);SupportCoverage coverage=compliance.createSupportCoverage(coverageCommand(asset.id(),body),context(request,key,body.reason()));return ResponseEntity.status(HttpStatus.CREATED).eTag(etag(coverage.version())).body(SupportCoverageResponse.from(coverage));}
 
+    @GetMapping("/support-coverages/{coverageId}")
+    ResponseEntity<SupportCoverageResponse> getSupportCoverage(@PathVariable String coverageId,HttpServletRequest request,HttpServletResponse response){
+        SupportCoverage current=compliance.getSupportCoverage(id(coverageId));requireAsset(current.assetId().toString(),PermissionCodes.ITAM_SUPPORT_COVERAGE_READ,request,response);return ok(current.version(),SupportCoverageResponse.from(current));
+    }
+
     @PatchMapping("/support-coverages/{coverageId}")
     ResponseEntity<SupportCoverageResponse> reviseSupportCoverage(@PathVariable String coverageId,@RequestHeader(HttpHeaders.IF_MATCH) String ifMatch,
             @RequestHeader("Idempotency-Key") String key,@Valid @RequestBody SupportCoverageRequest body,HttpServletRequest request,HttpServletResponse response){SupportCoverage current=compliance.getSupportCoverage(id(coverageId));Asset asset=requireAsset(current.assetId().toString(),PermissionCodes.ITAM_SUPPORT_COVERAGE_MANAGE,request,response);SupportCoverage changed=compliance.reviseSupportCoverage(current.id(),version(ifMatch),coverageCommand(asset.id(),body),context(request,key,body.reason()));return ok(changed.version(),SupportCoverageResponse.from(changed));}
@@ -120,6 +135,9 @@ public final class ItamComplianceController {
     @PostMapping("/support-coverages/{coverageId}/expire")
     ResponseEntity<SupportCoverageResponse> expireSupportCoverage(@PathVariable String coverageId,@RequestHeader(HttpHeaders.IF_MATCH) String ifMatch,
             @RequestHeader("Idempotency-Key") String key,@Valid @RequestBody ReasonRequest body,HttpServletRequest request,HttpServletResponse response){SupportCoverage current=compliance.getSupportCoverage(id(coverageId));requireAsset(current.assetId().toString(),PermissionCodes.ITAM_SUPPORT_COVERAGE_MANAGE,request,response);SupportCoverage changed=compliance.expireSupportCoverage(current.id(),version(ifMatch),context(request,key,body.reason()));return ok(changed.version(),SupportCoverageResponse.from(changed));}
+
+    @GetMapping("/support-authorizations")
+    List<SupportAuthorizationResponse> supportAuthorizations(@RequestParam(name="organization_id") String organizationId,HttpServletRequest request,HttpServletResponse response){DomainIdentifier org=id(organizationId);authorization.require(request,response,PermissionCodes.ITAM_SUPPORT_CATALOG_MANAGE,AuthorizationScope.organization(org),"itam-support-authorization","collection");return compliance.supportAuthorizations(org).stream().map(SupportAuthorizationResponse::from).toList();}
 
     @PostMapping("/support-authorizations")
     ResponseEntity<SupportAuthorizationResponse> createSupportAuthorization(@RequestHeader("Idempotency-Key") String key,

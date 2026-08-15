@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.79",
-  "profile": "pgm-07-e03-itam-contractual-compliance-pro-ha-local-development",
+  "version": "2.0.0-alpha.0.80",
+  "profile": "alpha080-web-functional-parity-rsot-itam-pro-ha-local-development",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -22,7 +22,7 @@
     },
     {
       "id": "infranexum-web",
-      "status": "runtime-source-alpha074-freeipa-like-fluid-themed-iam-stable-select-calendar-native-date-time-input-de-en-es-fr-it-target-node24-and-docker-runtime-pending"
+      "status": "alpha080-real-rsot-itam-capability-gated-routes-workspaces-governed-entity-selects-temporal-controls-de-en-es-fr-it-full-interaction-tests-target-node24-and-docker-runtime-pending"
     },
     {
       "id": "source-integrity-v1",
@@ -37,8 +37,8 @@
       "status": "postgresql-oracle-jdbc-workers-local-identity-session-persistence-security-epoch-transient-connectivity-classification-durable-nullable-uuidv7-correlation-entitlements-revocations-json-binding-and-contextual-domain-errors-hosted-jdk25-jacoco-proof-pending"
     },
     {
-      "id": "migration-catalogue-0001-0024",
-      "status": "paired-catalogue-postgresql-oracle-through-0024-including-0023-itam-warranty-support-license-and-0024-itam-compliance-permissions"
+      "id": "migration-catalogue-0001-0025",
+      "status": "paired-catalogue-postgresql-oracle-through-0025-including-0025-organization-scoped-rsot-read-permission-for-canonical-object-web-selectors"
     },
     {
       "id": "ci-foundation",
@@ -70,7 +70,7 @@
     },
     {
       "id": "rsot-authority-foundation-v1",
-      "status": "pgm-06-e01-canonical-identity-lifecycle-nine-row-draft21-authority-matrix-ten-provider-context-map-versioned-temporal-bounded-attribute-authority-policies-fail-closed-resolution-isolated-postgresql-oracle-schema-migration0015-jdbc-read-repository-server-composition; ingestion-reconciliation-api-cli-web-and-abac-pdp-sod-deferred"
+      "status": "pgm-06-e01-authority-foundation-preserved-plus-alpha080-organization-scoped-canonical-object-query-surface-protected-by-rsot.read-no-duplicate-rsot-authority"
     },
     {
       "id": "identity-access-advanced-authorization-v1",
@@ -90,22 +90,26 @@
     },
     {
       "id": "itam-contractual-compliance-v1",
-      "status": "pgm-07-e03-governed-warranty-license-support-authorization-coverage-versioned-evidence-alerts-canonical-producer-correction-real-asset-readiness-no-raw-license-secrets-rbac-abac-api-cli-web-postgresql-oracle-migrations0023-0024"
+      "status": "pgm-07-e03-contractual-compliance-preserved-plus-alpha080-governed-support-authorization-and-record-detail-query-surfaces-for-real-web-selectors-no-raw-license-secrets"
+    },
+    {
+      "id": "web-functional-parity-v1",
+      "status": "alpha080-rsot-itam-first-level-routes-real-workspaces-list-detail-create-lifecycle-governed-selects-calendar-i18n-de-en-es-fr-it-capability-fail-closed-null-byte-regression-and-interaction-tests"
     }
   ],
   "validation_reports": [],
   "validation_summary": {
-    "source_inventory_paths": 1034,
+    "source_inventory_paths": 1052,
     "source_integrity_tests": 45,
     "source_integrity_coverage_percent": 100,
     "source_integrity_violations": 0,
-    "python_tests": 420,
-    "architecture_tests": 130,
+    "python_tests": 427,
+    "architecture_tests": 134,
     "architecture_violations": 0,
     "toolchain_tests": 25,
     "toolchain_coverage_percent": 99,
     "toolchain_violations": 0,
-    "migration_tests": 95,
+    "migration_tests": 98,
     "migration_coverage_percent": 99,
     "migration_violations": 0,
     "eventing_tests": 10,
@@ -129,19 +133,19 @@
     "jdbc_workers_junit_tests_defined": 11,
     "jdbc_workers_postgresql_live_tests_defined": 5,
     "agent_local_coverage_percent": 98.4,
-    "web_tests": 127,
+    "web_tests": 136,
     "web_line_coverage_percent": 99.71,
     "web_branch_coverage_percent": 98.48,
     "web_function_coverage_percent": 100,
     "repository_syntax_counts": {
-      "python": 73,
-      "json": 68,
-      "yaml": 64,
+      "python": 75,
+      "json": 69,
+      "yaml": 67,
       "xml": 16,
-      "javascript": 48,
+      "javascript": 53,
       "go": 8,
       "shell": 7,
-      "java": 596
+      "java": 598
     },
     "archive_compatibility_tests": 12,
     "archive_compatibility_coverage_percent": 100,
@@ -150,8 +154,8 @@
     "archive_compatibility_max_member_path": 148,
     "entitlements_module_tests_defined": 49,
     "audit_module_tests_defined": 21,
-    "architecture_coverage_status": "EXECUTED_100_PERCENT_FUNCTIONAL_130_OF_130_PASS",
-    "architecture_functional_tests": 130,
+    "architecture_coverage_status": "NON_EXECUTED_ALPHA080_AGGREGATED_AND_FRAGMENTED_INSTRUMENTATION_RUNNER_TIMEOUT_FUNCTIONAL_134_OF_134_PASS_ARCHITECTURE_CHECK_PASS",
+    "architecture_functional_tests": 134,
     "jdbc_module_tests_defined": 73,
     "jdbc_postgresql_live_tests_defined": 18,
     "server_module_tests_defined": 121,
@@ -442,7 +446,34 @@
     "packaging_tracked_files_alpha078": 980,
     "source_integrity_alpha078": "EXECUTED_45_OF_45_100_PERCENT_STAGED_SNAPSHOT_979_GIT_BLOB_CHECKSUMS_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
     "archive_compatibility_alpha078": "EXECUTED_12_OF_12_100_PERCENT_CANDIDATE_GIT_ARCHIVE_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
-    "itam_compliance_module_tests_defined": 5
+    "itam_compliance_module_tests_defined": 5,
+    "web_functional_parity_alpha080": "EXECUTED_LOCAL_NODE22_16_0_136_OF_136_LINE99_71_BRANCH98_48_FUNCTION100_PROCESS_SMOKE_PASS_REAL_ROUTES_WORKSPACES_SELECTORS_CALENDARS_FIVE_LOCALES_NUL_GUARD",
+    "migration_alpha080": "EXECUTED_98_OF_98_99_PERCENT_ZERO_VIOLATIONS_0025_LIVE_POSTGRESQL_ORACLE_PENDING",
+    "architecture_functional_alpha080": "EXECUTED_134_OF_134_SPLIT_DETERMINISTIC_GROUPS",
+    "architecture_check_alpha080": "EXECUTED_PASS_ZERO_VIOLATIONS",
+    "architecture_coverage_alpha080": "NON_EXECUTED_CURRENT_BASELINE_INSTRUMENTATION_TIMEOUT_FUNCTIONAL_134_OF_134_PASS",
+    "java_offline_smokes_alpha080": "EXECUTED_17_OF_17_TARGETS_EXIT_ZERO_LOCAL_JAVA21_XLINT_ALL_WERROR",
+    "compose_contract_alpha080": "EXECUTED_63_OF_63",
+    "source_integrity_prepack_alpha080": "EXECUTED_45_OF_45_100_PERCENT_ZERO_VIOLATIONS_CANONICAL_INVENTORY_1052_PATHS",
+    "agent_local_alpha080": "EXECUTED_GOTOOLCHAIN_LOCAL_GO1_23_2_VET_RACE_TEST_BUILD_COVERAGE98_4_PERCENT",
+    "agent_target_go1265_alpha080": "NON_EXECUTED_TARGET_GO1_26_5_LOCAL_GO1_23_2_AUTO_TOOLCHAIN_DOWNLOAD_REQUIRES_NETWORK",
+    "maven_target_jdk25_alpha080": "NON_EXECUTED_LOCAL_JDK21_0_11_MAVEN_UNAVAILABLE_WRAPPER_REJECTS_JDK21_PROJECT_REQUIRES_JDK25_MAVEN3_9_16_JUNIT_JACOCO",
+    "web_target_node24_alpha080": "NON_EXECUTED_LOCAL_NODE22_16_0_TARGET_NODE24_18_1_REQUIRED",
+    "docker_runtime_alpha080": "NON_EXECUTED_LOCAL_DOCKER_COMMAND_UNAVAILABLE_PRO_UP_SMOKE_HA_SMOKE_REQUIRED",
+    "postgresql_live_migration_alpha080": "NON_EXECUTED_LOCAL_DOCKER_UNAVAILABLE_0025_APPLY_VERIFY_ROLLBACK_REQUIRED",
+    "oracle_live_migration_alpha080": "NON_EXECUTED_LOCAL_ORACLE_UNAVAILABLE_0025_APPLY_VERIFY_ROLLBACK_REQUIRED",
+    "powershell_runtime_alpha080": "NON_EXECUTED_LOCAL_PWSH_UNAVAILABLE",
+    "affected_junit_source_compile_alpha080": "EXECUTED_LOCAL_JAVA21_XLINT_ALL_WERROR_TEMPORARY_JUNIT_API_STUBS_RSOT_AND_ITAM_COMPLIANCE_FAKES_COMPILE_AGAINST_REAL_PORTS",
+    "source_integrity_alpha080": "EXECUTED_45_OF_45_100_PERCENT_STAGED_SNAPSHOT_1054_GIT_BLOB_CHECKSUMS_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
+    "toolchain_alpha080": "EXECUTED_25_OF_25_99_PERCENT_ZERO_VIOLATIONS",
+    "eventing_alpha080": "EXECUTED_10_OF_10_100_PERCENT_ZERO_VIOLATIONS",
+    "persistence_alpha080": "EXECUTED_12_OF_12_98_PERCENT_ZERO_VIOLATIONS",
+    "capabilities_alpha080": "EXECUTED_10_OF_10_99_PERCENT_ZERO_VIOLATIONS",
+    "entitlements_alpha080": "EXECUTED_10_OF_10_100_PERCENT_ZERO_VIOLATIONS",
+    "audit_alpha080": "EXECUTED_8_OF_8_100_PERCENT_ZERO_VIOLATIONS",
+    "packaging_tracked_files_alpha080": 1055,
+    "archive_compatibility_unit_alpha080": "EXECUTED_12_OF_12_100_PERCENT",
+    "archive_compatibility_alpha080": "EXECUTED_12_OF_12_100_PERCENT_CANDIDATE_GIT_ARCHIVE_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT"
   },
   "source_layout": "All production solution spaces are contained below src/; Java, Go and Web tests are repository-level under tests/; canonical relative paths are limited to 120 characters and path components to 80 characters.",
   "source_integrity": {
@@ -454,14 +485,14 @@
     "pre_commit_hook": ".githooks/pre-commit"
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.79",
+    "prefix": "infranexum-2.0.0-alpha.0.80",
     "archive_entries": 1037,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
     "source_recorded_files": 1036,
     "release_checksum_manifest": "../../artifacts/validation/release-files.sha256"
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.79-validation-evidence.zip",
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.80-validation-evidence.zip",
   "runtime_validation": {
     "web_local_runtime_alpha058": "EXECUTED_38_OF_38_LINE_99_67_BRANCH_98_33_FUNCTION_100_PROCESS_SMOKE_PASS_LOCAL_NODE22_BOOTSTRAP5_3_6_PROFESSIONAL_ADMIN_DASHBOARD_THEME_TOGGLE_TRUTHFUL_KPI_SAME_ORIGIN_ORGANIZATION_UI",
     "architecture_functional_alpha058": "EXECUTED_57_OF_57",
@@ -720,5 +751,5 @@
     "source_integrity_alpha079": "EXECUTED_45_OF_45_100_PERCENT_STAGED_SNAPSHOT_1036_GIT_BLOB_CHECKSUMS_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
     "archive_compatibility_alpha079": "EXECUTED_12_OF_12_100_PERCENT_CANDIDATE_GIT_ARCHIVE_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT"
   },
-  "runtime_validation_note": "alpha.0.79 implements PGM-07-E03 ITAM contractual compliance: governed manufacturer warranties, software-license contracts without raw activation secrets, scoped third-party support authorizations/coverages, warranty-type catalogue, canonical producer correction, real fail-closed Asset operational readiness, append-only contractual revisions, deterministic deadline alerts, capability/RBAC/ABAC, HTTP/OpenAPI, Server CLI, Web client and PostgreSQL/Oracle migrations 0023-0024. Secret-bearing license material remains blocked on PGM-13-E02. Exact JDK25 Maven/JaCoCo, Go1.26.5, Node24, Docker Desktop PRO/HA and PostgreSQL/Oracle live execution remain mandatory before promotion where not executed in the delivery environment."
+  "runtime_validation_note": "alpha.0.80 is a corrective Web Functional Parity release for already-delivered RSOT and ITAM capabilities. It adds real capability-gated RSOT/ITAM routes and workspaces, governed entity selectors, canonical RSOT organization-scoped reads protected by rsot.read and migration 0025, Compliance selector/detail query surfaces, corrected OpenAPI response schemas, five-locale UI vocabulary and a browser NUL-byte regression gate. No new PGM business epic is claimed. Exact JDK25 Maven/JaCoCo, Go1.26.5, Node24, Docker Desktop PRO/HA and PostgreSQL/Oracle live execution remain mandatory before promotion where not executed in the delivery environment."
 }
