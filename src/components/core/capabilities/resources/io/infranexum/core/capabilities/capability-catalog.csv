@@ -2,6 +2,8 @@ capability_code,allowed_profiles,required_roles,allowed_topologies,required_trai
 iam.local-auth,lite;pro;enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,,false
 database.postgresql,lite;pro;enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,,false
 discovery.agentless,lite;pro;enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,,false
+rsot.core,lite;pro;enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,,false
+itam.partners,lite;pro;enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,,false
 agent.enabled,enterprise,agent,distributed-sites;regional;multi-region,,true
 automation.multi_region,enterprise,server,regional;multi-region,,true
 database.oracle,enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,oracle-backend,true

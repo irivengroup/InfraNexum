@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum Identity Access RBAC API
-  version: 2.0.0-alpha.0.69
+  version: 2.0.0-alpha.0.77
   description: PGM-03-E03 RBAC foundation for users, memberships, groups, roles, permissions, temporal scoped assignments
     and explainable permission evaluation. Local authentication establishes the actor; the Server RBAC PEP denies unregistered
     protected routes by default.
@@ -1479,10 +1479,14 @@ components:
           - *id009
           - type: 'null'
         effectiveFrom: &id011
-          type:
-          - string
-          - 'null'
-          format: date-time
+          oneOf:
+          - type: string
+            format: date-time
+          - type: string
+            pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?$'
+          - type: 'null'
+          description: ISO-8601 date-time. Values without an offset are resolved in the Server timezone; explicit offsets remain authoritative.
+          x-infranexum-timezone-default: server
         effectiveTo: *id011
         reason: *id010
     UserRoleRequest:

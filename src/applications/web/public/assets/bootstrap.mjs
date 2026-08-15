@@ -1,9 +1,12 @@
 import { initializeAdminShell, setIdentityAccessAvailability, setOrganizationAvailability } from './admin-shell.mjs';
 import { initializeLocalAuthentication } from './auth.mjs';
 import { initializeIdentityAccess } from './identity-access.mjs';
+import { initializePolicyAuthorization } from './policy-authorization.mjs';
 import { initializeNotificationCenter } from './notifications.mjs';
 import { initializePlatformAutoRefresh, loadPlatformInsights } from './platform-insights.mjs';
 import { initializePreferences } from './preferences.mjs';
+import { initializeStableSelects } from './stable-select.mjs';
+import { initializeTemporalPickers } from './temporal-picker.mjs';
 import {
   initializeLocalization,
   setLocalizedAriaLabel,
@@ -40,6 +43,18 @@ export function validatePublicConfiguration(value) {
   }
   if (typeof value.identityAccessEnabled !== 'boolean') {
     throw new Error('Runtime configuration identityAccessEnabled is invalid');
+  }
+  if (typeof value.advancedAuthorizationEnabled !== 'boolean') {
+    throw new Error('Runtime configuration advancedAuthorizationEnabled is invalid');
+  }
+  if (typeof value.rsotCoreEnabled !== 'boolean') {
+    throw new Error('Runtime configuration rsotCoreEnabled is invalid');
+  }
+  if (typeof value.itamPartnersEnabled !== 'boolean') {
+    throw new Error('Runtime configuration itamPartnersEnabled is invalid');
+  }
+  if (value.advancedAuthorizationEnabled && !value.identityAccessEnabled) {
+    throw new Error('Runtime configuration advanced authorization requires identity access');
   }
   if (
     value.schema !== REQUIRED_SCHEMA
@@ -156,6 +171,7 @@ export async function bootstrap({
     await initializeLocalAuthentication(documentObject, configuration, fetchFunction);
     renderRuntimeConfiguration(documentObject, configuration);
     await initializeIdentityAccess(documentObject, configuration, fetchFunction);
+    await initializePolicyAuthorization(documentObject, configuration, fetchFunction);
     notificationCenter?.upsert?.({
       id: 'web-runtime', severity: 'success', titleKey: 'notification.runtimeReady.title', bodyKey: 'notification.runtimeReady.body',
       parameters: { version: configuration.version, environment: configuration.environment },
@@ -303,6 +319,8 @@ if (typeof document !== 'undefined') {
     let preferenceController = null;
     let notificationCenter = null;
     try { preferenceController = initializePreferences(document); } catch { /* non-critical */ }
+    try { initializeStableSelects(document); } catch { /* native selects remain as safe fallback */ }
+    try { initializeTemporalPickers(document); } catch { /* native temporal inputs remain as safe fallback */ }
     try { notificationCenter = initializeNotificationCenter(document); } catch { /* non-critical */ }
     try { initializeAdminShell(document, globalThis.window); } catch { /* non-critical */ }
 

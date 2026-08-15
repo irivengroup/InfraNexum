@@ -1,0 +1,36 @@
+{
+  "schema": "infranexum.logical-schema/v1",
+  "objects": [
+    {
+      "kind": "table",
+      "logical_name": "itam.partner",
+      "invariant": "single governed Partner aggregate with immutable UUIDv7 identity, organization-local code and optimistic lifecycle version"
+    },
+    {
+      "kind": "table",
+      "logical_name": "itam.partner_role",
+      "invariant": "one Partner can expose multiple normative roles without duplicating manufacturer or support catalogues"
+    },
+    {
+      "kind": "table",
+      "logical_name": "itam.partner_identity_token",
+      "invariant": "organization-scoped normalized identity tokens prevent concurrent duplicate Partner identities"
+    },
+    {
+      "kind": "table",
+      "logical_name": "itam.partner_command_dedup",
+      "invariant": "idempotency key binds one mutation fingerprint to one Partner identity"
+    },
+    {
+      "kind": "weak_reference",
+      "logical_name": "itam.partner.governing_scope",
+      "invariant": "organization, subdivision and actor identifiers are validated at application boundaries without cross-context foreign keys"
+    }
+  ],
+  "invariants": {
+    "cross_context_foreign_keys": false,
+    "single_partner_aggregate": true,
+    "role_filtered_catalogues": true,
+    "optimistic_version_required": true
+  }
+}

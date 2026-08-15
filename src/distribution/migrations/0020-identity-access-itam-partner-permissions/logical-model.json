@@ -1,0 +1,23 @@
+{
+  "schema": "infranexum.logical-schema/v1",
+  "objects": [
+    {
+      "kind": "permission_seed",
+      "logical_name": "identity_access.itam_partner_permissions",
+      "invariant": "six PGM-07-E01 ITAM Partner permissions are organization-scoped and bootstrap-accessible to system.platform_admin"
+    }
+  ],
+  "permissions": [
+    "itam.partner.read",
+    "itam.partner.create",
+    "itam.partner.update",
+    "itam.partner.approve",
+    "itam.partner.suspend",
+    "itam.audit.read"
+  ],
+  "bootstrap_role": "system.platform_admin",
+  "scope_kind": "ORGANIZATION",
+  "invariants": {
+    "cross_context_business_tables": false
+  }
+}

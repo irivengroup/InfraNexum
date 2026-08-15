@@ -38,7 +38,7 @@ const configuration = {
   schema: 'infranexum.web-runtime-config/v1',
   product: 'InfraNexum',
   component: 'web',
-  version: '2.0.0-alpha.0.69',
+  version: '2.0.0-alpha.0.77',
   architectureBaseline: '2.0.0-draft.21',
   environment: 'local',
   apiBaseUrl: '/api',
@@ -50,7 +50,7 @@ test('dashboard renders truthful runtime posture without inventing unavailable m
   renderRuntimeConfiguration(documentObject, configuration);
   assert.equal(documentObject.elements.get('dashboard-runtime').textContent, 'Operational');
   assert.equal(documentObject.elements.get('dashboard-environment').textContent, 'local');
-  assert.equal(documentObject.elements.get('dashboard-version').textContent, 'Version 2.0.0-alpha.0.69');
+  assert.equal(documentObject.elements.get('dashboard-version').textContent, 'Version 2.0.0-alpha.0.77');
   assert.equal(documentObject.elements.get('dashboard-foundation').textContent, 'Disabled');
   assert.equal(documentObject.elements.get('dashboard-organization-count').textContent, 'N/A');
   assert.equal(documentObject.elements.get('runtime-health-badge').textContent, 'UP');

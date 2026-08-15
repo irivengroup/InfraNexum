@@ -209,6 +209,19 @@ final class IdentityAccessTestRepository implements IdentityAccessRepository {
     }
 
     @Override
+    public boolean hasEffectiveRole(DomainIdentifier userId, DomainIdentifier roleId, AuthorizationScope scope, Instant at) {
+        IdentityUser user = users.get(userId);
+        if (user == null || user.status() != IdentityUserStatus.ACTIVE) return false;
+        if (scope.kind() != ScopeKind.PLATFORM && !hasEffectiveMembership(userId, scope, at)) return false;
+        for (RoleAssignment assignment : roleAssignments.values()) {
+            if (!assignment.roleId().equals(roleId) || !assignment.effectiveAt(at) || !assignment.scope().covers(scope)) continue;
+            if (assignment.actorType() == AssignmentActorType.USER && assignment.actorId().equals(userId)) return true;
+            if (assignment.actorType() == AssignmentActorType.GROUP && effectiveGroupsForUser(userId).contains(assignment.actorId())) return true;
+        }
+        return false;
+    }
+
+    @Override
     public boolean hasEffectiveSystemRole(DomainIdentifier userId, String roleCode, Instant at) {
         IdentityUser user = users.get(userId);
         if (user == null || user.status() != IdentityUserStatus.ACTIVE) return false;

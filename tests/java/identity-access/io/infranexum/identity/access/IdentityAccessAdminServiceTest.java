@@ -26,6 +26,7 @@ import io.infranexum.identity.access.domain.ScopeKind;
 import io.infranexum.identity.access.domain.UserMembership;
 import io.infranexum.identity.access.ports.IdentityAccessFeaturePolicy;
 import io.infranexum.identity.access.ports.OrganizationScopeReferencePort;
+import io.infranexum.identity.access.ports.RoleAssignmentPolicyGuard;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Instant;
@@ -267,7 +268,7 @@ class IdentityAccessAdminServiceTest {
                 return organizationId.equals(ORG) && subdivisionId.equals(SUBDIVISION);
             }
         };
-        return new IdentityAccessAdminService(repository, features, organizationScopes, events, audit,
+        return new IdentityAccessAdminService(repository, features, organizationScopes, RoleAssignmentPolicyGuard.allowAll(), events, audit,
                 new UuidV7Generator(clock, new SecureRandom(new byte[] {7, 3, 1, 9})), clock);
     }
 

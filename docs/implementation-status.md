@@ -1,18 +1,133 @@
-# InfraNexum 2.0.0-alpha.0.69 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.77 — état d’implémentation
 
-## PGM-04-E02 / PGM-06-E01 — isolation des contextes et fondation RSOT
+## alpha.0.77 — PGM-07-E01 Partenaires et catalogues ITAM
 
-`alpha.0.69` remédie d’abord à une violation d’ADR-0029 héritée de `0013` : IAM ne porte plus de clés étrangères physiques vers les tables du bounded context Organization. Les identifiants `organization_id` / `subdivision_id` restent inchangés comme références faibles et sont validés avant mutation via `OrganizationScopeReferencePort`, dont l’adapter Server appelle uniquement les ports publics `OrganizationRepository` et `SubdivisionRepository`. La migration additive `0014` supprime les sept contraintes croisées PostgreSQL/Oracle et son rollback ne les recrée pas, afin de ne jamais réintroduire une architecture interdite.
+`alpha.0.77` implémente `PGM-07-E01` sans dupliquer les autorités métier : un seul agrégat `Partner` porte les rôles `manufacturer`, `software_publisher`, `supplier`, `third_party_support_provider`, `integrator` et `recycler`. Les catalogues constructeurs/éditeurs/supports sont des vues filtrées de cet agrégat. Le cycle gouverné est `DRAFT → PENDING_APPROVAL → ACTIVE`, puis `SUSPENDED` ou `RETIRED` selon les transitions autorisées ; `RETIRED` est terminal. Les références Organisation/Subdivision sont des weak references validées par le bounded context Organization, sans FK inter-contexte.
 
-PGM-06-E01 introduit ensuite le bounded context `rsot`, isolé de toute table IAM/Organization. Son modèle minimal couvre l’identité canonique (`id`, `object_type`, `version`, scope Organisation, `schema_version`), les états `proposed|validated|reconciled|deprecated|archived`, la temporalité et l’archivage. Les lectures consommateur sont limitées aux états `validated` et `reconciled`; la vue Governance peut inspecter les autres états. La matrice d’autorité initiale reprend exactement les neuf lignes approuvées du CDC draft.21 et le context map les dix fournisseurs normatifs. Les politiques d’autorité par attribut utilisent les champs `object_type`, `attribute_path`, `authority_context`, `source_priority`, `effective_from`, `effective_until`, `policy_version`, `approval_ref`; les wildcards globales sont interdites et le résolveur échoue fermé en cas d’absence ou d’ambiguïté.
+La création et les transitions sont idempotentes, versionnées et transactionnelles avec l’outbox. La détection de doublons couvre le code et les jetons d’identité normalisés ; le quota effectif `itam.partners.max` est relu au moment de la requête. L’autorisation HTTP est en deux temps : authentification/PEP global, puis `ScopedAuthorizationGuard` sur l’organisation réellement liée à la requête afin d’appliquer RBAC et ABAC sans transformer un rôle organisationnel en permission plateforme. La persistance est fournie par `0019-itam-partner-foundation` et les six permissions normatives par `0020-identity-access-itam-partner-permissions`.
 
-La migration paire `0015-rsot-authority-foundation` crée les objets RSOT PostgreSQL/Oracle sans FK inter-contexte, seed la matrice et le context map de manière idempotente, et fournit verify/rollback. `JdbcRsotRepository`, `RsotQueryService`, `RsotAuthorityService` et la composition Server PostgreSQL/Oracle sont intégrés. Cette tranche reste volontairement read-side : ingestion, réconciliation/mutation, API/CLI/Web RSOT et PGM-03-E04 ABAC/PDP/SoD appartiennent aux étapes suivantes de la roadmap et ne sont pas simulés.
+L’API `/api/v1/itam/partners` fournit recherche filtrée, création, soumission pour approbation, autorisation et suspension, avec `problem+json`, `Idempotency-Key` et `If-Match`. La CLI Server expose les mêmes use cases avec authentification locale par fichier de secret, JSON/texte et `--dry-run`. Le client Web est capability-gated, CSRF-protected et aligne strictement les bornes du contrat Server/OpenAPI. Les garanties, contrats de support et couvertures restent hors périmètre de cet epic et seront traités par les epics ITAM dédiés.
+
+### Validation alpha.0.77
+
+**EXÉCUTÉ** — tests fonctionnels Architecture **117/117** rejoués par fichiers et Architecture-as-Code `PASS`; migrations **81/81**, checker à 0 violation; Capabilities **10/10**, checker à 0 violation; Web **112/112**, couverture runtime **99,70 % lignes / 98,43 % branches / 100 % fonctions**, process smoke `passed`; **15** targets Java dependency-free sans échec sous Java 21 avec `javac -Xlint:all -Werror`, dont le smoke ITAM de bout en bout. Les validations transverses restantes et le packaging sont rejoués sur le snapshot final avant livraison.
+
+**NON EXÉCUTÉ** — Maven/JUnit/JaCoCo cible JDK 25/Maven 3.9.16, Agent Go 1.26.5, Node 24.18.1 exact, Docker Desktop PRO/HA, migrations live PostgreSQL/Oracle et validation navigateur cible restent indisponibles dans ce runner et obligatoires avant promotion.
+
+Voir `docs/itam-partner-catalogue.md` pour les contrats et le rollback.
+
+---
+
+## alpha.0.76 — PGM-06-E03 Core Schema Registry et profils composables
+
+`alpha.0.76` implémente le registre Core Contracts/Compatibility prévu par `PGM-06-E03`. Les schémas JSON sont identifiés par clé + version sémantique et suivent le cycle `DRAFT → PUBLISHED → DEPRECATED`; une publication est immutable. Une révision optimiste indépendante de la version sémantique protège les modifications concurrentes et alimente `ETag`/`If-Match` sur l’API.
+
+L’analyse de compatibilité est fail-closed : suppressions, réduction de types, optional→required, retrait d’enum et changements de format sont `BREAKING`; une publication breaking exige une référence d’approbation. Les contraintes dont la compatibilité ne peut pas être démontrée automatiquement sont `INDETERMINATE` et bloquent la publication. Les extensions `RSOT_EXTENSION` restent strictement déclaratives : aucun script/expression/I/O et aucun `$ref` externe ne sont admis.
+
+Les profils composables sont versionnés séparément, ordonnés, bornés et ne peuvent contenir que des schémas publiés. La persistance est livrée par `0017-core-schema-registry` (Core, sans FK inter-contexte) et `0018-identity-access-rsot-schema-permissions` (IAM, six permissions normatives et bootstrap `system.platform_admin`). Les mêmes use cases sont exposés via API/OpenAPI, CLI Server et client Web capability-gated `rsot.core`.
+
+### Validation alpha.0.76
+
+**EXÉCUTÉ** — Architecture fonctionnelle **111/111** et Architecture-as-Code `PASS`; migrations **75/75**, couverture **99 %**, 0 violation; Toolchains **25/25** (99 %), Eventing **10/10** (100 %), Persistence **12/12** (98 %), Capabilities **10/10** (99 %), Entitlements **10/10** (100 %), Audit **8/8** (100 %), tous les checkers à 0 violation; contrats Compose **63/63**; Web **107/107**, couverture **99,69 % lignes / 98,43 % branches / 100 % fonctions**, process smoke `passed`; **14** targets Java dependency-free exécutés avec `javac -Xlint:all -Werror` sous Java 21, incluant Core Schema Registry et JDBC. Source Integrity **45/45** à 100 % passe sur le snapshot Git de packaging avec **870 checksums de blobs Git** et 0 violation ; Archive Compatibility **12/12** à 100 % et le contrôle du candidat `git archive` passent avec 0 violation.
+
+**NON EXÉCUTÉ** — la couverture Architecture instrumentée agrégée dépasse la limite d’exécution du runner malgré la suite fonctionnelle 111/111; la cible Maven/JUnit/JaCoCo requiert JDK 25 et Maven 3.9.16, indisponibles localement; la cible Agent requiert Go 1.26.5 mais le runner ne peut pas télécharger l’auto-toolchain; Node cible 24.18.1 n’est pas disponible (tests locaux exécutés sous Node 22.16.0); Docker n’est pas installé et aucune instance Oracle n’est disponible. Les migrations PostgreSQL/Oracle live, les smokes Docker PRO/HA et les gates Maven/JDK25 restent donc obligatoires avant promotion.
+
+Voir `docs/rsot-schema-registry.md` pour le contrat fonctionnel et le rollback.
+
+---
+
+## alpha.0.75 — formulaires IAM pilotés par les entités et calendrier déterministe
+
+`alpha.0.75` remplace les identifiants structurés saisis manuellement dans Identity & Access par des sélecteurs alimentés uniquement par les entités réellement lisibles par l’opérateur. Les dépendances sont synchronisées : Organisation → Subdivisions, type d’acteur/membre → Utilisateurs ou Groupes, Rôle → Affectations révocables, et le catalogue des Policies dispose d’une lecture dédiée protégée. Les listes inaccessibles restent désactivées fail-closed au lieu d’accepter un UUID arbitraire.
+
+Les contrôles temporels utilisent désormais un calendrier InfraNexum déterministe, indépendant des popups natifs Windows/Chromium, tout en conservant le vrai champ `date`/`datetime-local` comme source FormData. Le Server conserve la responsabilité de la conversion et du fuseau par défaut. L’organisation reste inspirée de FreeIPA (navigation fonctionnelle, liste → sélection → actions contextuelles), mais la palette et les composants restent InfraNexum, enrichis d’accents navy/cyan/orange inspirés de la présence Web IONOS actuelle.
+
+### Validation alpha.0.75
+
+Validation locale exécutée : Web **102/102** (99,69 % lignes, 98,42 % branches, 100 % fonctions) et smoke Web réussi ; Architecture **104/104** + Architecture-as-Code PASS ; migrations **69/69** avec 0 violation ; contrats Compose **63/63** ; Toolchains 25/25, Eventing 10/10, Persistence 12/12, Capabilities 10/10, Entitlements 10/10, Audit 8/8 ; **13** smokes Java dependency-free réussis. Le navigateur Chromium du sandbox bloque les URLs localhost par politique d’entreprise, donc la preuve interactive finale calendrier/sélecteurs reste à exécuter sous Docker Desktop/navigateur cible. La promotion reste interdite tant que les gates cible Docker/JDK25/Oracle applicables ne sont pas exécutés.
+
+---
+
+## Historique alpha.0.74 — état d’implémentation
+
+## alpha.0.74 — calendriers natifs et résolution temporelle côté serveur
+
+`alpha.0.74` remplace les saisies libres de date/heure IAM et PAP/PDP par des contrôles navigateur `datetime-local`. Le navigateur transmet la valeur locale sans inventer de fuseau. À la frontière HTTP, `ServerTemporalInputParser` convertit la valeur en `Instant` : un offset ou fuseau explicitement fourni reste prioritaire ; sans fuseau, `ZoneId.systemDefault()` du Server est utilisé. Les heures locales inexistantes ou ambiguës lors des transitions DST sont refusées en 400 afin d’éviter toute correction silencieuse. Le parseur fournit également une conversion `LocalDate` dédiée pour les futurs champs de date pure, sans leur inventer d’heure.
+
+Le contrat OpenAPI documente cette double forme (`date-time` avec offset ou date-time locale) avec `x-infranexum-timezone-default: server`. La gestion d’erreurs IAM couvre aussi `PolicyController`, de sorte qu’une valeur temporelle invalide reçoit un problème HTTP 400 stable. Aucune migration, permission RBAC/ABAC ou règle SoD n’est modifiée.
+
+### Validation alpha.0.74
+
+- calendrier/date-time : 9 champs `effectiveFrom/effectiveTo` convertis en `datetime-local` ;
+- Web local : **95/95**, couverture **99,69 % lignes / 98,42 % branches / 100 % fonctions**, process smoke `passed` ;
+- temporal-input smoke : **PASS** sur offset explicite, timezone Server, `LocalDate` et rejets DST ;
+- Architecture : **101/101** et Architecture-as-Code **PASS** ;
+- migrations : **69/69**, 0 violation ; Compose : **63/63** ;
+- Toolchains 25/25, Eventing 10/10, Persistence 12/12, Capabilities 10/10, Entitlements 10/10, Audit 8/8 ;
+- 13 targets de smoke Java existants : sortie 0 ;
+- packaging/replay post-extraction : à exécuter après le snapshot final.
+
+# InfraNexum 2.0.0-alpha.0.73 — état d’implémentation
+
+## alpha.0.73 — accès IAM partiel, interface fluide et sélecteurs stables
+
+`alpha.0.73` corrige trois défauts Web observés sur `Identity & Access` sans modifier les contrats Server, RBAC, ABAC, SoD ni le catalogue de migrations. Le chargement des listes Users/Groups/Roles/Permissions est désormais indépendant : un refus `*.search` sur une rubrique est rendu dans cette liste uniquement et ne met plus l’ensemble du workspace en erreur. Cela ferme notamment la régression où `INFRANEXUM_AUTHORIZATION_DENIED` sur `iam.role.search` apparaissait dès l’ouverture de la page. Une mutation autorisée reste également considérée comme réussie même si le rechargement de sa liste est ensuite restreint.
+
+Le canvas d’administration utilise maintenant toute la largeur disponible et les listes/data-tables reprennent explicitement le langage visuel InfraNexum (surfaces, en-têtes teintés, lignes alternées, hover/focus, sticky headers, états restreints). Les formulaires IAM ne sont plus artificiellement limités à 58 rem.
+
+Les `select.form-select` sont enrichis après bootstrap par un composant combobox/listbox InfraNexum accessible. Le `<select>` natif reste dans le formulaire comme source de vérité pour `FormData`, validation et événements `change`, mais l’interaction souris/clavier passe par une surface déterministe qui élimine le défaut Chromium/Windows de fermeture au relâchement du clic.
+
+### Validation alpha.0.73
+
+**EXÉCUTÉ** — tests ciblés IAM/Stable Select et interaction Chromium réelle `mousePressed→mouseReleased` : menu maintenu ouvert, sélection de l’option suivante, un seul événement `change`. Suite Web locale 95/95 et process smoke `passed` avant gel de version. Les gates complets sont rejoués après versionnement et packaging avant publication de l’archive.
+
+**NON EXÉCUTÉ** — validation interactive finale sous Docker Desktop/Chrome Windows de l’opérateur, requise pour fermer le défaut d’origine sur la plateforme cible.
+
+## alpha.0.72 — organisation Identity & Access inspirée de FreeIPA
+
+`alpha.0.72` réorganise exclusivement la surface Web `Identity & Access` sans modifier les contrats Server, RBAC, ABAC, SoD ni le catalogue de migrations. L’interface adopte une architecture d’information inspirée de FreeIPA : navigation fonctionnelle `Identity` / `Access control` / `Authorization policy`, facettes orientées liste, recherche locale, actualisation et ajout en barre d’outils, puis vues d’actions contextuelles affichées une à une après sélection de l’objet.
+
+Les 19 formulaires IAM/PAP-PDP existants conservent leurs IDs et leurs handlers afin de préserver le câblage API/CSRF corrigé en `alpha.0.71`. Les sélections d’utilisateurs, groupes, rôles et permissions préremplissent désormais la vue `Settings` correspondante. La navigation principale et les vues d’actions sont accessibles au clavier; l’interface reste Bootstrap 5, responsive et internationalisée DE/EN/ES/FR/IT.
+
+### Validation alpha.0.72
+
+**EXÉCUTÉ** — Web 92/92 avec 99,69 % lignes, 98,42 % branches et 100 % fonctions ; process smoke `passed`. Les 7 gates Architecture spécifiques à la nouvelle organisation IAM passent. Architecture complète 96/96 + Architecture-as-Code `PASS`; migrations 69/69; Toolchains 25/25; Eventing 10/10; Persistence 12/12; Capabilities 10/10; Entitlements 10/10; Audit 8/8; contrats Compose 63/63; Source Integrity 45/45 à 100 % et 0 violation; 13 targets de smoke Java sortent avec code 0.
+
+**NON EXÉCUTÉ** — Docker Desktop PRO et validation interactive dans un navigateur réel de la navigation liste→détail et des soumissions IAM après cette réorganisation. Ces preuves restent requises avant promotion ; aucun contrat Server/RBAC/ABAC/SoD ni aucune migration n'a changé dans `alpha.0.72`.
+
+## alpha.0.71 — stabilisation Web Identity & Access
+
+**Statut : correction fonctionnelle et UX implémentée ; validation Docker Desktop cible requise avant promotion.**
+
+La page `Identity & Access` est restructurée en cinq sous-rubriques exclusives — Utilisateurs, Groupes, Rôles, Permissions et Policies — au lieu d'un accordéon monolithique. Les formulaires sont des cartes d'opération, les identifiants des ressources sont visibles, et l'action `Sélectionner` préremplit les formulaires liés afin d'éviter la saisie manuelle d'UUID opaques. Les suppressions impossibles d'objets système ne sont plus proposées.
+
+Le défaut de soumission est traité à la frontière navigateur : tous les formulaires IAM et PAP/PDP utilisent désormais un contrôleur asynchrone commun qui écoute explicitement les clics des boutons **et** l'événement natif `submit`, conserve la validation HTML, sérialise une seule mutation à la fois et restaure toujours les boutons après succès/échec. Les erreurs API/CSRF/validation sont affichées dans un feedback IAM visible avec code stable plutôt que masquées derrière un simple état générique. Les tests de non-régression reproduisent le chemin où un clic n'est suivi d'aucun second événement `submit` et exigent malgré tout une exécution unique de la mutation.
+
+Aucun contrat RBAC/ABAC, aucune migration ni permission n'est modifié par cette tranche.
+
+### Validation alpha.0.71
+
+**EXÉCUTÉ** — Web 90/90 sous Node local avec 99,69 % lignes, 98,42 % branches et 100 % fonctions ; process smoke `passed`. Les 4 scénarios comportementaux du contrôleur/navigation IAM passent, ainsi que 5 gates Architecture dédiés. Architecture complète 94/94 + Architecture-as-Code `PASS`; migrations 69/69; Toolchains 25/25; Eventing 10/10; Persistence 12/12; Capabilities 10/10; Entitlements 10/10; Audit 8/8; contrats Compose 63/63.
+
+**NON EXÉCUTÉ** — navigateur Chromium réel dans le sandbox (l'environnement headless local retourne `chrome-error://chromewebdata/` même sur le serveur HTTP de test), Node 24.18.1 cible, Docker Desktop PRO et interaction IAM réelle via l'ingress. Ces preuves restent obligatoires avant promotion.
+
+## PGM-03-E04 — PAP/PDP/PEP/PIP/PRP, ABAC et SoD statique
+
+`alpha.0.70` implémente l’autorisation avancée Pro/Enterprise au-dessus du RBAC `alpha.0.68` et des contrats d’autorité RSOT `alpha.0.69`. Le PAP administre des versions immuables de politiques déclaratives ; le PDP produit exclusivement `permit`, `deny`, `not_applicable` ou `indeterminate` avec stratégie deny-overrides ; le PIP reconstruit les attributs de confiance côté Server ; le PRP JDBC stocke les politiques et contraintes SoD ; les PEP HTTP et CLI appliquent toute décision autre que `permit` comme un refus. Lite reste explicitement sans ABAC.
+
+Le langage de policy est fermé et déterministe : aucune expression exécutable, aucun accès réseau/fichier et aucune horloge implicite. Le cycle est `draft → validated → approved → active → deprecated → retired`, avec approbateur distinct du propriétaire, activation atomique et rollback par réactivation d’une version dépréciée. Le policy système `system.rbac-bridge` préserve les autorisations RBAC existantes mais le PDP refuse toujours si le RBAC de base refuse ; ABAC ne peut donc jamais élever un refus RBAC. Les obligations non encore enforceables (`STEP_UP_MFA`, approbation et contrôles de champs) échouent fermé ; `REQUIRE_JUSTIFICATION` est enforceable sur HTTP et CLI.
+
+La migration paire `0016-identity-access-abac-sod` ajoute policies, rules, conditions et contraintes SoD dans le seul bounded context IAM, avec index PostgreSQL/Oracle garantissant l’unicité des versions actives y compris au scope plateforme. La SoD statique est évaluée avant toute persistance d’affectation de rôle. L’API normative expose uniquement création/validation/approbation/activation, décision et explication ; l’explication ne sérialise aucun attribut PIP sensible. L’IHM Web Pro/Enterprise utilise exactement ces endpoints, reste capability-gated et conserve DE/EN/ES/FR/IT.
 
 ### Validation courante
 
-**EXÉCUTÉ** — Source Integrity 45/45 (100 %, 0 violation) sur l’inventaire courant de 764 chemins ; Architecture fonctionnelle 79/79 et Architecture-as-Code `PASS` ; migrations 61/61 (99 %, 0 violation) incluant les contrats statiques `0014`/`0015` ; Toolchains 25/25 ; Eventing 10/10 ; Persistence 12/12 ; Capabilities 10/10 ; Entitlements 10/10 ; Audit 8/8 ; contrats Compose 63/63. Le Web passe 79/79 sous le Node local 22.16.0 avec 99,68 % lignes, 98,39 % branches, 100 % fonctions et process smoke `passed`. Les 12 smokes Java dependency-free passent avec `javac -Xlint:all -Werror`. Les nouveaux tests à assertions réelles exécutables sans Spring/Maven cible passent 22/22 : domaine RSOT et repository JDBC, bridge IAM→Organization, et composition RSOT PostgreSQL/Oracle.
+**EXÉCUTÉ** — Source Architecture fonctionnelle 89/89 et Architecture-as-Code `PASS`; migrations 69/69 (99 %, 0 violation); Toolchains 25/25; Eventing 10/10; Persistence 12/12; Capabilities 10/10; Entitlements 10/10; Audit 8/8; contrats Compose 63/63. Le Web passe 86/86 sous Node local 22.16.0 avec 99,69 % lignes, 98,42 % branches, 100 % fonctions et process smoke `passed`. `java-policy-smoke` passe, incluant lifecycle quatre-yeux, rollback, deny-overrides, PIP/PRP fail-closed et SoD; son benchmark de 2 000 décisions mises en cache observe un P95 local de 0,173 ms pour une cible draft.21 <50 ms. `JdbcAccessPolicyRepository` passe 10/10 scénarios déterministes PostgreSQL/Oracle à assertions réelles, et les smokes JDBC stricts restent verts.
 
-**NON EXÉCUTÉ** — le runner de couverture Architecture agrégé dépasse la durée locale alors que les 79 tests fonctionnels passent séparément ; Maven/JUnit/JaCoCo sous Temurin 25.0.4 ; Web sous Node 24.18.1 exact ; Agent sous Go 1.26.5 ; upgrade Docker Desktop PRO depuis les volumes persistants `alpha.0.68` avec application réelle de `0014`/`0015` sur PostgreSQL ; exécution réelle PostgreSQL/Oracle et rollback Oracle. Ces contrôles restent obligatoires avant promotion de `alpha.0.69`.
+**NON EXÉCUTÉ** — Maven/JUnit/JaCoCo complet sous Temurin 25.0.4+7 / Maven 3.9.16, faute de JDK25/cache Maven/réseau dans l’environnement local; Docker Desktop PRO avec upgrade réel `0016`; PostgreSQL live de la nouvelle migration; Oracle apply/verify/rollback; Web sous Node 24.18.1 exact; Agent sous Go 1.26.5. Ces preuves restent obligatoires avant promotion de `alpha.0.70`.
+
+## alpha.0.69 — PGM-04-E02 / PGM-06-E01 — isolation des contextes et fondation RSOT
+
+`alpha.0.69` a supprimé les FK IAM→Organization interdites via la migration additive `0014`, puis introduit la fondation RSOT isolée et sa matrice d’autorité via `0015`. Cette baseline est conservée sans réécriture et sert de prérequis direct au PAP/PDP de `alpha.0.70`.
 
 ## alpha.0.68 — PGM-03-E03 RBAC foundation
 

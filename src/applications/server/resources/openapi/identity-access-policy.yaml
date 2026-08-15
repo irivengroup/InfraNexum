@@ -1,0 +1,659 @@
+openapi: 3.1.0
+info:
+  title: InfraNexum Identity Access Policy API
+  version: 2.0.0-alpha.0.77
+  description: PGM-03-E04 PAP/PDP surface for deterministic versioned ABAC policies, static separation of duty, deny-overrides
+    evaluation and non-sensitive explanations. RBAC remains the mandatory baseline and every PDP result other than permit
+    is refused by the PEP.
+tags:
+- name: IAM / Authorization / Policies
+- name: IAM / Authorization / Decisions
+x-tagGroups:
+- name: IAM
+  tags:
+  - IAM / Authorization / Policies
+  - IAM / Authorization / Decisions
+x-infranexum-rbac-baseline-required: true
+x-infranexum-abac-combining-algorithm: deny-overrides
+security:
+- LocalSessionCookie: []
+paths:
+  /api/v1/iam/policies:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    post:
+      tags:
+      - IAM / Authorization / Policies
+      operationId: createIamAccessPolicy
+      summary: Create a new immutable access-policy version
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePolicy'
+      responses:
+        '201':
+          description: Draft policy version created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '409':
+          $ref: '#/components/responses/Problem'
+        '422':
+          $ref: '#/components/responses/Problem'
+    get:
+      tags:
+      - IAM / Authorization / Policies
+      operationId: listIamAccessPolicies
+      summary: List access-policy versions available in the requested scope
+      parameters:
+      - name: organizationId
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+        description: Omit to list platform-scoped policy versions.
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 100
+      responses:
+        '200':
+          description: Policy versions.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Policy'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+  /api/v1/iam/policies/{policyId}/validate:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - $ref: '#/components/parameters/PolicyId'
+    post:
+      tags:
+      - IAM / Authorization / Policies
+      operationId: validateIamAccessPolicy
+      summary: Validate a draft policy version
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LifecycleRequest'
+      responses:
+        '200':
+          description: Policy validated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '404':
+          $ref: '#/components/responses/Problem'
+        '409':
+          $ref: '#/components/responses/Problem'
+  /api/v1/iam/policies/{policyId}/approve:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - $ref: '#/components/parameters/PolicyId'
+    post:
+      tags:
+      - IAM / Authorization / Policies
+      operationId: approveIamAccessPolicy
+      summary: Approve a validated policy version with four-eyes separation
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LifecycleRequest'
+      responses:
+        '200':
+          description: Policy approved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '404':
+          $ref: '#/components/responses/Problem'
+        '409':
+          $ref: '#/components/responses/Problem'
+  /api/v1/iam/policies/{policyId}/activate:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - $ref: '#/components/parameters/PolicyId'
+    post:
+      tags:
+      - IAM / Authorization / Policies
+      operationId: activateIamAccessPolicy
+      summary: Atomically activate or roll back to an approved policy version
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LifecycleRequest'
+      responses:
+        '200':
+          description: Policy version activated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '404':
+          $ref: '#/components/responses/Problem'
+        '409':
+          $ref: '#/components/responses/Problem'
+  /api/v1/iam/authorization/decisions:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    post:
+      tags:
+      - IAM / Authorization / Decisions
+      operationId: decideIamAuthorization
+      summary: Evaluate the final RBAC plus ABAC authorization decision
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DecisionRequest'
+      responses:
+        '200':
+          description: Authorization decision.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Decision'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+  /api/v1/iam/authorization/explain:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    post:
+      tags:
+      - IAM / Authorization / Decisions
+      operationId: explainIamAuthorization
+      summary: Explain a decision without exposing trusted authority attributes
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DecisionRequest'
+      responses:
+        '200':
+          description: Sanitized authorization explanation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Explanation'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '401':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+components:
+  securitySchemes:
+    LocalSessionCookie:
+      type: apiKey
+      in: cookie
+      name: INX_SESSION
+  parameters:
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: false
+      schema:
+        type: string
+        format: uuid
+    CsrfToken:
+      name: X-CSRF-Token
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 256
+    PolicyId:
+      name: policyId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    ScopeKind:
+      type: string
+      enum:
+      - PLATFORM
+      - ORGANIZATION
+      - SUBDIVISION
+    Condition:
+      type: object
+      additionalProperties: false
+      required:
+      - source
+      - attribute
+      - operator
+      - expectedValue
+      properties:
+        source:
+          type: string
+          enum:
+          - SUBJECT
+          - RESOURCE
+          - ORGANIZATION
+          - SUBDIVISION
+          - ENVIRONMENT
+          - AUTHENTICATION
+          - CAPABILITY
+          - RBAC
+        attribute:
+          type: string
+          minLength: 1
+          maxLength: 64
+        operator:
+          type: string
+          enum:
+          - EQUALS
+          - NOT_EQUALS
+          - CONTAINS
+          - EXISTS
+        expectedValue:
+          type: string
+          minLength: 1
+          maxLength: 256
+    Rule:
+      type: object
+      additionalProperties: false
+      required:
+      - effect
+      - action
+      - resourceType
+      - conditions
+      properties:
+        effect:
+          type: string
+          enum:
+          - PERMIT
+          - DENY
+        action:
+          type: string
+          minLength: 1
+          maxLength: 128
+        resourceType:
+          type: string
+          minLength: 1
+          maxLength: 80
+        conditions:
+          type: array
+          minItems: 1
+          maxItems: 32
+          items:
+            $ref: '#/components/schemas/Condition'
+        obligations:
+          type: array
+          maxItems: 8
+          uniqueItems: true
+          items:
+            type: string
+            enum:
+            - REQUIRE_JUSTIFICATION
+            - STEP_UP_MFA
+            - REQUIRE_APPROVAL
+            - MASK_FIELDS
+            - LIMIT_FIELDS
+        advice:
+          type: string
+          maxLength: 500
+    SodConstraint:
+      type: object
+      additionalProperties: false
+      required:
+      - firstRoleId
+      - secondRoleId
+      - reason
+      properties:
+        firstRoleId:
+          type: string
+          format: uuid
+        secondRoleId:
+          type: string
+          format: uuid
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+    CreatePolicy:
+      type: object
+      additionalProperties: false
+      required:
+      - code
+      - purpose
+      - priority
+      - scopeKind
+      - rules
+      - reason
+      properties:
+        organizationId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        code:
+          type: string
+          minLength: 1
+          maxLength: 128
+        purpose:
+          type: string
+          minLength: 1
+          maxLength: 500
+        priority:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        scopeKind:
+          $ref: '#/components/schemas/ScopeKind'
+        subdivisionId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        effectiveFrom:
+          oneOf:
+          - type: string
+            format: date-time
+          - type: string
+            pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?$
+          - type: 'null'
+          description: ISO-8601 date-time. Values without an offset are resolved in the Server timezone; explicit offsets
+            remain authoritative.
+          x-infranexum-timezone-default: server
+        rules:
+          type: array
+          minItems: 1
+          maxItems: 256
+          items:
+            $ref: '#/components/schemas/Rule'
+        sodConstraints:
+          type: array
+          maxItems: 128
+          items:
+            $ref: '#/components/schemas/SodConstraint'
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 1024
+    LifecycleRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - reason
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 1024
+    DecisionRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - subjectId
+      - action
+      - resourceType
+      - resourceId
+      - scopeKind
+      properties:
+        subjectId:
+          type: string
+          format: uuid
+        action:
+          type: string
+          minLength: 1
+          maxLength: 128
+        resourceType:
+          type: string
+          minLength: 1
+          maxLength: 80
+        resourceId:
+          type: string
+          minLength: 1
+          maxLength: 512
+        scopeKind:
+          $ref: '#/components/schemas/ScopeKind'
+        organizationId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        subdivisionId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        requestedPolicyVersion:
+          type:
+          - string
+          - 'null'
+          maxLength: 128
+    Policy:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - code
+      - version
+      - ownerId
+      - purpose
+      - priority
+      - scopeKind
+      - state
+      - effectiveFrom
+      - createdAt
+      - updatedAt
+      - ruleCount
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        code:
+          type: string
+        version:
+          type: integer
+          minimum: 1
+        ownerId:
+          type: string
+          format: uuid
+        purpose:
+          type: string
+        priority:
+          type: integer
+        scopeKind:
+          $ref: '#/components/schemas/ScopeKind'
+        subdivisionId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        state:
+          type: string
+          enum:
+          - DRAFT
+          - VALIDATED
+          - APPROVED
+          - ACTIVE
+          - DEPRECATED
+          - RETIRED
+        effectiveFrom:
+          type: string
+          format: date-time
+        approvedBy:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        approvedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        activatedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        deprecatedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        retiredAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        ruleCount:
+          type: integer
+          minimum: 1
+    Decision:
+      type: object
+      additionalProperties: false
+      required:
+      - decision
+      - reasonCode
+      - obligations
+      - policyVersion
+      - decisionId
+      - expiresAt
+      properties:
+        decision:
+          type: string
+          enum:
+          - permit
+          - deny
+          - not_applicable
+          - indeterminate
+        reasonCode:
+          type: string
+        obligations:
+          type: array
+          items:
+            type: string
+        policyVersion:
+          type: string
+        decisionId:
+          type: string
+          format: uuid
+        expiresAt:
+          type: string
+          format: date-time
+    Explanation:
+      allOf:
+      - $ref: '#/components/schemas/Decision'
+      - type: object
+        required:
+        - advice
+        - matchedPolicies
+        properties:
+          advice:
+            type: array
+            items:
+              type: string
+          matchedPolicies:
+            type: array
+            items:
+              type: string
+  responses:
+    Problem:
+      description: RFC 9457 compatible problem response.
+      content:
+        application/problem+json:
+          schema:
+            type: object
+            required:
+            - status
+            - title
+            - code
+            - detail
+            properties:
+              status:
+                type: integer
+              title:
+                type: string
+              code:
+                type: string
+              detail:
+                type: string

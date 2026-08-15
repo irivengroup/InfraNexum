@@ -1,0 +1,8 @@
+{
+  "policy": "validation/architecture/policy.json",
+  "root": ".",
+  "schema": "infranexum.architecture-report/v1",
+  "status": "PASS",
+  "violation_count": 0,
+  "violations": []
+}

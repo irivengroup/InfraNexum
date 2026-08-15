@@ -1,0 +1,26 @@
+schema: infranexum.migration/v1
+id: '0018'
+name: identity-access-rsot-schema-permissions
+owner_context: identity-access
+dependencies:
+- '0017'
+preconditions:
+- core-schema-registry-declared
+- identity-access-rbac-foundation-declared
+postconditions:
+- six-draft21-rsot-schema-permissions-seeded
+- platform-admin-upgrade-access-preserved
+recovery: rerun-idempotent-permission-seeds-after-correcting-database-connectivity
+rollback: removes-only-rsot-schema-permission-grants-and-permissions
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 20
+checksums:
+  postgresql.sql: 8bde65e440f14877e5d9981f04baf1853e5e600fc4f537cf2375832841fa1e2b
+  oracle.sql: 97de12ef54848747e512db0c4541595017d2509542211b4151c0c2fb2d207329
+  rollback/postgresql.sql: 8a103035535459ce0543ccf65bb060897eb2657f22f4554484baaf24d411dde5
+  rollback/oracle.sql: f437f4002ff72ef02fee9b6c361b333a39250c438a21e1551ad27a103e0723c8
+  logical-model.json: d9107e2e56a369cf37627ba60d2f3630b4f9442129f22f9adb0d367c5a035a27
+  verify.sql.yaml: ab8964d19ee3fa198fcf9da1d43ebad996b74a7f81b72358a2b6d952a8d017a8

@@ -396,7 +396,22 @@ public final class JdbcIdentityAccessRepository implements IdentityAccessReposit
     }
 
     @Override
+    public boolean hasEffectiveRole(DomainIdentifier userId,DomainIdentifier roleId,AuthorizationScope scope,Instant at){
+        Objects.requireNonNull(userId,"userId");Objects.requireNonNull(roleId,"roleId");Objects.requireNonNull(scope,"scope");Objects.requireNonNull(at,"at");
+        if(!isActiveUser(userId))return false;
+        if(scope.kind()!=ScopeKind.PLATFORM&&!hasEffectiveMembership(userId,scope,at))return false;
+        if(assignmentHasRole("USER",userId,roleId,scope,at))return true;
+        for(DomainIdentifier group:effectiveGroups(userId))if(assignmentHasRole("GROUP",group,roleId,scope,at))return true;
+        return false;
+    }
+
+    @Override
     public boolean hasEffectiveSystemRole(DomainIdentifier userId,String roleCode,Instant at){if(!isActiveUser(userId)) return false; return withRead(connection->{String sql="SELECT 1 FROM "+assignmentTable()+" a JOIN "+roleTable()+" r ON r.id=a.role_id WHERE a.actor_type='USER' AND a.actor_id=? AND a.scope_kind='PLATFORM' AND a.revoked_at IS NULL AND a.effective_from<=? AND (a.effective_to IS NULL OR a.effective_to>?) AND r.code=? AND r.system_role="+trueLiteral()+" AND r.active="+trueLiteral()+" AND r.deleted_at IS NULL";try(PreparedStatement statement=connection.prepareStatement(sql)){dialect.bindIdentifier(statement,1,userId);JdbcTemporal.bindInstant(statement,2,at);JdbcTemporal.bindInstant(statement,3,at);statement.setString(4,roleCode);try(ResultSet rows=statement.executeQuery()){return rows.next();}}},"evaluate IAM system role");}
+
+
+    private boolean assignmentHasRole(String actorType,DomainIdentifier actorId,DomainIdentifier roleId,AuthorizationScope requested,Instant at){
+        return withRead(connection->{String sql="SELECT a.scope_kind,a.organization_id,a.subdivision_id FROM "+assignmentTable()+" a JOIN "+roleTable()+" r ON r.id=a.role_id WHERE a.actor_type=? AND a.actor_id=? AND a.role_id=? AND a.revoked_at IS NULL AND a.effective_from<=? AND (a.effective_to IS NULL OR a.effective_to>?) AND r.active="+trueLiteral()+" AND r.deleted_at IS NULL";try(PreparedStatement statement=connection.prepareStatement(sql)){statement.setString(1,actorType);dialect.bindIdentifier(statement,2,actorId);dialect.bindIdentifier(statement,3,roleId);JdbcTemporal.bindInstant(statement,4,at);JdbcTemporal.bindInstant(statement,5,at);try(ResultSet rows=statement.executeQuery()){while(rows.next())if(readScope(rows).covers(requested))return true;return false;}}},"evaluate IAM role");
+    }
 
     private boolean assignmentGrants(String actorType,DomainIdentifier actorId,String permissionCode,AuthorizationScope requested,Instant at){
         return withRead(connection->{String sql="SELECT a.scope_kind,a.organization_id,a.subdivision_id FROM "+assignmentTable()+" a JOIN "+roleTable()+" r ON r.id=a.role_id JOIN "+rolePermissionTable()+" rp ON rp.role_id=r.id JOIN "+permissionTable()+" p ON p.id=rp.permission_id WHERE a.actor_type=? AND a.actor_id=? AND a.revoked_at IS NULL AND a.effective_from<=? AND (a.effective_to IS NULL OR a.effective_to>?) AND r.active="+trueLiteral()+" AND r.deleted_at IS NULL AND p.code=? AND p.active="+trueLiteral()+" AND p.deleted_at IS NULL";try(PreparedStatement statement=connection.prepareStatement(sql)){statement.setString(1,actorType);dialect.bindIdentifier(statement,2,actorId);JdbcTemporal.bindInstant(statement,3,at);JdbcTemporal.bindInstant(statement,4,at);statement.setString(5,permissionCode);try(ResultSet rows=statement.executeQuery()){while(rows.next())if(readScope(rows).covers(requested))return true;return false;}}},"evaluate IAM permission");

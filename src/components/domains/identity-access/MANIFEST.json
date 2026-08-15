@@ -4,7 +4,8 @@
   "status": "implemented",
   "program_epics": [
     "PGM-03-E03",
-    "PGM-04-E02"
+    "PGM-04-E02",
+    "PGM-03-E04"
   ],
   "owns": [
     "iam-users",
@@ -12,6 +13,9 @@
     "iam-groups",
     "iam-roles",
     "iam-permissions",
-    "rbac-assignments"
+    "rbac-assignments",
+    "abac-policies",
+    "policy-decisions",
+    "static-sod-constraints"
   ]
 }

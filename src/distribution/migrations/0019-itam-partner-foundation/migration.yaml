@@ -1,0 +1,27 @@
+schema: infranexum.migration/v1
+id: 0019
+name: itam-partner-foundation
+owner_context: itam
+dependencies:
+- 0018
+preconditions:
+- organization-foundation-declared
+- identity-access-rbac-foundation-declared
+postconditions:
+- itam-partner-catalogue-created
+- itam-partner-deduplication-enforced
+- partner-optimistic-version-enforced
+recovery: rerun-idempotent-ddl-after-correcting-database-connectivity
+rollback: drops-only-itam-partner-owned-objects
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 30
+checksums:
+  postgresql.sql: cad400c6de37db16f2cae79b9b7a1bacb037ea302b2cddea27f2673cab8c767a
+  oracle.sql: 97e8b80539acb1f13ada846fea2ec5598380244cdb8181601a35bfbe90228204
+  rollback/postgresql.sql: 14d87291fca8294994ab5f99dfbcb3451d7eedaaeb140e215763d4c8d1e0fb23
+  rollback/oracle.sql: cb8da6ad071f2c454c19a016c58ab7da7fc73b47db48a52b119bd3b595cd1f38
+  logical-model.json: c8e8ddf060d820373cb17263f27d4743b02a054dd6da7d4c5f210bff4e0bef6f
+  verify.sql.yaml: 02115123d111214db02585030ca7ba4ad32f1a83ebd381979c464429cebc7c69

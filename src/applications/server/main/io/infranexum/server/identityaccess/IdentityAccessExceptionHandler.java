@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /** Stable problem+json translation for IAM RBAC domain and validation failures. */
-@RestControllerAdvice(assignableTypes = IdentityAccessController.class)
+@RestControllerAdvice(assignableTypes = {IdentityAccessController.class, PolicyController.class})
 public final class IdentityAccessExceptionHandler {
     @ExceptionHandler(IdentityAccessException.class)
     ResponseEntity<ProblemDetail> domain(IdentityAccessException failure,HttpServletRequest request){

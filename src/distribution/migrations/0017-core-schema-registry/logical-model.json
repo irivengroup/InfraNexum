@@ -1,0 +1,20 @@
+{
+  "schema": "infranexum.logical-migration/v1",
+  "migration": "0017",
+  "context": "core-compatibility",
+  "objects": [
+    "infranexum_core.schema_registry_entry",
+    "infranexum_core.schema_profile",
+    "infranexum_core.schema_profile_member"
+  ],
+  "purpose": "versioned-immutable-schema-registry-and-composable-profiles",
+  "invariants": {
+    "published_schema_immutable": true,
+    "semantic_version_unique_per_schema_key": true,
+    "optimistic_revision_required": true,
+    "profiles_reference_registry_only": true,
+    "extension_code_storage": false,
+    "cross_context_foreign_keys": false
+  },
+  "security": {"declarative_only": true, "destructive": false}
+}

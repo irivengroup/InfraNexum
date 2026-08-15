@@ -1,0 +1,12 @@
+{
+  "schema": "infranexum.logical-migration/v1",
+  "migration": "0018",
+  "context": "identity-access",
+  "objects": ["infranexum_iam.permission", "infranexum_iam.role_permission"],
+  "purpose": "draft21-rsot-schema-atomic-permissions-and-platform-admin-bootstrap",
+  "permissions": [
+    "rsot.schema.create", "rsot.schema.read", "rsot.schema.update",
+    "rsot.schema.deprecate", "rsot.schema.publish", "rsot.audit"
+  ],
+  "security": {"deny_by_default": true, "system_role_bootstrap_preserved": true, "destructive": false}
+}

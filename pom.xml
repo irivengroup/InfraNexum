@@ -6,7 +6,7 @@
 
   <groupId>io.infranexum</groupId>
   <artifactId>infranexum-parent</artifactId>
-  <version>2.0.0-alpha.0.69</version>
+  <version>2.0.0-alpha.0.77</version>
   <packaging>pom</packaging>
   <name>InfraNexum</name>
   <description>InfraNexum — Infrastructure Control &amp; Governance Platform</description>
@@ -18,10 +18,12 @@
     <module>src/components/core/capabilities</module>
     <module>src/components/core/entitlements</module>
     <module>src/components/core/audit</module>
+    <module>src/components/core/compatibility</module>
     <module>src/components/domains/organization</module>
     <module>src/components/domains/identity-local</module>
     <module>src/components/domains/identity-access</module>
     <module>src/components/domains/rsot</module>
+    <module>src/components/domains/itam</module>
     <module>src/components/adapters/jdbc</module>
     <module>src/components/adapters/security</module>
     <module>src/applications/server</module>

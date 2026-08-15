@@ -5,7 +5,7 @@ import test from 'node:test';
 
 import { WebRuntimeConfiguration } from '../../src/applications/web/runtime/config.mjs';
 
-const options = { version: '2.0.0-alpha.0.69', baseDirectory: os.tmpdir() };
+const options = { version: '2.0.0-alpha.0.77', baseDirectory: os.tmpdir() };
 
 test('configuration applies safe defaults and exposes only public values', () => {
   const configuration = WebRuntimeConfiguration.fromEnvironment({}, options);
@@ -28,6 +28,9 @@ test('configuration applies safe defaults and exposes only public values', () =>
     organizationFoundationEnabled: false,
     localAuthEnabled: false,
     identityAccessEnabled: false,
+    advancedAuthorizationEnabled: false,
+    rsotCoreEnabled: false,
+    itamPartnersEnabled: false,
   });
   assert.equal(Object.isFrozen(configuration), true);
   assert.equal(Object.isFrozen(configuration.publicConfiguration()), true);
@@ -154,4 +157,47 @@ test('identity-access publication is fail-closed and requires auth plus organiza
   assert.throws(() => WebRuntimeConfiguration.fromEnvironment({
     INFRANEXUM_WEB_IDENTITY_ACCESS_ENABLED: 'yes',
   }, options), /IDENTITY_ACCESS_ENABLED/);
+});
+
+
+test('advanced authorization publication is fail-closed and requires identity access', () => {
+  assert.throws(() => WebRuntimeConfiguration.fromEnvironment({
+    INFRANEXUM_WEB_ADVANCED_AUTHORIZATION_ENABLED: 'true',
+  }, options), /requires identity-access capability/);
+  assert.throws(() => WebRuntimeConfiguration.fromEnvironment({
+    INFRANEXUM_WEB_ORGANIZATION_FOUNDATION_ENABLED: 'true',
+    INFRANEXUM_WEB_LOCAL_AUTH_ENABLED: 'true',
+    INFRANEXUM_WEB_ADVANCED_AUTHORIZATION_ENABLED: 'true',
+  }, options), /requires identity-access capability/);
+  const enabled = WebRuntimeConfiguration.fromEnvironment({
+    INFRANEXUM_WEB_ORGANIZATION_FOUNDATION_ENABLED: 'true',
+    INFRANEXUM_WEB_LOCAL_AUTH_ENABLED: 'true',
+    INFRANEXUM_WEB_IDENTITY_ACCESS_ENABLED: 'true',
+    INFRANEXUM_WEB_ADVANCED_AUTHORIZATION_ENABLED: 'true',
+  }, options);
+  assert.equal(enabled.advancedAuthorizationEnabled, true);
+  assert.equal(enabled.publicConfiguration().advancedAuthorizationEnabled, true);
+  assert.throws(() => WebRuntimeConfiguration.fromEnvironment({
+    INFRANEXUM_WEB_ADVANCED_AUTHORIZATION_ENABLED: 'yes',
+  }, options), /ADVANCED_AUTHORIZATION_ENABLED/);
+});
+
+
+test('RSOT core publication is fail-closed and validates explicit booleans', () => {
+  const enabled = WebRuntimeConfiguration.fromEnvironment({
+    INFRANEXUM_WEB_RSOT_CORE_ENABLED: 'true',
+  }, options);
+  assert.equal(enabled.rsotCoreEnabled, true);
+  assert.equal(enabled.publicConfiguration().rsotCoreEnabled, true);
+  assert.throws(() => WebRuntimeConfiguration.fromEnvironment({
+    INFRANEXUM_WEB_RSOT_CORE_ENABLED: 'yes',
+  }, options), /RSOT_CORE_ENABLED/);
+});
+
+
+test('ITAM Partner publication is fail-closed and validates explicit booleans', () => {
+  const enabled = WebRuntimeConfiguration.fromEnvironment({ INFRANEXUM_WEB_ITAM_PARTNERS_ENABLED: 'true' }, options);
+  assert.equal(enabled.itamPartnersEnabled, true);
+  assert.equal(enabled.publicConfiguration().itamPartnersEnabled, true);
+  assert.throws(() => WebRuntimeConfiguration.fromEnvironment({ INFRANEXUM_WEB_ITAM_PARTNERS_ENABLED: 'yes' }, options), /ITAM_PARTNERS_ENABLED/);
 });

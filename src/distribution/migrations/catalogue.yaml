@@ -1,5 +1,5 @@
 schema: infranexum.migration-catalogue/v1
-version: 1.14.0
+version: 1.19.0
 entries:
 - id: '0001'
   path: 0001-core-schema-history/migration.yaml
@@ -31,3 +31,13 @@ entries:
   path: 0014-identity-access-weak-scope-references/migration.yaml
 - id: '0015'
   path: 0015-rsot-authority-foundation/migration.yaml
+- id: '0016'
+  path: 0016-identity-access-abac-sod/migration.yaml
+- id: '0017'
+  path: 0017-core-schema-registry/migration.yaml
+- id: 0018
+  path: 0018-identity-access-rsot-schema-permissions/migration.yaml
+- id: 0019
+  path: 0019-itam-partner-foundation/migration.yaml
+- id: '0020'
+  path: 0020-identity-access-itam-partner-permissions/migration.yaml

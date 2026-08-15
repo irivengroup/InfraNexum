@@ -1,0 +1,9 @@
+DROP TABLE IF EXISTS infranexum_itam.partner_command_dedup;
+DROP TABLE IF EXISTS infranexum_itam.partner_identity_token;
+DROP TABLE IF EXISTS infranexum_itam.partner_contact;
+DROP TABLE IF EXISTS infranexum_itam.partner_accreditation;
+DROP TABLE IF EXISTS infranexum_itam.partner_external_id;
+DROP TABLE IF EXISTS infranexum_itam.partner_alias;
+DROP TABLE IF EXISTS infranexum_itam.partner_role;
+DROP TABLE IF EXISTS infranexum_itam.partner;
+DROP SCHEMA IF EXISTS infranexum_itam;

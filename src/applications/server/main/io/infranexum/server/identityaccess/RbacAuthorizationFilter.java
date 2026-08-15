@@ -18,13 +18,15 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 /** Server PEP enforcing the registered RBAC policy after successful authentication. */
 public final class RbacAuthorizationFilter extends OncePerRequestFilter implements Ordered {
+    public static final int ORDER = Ordered.HIGHEST_PRECEDENCE + 30;
+    public static final String REQUIREMENT_ATTRIBUTE = "io.infranexum.authorization.rbac.requirement";
     private static final String API_PREFIX="/api/v1/";
     private static final String AUTH_PREFIX="/api/v1/iam/local-auth";
     private static final String PUBLIC_BUILD_PATH="/api/v1/system/build";
     private final RbacAuthorizationService authorization;
 
     public RbacAuthorizationFilter(RbacAuthorizationService authorization){this.authorization=Objects.requireNonNull(authorization,"authorization");}
-    @Override public int getOrder(){return Ordered.HIGHEST_PRECEDENCE+30;}
+    @Override public int getOrder(){return ORDER;}
 
     @Override protected boolean shouldNotFilter(HttpServletRequest request){String path=request.getRequestURI();return !path.startsWith(API_PREFIX)||path.equals(AUTH_PREFIX)||path.startsWith(AUTH_PREFIX+"/")||PUBLIC_BUILD_PATH.equals(path);}
 
@@ -41,9 +43,11 @@ public final class RbacAuthorizationFilter extends OncePerRequestFilter implemen
             case GROUP_PERMISSION -> authorization.decideGroupPermission(actor,requirement.permissionCode(),DomainIdentifier.parse(requirement.targetId()),correlation,"HTTP");
             case ORGANIZATION_VISIBILITY -> authorization.decideOrganizationVisibility(actor,requirement.scope().organizationId(),correlation,"HTTP");
             case PLATFORM_ADMINISTRATOR -> authorization.decidePlatformAdministrator(actor,correlation,requirement.targetType(),requirement.targetId(),"HTTP");
+            case CONTROLLER_SCOPED -> new AuthorizationDecision(true, "DEFERRED_TO_CONTROLLER", "resource scope resolved at controller boundary");
             case UNREGISTERED -> authorization.denyUnregisteredRoute(actor,correlation,request.getMethod()+" "+request.getRequestURI(),"HTTP");
         };
         if(!decision.allowed()){reject(request,response,HttpServletResponse.SC_FORBIDDEN,"INFRANEXUM_AUTHORIZATION_DENIED",decision.explanation());return;}
+        request.setAttribute(REQUIREMENT_ATTRIBUTE, requirement);
         chain.doFilter(request,response);
     }
 

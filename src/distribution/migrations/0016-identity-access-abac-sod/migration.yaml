@@ -1,0 +1,29 @@
+schema: infranexum.migration/v1
+id: '0016'
+name: identity-access-abac-sod
+owner_context: identity-access
+dependencies:
+- '0015'
+preconditions:
+- identity-access-rbac-foundation-declared
+- rsot-authority-foundation-declared
+postconditions:
+- pap-policy-version-storage-created
+- deny-overrides-pdp-language-storage-created
+- static-sod-storage-created
+- system-rbac-bridge-active
+- cross-context-foreign-keys-absent
+recovery: rerun-idempotent-ddl-and-system-seeds-after-correcting-database-connectivity
+rollback: drops-only-abac-and-sod-foundation-objects-and-restores-rbac-only-alpha-0-69-behavior
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 20
+checksums:
+  postgresql.sql: f12e0b6248675fe005c59b9a0f83b6319fefffbb30c5c9889773d61854b88c09
+  oracle.sql: 4e117bca11932d2539a02c5743923215d4eec8705aa38f2fc4db04bd1083deea
+  rollback/postgresql.sql: cb690fa2f3ca82f451a581bee395e4d4800fcf40396d55d358018a41f91e79e5
+  rollback/oracle.sql: 4d6709a71a778409608fab0a8b871d365a2159e457990dbb4c3a215365385d8c
+  logical-model.json: 65e4f48be2332c1569e312f972beb6271a7a5fde9bebae53304a34af47fd01f9
+  verify.sql.yaml: bbe135746b692f74ef1365f28b2b73b5269aaa04969f27a4ba049d49d69c3c7d

@@ -6,7 +6,7 @@
   <parent>
     <groupId>io.infranexum</groupId>
     <artifactId>infranexum-parent</artifactId>
-    <version>2.0.0-alpha.0.69</version>
+    <version>2.0.0-alpha.0.77</version>
     <relativePath>../../../pom.xml</relativePath>
   </parent>
   <artifactId>infranexum-server</artifactId>
@@ -15,6 +15,7 @@
     <dependency><groupId>io.infranexum</groupId><artifactId>infranexum-domain-identity-local</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>io.infranexum</groupId><artifactId>infranexum-domain-identity-access</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>io.infranexum</groupId><artifactId>infranexum-adapter-security</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>io.infranexum</groupId><artifactId>infranexum-core-compatibility</artifactId><version>${project.version}</version></dependency>
     <dependency>
       <groupId>io.infranexum</groupId>
       <artifactId>infranexum-core-contracts</artifactId>
@@ -23,6 +24,11 @@
     <dependency>
       <groupId>io.infranexum</groupId>
       <artifactId>infranexum-domain-rsot</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.infranexum</groupId>
+      <artifactId>infranexum-domain-itam</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -60,6 +66,7 @@
       <artifactId>infranexum-domain-organization</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency><groupId>tools.jackson.core</groupId><artifactId>jackson-databind</artifactId></dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-webmvc</artifactId>

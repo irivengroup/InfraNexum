@@ -1,0 +1,29 @@
+schema: infranexum.migration/v1
+id: '0017'
+name: core-schema-registry
+owner_context: core-compatibility
+dependencies:
+- '0016'
+preconditions:
+- identity-access-abac-sod-declared
+- rsot-authority-foundation-declared
+- core-contracts-compatibility-provider-declared
+postconditions:
+- schema-registry-created
+- composable-schema-profiles-created
+- optimistic-revision-enforced
+- published-lifecycle-storage-enforced
+recovery: rerun-idempotent-ddl-after-correcting-database-connectivity
+rollback: drops-only-core-schema-registry-objects
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 20
+checksums:
+  postgresql.sql: 935b8104858779b6c78acdb4db36cbe84e6d5489b2603543ff36bf23afed4359
+  oracle.sql: fc2b28d11b10d2ce364c44231331ce4a83694bf0617956dcba4b3310b5eb5361
+  rollback/postgresql.sql: 43d98417179e05b562fd62408a4355351e503b79b616a7f17088fc75ea6197dc
+  rollback/oracle.sql: 4742ef7a66104ff6c2e6a7c004d48d5a51b7e9e99cb18c17533f0ffa43c345cb
+  logical-model.json: 49bee9ffb94355a485772564b96a0dee0778eb90a1a17dd144f41dc70a7fa992
+  verify.sql.yaml: 79b3758a0b8938325471a9a59b497e483b5e8fba5326eb13164aa9438e386351

@@ -12,6 +12,7 @@ import io.infranexum.identity.access.domain.AssignmentActorType;
 import io.infranexum.identity.access.domain.AuthorizationScope;
 import io.infranexum.identity.access.domain.PermissionCodes;
 import io.infranexum.identity.access.domain.ScopeKind;
+import io.infranexum.server.configuration.ServerTemporalInputParser;
 import io.infranexum.server.identity.LocalAuthenticationFilter;
 import io.infranexum.server.observability.CorrelationContext;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,9 +33,10 @@ public final class IdentityAccessController {
     private final IdentityAccessAdminService service;
     private final RbacAuthorizationService authorization;
     private final UuidV7Generator ids;
+    private final ServerTemporalInputParser temporal;
 
-    public IdentityAccessController(IdentityAccessAdminService service,RbacAuthorizationService authorization,@Qualifier("platformClock") Clock clock){
-        this.service=Objects.requireNonNull(service,"service");this.authorization=Objects.requireNonNull(authorization,"authorization");this.ids=new UuidV7Generator(Objects.requireNonNull(clock,"clock"),new SecureRandom());
+    public IdentityAccessController(IdentityAccessAdminService service,RbacAuthorizationService authorization,@Qualifier("platformClock") Clock clock,ServerTemporalInputParser temporal){
+        this.service=Objects.requireNonNull(service,"service");this.authorization=Objects.requireNonNull(authorization,"authorization");this.ids=new UuidV7Generator(Objects.requireNonNull(clock,"clock"),new SecureRandom());this.temporal=Objects.requireNonNull(temporal,"temporal");
     }
 
     @GetMapping("/api/v1/iam/users")
@@ -54,9 +56,9 @@ public final class IdentityAccessController {
     @GetMapping("/api/v1/iam/users/{userId}/memberships")
     List<MembershipResponse> memberships(@PathVariable String userId){return service.memberships(id(userId)).stream().map(MembershipResponse::from).toList();}
     @PostMapping("/api/v1/iam/users/{userId}/memberships")
-    ResponseEntity<MembershipResponse> addMembership(@PathVariable String userId,@Valid @RequestBody MembershipRequest body,HttpServletRequest request){var result=service.addMembership(id(userId),id(body.organizationId()),nullableId(body.subdivisionId()),body.effectiveFrom(),body.effectiveTo(),context(request,body.reason()));return ResponseEntity.status(HttpStatus.CREATED).body(MembershipResponse.from(result));}
+    ResponseEntity<MembershipResponse> addMembership(@PathVariable String userId,@Valid @RequestBody MembershipRequest body,HttpServletRequest request){var result=service.addMembership(id(userId),id(body.organizationId()),nullableId(body.subdivisionId()),instant(body.effectiveFrom(),"effectiveFrom"),instant(body.effectiveTo(),"effectiveTo"),context(request,body.reason()));return ResponseEntity.status(HttpStatus.CREATED).body(MembershipResponse.from(result));}
     @PostMapping("/api/v1/iam/users/{userId}/roles")
-    ResponseEntity<RoleAssignmentResponse> assignUserRole(@PathVariable String userId,@Valid @RequestBody UserRoleRequest body,HttpServletRequest request){var scope=scope(body.scopeKind(),body.organizationId(),body.subdivisionId());var result=service.assignRole(id(body.roleId()),AssignmentActorType.USER,id(userId),scope,body.effectiveFrom(),body.effectiveTo(),context(request,body.reason()));return ResponseEntity.status(HttpStatus.CREATED).body(RoleAssignmentResponse.from(result));}
+    ResponseEntity<RoleAssignmentResponse> assignUserRole(@PathVariable String userId,@Valid @RequestBody UserRoleRequest body,HttpServletRequest request){var scope=scope(body.scopeKind(),body.organizationId(),body.subdivisionId());var result=service.assignRole(id(body.roleId()),AssignmentActorType.USER,id(userId),scope,instant(body.effectiveFrom(),"effectiveFrom"),instant(body.effectiveTo(),"effectiveTo"),context(request,body.reason()));return ResponseEntity.status(HttpStatus.CREATED).body(RoleAssignmentResponse.from(result));}
 
     @GetMapping("/api/v1/iam/groups/{groupId}/effective-members")
     EffectiveMembersResponse effectiveGroupMembers(@PathVariable String groupId){
@@ -79,7 +81,7 @@ public final class IdentityAccessController {
     @DeleteMapping("/api/v1/organizations/{orgId}/groups/{groupId}/members/{memberId}")
     ResponseEntity<Void> removeGroupMember(@PathVariable String orgId,@PathVariable String groupId,@PathVariable String memberId,@RequestParam(defaultValue="USER") AssignmentActorType memberType,@RequestParam(required=false)String reason,HttpServletRequest request){if(memberType==AssignmentActorType.USER)service.removeUserFromGroup(id(orgId),id(groupId),id(memberId),context(request,reason));else{requirePermission(request,PermissionCodes.GROUP_REMOVE_GROUP,AuthorizationScope.organization(id(orgId)),"group",groupId);service.removeGroupFromGroup(id(orgId),id(groupId),id(memberId),context(request,reason));}return ResponseEntity.noContent().build();}
     @PostMapping("/api/v1/organizations/{orgId}/groups/{groupId}/roles")
-    ResponseEntity<RoleAssignmentResponse> assignGroupRole(@PathVariable String orgId,@PathVariable String groupId,@Valid @RequestBody GroupRoleRequest body,HttpServletRequest request){AuthorizationScope scope=scope(body.scopeKind(),orgId,body.subdivisionId());var result=service.assignRole(id(body.roleId()),AssignmentActorType.GROUP,id(groupId),scope,body.effectiveFrom(),body.effectiveTo(),context(request,body.reason()));return ResponseEntity.status(HttpStatus.CREATED).body(RoleAssignmentResponse.from(result));}
+    ResponseEntity<RoleAssignmentResponse> assignGroupRole(@PathVariable String orgId,@PathVariable String groupId,@Valid @RequestBody GroupRoleRequest body,HttpServletRequest request){AuthorizationScope scope=scope(body.scopeKind(),orgId,body.subdivisionId());var result=service.assignRole(id(body.roleId()),AssignmentActorType.GROUP,id(groupId),scope,instant(body.effectiveFrom(),"effectiveFrom"),instant(body.effectiveTo(),"effectiveTo"),context(request,body.reason()));return ResponseEntity.status(HttpStatus.CREATED).body(RoleAssignmentResponse.from(result));}
 
     @GetMapping("/api/v1/organizations/{orgId}/roles")
     List<RoleResponse> roles(@PathVariable String orgId,@RequestParam(defaultValue="0")int offset,@RequestParam(defaultValue="50")int limit){return service.listRoles(id(orgId),offset,limit).stream().map(RoleResponse::from).toList();}
@@ -94,7 +96,7 @@ public final class IdentityAccessController {
     @GetMapping("/api/v1/organizations/{orgId}/roles/{roleId}/assignments")
     List<RoleAssignmentResponse> roleAssignments(@PathVariable String orgId,@PathVariable String roleId){RoleResponse current=RoleResponse.from(service.getRole(id(roleId)));requireOwned(current.organizationId(),orgId);return service.assignments(id(roleId)).stream().map(RoleAssignmentResponse::from).toList();}
     @PostMapping("/api/v1/organizations/{orgId}/roles/{roleId}/assignments")
-    ResponseEntity<RoleAssignmentResponse> assignRole(@PathVariable String orgId,@PathVariable String roleId,@Valid @RequestBody RoleAssignmentRequest body,HttpServletRequest request){var result=service.assignRole(id(roleId),body.actorType(),id(body.actorId()),scope(body.scopeKind(),orgId,body.subdivisionId()),body.effectiveFrom(),body.effectiveTo(),context(request,body.reason()));return ResponseEntity.status(HttpStatus.CREATED).body(RoleAssignmentResponse.from(result));}
+    ResponseEntity<RoleAssignmentResponse> assignRole(@PathVariable String orgId,@PathVariable String roleId,@Valid @RequestBody RoleAssignmentRequest body,HttpServletRequest request){var result=service.assignRole(id(roleId),body.actorType(),id(body.actorId()),scope(body.scopeKind(),orgId,body.subdivisionId()),instant(body.effectiveFrom(),"effectiveFrom"),instant(body.effectiveTo(),"effectiveTo"),context(request,body.reason()));return ResponseEntity.status(HttpStatus.CREATED).body(RoleAssignmentResponse.from(result));}
     @DeleteMapping("/api/v1/organizations/{orgId}/roles/{roleId}/assignments/{assignmentId}")
     ResponseEntity<Void> revokeRole(@PathVariable String orgId,@PathVariable String roleId,@PathVariable String assignmentId,@RequestParam(required=false)String reason,HttpServletRequest request){RoleResponse current=RoleResponse.from(service.getRole(id(roleId)));requireOwned(current.organizationId(),orgId);service.revokeAssignment(id(roleId),id(assignmentId),context(request,reason));return ResponseEntity.noContent().build();}
 
@@ -128,6 +130,7 @@ public final class IdentityAccessController {
     private static DomainIdentifier authenticatedActor(HttpServletRequest request){Object actorValue=request.getAttribute(LocalAuthenticationFilter.ACCOUNT_ATTRIBUTE);if(!(actorValue instanceof DomainIdentifier actor))throw new IllegalStateException("authenticated actor missing after RBAC boundary");return actor;}
     private DomainIdentifier correlation(HttpServletRequest request){return CorrelationContext.identifier(request).orElseGet(ids::next);}
     private IdentityAccessCommandContext context(HttpServletRequest request,String reason){return new IdentityAccessCommandContext(authenticatedActor(request),correlation(request),reason==null||reason.isBlank()?"IAM administration":reason,"HTTP");}
+    private java.time.Instant instant(String value,String field){return temporal.optionalInstant(value,field);}
     private static DomainIdentifier id(String value){return DomainIdentifier.parse(value);}
     private static DomainIdentifier nullableId(String value){return value==null||value.isBlank()?null:id(value);}
     private static AuthorizationScope scope(ScopeKind kind,String organizationId,String subdivisionId){return switch(kind){case PLATFORM->AuthorizationScope.platform();case ORGANIZATION->AuthorizationScope.organization(id(organizationId));case SUBDIVISION->AuthorizationScope.subdivision(id(organizationId),id(subdivisionId));};}

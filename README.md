@@ -1,11 +1,26 @@
-# InfraNexum 2.0.0-alpha.0.69 — PGM-06-E01 RSOT Authority Foundation
+# InfraNexum 2.0.0-alpha.0.77 — PGM-07-E01 ITAM Partner catalogues
+
+`alpha.0.77` implements **PGM-07-E01** as the first ITAM catalogue slice: one governed `Partner` aggregate is authoritative for manufacturers, software publishers, suppliers, third-party support providers, integrators and recyclers. Partner lifecycle is explicit (`draft → pending_approval → active`, with `suspended` and terminal `retired` states), organization/subdivision references remain weak cross-context references, and duplicate identities, quotas, optimistic versions and idempotent mutations are enforced fail-closed. Role-filtered catalogues are views of the same aggregate; no duplicate Manufacturer or Support Provider aggregate is introduced.
+
+The slice includes paired PostgreSQL/Oracle migrations `0019`/`0020`, the six normative ITAM Partner permissions, capability `itam.partners`, transactional events/audit, dynamic organization-scoped RBAC/ABAC, HTTP/OpenAPI, Server CLI and a capability-gated Web client. The HTTP surface remains disabled unless `INFRANEXUM_ITAM_PARTNER_API_ENABLED` is explicitly enabled; the Web publication is independently fail-closed through `INFRANEXUM_WEB_ITAM_PARTNERS_ENABLED`. See `docs/itam-partner-catalogue.md`.
+
+`alpha.0.76` remains the Core Schema Registry baseline for **PGM-06-E03** and is not functionally altered by this increment.
+
+The `alpha.0.75` Identity & Access entity selectors, deterministic calendars and InfraNexum visual theme remain unchanged and form the Web baseline for this increment.
+
+# InfraNexum 2.0.0-alpha.0.74 — calendar-first temporal input and Server timezone resolution
+
+`alpha.0.74` extends the stabilized Identity & Access experience with calendar-first temporal input. IAM and advanced-authorization effective dates are no longer free-text ISO fields: the Web uses native `datetime-local` pickers, while the Server accepts either an explicit offset/zoned ISO-8601 value or a timezone-less local date-time. When the client omits a timezone, the Server JVM/host timezone is authoritative. Ambiguous and nonexistent daylight-saving wall times are rejected fail-closed instead of being silently shifted. The RBAC/ABAC permission model, database schema and migration catalogue remain unchanged from `alpha.0.73`.
 
 **InfraNexum — Infrastructure Control & Governance Platform**
-`alpha.0.69` closes the prerequisite required before PGM-03-E04 ABAC/PDP/SoD: the first RSOT canonical-identity and authority foundation defined by PGM-06-E01. The new `rsot` bounded context owns only canonical identity, lifecycle, authority-policy contracts, the approved nine-row draft.21 authority matrix and the ten-provider context map. Specialist payloads remain in their authoritative bounded contexts; consumer reads fail closed unless a canonical object is `validated` or `reconciled`. Attribute authority is versioned, temporal and bounded, with no implicit global wildcard.
 
-This increment also remediates the PGM-04-E02/ADR-0029 isolation defect discovered in the released RBAC migration: IAM Organization/Subdivision references are now weak references validated through the Organization context public ports. Migration `0014-identity-access-weak-scope-references` removes the seven physical IAM→Organization foreign keys without changing identifiers or data and deliberately does not recreate those forbidden cross-context constraints on rollback. Migration `0015-rsot-authority-foundation` creates the isolated PostgreSQL/Oracle RSOT schema with no inter-bounded-context foreign key. Migration `0013` remains immutable.
+`alpha.0.73` is a focused Web/IAM authorization-boundary and operator-experience correction. It preserves the RBAC/ABAC contracts introduced by `alpha.0.68` through `alpha.0.70` and the FreeIPA-inspired information architecture introduced by `alpha.0.72`, while fixing three observed browser defects: one denied `*.search` permission no longer fails the complete Identity & Access workspace, administration pages use the full available width with InfraNexum-themed data surfaces, and all Bootstrap `select` controls are enhanced by a deterministic accessible combobox/listbox layer.
 
-PGM-03-E04 is intentionally not implemented in this increment. No ABAC policy language, PDP decision engine, SoD rule, reconciliation mutation API or ingestion pipeline is simulated before the canonical authority contracts exist and pass their target-runtime gates. Docker/Compose remains local development/test tooling only; production deployment continues to target standalone bare metal or VM.
+IAM list loading is independent per resource family. A user who can administer Users or Groups but does not hold `iam.role.search` now sees a scoped restricted state only in the Roles list; other areas continue to work. The same containment applies after mutations, so a successful write is never reported as failed merely because its follow-up list refresh is not authorized.
+
+The stable select layer keeps the native `<select>` as the authoritative form value for `FormData`, HTML validation and `change` listeners, while mouse and keyboard interaction use an InfraNexum-themed combobox/listbox. This removes the Windows/Chromium close-on-mouse-release failure without changing API payloads. The administration canvas is fluid, IAM forms are no longer capped at 58 rem, and global/IAM data tables use themed sticky headers, alternating rows, hover/focus treatment and explicit restricted/error states. DE/EN/ES/FR/IT remain first-class UI locales.
+
+`alpha.0.70` remains the advanced-authorization baseline (PAP/PDP/PEP/PIP/PRP, declarative ABAC and static SoD). No authorization rule, database migration or public API contract is weakened by this correction. Docker/Compose remains local development/test tooling only; product deployment targets remain standalone bare metal/VM.
 
 ## alpha.0.68 — PGM-03-E03 RBAC Foundation
 

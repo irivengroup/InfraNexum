@@ -1,0 +1,2 @@
+DELETE FROM INFRANEXUM_IAM_ROLE_PERMISSION WHERE PERMISSION_ID IN (SELECT ID FROM INFRANEXUM_IAM_PERMISSION WHERE ORGANIZATION_ID IS NULL AND CODE IN ('rsot.schema.create','rsot.schema.read','rsot.schema.update','rsot.schema.deprecate','rsot.schema.publish','rsot.audit'));
+DELETE FROM INFRANEXUM_IAM_PERMISSION WHERE ORGANIZATION_ID IS NULL AND CODE IN ('rsot.schema.create','rsot.schema.read','rsot.schema.update','rsot.schema.deprecate','rsot.schema.publish','rsot.audit');

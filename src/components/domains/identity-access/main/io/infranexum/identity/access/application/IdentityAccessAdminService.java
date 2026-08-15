@@ -17,16 +17,18 @@ public final class IdentityAccessAdminService {
     private final IdentityAccessRepository repository;
     private final IdentityAccessFeaturePolicy features;
     private final OrganizationScopeReferencePort organizationScopes;
+    private final RoleAssignmentPolicyGuard assignmentGuard;
     private final TransactionalEventStore events;
     private final AuditJournal audit;
     private final UuidV7Generator ids;
     private final Clock clock;
 
     public IdentityAccessAdminService(IdentityAccessRepository repository, IdentityAccessFeaturePolicy features,
-            OrganizationScopeReferencePort organizationScopes, TransactionalEventStore events,
+            OrganizationScopeReferencePort organizationScopes, RoleAssignmentPolicyGuard assignmentGuard, TransactionalEventStore events,
             AuditJournal audit, UuidV7Generator ids, Clock clock) {
         this.repository=Objects.requireNonNull(repository,"repository"); this.features=Objects.requireNonNull(features,"features");
         this.organizationScopes=Objects.requireNonNull(organizationScopes,"organizationScopes");
+        this.assignmentGuard=Objects.requireNonNull(assignmentGuard,"assignmentGuard");
         this.events=Objects.requireNonNull(events,"events"); this.audit=Objects.requireNonNull(audit,"audit");
         this.ids=Objects.requireNonNull(ids,"ids"); this.clock=Objects.requireNonNull(clock,"clock");
     }
@@ -198,6 +200,7 @@ public final class IdentityAccessAdminService {
             if(scope.organizationId()==null) throw new IdentityAccessException("IAM_ASSIGNMENT_SCOPE_MISMATCH","group role assignments require organization scope");
             getGroup(scope.organizationId(),actorId);
         }
+        assignmentGuard.check(roleId,actorType,actorId,scope,from);
         RoleAssignment assignment=new RoleAssignment(ids.next(),roleId,actorType,actorId,scope,from,effectiveTo,null,null);
         return execute(tx->{ repository.insertAssignment(assignment); tx.append(event("iam.role.assigned.v1",roleId,context.correlationId(),clock.instant(),assignmentPayload(assignment)));
             auditMutation(context,"iam.role.assign","role",roleId.toString(),auditScope(scope),"SUCCESS",Map.of("assignment_id",assignment.id().toString(),"actor_id",actorId.toString(),"actor_type",actorType.name())); return assignment; });

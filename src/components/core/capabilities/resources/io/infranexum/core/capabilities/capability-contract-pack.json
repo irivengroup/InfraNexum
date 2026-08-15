@@ -23,7 +23,7 @@
       "ultimate"
     ]
   },
-  "capability_count": 21,
+  "capability_count": 23,
   "quota_count": 119,
   "quota_thresholds_percent": [
     80,
@@ -40,7 +40,7 @@
     "PGM-02-E04"
   ],
   "files": {
-    "capability-catalog.csv": "088c6af76540cba9593c708865e32d9e6d3744f98fb723ba2310131ea019c058",
+    "capability-catalog.csv": "3424cf1ab0a8d00a86e81dcfd5eed35fe098e256251c1799a73cdfb4ff4f87c1",
     "quota-catalog.csv": "03ccb6d225410a06d5fad918549a4455ebca79a154f7f3e6be8e0e9f117413ea",
     "quota-policy.json": "7e945ff83fb747e7545f477fef994c552d54fc5ab7f341ce0e8714b433db9125"
   }

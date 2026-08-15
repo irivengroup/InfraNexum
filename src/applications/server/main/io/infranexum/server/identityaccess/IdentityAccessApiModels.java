@@ -21,17 +21,17 @@ final class IdentityAccessApiModels {
             @Size(max=1024) String reason) {}
     record UpdateUserRequest(@Email @Size(max=320) String email,@NotBlank @Size(max=200) String displayName,@Size(max=1024) String reason) {}
     record ReasonRequest(@Size(max=1024) String reason) {}
-    record MembershipRequest(@NotBlank String organizationId,String subdivisionId,Instant effectiveFrom,Instant effectiveTo,@Size(max=1024) String reason) {}
-    record UserRoleRequest(@NotBlank String roleId,@NotNull ScopeKind scopeKind,String organizationId,String subdivisionId,Instant effectiveFrom,Instant effectiveTo,@Size(max=1024) String reason) {}
+    record MembershipRequest(@NotBlank String organizationId,String subdivisionId,@Size(max=80) String effectiveFrom,@Size(max=80) String effectiveTo,@Size(max=1024) String reason) {}
+    record UserRoleRequest(@NotBlank String roleId,@NotNull ScopeKind scopeKind,String organizationId,String subdivisionId,@Size(max=80) String effectiveFrom,@Size(max=80) String effectiveTo,@Size(max=1024) String reason) {}
 
     record CreateGroupRequest(@NotBlank @Size(max=96) String code,@NotBlank @Size(max=200) String displayName,@Size(max=1024) String reason) {}
     record UpdateGroupRequest(@NotBlank @Size(max=200) String displayName,@Size(max=1024) String reason) {}
     record GroupMemberRequest(@NotNull AssignmentActorType memberType,@NotBlank String memberId,@Size(max=1024) String reason) {}
-    record GroupRoleRequest(@NotBlank String roleId,@NotNull ScopeKind scopeKind,String subdivisionId,Instant effectiveFrom,Instant effectiveTo,@Size(max=1024) String reason) {}
+    record GroupRoleRequest(@NotBlank String roleId,@NotNull ScopeKind scopeKind,String subdivisionId,@Size(max=80) String effectiveFrom,@Size(max=80) String effectiveTo,@Size(max=1024) String reason) {}
 
     record CreateRoleRequest(@NotBlank @Size(max=160) String code,@NotBlank @Size(max=200) String displayName,@NotNull ScopeKind scopeKind,@NotEmpty Set<@NotBlank String> permissionCodes,@Size(max=1024) String reason) {}
     record UpdateRoleRequest(@NotBlank @Size(max=160) String code,@NotBlank @Size(max=200) String displayName,Set<@NotBlank String> permissionCodes,@Size(max=1024) String reason) {}
-    record RoleAssignmentRequest(@NotNull AssignmentActorType actorType,@NotBlank String actorId,@NotNull ScopeKind scopeKind,String subdivisionId,Instant effectiveFrom,Instant effectiveTo,@Size(max=1024) String reason) {}
+    record RoleAssignmentRequest(@NotNull AssignmentActorType actorType,@NotBlank String actorId,@NotNull ScopeKind scopeKind,String subdivisionId,@Size(max=80) String effectiveFrom,@Size(max=80) String effectiveTo,@Size(max=1024) String reason) {}
 
     record CreatePermissionRequest(@NotBlank @Size(max=160) String code,@NotBlank @Size(max=64) String resourceType,@NotBlank @Size(max=64) String action,@NotBlank @Size(max=16) String sensitivity,@NotNull ScopeKind scopeKind,@Size(max=1024) String reason) {}
     record UpdatePermissionRequest(@NotBlank @Size(max=64) String resourceType,@NotBlank @Size(max=64) String action,@NotBlank @Size(max=16) String sensitivity,@NotNull ScopeKind scopeKind,boolean active,@Size(max=1024) String reason) {}

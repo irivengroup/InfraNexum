@@ -4,4 +4,5 @@ package io.infranexum.identity.access.ports;
 public interface IdentityAccessFeaturePolicy {
     boolean supportsNestedGroups();
     boolean supportsMultiMembership();
+    default boolean supportsAdvancedAuthorization() { return false; }
 }

@@ -15,7 +15,9 @@
     "components.core.workers",
     "components.adapters.persistence-jdbc",
     "components.domains.organization",
-    "components.domains.rsot"
+    "components.domains.rsot",
+    "components.core.compatibility",
+    "components.domains.itam"
   ],
   "source_baseline": [
     "PGM-02-E01",
@@ -27,6 +29,9 @@
     "PGM-12-E01",
     "PGM-03-E03",
     "PGM-04-E02",
-    "PGM-06-E01"
+    "PGM-06-E01",
+    "PGM-03-E04",
+    "PGM-06-E03",
+    "PGM-07-E01"
   ]
 }

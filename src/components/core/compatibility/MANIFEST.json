@@ -1,0 +1,21 @@
+{
+  "schema": "infranexum.component-manifest/v1",
+  "id": "components.core.compatibility",
+  "kind": "component",
+  "owner": "team.core-platform",
+  "lifecycle": "active",
+  "languages": [
+    "java"
+  ],
+  "dependencies": [
+    "components.core.contracts",
+    "components.core.events",
+    "components.core.audit"
+  ],
+  "source_baseline": [
+    "CDC RSOT 05 schemas and models",
+    "CDC RSOT 13 persistence and schema registry",
+    "CDC RSOT 18 declarative governance",
+    "PGM-06-E03"
+  ]
+}

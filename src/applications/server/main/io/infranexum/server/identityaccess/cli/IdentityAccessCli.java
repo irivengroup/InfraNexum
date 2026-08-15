@@ -6,16 +6,21 @@ import io.infranexum.identity.access.application.AuthorizationDecision;
 import io.infranexum.identity.access.application.IdentityAccessAdminService;
 import io.infranexum.identity.access.application.IdentityAccessCommandContext;
 import io.infranexum.identity.access.application.RbacAuthorizationService;
+import io.infranexum.identity.access.application.PolicyDecisionService;
 import io.infranexum.identity.access.domain.AssignmentActorType;
 import io.infranexum.identity.access.domain.AuthorizationScope;
 import io.infranexum.identity.access.domain.IdentityGroup;
 import io.infranexum.identity.access.domain.IdentityUser;
 import io.infranexum.identity.access.domain.Permission;
 import io.infranexum.identity.access.domain.PermissionCodes;
+import io.infranexum.identity.access.domain.PolicyEvaluationRequest;
+import io.infranexum.identity.access.domain.PolicyObligation;
 import io.infranexum.identity.access.domain.Role;
 import io.infranexum.identity.access.domain.RoleAssignment;
 import io.infranexum.identity.access.domain.ScopeKind;
 import io.infranexum.identity.access.domain.UserMembership;
+import io.infranexum.identity.access.ports.IdentityAccessFeaturePolicy;
+import io.infranexum.server.platform.PlatformCapabilityService;
 import io.infranexum.identity.local.application.AuthenticatedSession;
 import io.infranexum.identity.local.application.LocalAuthenticationService;
 import io.infranexum.identity.local.application.ValidatedSession;
@@ -40,10 +45,10 @@ import java.util.TreeSet;
 import java.util.function.Supplier;
 
 /**
- * In-process IAM CLI adapter for PGM-03-E03.
+ * In-process IAM CLI adapter for RBAC and PGM-03-E04 advanced authorization.
  *
  * <p>The CLI never accepts passwords directly in argv. It authenticates from an explicitly supplied
- * UTF-8 password file, evaluates RBAC through the same PEP service as HTTP, invokes the same IAM use
+ * UTF-8 password file, evaluates RBAC then ABAC through the same PEP services as HTTP, invokes the same IAM use
  * cases, and revokes the ephemeral session before returning.</p>
  */
 public final class IdentityAccessCli {
@@ -57,16 +62,25 @@ public final class IdentityAccessCli {
     private final LocalAuthenticationService authentication;
     private final IdentityAccessAdminService administration;
     private final RbacAuthorizationService authorization;
+    private final PolicyDecisionService policyDecisions;
+    private final IdentityAccessFeaturePolicy features;
+    private final PlatformCapabilityService capabilities;
     private final UuidV7Generator ids;
 
     public IdentityAccessCli(
             LocalAuthenticationService authentication,
             IdentityAccessAdminService administration,
             RbacAuthorizationService authorization,
+            PolicyDecisionService policyDecisions,
+            IdentityAccessFeaturePolicy features,
+            PlatformCapabilityService capabilities,
             UuidV7Generator identifiers) {
         this.authentication = Objects.requireNonNull(authentication, "authentication");
         this.administration = Objects.requireNonNull(administration, "administration");
         this.authorization = Objects.requireNonNull(authorization, "authorization");
+        this.policyDecisions = Objects.requireNonNull(policyDecisions, "policyDecisions");
+        this.features = Objects.requireNonNull(features, "features");
+        this.capabilities = Objects.requireNonNull(capabilities, "capabilities");
         this.ids = Objects.requireNonNull(identifiers, "identifiers");
     }
 
@@ -140,7 +154,7 @@ public final class IdentityAccessCli {
     private String user(Arguments args, DomainIdentifier actor, DomainIdentifier correlation, IdentityAccessCommandContext context) {
         return switch (args.operation()) {
             case "list" -> {
-                require(actor, PermissionCodes.USER_SEARCH, AuthorizationScope.platform(), correlation, "user", "collection");
+                require(args, actor, PermissionCodes.USER_SEARCH, AuthorizationScope.platform(), correlation, "user", "collection");
                 DomainIdentifier org = args.optionalId("org");
                 String status = args.optional("status", "").toUpperCase(Locale.ROOT);
                 String filter = args.optional("filter", "").toLowerCase(Locale.ROOT);
@@ -152,7 +166,7 @@ public final class IdentityAccessCli {
                 yield renderList(args, users.stream().map(IdentityAccessCli::userMap).toList());
             }
             case "create" -> {
-                require(actor, PermissionCodes.USER_CREATE, AuthorizationScope.platform(), correlation, "user", "collection");
+                require(args, actor, PermissionCodes.USER_CREATE, AuthorizationScope.platform(), correlation, "user", "collection");
                 DomainIdentifier org = args.requiredId("org");
                 boolean invite = args.flag("invite");
                 if (args.flag("dry-run")) yield dryRun(args, "create user " + args.required("login") + " in organization " + org);
@@ -175,7 +189,7 @@ public final class IdentityAccessCli {
             }
             case "update" -> {
                 DomainIdentifier userId = args.requiredId("id");
-                require(actor, PermissionCodes.USER_UPDATE, AuthorizationScope.platform(), correlation, "user", userId.toString());
+                require(args, actor, PermissionCodes.USER_UPDATE, AuthorizationScope.platform(), correlation, "user", userId.toString());
                 IdentityUser current = administration.getUser(userId);
                 if (args.flag("dry-run")) yield dryRun(args, "update user " + userId);
                 yield render(args, userMap(administration.updateUser(userId,
@@ -183,27 +197,27 @@ public final class IdentityAccessCli {
             }
             case "suspend" -> {
                 DomainIdentifier userId = args.requiredId("id");
-                require(actor, PermissionCodes.USER_SUSPEND, AuthorizationScope.platform(), correlation, "user", userId.toString());
+                require(args, actor, PermissionCodes.USER_SUSPEND, AuthorizationScope.platform(), correlation, "user", userId.toString());
                 confirm(args, "suspend user " + userId);
                 if (args.flag("dry-run")) yield dryRun(args, "suspend user " + userId);
                 yield render(args, userMap(administration.suspendUser(userId, context)));
             }
             case "activate" -> {
                 DomainIdentifier userId = args.requiredId("id");
-                require(actor, PermissionCodes.USER_ACTIVATE, AuthorizationScope.platform(), correlation, "user", userId.toString());
+                require(args, actor, PermissionCodes.USER_ACTIVATE, AuthorizationScope.platform(), correlation, "user", userId.toString());
                 if (args.flag("dry-run")) yield dryRun(args, "activate user " + userId);
                 yield render(args, userMap(administration.activateUser(userId, context)));
             }
             case "delete" -> {
                 DomainIdentifier userId = args.requiredId("id");
-                require(actor, PermissionCodes.USER_DELETE, AuthorizationScope.platform(), correlation, "user", userId.toString());
+                require(args, actor, PermissionCodes.USER_DELETE, AuthorizationScope.platform(), correlation, "user", userId.toString());
                 confirm(args, "delete user " + userId);
                 if (args.flag("dry-run")) yield dryRun(args, "soft-delete user " + userId);
                 yield render(args, userMap(administration.deleteUser(userId, context)));
             }
             case "add-membership" -> {
                 DomainIdentifier userId = args.requiredId("id");
-                require(actor, PermissionCodes.USER_MANAGE_MEMBERSHIP, AuthorizationScope.platform(), correlation, "user", userId.toString());
+                require(args, actor, PermissionCodes.USER_MANAGE_MEMBERSHIP, AuthorizationScope.platform(), correlation, "user", userId.toString());
                 DomainIdentifier org = args.requiredId("org");
                 if (args.flag("dry-run")) yield dryRun(args, "add membership for user " + userId + " in organization " + org);
                 UserMembership membership = administration.addMembership(userId, org, args.optionalId("subdivision"),
@@ -221,7 +235,7 @@ public final class IdentityAccessCli {
         return switch (args.operation()) {
             case "list" -> {
                 DomainIdentifier org = args.requiredId("org");
-                require(actor, PermissionCodes.GROUP_SEARCH, AuthorizationScope.organization(org), correlation, "group", "collection");
+                require(args, actor, PermissionCodes.GROUP_SEARCH, AuthorizationScope.organization(org), correlation, "group", "collection");
                 String filter = args.optional("filter", "").toLowerCase(Locale.ROOT);
                 var groups = administration.listGroups(org, args.offset(), args.limit()).stream()
                         .filter(group -> filter.isEmpty() || group.code().contains(filter) || group.displayName().toLowerCase(Locale.ROOT).contains(filter))
@@ -230,19 +244,19 @@ public final class IdentityAccessCli {
             }
             case "create" -> {
                 DomainIdentifier org = args.requiredId("org");
-                require(actor, PermissionCodes.GROUP_CREATE, AuthorizationScope.organization(org), correlation, "group", "collection");
+                require(args, actor, PermissionCodes.GROUP_CREATE, AuthorizationScope.organization(org), correlation, "group", "collection");
                 if (args.flag("dry-run")) yield dryRun(args, "create group " + args.required("code") + " in organization " + org);
                 yield render(args, groupMap(administration.createGroup(org, args.required("code"), args.required("name"), context)));
             }
             case "update" -> {
                 IdentityGroup group = administration.getGroup(args.requiredId("id"));
-                require(actor, PermissionCodes.GROUP_UPDATE, AuthorizationScope.organization(group.organizationId()), correlation, "group", group.id().toString());
+                require(args, actor, PermissionCodes.GROUP_UPDATE, AuthorizationScope.organization(group.organizationId()), correlation, "group", group.id().toString());
                 if (args.flag("dry-run")) yield dryRun(args, "update group " + group.id());
                 yield render(args, groupMap(administration.updateGroup(group.organizationId(), group.id(), args.optional("name", group.displayName()), context)));
             }
             case "delete" -> {
                 IdentityGroup group = administration.getGroup(args.requiredId("id"));
-                require(actor, PermissionCodes.GROUP_DELETE, AuthorizationScope.organization(group.organizationId()), correlation, "group", group.id().toString());
+                require(args, actor, PermissionCodes.GROUP_DELETE, AuthorizationScope.organization(group.organizationId()), correlation, "group", group.id().toString());
                 confirm(args, "delete group " + group.id());
                 if (args.flag("dry-run")) yield dryRun(args, "soft-delete group " + group.id());
                 yield render(args, groupMap(administration.deleteGroup(group.organizationId(), group.id(), context)));
@@ -250,7 +264,7 @@ public final class IdentityAccessCli {
             case "add-member", "remove-member" -> {
                 IdentityGroup group = administration.getGroup(args.requiredId("id"));
                 boolean add = args.operation().equals("add-member");
-                require(actor, add ? PermissionCodes.GROUP_ADD_MEMBER : PermissionCodes.GROUP_REMOVE_MEMBER,
+                require(args, actor, add ? PermissionCodes.GROUP_ADD_MEMBER : PermissionCodes.GROUP_REMOVE_MEMBER,
                         AuthorizationScope.organization(group.organizationId()), correlation, "group", group.id().toString());
                 DomainIdentifier userId = args.requiredId("user");
                 if (args.flag("dry-run")) yield dryRun(args, (add ? "add" : "remove") + " user " + userId + " in group " + group.id());
@@ -261,7 +275,7 @@ public final class IdentityAccessCli {
             case "add-group", "remove-group" -> {
                 IdentityGroup group = administration.getGroup(args.requiredId("id"));
                 boolean add = args.operation().equals("add-group");
-                require(actor, add ? PermissionCodes.GROUP_ADD_GROUP : PermissionCodes.GROUP_REMOVE_GROUP,
+                require(args, actor, add ? PermissionCodes.GROUP_ADD_GROUP : PermissionCodes.GROUP_REMOVE_GROUP,
                         AuthorizationScope.organization(group.organizationId()), correlation, "group", group.id().toString());
                 DomainIdentifier child = args.requiredId("child");
                 if (args.flag("dry-run")) yield dryRun(args, (add ? "add" : "remove") + " child group " + child + " in group " + group.id());
@@ -271,7 +285,7 @@ public final class IdentityAccessCli {
             }
             case "assign-role" -> {
                 IdentityGroup group = administration.getGroup(args.requiredId("id"));
-                require(actor, PermissionCodes.GROUP_ASSIGN_ROLE, AuthorizationScope.organization(group.organizationId()), correlation, "group", group.id().toString());
+                require(args, actor, PermissionCodes.GROUP_ASSIGN_ROLE, AuthorizationScope.organization(group.organizationId()), correlation, "group", group.id().toString());
                 Role role = administration.getRole(args.requiredId("role"));
                 AuthorizationScope scope = role.scopeKind() == ScopeKind.SUBDIVISION
                         ? AuthorizationScope.subdivision(group.organizationId(), args.requiredId("subdivision"))
@@ -288,7 +302,7 @@ public final class IdentityAccessCli {
         return switch (args.operation()) {
             case "list" -> {
                 DomainIdentifier org = args.requiredId("org");
-                require(actor, PermissionCodes.ROLE_SEARCH, AuthorizationScope.organization(org), correlation, "role", "collection");
+                require(args, actor, PermissionCodes.ROLE_SEARCH, AuthorizationScope.organization(org), correlation, "role", "collection");
                 String filter = args.optional("filter", "").toLowerCase(Locale.ROOT);
                 yield renderList(args, administration.listRoles(org, args.offset(), args.limit()).stream()
                         .filter(role -> filter.isEmpty() || role.code().contains(filter) || role.displayName().toLowerCase(Locale.ROOT).contains(filter))
@@ -297,12 +311,12 @@ public final class IdentityAccessCli {
             case "show" -> {
                 Role role = administration.getRole(args.requiredId("id"));
                 AuthorizationScope scope = role.organizationId() == null ? AuthorizationScope.platform() : AuthorizationScope.organization(role.organizationId());
-                require(actor, PermissionCodes.ROLE_READ, scope, correlation, "role", role.id().toString());
+                require(args, actor, PermissionCodes.ROLE_READ, scope, correlation, "role", role.id().toString());
                 yield render(args, roleMap(role));
             }
             case "create" -> {
                 DomainIdentifier org = args.requiredId("org");
-                require(actor, PermissionCodes.ROLE_CREATE, AuthorizationScope.organization(org), correlation, "role", "collection");
+                require(args, actor, PermissionCodes.ROLE_CREATE, AuthorizationScope.organization(org), correlation, "role", "collection");
                 if (args.has("condition")) throw new IllegalArgumentException("--condition belongs to PGM-03-E04 and is not accepted by the RBAC foundation");
                 ScopeKind scopeKind = args.optionalScope("scope", ScopeKind.ORGANIZATION);
                 if (scopeKind == ScopeKind.PLATFORM) throw new IllegalArgumentException("organization-created roles cannot use platform scope");
@@ -313,7 +327,7 @@ public final class IdentityAccessCli {
             case "update" -> {
                 Role current = administration.getRole(args.requiredId("id"));
                 AuthorizationScope scope = current.organizationId() == null ? AuthorizationScope.platform() : AuthorizationScope.organization(current.organizationId());
-                require(actor, PermissionCodes.ROLE_UPDATE, scope, correlation, "role", current.id().toString());
+                require(args, actor, PermissionCodes.ROLE_UPDATE, scope, correlation, "role", current.id().toString());
                 if (args.has("scope") && args.optionalScope("scope", current.scopeKind()) != current.scopeKind()) {
                     throw new IllegalArgumentException("role scope changes require replacement in PGM-03-E03 to preserve active assignment semantics");
                 }
@@ -325,7 +339,7 @@ public final class IdentityAccessCli {
             case "delete" -> {
                 Role current = administration.getRole(args.requiredId("id"));
                 AuthorizationScope scope = current.organizationId() == null ? AuthorizationScope.platform() : AuthorizationScope.organization(current.organizationId());
-                require(actor, PermissionCodes.ROLE_DELETE, scope, correlation, "role", current.id().toString());
+                require(args, actor, PermissionCodes.ROLE_DELETE, scope, correlation, "role", current.id().toString());
                 confirm(args, "delete role " + current.id());
                 if (args.flag("dry-run")) yield dryRun(args, "soft-delete role " + current.id());
                 yield render(args, roleMap(administration.deleteRole(current.id(), args.flag("force"), context)));
@@ -335,7 +349,7 @@ public final class IdentityAccessCli {
                 AssignmentActorType actorType = actorType(args.required("actor-type"));
                 DomainIdentifier targetActor = args.requiredId("actor");
                 AuthorizationScope scope = assignmentScope(args, role);
-                require(actor, PermissionCodes.ROLE_ASSIGN, scope.kind() == ScopeKind.PLATFORM ? AuthorizationScope.platform() : AuthorizationScope.organization(scope.organizationId()), correlation, "role", role.id().toString());
+                require(args, actor, PermissionCodes.ROLE_ASSIGN, scope.kind() == ScopeKind.PLATFORM ? AuthorizationScope.platform() : AuthorizationScope.organization(scope.organizationId()), correlation, "role", role.id().toString());
                 if (args.flag("dry-run")) yield dryRun(args, "assign role " + role.id() + " to " + actorType + " " + targetActor);
                 yield render(args, assignmentMap(administration.assignRole(role.id(), actorType, targetActor, scope,
                         args.optionalInstant("effective-from"), args.optionalInstant("effective-to"), context)));
@@ -345,7 +359,7 @@ public final class IdentityAccessCli {
                 RoleAssignment assignment = administration.getAssignment(assignmentId);
                 Role role = administration.getRole(assignment.roleId());
                 AuthorizationScope scope = role.organizationId() == null ? AuthorizationScope.platform() : AuthorizationScope.organization(role.organizationId());
-                require(actor, PermissionCodes.ROLE_UNASSIGN, scope, correlation, "role", role.id().toString());
+                require(args, actor, PermissionCodes.ROLE_UNASSIGN, scope, correlation, "role", role.id().toString());
                 confirm(args, "revoke assignment " + assignmentId);
                 if (args.flag("dry-run")) yield dryRun(args, "revoke role assignment " + assignmentId);
                 administration.revokeAssignment(role.id(), assignmentId, context);
@@ -359,7 +373,7 @@ public final class IdentityAccessCli {
         return switch (args.operation()) {
             case "list" -> {
                 DomainIdentifier org = args.requiredId("org");
-                require(actor, PermissionCodes.PERMISSION_SEARCH, AuthorizationScope.organization(org), correlation, "permission", "collection");
+                require(args, actor, PermissionCodes.PERMISSION_SEARCH, AuthorizationScope.organization(org), correlation, "permission", "collection");
                 String filter = args.optional("filter", "").toLowerCase(Locale.ROOT);
                 yield renderList(args, administration.listPermissions(org, args.offset(), args.limit()).stream()
                         .filter(permission -> filter.isEmpty() || permission.code().contains(filter)
@@ -369,12 +383,12 @@ public final class IdentityAccessCli {
             case "describe" -> {
                 Permission permission = administration.getPermission(args.requiredId("id"));
                 AuthorizationScope scope = permission.organizationId() == null ? AuthorizationScope.platform() : AuthorizationScope.organization(permission.organizationId());
-                require(actor, PermissionCodes.PERMISSION_READ, scope, correlation, "permission", permission.id().toString());
+                require(args, actor, PermissionCodes.PERMISSION_READ, scope, correlation, "permission", permission.id().toString());
                 yield render(args, permissionMap(permission));
             }
             case "create" -> {
                 DomainIdentifier org = args.requiredId("org");
-                require(actor, PermissionCodes.PERMISSION_CREATE, AuthorizationScope.organization(org), correlation, "permission", "collection");
+                require(args, actor, PermissionCodes.PERMISSION_CREATE, AuthorizationScope.organization(org), correlation, "permission", "collection");
                 ScopeKind scope = args.optionalScope("scope", ScopeKind.ORGANIZATION);
                 if (scope == ScopeKind.PLATFORM) throw new IllegalArgumentException("organization-created permissions cannot use platform scope");
                 if (args.flag("dry-run")) yield dryRun(args, "create permission " + args.required("code") + " in organization " + org);
@@ -384,7 +398,7 @@ public final class IdentityAccessCli {
             case "update" -> {
                 Permission current = administration.getPermission(args.requiredId("id"));
                 AuthorizationScope authScope = current.organizationId() == null ? AuthorizationScope.platform() : AuthorizationScope.organization(current.organizationId());
-                require(actor, PermissionCodes.PERMISSION_UPDATE, authScope, correlation, "permission", current.id().toString());
+                require(args, actor, PermissionCodes.PERMISSION_UPDATE, authScope, correlation, "permission", current.id().toString());
                 boolean active = !"inactive".equalsIgnoreCase(args.optional("status", current.active() ? "active" : "inactive"));
                 if (args.flag("dry-run")) yield dryRun(args, "update permission " + current.id());
                 yield render(args, permissionMap(administration.updatePermission(current.id(), args.optional("resource", current.resourceType()),
@@ -394,7 +408,7 @@ public final class IdentityAccessCli {
             case "delete" -> {
                 Permission current = administration.getPermission(args.requiredId("id"));
                 AuthorizationScope scope = current.organizationId() == null ? AuthorizationScope.platform() : AuthorizationScope.organization(current.organizationId());
-                require(actor, PermissionCodes.PERMISSION_DELETE, scope, correlation, "permission", current.id().toString());
+                require(args, actor, PermissionCodes.PERMISSION_DELETE, scope, correlation, "permission", current.id().toString());
                 confirm(args, "delete permission " + current.id());
                 if (args.flag("dry-run")) yield dryRun(args, "soft-delete permission " + current.id());
                 yield render(args, permissionMap(administration.deletePermission(current.id(), context)));
@@ -404,7 +418,7 @@ public final class IdentityAccessCli {
                 AuthorizationScope scope = args.has("subdivision")
                         ? AuthorizationScope.subdivision(org, args.requiredId("subdivision"))
                         : AuthorizationScope.organization(org);
-                require(actor, PermissionCodes.PERMISSION_EVALUATE, AuthorizationScope.organization(org), correlation, "permission", "evaluation");
+                require(args, actor, PermissionCodes.PERMISSION_EVALUATE, AuthorizationScope.organization(org), correlation, "permission", "evaluation");
                 DomainIdentifier evaluated = args.requiredId("actor");
                 if (args.has("permission")) {
                     AuthorizationDecision decision = authorization.evaluatePermission(evaluated, args.required("permission"), scope,
@@ -426,9 +440,28 @@ public final class IdentityAccessCli {
         return AuthorizationScope.organization(org);
     }
 
-    private void require(DomainIdentifier actor, String permission, AuthorizationScope scope, DomainIdentifier correlation, String targetType, String targetId) {
+    private void require(Arguments args, DomainIdentifier actor, String permission, AuthorizationScope scope,
+            DomainIdentifier correlation, String targetType, String targetId) {
         AuthorizationDecision decision = authorization.decide(actor, permission, scope, correlation, targetType, targetId, "CLI");
         if (!decision.allowed()) throw new CliAuthorizationException(decision.explanation());
+        if (!features.supportsAdvancedAuthorization()) return;
+        boolean justificationPresent = args.has("reason") && validJustification(args.required("reason"));
+        String capabilityVersion = capabilities.snapshot().catalogVersion() + ":" + capabilities.snapshot().profileVersion();
+        PolicyEvaluationRequest request = new PolicyEvaluationRequest(actor, permission, targetType, targetId, scope,
+                Map.of("channel", "CLI", "justification_present", Boolean.toString(justificationPresent)),
+                "LOCAL_SESSION", capabilityVersion, null, true);
+        var advanced = policyDecisions.decide(request, correlation, "CLI");
+        if (!advanced.permitted()) throw new CliAuthorizationException(advanced.reasonCode());
+        for (PolicyObligation obligation : advanced.obligations()) {
+            if (obligation == PolicyObligation.REQUIRE_JUSTIFICATION && justificationPresent) continue;
+            throw new CliAuthorizationException("required authorization obligation is not satisfied: " + obligation.name());
+        }
+    }
+
+    private static boolean validJustification(String value) {
+        String normalized = value.strip();
+        return normalized.length() >= 8 && normalized.length() <= 500
+                && normalized.chars().noneMatch(Character::isISOControl);
     }
 
     private static void confirm(Arguments args, String description) {

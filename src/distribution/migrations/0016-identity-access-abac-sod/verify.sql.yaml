@@ -1,0 +1,14 @@
+schema: infranexum.migration-verification/v1
+checks:
+- id: iam-system-rbac-bridge-active
+  postgresql: "SELECT COUNT(*) = 1 FROM infranexum_iam.access_policy WHERE organization_id IS NULL AND code='system.rbac-bridge' AND policy_version=1 AND state='ACTIVE'"
+  oracle: "SELECT CASE WHEN COUNT(*)=1 THEN 1 ELSE 0 END FROM INFRANEXUM_IAM_ACCESS_POLICY WHERE ORGANIZATION_ID IS NULL AND CODE='system.rbac-bridge' AND POLICY_VERSION=1 AND STATE='ACTIVE'"
+- id: iam-system-rbac-bridge-condition-exact
+  postgresql: "SELECT COUNT(*) = 1 FROM infranexum_iam.access_policy_condition c JOIN infranexum_iam.access_policy_rule r ON r.id=c.rule_id JOIN infranexum_iam.access_policy p ON p.id=r.policy_id WHERE p.code='system.rbac-bridge' AND c.source_name='RBAC' AND c.attribute_name='permitted' AND c.operator_name='EQUALS' AND c.expected_value='true'"
+  oracle: "SELECT CASE WHEN COUNT(*)=1 THEN 1 ELSE 0 END FROM INFRANEXUM_IAM_ACCESS_POLICY_CONDITION c JOIN INFRANEXUM_IAM_ACCESS_POLICY_RULE r ON r.ID=c.RULE_ID JOIN INFRANEXUM_IAM_ACCESS_POLICY p ON p.ID=r.POLICY_ID WHERE p.CODE='system.rbac-bridge' AND c.SOURCE_NAME='RBAC' AND c.ATTRIBUTE_NAME='permitted' AND c.OPERATOR_NAME='EQUALS' AND c.EXPECTED_VALUE='true'"
+- id: iam-policy-no-cross-context-foreign-keys
+  postgresql: "SELECT COUNT(*) = 0 FROM pg_constraint c JOIN pg_class t ON t.oid=c.conrelid JOIN pg_namespace n ON n.oid=t.relnamespace JOIN pg_class rt ON rt.oid=c.confrelid JOIN pg_namespace rn ON rn.oid=rt.relnamespace WHERE c.contype='f' AND n.nspname='infranexum_iam' AND t.relname IN ('access_policy','access_policy_rule','access_policy_condition','sod_constraint') AND rn.nspname<>'infranexum_iam'"
+  oracle: "SELECT CASE WHEN COUNT(*)=0 THEN 1 ELSE 0 END FROM USER_CONSTRAINTS WHERE TABLE_NAME IN ('INFRANEXUM_IAM_ACCESS_POLICY','INFRANEXUM_IAM_ACCESS_POLICY_RULE','INFRANEXUM_IAM_ACCESS_POLICY_CONDITION','INFRANEXUM_IAM_SOD_CONSTRAINT') AND CONSTRAINT_TYPE='R' AND R_CONSTRAINT_NAME NOT IN (SELECT CONSTRAINT_NAME FROM USER_CONSTRAINTS WHERE TABLE_NAME LIKE 'INFRANEXUM_IAM_%')"
+- id: iam-policy-language-closed
+  postgresql: "SELECT COUNT(*) = 0 FROM infranexum_iam.access_policy_condition WHERE source_name NOT IN ('SUBJECT','RESOURCE','ORGANIZATION','SUBDIVISION','ENVIRONMENT','AUTHENTICATION','CAPABILITY','RBAC') OR operator_name NOT IN ('EQUALS','NOT_EQUALS','CONTAINS','EXISTS')"
+  oracle: "SELECT CASE WHEN COUNT(*)=0 THEN 1 ELSE 0 END FROM INFRANEXUM_IAM_ACCESS_POLICY_CONDITION WHERE SOURCE_NAME NOT IN ('SUBJECT','RESOURCE','ORGANIZATION','SUBDIVISION','ENVIRONMENT','AUTHENTICATION','CAPABILITY','RBAC') OR OPERATOR_NAME NOT IN ('EQUALS','NOT_EQUALS','CONTAINS','EXISTS')"

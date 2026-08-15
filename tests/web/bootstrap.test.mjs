@@ -28,13 +28,16 @@ const valid = {
   schema: 'infranexum.web-runtime-config/v1',
   product: 'InfraNexum',
   component: 'web',
-  version: '2.0.0-alpha.0.69',
+  version: '2.0.0-alpha.0.77',
   architectureBaseline: '2.0.0-draft.21',
   environment: 'test',
   apiBaseUrl: '/api',
   organizationFoundationEnabled: false,
   localAuthEnabled: false,
   identityAccessEnabled: false,
+  advancedAuthorizationEnabled: false,
+  rsotCoreEnabled: false,
+  itamPartnersEnabled: false,
 };
 
 test('browser bootstrap validates and renders public configuration', async () => {
@@ -58,7 +61,7 @@ test('browser bootstrap validates and renders public configuration', async () =>
 });
 
 test('browser bootstrap rejects malformed configuration and renders a safe failure', async () => {
-  for (const value of [null, [], {}, { ...valid, schema: 'wrong' }, { ...valid, version: '' }]) {
+  for (const value of [null, [], {}, { ...valid, schema: 'wrong' }, { ...valid, version: '' }, { ...valid, advancedAuthorizationEnabled: 'true' }, { ...valid, rsotCoreEnabled: 'true' }, { ...valid, itamPartnersEnabled: 'true' }, { ...valid, advancedAuthorizationEnabled: true, identityAccessEnabled: false }]) {
     assert.throws(() => validatePublicConfiguration(value), /configuration/i);
   }
   const documentObject = documentFixture();

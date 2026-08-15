@@ -1,0 +1,508 @@
+openapi: 3.1.0
+info:
+  title: InfraNexum RSOT Schema Registry API
+  version: 2.0.0-alpha.0.77
+  description: Versioned JSON Schema registry and composable schema profiles for PGM-06-E03.
+servers:
+  - url: /
+security:
+  - LocalSessionCookie: []
+x-tagGroups:
+  - name: RSOT
+    tags:
+      - RSOT / Schemas
+      - RSOT / Schema Profiles
+x-infranexum-published-events:
+  - rsot.schema.created.v1
+  - rsot.schema.updated.v1
+  - rsot.schema.published.v1
+  - rsot.schema.deprecated.v1
+  - rsot.schema.profile.created.v1
+  - rsot.schema.profile.published.v1
+  - rsot.schema.profile.deprecated.v1
+tags:
+  - name: RSOT / Schemas
+    description: Versioned JSON Schema contracts governed by Core Contracts/Compatibility.
+  - name: RSOT / Schema Profiles
+    description: Ordered composable profiles made only from published registry schemas.
+paths:
+  /api/v1/rsot/schemas:
+    parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+    get:
+      tags: [RSOT / Schemas]
+      operationId: listRsotSchemas
+      summary: List schema revisions
+      x-infranexum-permission: rsot.schema.read
+      x-infranexum-capability: rsot.core
+      x-infranexum-minimum-installation-profile: lite
+      parameters:
+        - name: schemaKey
+          in: query
+          schema: {type: string, maxLength: 160}
+        - name: kind
+          in: query
+          schema: {$ref: '#/components/schemas/SchemaKind'}
+        - name: status
+          in: query
+          schema: {$ref: '#/components/schemas/RegistryStatus'}
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Bounded list of schema revisions.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Schema'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    post:
+      tags: [RSOT / Schemas]
+      operationId: createRsotSchema
+      summary: Create a schema draft
+      x-infranexum-permission: rsot.schema.create
+      x-infranexum-capability: rsot.core
+      x-infranexum-minimum-installation-profile: lite
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateSchema'}
+      responses:
+        '201': {$ref: '#/components/responses/SchemaResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/UnprocessableEntity'}
+  /api/v1/rsot/schemas/{schemaId}:
+    parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/SchemaId'
+    get:
+      tags: [RSOT / Schemas]
+      operationId: getRsotSchema
+      summary: Read one schema revision
+      x-infranexum-permission: rsot.schema.read
+      x-infranexum-capability: rsot.core
+      responses:
+        '200': {$ref: '#/components/responses/SchemaResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+    patch:
+      tags: [RSOT / Schemas]
+      operationId: updateRsotSchemaDraft
+      summary: Replace the definition of a schema draft
+      description: Published and deprecated revisions are immutable. If-Match must carry the current registry revision.
+      x-infranexum-permission: rsot.schema.update
+      x-infranexum-capability: rsot.core
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UpdateSchema'}
+      responses:
+        '200': {$ref: '#/components/responses/SchemaResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/UnprocessableEntity'}
+  /api/v1/rsot/schemas/{schemaId}/compatibility:
+    parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/SchemaId'
+    get:
+      tags: [RSOT / Schemas]
+      operationId: previewRsotSchemaCompatibility
+      summary: Preview compatibility with the latest published revision
+      x-infranexum-permission: rsot.schema.read
+      x-infranexum-capability: rsot.core
+      responses:
+        '200':
+          description: Compatibility verdict and deterministic issues.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Compatibility'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '422': {$ref: '#/components/responses/UnprocessableEntity'}
+  /api/v1/rsot/schemas/{schemaId}/publish:
+    parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/SchemaId'
+    post:
+      tags: [RSOT / Schemas]
+      operationId: publishRsotSchema
+      summary: Publish a compatible schema revision
+      description: Breaking revisions require an explicit architecture approval reference; indeterminate compatibility is rejected fail-closed.
+      x-infranexum-permission: rsot.schema.publish
+      x-infranexum-capability: rsot.core
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PublishSchema'}
+      responses:
+        '200': {$ref: '#/components/responses/SchemaResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/UnprocessableEntity'}
+  /api/v1/rsot/schemas/{schemaId}/deprecate:
+    parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/SchemaId'
+    post:
+      tags: [RSOT / Schemas]
+      operationId: deprecateRsotSchema
+      summary: Deprecate a published schema revision
+      x-infranexum-permission: rsot.schema.deprecate
+      x-infranexum-capability: rsot.core
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/Deprecate'}
+      responses:
+        '200': {$ref: '#/components/responses/SchemaResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/UnprocessableEntity'}
+  /api/v1/rsot/schema-profiles:
+    parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+    get:
+      tags: [RSOT / Schema Profiles]
+      operationId: listRsotSchemaProfiles
+      summary: List composable schema profiles
+      x-infranexum-permission: rsot.schema.read
+      x-infranexum-capability: rsot.core
+      parameters:
+        - name: code
+          in: query
+          schema: {type: string, maxLength: 160}
+        - name: status
+          in: query
+          schema: {$ref: '#/components/schemas/RegistryStatus'}
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Bounded list of schema profiles.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/SchemaProfile'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    post:
+      tags: [RSOT / Schema Profiles]
+      operationId: createRsotSchemaProfile
+      summary: Create a composable profile draft
+      x-infranexum-permission: rsot.schema.create
+      x-infranexum-capability: rsot.core
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateSchemaProfile'}
+      responses:
+        '201': {$ref: '#/components/responses/ProfileResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/UnprocessableEntity'}
+  /api/v1/rsot/schema-profiles/{profileId}:
+    parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/ProfileId'
+    get:
+      tags: [RSOT / Schema Profiles]
+      operationId: getRsotSchemaProfile
+      summary: Read one composable schema profile
+      x-infranexum-permission: rsot.schema.read
+      x-infranexum-capability: rsot.core
+      responses:
+        '200': {$ref: '#/components/responses/ProfileResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /api/v1/rsot/schema-profiles/{profileId}/publish:
+    parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/ProfileId'
+    post:
+      tags: [RSOT / Schema Profiles]
+      operationId: publishRsotSchemaProfile
+      summary: Publish a composable schema profile
+      x-infranexum-permission: rsot.schema.publish
+      x-infranexum-capability: rsot.core
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '200': {$ref: '#/components/responses/ProfileResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/UnprocessableEntity'}
+  /api/v1/rsot/schema-profiles/{profileId}/deprecate:
+    parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/ProfileId'
+    post:
+      tags: [RSOT / Schema Profiles]
+      operationId: deprecateRsotSchemaProfile
+      summary: Deprecate a composable schema profile
+      x-infranexum-permission: rsot.schema.deprecate
+      x-infranexum-capability: rsot.core
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/Deprecate'}
+      responses:
+        '200': {$ref: '#/components/responses/ProfileResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/UnprocessableEntity'}
+components:
+  securitySchemes:
+    LocalSessionCookie:
+      type: apiKey
+      in: cookie
+      name: INFRANEXUM_SESSION
+  parameters:
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: false
+      schema: {type: string, format: uuid}
+    CsrfToken:
+      name: X-CSRF-Token
+      in: header
+      required: true
+      schema: {type: string, minLength: 16, maxLength: 512}
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      description: Optimistic registry revision, for example `"rev-3"`.
+      schema: {type: string, pattern: '^((W/)?)"?rev-[1-9][0-9]*"?$'}
+    SchemaId:
+      name: schemaId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    ProfileId:
+      name: profileId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+    Offset:
+      name: offset
+      in: query
+      schema: {type: integer, minimum: 0, default: 0}
+    Limit:
+      name: limit
+      in: query
+      schema: {type: integer, minimum: 1, maximum: 200, default: 50}
+  schemas:
+    SchemaKind:
+      type: string
+      enum: [API, EVENT, COMMAND, IMPORT, EXPORT, RSOT_CANONICAL, RSOT_EXTENSION, CUSTOM_FIELD, PROJECTION]
+    RegistryStatus:
+      type: string
+      enum: [DRAFT, PUBLISHED, DEPRECATED]
+    CreateSchema:
+      type: object
+      additionalProperties: false
+      required: [schemaKey, kind, owner, version, definition]
+      properties:
+        schemaKey: {type: string, pattern: '^[a-z][a-z0-9.-]{2,159}$'}
+        kind: {$ref: '#/components/schemas/SchemaKind'}
+        owner: {type: string, pattern: '^[a-z][a-z0-9._-]{2,159}$'}
+        version: {type: string, minLength: 1, maxLength: 64}
+        definition: {type: object}
+        effectiveAt: {type: [string, 'null'], description: ISO-8601 instant/offset/zoned/local Server-time date-time.}
+    UpdateSchema:
+      type: object
+      additionalProperties: false
+      required: [definition]
+      properties:
+        definition: {type: object}
+    PublishSchema:
+      type: object
+      additionalProperties: false
+      properties:
+        breakingApprovalReference: {type: [string, 'null'], maxLength: 240}
+    Deprecate:
+      type: object
+      additionalProperties: false
+      required: [sunsetAt, reason]
+      properties:
+        sunsetAt: {type: string, description: ISO-8601 date-time; must resolve after deprecation time.}
+        reason: {type: string, minLength: 1, maxLength: 500}
+    CreateSchemaProfile:
+      type: object
+      additionalProperties: false
+      required: [code, owner, version, schemaIds]
+      properties:
+        code: {type: string, pattern: '^[a-z][a-z0-9.-]{2,159}$'}
+        owner: {type: string, pattern: '^[a-z][a-z0-9._-]{2,159}$'}
+        version: {type: string, minLength: 1, maxLength: 64}
+        schemaIds:
+          type: array
+          minItems: 1
+          maxItems: 128
+          uniqueItems: true
+          items: {type: string, format: uuid}
+    Schema:
+      type: object
+      required: [id, schemaKey, kind, owner, version, status, definition, checksumSha256, revision, effectiveAt, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        schemaKey: {type: string}
+        kind: {$ref: '#/components/schemas/SchemaKind'}
+        owner: {type: string}
+        version: {type: string}
+        status: {$ref: '#/components/schemas/RegistryStatus'}
+        definition: {type: object}
+        checksumSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+        revision: {type: integer, minimum: 1}
+        effectiveAt: {type: string, format: date-time}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+        publishedAt: {type: [string, 'null'], format: date-time}
+        deprecatedAt: {type: [string, 'null'], format: date-time}
+        sunsetAt: {type: [string, 'null'], format: date-time}
+        deprecationReason: {type: [string, 'null']}
+        compatibilityEvidence: {type: [string, 'null']}
+        breakingApprovalReference: {type: [string, 'null']}
+    SchemaProfile:
+      type: object
+      required: [id, code, owner, version, status, members, checksumSha256, revision, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        code: {type: string}
+        owner: {type: string}
+        version: {type: string}
+        status: {$ref: '#/components/schemas/RegistryStatus'}
+        members:
+          type: array
+          items:
+            type: object
+            required: [position, schemaId, required]
+            properties:
+              position: {type: integer, minimum: 1, maximum: 128}
+              schemaId: {type: string, format: uuid}
+              required: {type: boolean}
+        checksumSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+        revision: {type: integer, minimum: 1}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+        publishedAt: {type: [string, 'null'], format: date-time}
+        deprecatedAt: {type: [string, 'null'], format: date-time}
+        sunsetAt: {type: [string, 'null'], format: date-time}
+        deprecationReason: {type: [string, 'null']}
+    Compatibility:
+      type: object
+      required: [verdict, issues]
+      properties:
+        verdict: {type: string, enum: [COMPATIBLE, BREAKING, INDETERMINATE]}
+        issues:
+          type: array
+          items: {type: string}
+    Problem:
+      type: object
+      required: [type, title, status, detail]
+      properties:
+        type: {type: string}
+        title: {type: string}
+        status: {type: integer}
+        detail: {type: string}
+        code: {type: string}
+        instance: {type: string}
+        occurred_at: {type: string, format: date-time}
+        trace_id: {type: [string, 'null']}
+  headers:
+    ETag:
+      description: Current optimistic registry revision.
+      schema: {type: string}
+    CorrelationId:
+      description: Correlation identifier propagated or generated by Server.
+      schema: {type: string, format: uuid}
+  responses:
+    SchemaResponse:
+      description: Schema registry entry.
+      headers:
+        ETag: {$ref: '#/components/headers/ETag'}
+        X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Schema'}
+    ProfileResponse:
+      description: Composable schema profile.
+      headers:
+        ETag: {$ref: '#/components/headers/ETag'}
+        X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/SchemaProfile'}
+    BadRequest:
+      description: Invalid request.
+      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
+    Unauthorized:
+      description: Authentication required or invalid.
+      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
+    Forbidden:
+      description: RBAC or runtime capability denied the operation.
+      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
+    NotFound:
+      description: Registry entity not found.
+      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
+    Conflict:
+      description: Version or optimistic revision conflict.
+      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
+    UnprocessableEntity:
+      description: Lifecycle or compatibility rule rejected the request.
+      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}

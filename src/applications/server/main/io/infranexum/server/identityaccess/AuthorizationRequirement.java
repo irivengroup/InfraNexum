@@ -14,9 +14,10 @@ record AuthorizationRequirement(
         AuthorizationScope scope,
         String targetType,
         String targetId) {
-    enum Type { PERMISSION, GROUP_PERMISSION, ORGANIZATION_VISIBILITY, PLATFORM_ADMINISTRATOR, UNREGISTERED }
+    enum Type { PERMISSION, GROUP_PERMISSION, ORGANIZATION_VISIBILITY, PLATFORM_ADMINISTRATOR, CONTROLLER_SCOPED, UNREGISTERED }
 
     private static final Pattern IAM_ORG = Pattern.compile("^/api/v1/iam/organizations/([^/]+)(.*)$");
+    private static final Pattern POLICY_LIFECYCLE = Pattern.compile("^/api/v1/iam/policies/([^/]+)/(validate|approve|activate)$");
     private static final Pattern USER = Pattern.compile("^/api/v1/iam/users(?:/([^/]+))?(.*)$");
     private static final Pattern EFFECTIVE_GROUP = Pattern.compile("^/api/v1/iam/groups/([^/]+)/effective-members$");
     private static final Pattern ORG_RESOURCE = Pattern.compile("^/api/v1/organizations/([^/]+)/(groups|roles|permissions)(.*)$");
@@ -48,6 +49,40 @@ record AuthorizationRequirement(
         }
         if (normalized.equals("/api/v1/platform/evaluation/status")) {
             return permission(PermissionCodes.PLATFORM_PROFILE_READ, AuthorizationScope.platform(), "platform", "evaluation-status");
+        }
+
+        if (normalized.equals("/api/v1/rsot/schemas")) {
+            if (verb.equals("GET")) return permission(PermissionCodes.RSOT_SCHEMA_READ, AuthorizationScope.platform(), "rsot-schema", "collection");
+            if (verb.equals("POST")) return permission(PermissionCodes.RSOT_SCHEMA_CREATE, AuthorizationScope.platform(), "rsot-schema", "collection");
+            return unregistered(normalized);
+        }
+        if (normalized.startsWith("/api/v1/rsot/schemas/")) {
+            return rsotSchemaRequirement(verb, normalized.substring("/api/v1/rsot/schemas/".length()), false, normalized);
+        }
+        if (normalized.equals("/api/v1/rsot/schema-profiles")) {
+            if (verb.equals("GET")) return permission(PermissionCodes.RSOT_SCHEMA_READ, AuthorizationScope.platform(), "rsot-schema-profile", "collection");
+            if (verb.equals("POST")) return permission(PermissionCodes.RSOT_SCHEMA_CREATE, AuthorizationScope.platform(), "rsot-schema-profile", "collection");
+            return unregistered(normalized);
+        }
+        if (normalized.startsWith("/api/v1/rsot/schema-profiles/")) {
+            return rsotSchemaRequirement(verb, normalized.substring("/api/v1/rsot/schema-profiles/".length()), true, normalized);
+        }
+
+        if (normalized.equals("/api/v1/itam/partners") || normalized.startsWith("/api/v1/itam/partners/")) {
+            return controllerScoped("itam-partner", normalized);
+        }
+
+        if (normalized.equals("/api/v1/iam/policies") && (verb.equals("GET") || verb.equals("POST"))) {
+            return platformAdmin("policy", "collection");
+        }
+        Matcher policyLifecycle = POLICY_LIFECYCLE.matcher(normalized);
+        if (policyLifecycle.matches() && verb.equals("POST")) {
+            String policyId = DomainIdentifier.parse(policyLifecycle.group(1)).toString();
+            return platformAdmin("policy", policyId);
+        }
+        if ((normalized.equals("/api/v1/iam/authorization/decisions")
+                || normalized.equals("/api/v1/iam/authorization/explain")) && verb.equals("POST")) {
+            return platformAdmin("authorization", normalized.endsWith("/explain") ? "explain" : "decisions");
         }
 
         if (normalized.equals("/api/v1/iam/organizations")) {
@@ -105,6 +140,19 @@ record AuthorizationRequirement(
             };
         }
         return unregistered(normalized);
+    }
+
+    private static AuthorizationRequirement rsotSchemaRequirement(String verb, String tail, boolean profile, String target) {
+        String[] parts = tail.split("/", -1);
+        if (parts.length < 1 || parts[0].isBlank()) return unregistered(target);
+        String id = DomainIdentifier.parse(parts[0]).toString();
+        String type = profile ? "rsot-schema-profile" : "rsot-schema";
+        if (parts.length == 1 && verb.equals("GET")) return permission(PermissionCodes.RSOT_SCHEMA_READ, AuthorizationScope.platform(), type, id);
+        if (!profile && parts.length == 1 && verb.equals("PATCH")) return permission(PermissionCodes.RSOT_SCHEMA_UPDATE, AuthorizationScope.platform(), type, id);
+        if (!profile && parts.length == 2 && parts[1].equals("compatibility") && verb.equals("GET")) return permission(PermissionCodes.RSOT_SCHEMA_READ, AuthorizationScope.platform(), type, id);
+        if (parts.length == 2 && parts[1].equals("publish") && verb.equals("POST")) return permission(PermissionCodes.RSOT_SCHEMA_PUBLISH, AuthorizationScope.platform(), type, id);
+        if (parts.length == 2 && parts[1].equals("deprecate") && verb.equals("POST")) return permission(PermissionCodes.RSOT_SCHEMA_DEPRECATE, AuthorizationScope.platform(), type, id);
+        return unregistered(target);
     }
 
     private static AuthorizationRequirement groupRequirement(String verb,String tail,AuthorizationScope scope,String target){
@@ -177,5 +225,6 @@ record AuthorizationRequirement(
     private static AuthorizationRequirement groupPermission(String code,DomainIdentifier groupId){return new AuthorizationRequirement(Type.GROUP_PERMISSION,code,AuthorizationScope.platform(),"group",groupId.toString());}
     private static AuthorizationRequirement visibility(DomainIdentifier org){return new AuthorizationRequirement(Type.ORGANIZATION_VISIBILITY,null,AuthorizationScope.organization(org),"organization",org.toString());}
     private static AuthorizationRequirement platformAdmin(String type,String id){return new AuthorizationRequirement(Type.PLATFORM_ADMINISTRATOR,null,AuthorizationScope.platform(),type,id);}
+    private static AuthorizationRequirement controllerScoped(String type,String id){return new AuthorizationRequirement(Type.CONTROLLER_SCOPED,null,AuthorizationScope.platform(),type,id);}
     private static AuthorizationRequirement unregistered(String target){return new AuthorizationRequirement(Type.UNREGISTERED,null,AuthorizationScope.platform(),"api-route",target);}
 }

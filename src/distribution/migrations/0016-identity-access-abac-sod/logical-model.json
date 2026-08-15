@@ -1,0 +1,25 @@
+{
+  "schema": "infranexum.logical-migration/v1",
+  "migration": "0016",
+  "context": "identity-access",
+  "objects": [
+    "infranexum_iam.access_policy",
+    "infranexum_iam.access_policy_rule",
+    "infranexum_iam.access_policy_condition",
+    "infranexum_iam.sod_constraint"
+  ],
+  "purpose": "pap-pdp-abac-policy-versioning-static-sod-foundation",
+  "authorization": {
+    "decision_values": ["PERMIT", "DENY", "NOT_APPLICABLE", "INDETERMINATE"],
+    "combining_algorithm": "deny-overrides",
+    "system_bridge": "system.rbac-bridge@1",
+    "language": "closed-declarative-conditions-v1"
+  },
+  "security": {
+    "cross_context_foreign_keys": false,
+    "arbitrary_expression_execution": false,
+    "active_policy_immutable": true,
+    "default_deny": true,
+    "destructive": false
+  }
+}

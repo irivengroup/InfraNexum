@@ -1,0 +1,11 @@
+schema: infranexum.migration-verification/v1
+checks:
+- id: itam-partner-code-unique-per-organization
+  postgresql: "SELECT COUNT(*) = COUNT(DISTINCT governing_organization_id::text || ':' || code) FROM infranexum_itam.partner"
+  oracle: "SELECT CASE WHEN COUNT(*) = COUNT(DISTINCT GOVERNING_ORGANIZATION_ID || ':' || CODE) THEN 1 ELSE 0 END FROM INFRANEXUM_ITAM_PARTNER"
+- id: itam-partner-validity-periods-valid
+  postgresql: "SELECT COUNT(*) = 0 FROM infranexum_itam.partner WHERE valid_until IS NOT NULL AND valid_until < valid_from"
+  oracle: "SELECT CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END FROM INFRANEXUM_ITAM_PARTNER WHERE VALID_UNTIL IS NOT NULL AND VALID_UNTIL < VALID_FROM"
+- id: itam-partner-identity-tokens-unique
+  postgresql: "SELECT COUNT(*) = COUNT(DISTINCT governing_organization_id::text || ':' || identity_token) FROM infranexum_itam.partner_identity_token"
+  oracle: "SELECT CASE WHEN COUNT(*) = COUNT(DISTINCT GOVERNING_ORGANIZATION_ID || ':' || IDENTITY_TOKEN) THEN 1 ELSE 0 END FROM INFRANEXUM_ITAM_PARTNER_IDENT"

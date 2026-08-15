@@ -27,8 +27,10 @@ class RsotAuthorityFoundationMigrationTest(unittest.TestCase):
     def test_catalogue_orders_weak_reference_remediation_before_rsot(self) -> None:
         catalogue = yaml.safe_load((self.migrations / "catalogue.yaml").read_text(encoding="utf-8"))
         ids = [str(entry["id"]).zfill(4) for entry in catalogue["entries"]]
-        self.assertEqual(["0013", "0014", "0015"], ids[-3:])
-        self.assertEqual("1.14.0", catalogue["version"])
+        positions = {migration_id: ids.index(migration_id) for migration_id in ("0013", "0014", "0015")}
+        self.assertLess(positions["0013"], positions["0014"])
+        self.assertLess(positions["0014"], positions["0015"])
+        self.assertGreaterEqual(tuple(map(int, catalogue["version"].split("."))), (1, 14, 0))
 
     def test_both_descriptors_have_exact_checksums_and_dependencies(self) -> None:
         for directory, migration_id, owner, dependency in (

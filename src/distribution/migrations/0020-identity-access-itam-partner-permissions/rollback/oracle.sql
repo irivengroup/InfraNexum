@@ -1,0 +1,2 @@
+DELETE FROM INFRANEXUM_IAM_ROLE_PERMISSION WHERE PERMISSION_ID IN (SELECT ID FROM INFRANEXUM_IAM_PERMISSION WHERE ORGANIZATION_ID IS NULL AND CODE IN ('itam.partner.read','itam.partner.create','itam.partner.update','itam.partner.approve','itam.partner.suspend','itam.audit.read'));
+DELETE FROM INFRANEXUM_IAM_PERMISSION WHERE ORGANIZATION_ID IS NULL AND CODE IN ('itam.partner.read','itam.partner.create','itam.partner.update','itam.partner.approve','itam.partner.suspend','itam.audit.read');

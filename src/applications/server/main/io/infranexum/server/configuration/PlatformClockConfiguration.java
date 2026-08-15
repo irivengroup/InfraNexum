@@ -1,6 +1,7 @@
 package io.infranexum.server.configuration;
 
 import java.time.Clock;
+import java.time.ZoneId;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -19,5 +20,11 @@ public class PlatformClockConfiguration {
     @Primary
     Clock platformClock() {
         return Clock.systemUTC();
+    }
+
+    /** Resolves timezone-less request date-times against the host/JVM Server timezone. */
+    @Bean
+    ServerTemporalInputParser serverTemporalInputParser() {
+        return new ServerTemporalInputParser(ZoneId.systemDefault());
     }
 }

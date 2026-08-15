@@ -208,6 +208,7 @@ class CapabilityCheckerTest(unittest.TestCase):
         next(row for row in rows if row["capability_code"] == "agent.enabled")["allowed_profiles"] = "pro"
         next(row for row in rows if row["capability_code"] == "iam.ldap")["allowed_profiles"] = "enterprise"
         next(row for row in rows if row["capability_code"] == "iam.local-auth")["allowed_profiles"] = "pro"
+        next(row for row in rows if row["capability_code"] == "rsot.core")["allowed_profiles"] = "pro"
         rows[0]["capability_code"] = "INVALID"
         rows[0]["activation_protected"] = "maybe"
         self.write_csv(FILES[5], fields, rows)

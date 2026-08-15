@@ -21,6 +21,9 @@ export class WebRuntimeConfiguration {
   #organizationFoundationEnabled;
   #localAuthEnabled;
   #identityAccessEnabled;
+  #advancedAuthorizationEnabled;
+  #rsotCoreEnabled;
+  #itamPartnersEnabled;
 
   constructor({
     listenHost,
@@ -34,6 +37,9 @@ export class WebRuntimeConfiguration {
     organizationFoundationEnabled,
     localAuthEnabled,
     identityAccessEnabled,
+    advancedAuthorizationEnabled,
+    rsotCoreEnabled,
+    itamPartnersEnabled,
   }) {
     this.#listenHost = listenHost;
     this.#listenPort = listenPort;
@@ -46,6 +52,9 @@ export class WebRuntimeConfiguration {
     this.#organizationFoundationEnabled = organizationFoundationEnabled;
     this.#localAuthEnabled = localAuthEnabled;
     this.#identityAccessEnabled = identityAccessEnabled;
+    this.#advancedAuthorizationEnabled = advancedAuthorizationEnabled;
+    this.#rsotCoreEnabled = rsotCoreEnabled;
+    this.#itamPartnersEnabled = itamPartnersEnabled;
     Object.freeze(this);
   }
 
@@ -111,6 +120,24 @@ export class WebRuntimeConfiguration {
     if (identityAccessEnabled && (!organizationFoundationEnabled || !localAuthEnabled)) {
       throw new Error('Identity-access UI requires organization foundation and local authentication');
     }
+    const advancedAuthorizationEnabled = readBoolean(
+      environment,
+      'INFRANEXUM_WEB_ADVANCED_AUTHORIZATION_ENABLED',
+      false,
+    );
+    const rsotCoreEnabled = readBoolean(
+      environment,
+      'INFRANEXUM_WEB_RSOT_CORE_ENABLED',
+      false,
+    );
+    const itamPartnersEnabled = readBoolean(
+      environment,
+      'INFRANEXUM_WEB_ITAM_PARTNERS_ENABLED',
+      false,
+    );
+    if (advancedAuthorizationEnabled && !identityAccessEnabled) {
+      throw new Error('Advanced-authorization UI requires identity-access capability');
+    }
 
     return new WebRuntimeConfiguration({
       listenHost,
@@ -124,6 +151,9 @@ export class WebRuntimeConfiguration {
       organizationFoundationEnabled,
       localAuthEnabled,
       identityAccessEnabled,
+      advancedAuthorizationEnabled,
+      rsotCoreEnabled,
+      itamPartnersEnabled,
     });
   }
 
@@ -138,6 +168,9 @@ export class WebRuntimeConfiguration {
   get organizationFoundationEnabled() { return this.#organizationFoundationEnabled; }
   get localAuthEnabled() { return this.#localAuthEnabled; }
   get identityAccessEnabled() { return this.#identityAccessEnabled; }
+  get advancedAuthorizationEnabled() { return this.#advancedAuthorizationEnabled; }
+  get rsotCoreEnabled() { return this.#rsotCoreEnabled; }
+  get itamPartnersEnabled() { return this.#itamPartnersEnabled; }
 
   publicConfiguration() {
     return Object.freeze({
@@ -151,6 +184,9 @@ export class WebRuntimeConfiguration {
       organizationFoundationEnabled: this.#organizationFoundationEnabled,
       localAuthEnabled: this.#localAuthEnabled,
       identityAccessEnabled: this.#identityAccessEnabled,
+      advancedAuthorizationEnabled: this.#advancedAuthorizationEnabled,
+      rsotCoreEnabled: this.#rsotCoreEnabled,
+      itamPartnersEnabled: this.#itamPartnersEnabled,
     });
   }
 }

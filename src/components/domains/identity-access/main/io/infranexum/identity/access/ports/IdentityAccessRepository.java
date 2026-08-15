@@ -54,5 +54,6 @@ public interface IdentityAccessRepository {
     void revokeAssignment(DomainIdentifier assignmentId, DomainIdentifier revokedBy, Instant now);
     boolean hasEffectivePermission(DomainIdentifier userId, String permissionCode, AuthorizationScope scope, Instant at);
     Set<String> effectivePermissionCodes(DomainIdentifier userId, AuthorizationScope scope, Instant at);
+    boolean hasEffectiveRole(DomainIdentifier userId, DomainIdentifier roleId, AuthorizationScope scope, Instant at);
     boolean hasEffectiveSystemRole(DomainIdentifier userId, String roleCode, Instant at);
 }
