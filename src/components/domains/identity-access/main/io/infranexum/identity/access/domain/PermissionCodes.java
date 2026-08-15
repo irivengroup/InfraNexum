@@ -14,6 +14,11 @@ public final class PermissionCodes {
     public static final String ITAM_WARRANTY_READ="itam.warranty.read", ITAM_WARRANTY_MANAGE="itam.warranty.manage";
     public static final String ITAM_SUPPORT_COVERAGE_READ="itam.support_coverage.read", ITAM_SUPPORT_COVERAGE_MANAGE="itam.support_coverage.manage", ITAM_SUPPORT_CATALOG_MANAGE="itam.support_catalog.manage";
     public static final String ITAM_LICENSE_READ="itam.license.read", ITAM_LICENSE_MANAGE="itam.license.manage";
+    public static final String DCIM_SITE_READ="dcim.site.read", DCIM_SITE_CREATE="dcim.site.create", DCIM_SITE_UPDATE="dcim.site.update", DCIM_SITE_ARCHIVE="dcim.site.archive", DCIM_SITE_DELETE="dcim.site.delete", DCIM_SITE_AUDIT="dcim.site.audit";
+    public static final String DCIM_BUILDING_READ="dcim.building.read", DCIM_BUILDING_CREATE="dcim.building.create", DCIM_BUILDING_UPDATE="dcim.building.update", DCIM_BUILDING_ARCHIVE="dcim.building.archive", DCIM_BUILDING_DELETE="dcim.building.delete";
+    public static final String DCIM_FLOOR_READ="dcim.floor.read", DCIM_FLOOR_CREATE="dcim.floor.create", DCIM_FLOOR_UPDATE="dcim.floor.update", DCIM_FLOOR_ARCHIVE="dcim.floor.archive", DCIM_FLOOR_DELETE="dcim.floor.delete";
+    public static final String DCIM_ROOM_READ="dcim.room.read", DCIM_ROOM_CREATE="dcim.room.create", DCIM_ROOM_UPDATE="dcim.room.update", DCIM_ROOM_LOCK="dcim.room.lock", DCIM_ROOM_ARCHIVE="dcim.room.archive", DCIM_ROOM_DELETE="dcim.room.delete";
+    public static final String DCIM_ZONE_READ="dcim.zone.read", DCIM_ZONE_CREATE="dcim.zone.create", DCIM_ZONE_UPDATE="dcim.zone.update", DCIM_ZONE_DELETE="dcim.zone.delete";
     public static final String ORGANIZATION_CREATE="organization.create", ORGANIZATION_SUSPEND="organization.suspend";
     public static final String SUBDIVISION_CREATE="organization.subdivision.create", SUBDIVISION_READ="organization.subdivision.read", SUBDIVISION_SEARCH="organization.subdivision.search", SUBDIVISION_UPDATE="organization.subdivision.update", SUBDIVISION_DELETE="organization.subdivision.delete", SUBDIVISION_VIEW_RESOURCES="organization.subdivision.view_resources";
 }

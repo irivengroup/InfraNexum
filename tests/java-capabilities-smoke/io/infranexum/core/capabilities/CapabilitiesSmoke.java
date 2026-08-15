@@ -18,7 +18,7 @@ public final class CapabilitiesSmoke {
         String catalogVersion = "2.0.0-draft.20";
         CapabilityCatalog capabilities = CapabilityCatalog.load(catalogVersion, Path.of(args[0]));
         QuotaCatalog quotas = QuotaCatalog.load(catalogVersion, Path.of(args[1]));
-        assert capabilities.codes().size() == 25;
+        assert capabilities.codes().size() == 26;
         assert quotas.size() == 119;
 
         CapabilityCode ldap = new CapabilityCode("iam.ldap");

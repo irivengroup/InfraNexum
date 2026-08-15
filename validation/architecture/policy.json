@@ -36,6 +36,7 @@
     "components/domains/organization",
     "components/domains/rsot",
     "components/domains/itam",
+    "components/domains/dcim",
     "deployment",
     "distribution",
     "engines",

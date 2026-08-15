@@ -1,0 +1,32 @@
+{
+  "schema": "infranexum.logical-model/v1",
+  "context": "dcim",
+  "objects": [
+    {
+      "name": "facility_node",
+      "kind": "aggregate",
+      "authority": "dcim",
+      "weak_references": [
+        "organization_id",
+        "subdivision_id"
+      ],
+      "internal_foreign_keys": [
+        "parent_id"
+      ],
+      "unique": [
+        "facility_kind,scope_id,code"
+      ],
+      "required_site_address": [
+        "address_line_1",
+        "postal_code",
+        "city",
+        "country_code",
+        "timezone"
+      ]
+    },
+    {
+      "name": "facility_command_dedup",
+      "kind": "idempotency"
+    }
+  ]
+}

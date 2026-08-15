@@ -1,0 +1,24 @@
+schema: infranexum.migration/v1
+id: '0027'
+name: identity-access-dcim-facility-permissions
+owner_context: identity-access
+dependencies:
+- '0026'
+preconditions:
+- identity-access-rbac-foundation-declared
+postconditions:
+- dcim-facility-permissions-seeded
+recovery: rerun-idempotent-seed-after-correcting-database-connectivity
+rollback: removes-only-dcim-permission-seeds
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 30
+checksums:
+  postgresql.sql: 37e34006a47d706463b6f84d16633095a1c3f0aafea5bf71f36df1408dc10b36
+  oracle.sql: 00c93c05775fd77b6e08ffbeac0f2713f6c02fa38641493fb101294ac902b897
+  rollback/postgresql.sql: fde44a6e99968414fac22c0e1c407ec7942999769e597dc3f27a09a6765a6205
+  rollback/oracle.sql: 58dfa0081534cca966a39cbe1ee63ef4efa438c4067dcb4e1be8546bfc04c9f9
+  logical-model.json: 827c26f328cfd467428e54fe4d779d4c09ab27163b1a46476089a4bd42ee9f84
+  verify.sql.yaml: 8cb0b145515ddc4aa9665e6c16af2b4ea7963c5acd42f070cf5e5da1881cd3af

@@ -1,0 +1,1325 @@
+openapi: 3.1.0
+info:
+  title: InfraNexum DCIM Physical Facilities API
+  version: 2.0.0-alpha.0.81
+  description: PGM-07-E04 governed physical hierarchy for sites, buildings, floors,
+    rooms and technical zones.
+servers:
+- url: /
+security:
+- LocalSessionCookie: []
+x-tagGroups:
+- name: DCIM
+  tags:
+  - DCIM / Facilities
+x-infranexum-published-events:
+- dcim.site.created.v1
+- dcim.building.created.v1
+- dcim.floor.created.v1
+- dcim.room.created.v1
+- dcim.zone.created.v1
+- dcim.site.updated.v1
+- dcim.building.updated.v1
+- dcim.floor.updated.v1
+- dcim.room.updated.v1
+- dcim.zone.updated.v1
+- dcim.site.status_changed.v1
+- dcim.building.status_changed.v1
+- dcim.floor.status_changed.v1
+- dcim.room.status_changed.v1
+- dcim.zone.status_changed.v1
+- dcim.site.archived.v1
+- dcim.site.deleted.v1
+- dcim.room.locked.v1
+tags:
+- name: DCIM / Facilities
+  description: Organization-scoped physical topology and lifecycle governance.
+paths:
+  /api/v1/dcim/sites:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    get:
+      tags:
+      - DCIM / Facilities
+      operationId: listDcimSites
+      summary: List DCIM sites
+      x-infranexum-permission: dcim.site.read
+      x-infranexum-capability: dcim.facilities
+      parameters:
+      - name: organization_id
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/UuidV7'
+      - name: subdivision_id
+        in: query
+        schema:
+          $ref: '#/components/schemas/UuidV7'
+      - name: parent_id
+        in: query
+        schema:
+          $ref: '#/components/schemas/UuidV7'
+      - name: status
+        in: query
+        schema:
+          $ref: '#/components/schemas/FacilityStatus'
+      - name: country_code
+        in: query
+        description: ISO 3166-1 alpha-2 country filter for sites.
+        schema:
+          type: string
+          pattern: ^[A-Za-z]{2}$
+      - name: cursor
+        in: query
+        schema:
+          $ref: '#/components/schemas/UuidV7'
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+      responses:
+        '200':
+          description: Stable UUIDv7 cursor page.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FacilityPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags:
+      - DCIM / Facilities
+      operationId: createDcimSite
+      summary: Create a DCIM site
+      x-infranexum-permission: dcim.site.create
+      x-infranexum-capability: dcim.facilities
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSiteFacility'
+      responses:
+        '201':
+          $ref: '#/components/responses/FacilityMutation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/dcim/sites/{facilityId}:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - $ref: '#/components/parameters/FacilityId'
+    get:
+      tags:
+      - DCIM / Facilities
+      operationId: getDcimSite
+      summary: Get a DCIM site
+      x-infranexum-permission: dcim.site.read
+      x-infranexum-capability: dcim.facilities
+      responses:
+        '200':
+          $ref: '#/components/responses/FacilityMutation'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags:
+      - DCIM / Facilities
+      operationId: updateDcimSite
+      summary: Update DCIM site metadata
+      x-infranexum-permission: dcim.site.update
+      x-infranexum-capability: dcim.facilities
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSiteFacility'
+      responses:
+        '200':
+          $ref: '#/components/responses/FacilityMutation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/dcim/sites/{facilityId}/status:
+    post:
+      tags:
+      - DCIM / Facilities
+      operationId: changeDcimSiteStatus
+      summary: Change DCIM site lifecycle status
+      description: 'The Server resolves the atomic permission from the target transition:
+        update by default, archive/delete when applicable, and dcim.room.lock for
+        room lock.'
+      x-infranexum-permission: dcim.site.update
+      x-infranexum-capability: dcim.facilities
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/FacilityId'
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FacilityStatusChange'
+      responses:
+        '200':
+          $ref: '#/components/responses/FacilityMutation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/dcim/buildings:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    get:
+      tags:
+      - DCIM / Facilities
+      operationId: listDcimBuildings
+      summary: List DCIM buildings
+      x-infranexum-permission: dcim.building.read
+      x-infranexum-capability: dcim.facilities
+      parameters:
+      - name: organization_id
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/UuidV7'
+      - name: subdivision_id
+        in: query
+        schema:
+          $ref: '#/components/schemas/UuidV7'
+      - name: parent_id
+        in: query
+        schema:
+          $ref: '#/components/schemas/UuidV7'
+      - name: status
+        in: query
+        schema:
+          $ref: '#/components/schemas/FacilityStatus'
+      - name: cursor
+        in: query
+        schema:
+          $ref: '#/components/schemas/UuidV7'
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+      responses:
+        '200':
+          description: Stable UUIDv7 cursor page.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FacilityPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags:
+      - DCIM / Facilities
+      operationId: createDcimBuilding
+      summary: Create a DCIM building
+      x-infranexum-permission: dcim.building.create
+      x-infranexum-capability: dcim.facilities
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBuildingFacility'
+      responses:
+        '201':
+          $ref: '#/components/responses/FacilityMutation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/dcim/buildings/{facilityId}:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - $ref: '#/components/parameters/FacilityId'
+    get:
+      tags:
+      - DCIM / Facilities
+      operationId: getDcimBuilding
+      summary: Get a DCIM building
+      x-infranexum-permission: dcim.building.read
+      x-infranexum-capability: dcim.facilities
+      responses:
+        '200':
+          $ref: '#/components/responses/FacilityMutation'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags:
+      - DCIM / Facilities
+      operationId: updateDcimBuilding
+      summary: Update DCIM building metadata
+      x-infranexum-permission: dcim.building.update
+      x-infranexum-capability: dcim.facilities
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBuildingFacility'
+      responses:
+        '200':
+          $ref: '#/components/responses/FacilityMutation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/dcim/buildings/{facilityId}/status:
+    post:
+      tags:
+      - DCIM / Facilities
+      operationId: changeDcimBuildingStatus
+      summary: Change DCIM building lifecycle status
+      description: 'The Server resolves the atomic permission from the target transition:
+        update by default, archive/delete when applicable, and dcim.room.lock for
+        room lock.'
+      x-infranexum-permission: dcim.building.update
+      x-infranexum-capability: dcim.facilities
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/FacilityId'
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FacilityStatusChange'
+      responses:
+        '200':
+          $ref: '#/components/responses/FacilityMutation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/dcim/floors:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    get:
+      tags:
+      - DCIM / Facilities
+      operationId: listDcimFloors
+      summary: List DCIM floors
+      x-infranexum-permission: dcim.floor.read
+      x-infranexum-capability: dcim.facilities
+      parameters:
+      - name: organization_id
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/UuidV7'
+      - name: subdivision_id
+        in: query
+        schema:
+          $ref: '#/components/schemas/UuidV7'
+      - name: parent_id
+        in: query
+        schema:
+          $ref: '#/components/schemas/UuidV7'
+      - name: status
+        in: query
+        schema:
+          $ref: '#/components/schemas/FacilityStatus'
+      - name: cursor
+        in: query
+        schema:
+          $ref: '#/components/schemas/UuidV7'
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+      responses:
+        '200':
+          description: Stable UUIDv7 cursor page.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FacilityPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags:
+      - DCIM / Facilities
+      operationId: createDcimFloor
+      summary: Create a DCIM floor
+      x-infranexum-permission: dcim.floor.create
+      x-infranexum-capability: dcim.facilities
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFloorFacility'
+      responses:
+        '201':
+          $ref: '#/components/responses/FacilityMutation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/dcim/floors/{facilityId}:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - $ref: '#/components/parameters/FacilityId'
+    get:
+      tags:
+      - DCIM / Facilities
+      operationId: getDcimFloor
+      summary: Get a DCIM floor
+      x-infranexum-permission: dcim.floor.read
+      x-infranexum-capability: dcim.facilities
+      responses:
+        '200':
+          $ref: '#/components/responses/FacilityMutation'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags:
+      - DCIM / Facilities
+      operationId: updateDcimFloor
+      summary: Update DCIM floor metadata
+      x-infranexum-permission: dcim.floor.update
+      x-infranexum-capability: dcim.facilities
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFloorFacility'
+      responses:
+        '200':
+          $ref: '#/components/responses/FacilityMutation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/dcim/floors/{facilityId}/status:
+    post:
+      tags:
+      - DCIM / Facilities
+      operationId: changeDcimFloorStatus
+      summary: Change DCIM floor lifecycle status
+      description: 'The Server resolves the atomic permission from the target transition:
+        update by default, archive/delete when applicable, and dcim.room.lock for
+        room lock.'
+      x-infranexum-permission: dcim.floor.update
+      x-infranexum-capability: dcim.facilities
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/FacilityId'
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FacilityStatusChange'
+      responses:
+        '200':
+          $ref: '#/components/responses/FacilityMutation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/dcim/rooms:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    get:
+      tags:
+      - DCIM / Facilities
+      operationId: listDcimRooms
+      summary: List DCIM rooms
+      x-infranexum-permission: dcim.room.read
+      x-infranexum-capability: dcim.facilities
+      parameters:
+      - name: organization_id
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/UuidV7'
+      - name: subdivision_id
+        in: query
+        schema:
+          $ref: '#/components/schemas/UuidV7'
+      - name: parent_id
+        in: query
+        schema:
+          $ref: '#/components/schemas/UuidV7'
+      - name: status
+        in: query
+        schema:
+          $ref: '#/components/schemas/FacilityStatus'
+      - name: cursor
+        in: query
+        schema:
+          $ref: '#/components/schemas/UuidV7'
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+      responses:
+        '200':
+          description: Stable UUIDv7 cursor page.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FacilityPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags:
+      - DCIM / Facilities
+      operationId: createDcimRoom
+      summary: Create a DCIM room
+      x-infranexum-permission: dcim.room.create
+      x-infranexum-capability: dcim.facilities
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRoomFacility'
+      responses:
+        '201':
+          $ref: '#/components/responses/FacilityMutation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/dcim/rooms/{facilityId}:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - $ref: '#/components/parameters/FacilityId'
+    get:
+      tags:
+      - DCIM / Facilities
+      operationId: getDcimRoom
+      summary: Get a DCIM room
+      x-infranexum-permission: dcim.room.read
+      x-infranexum-capability: dcim.facilities
+      responses:
+        '200':
+          $ref: '#/components/responses/FacilityMutation'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags:
+      - DCIM / Facilities
+      operationId: updateDcimRoom
+      summary: Update DCIM room metadata
+      x-infranexum-permission: dcim.room.update
+      x-infranexum-capability: dcim.facilities
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRoomFacility'
+      responses:
+        '200':
+          $ref: '#/components/responses/FacilityMutation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/dcim/rooms/{facilityId}/status:
+    post:
+      tags:
+      - DCIM / Facilities
+      operationId: changeDcimRoomStatus
+      summary: Change DCIM room lifecycle status
+      description: 'The Server resolves the atomic permission from the target transition:
+        update by default, archive/delete when applicable, and dcim.room.lock for
+        room lock.'
+      x-infranexum-permission: dcim.room.update
+      x-infranexum-capability: dcim.facilities
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/FacilityId'
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FacilityStatusChange'
+      responses:
+        '200':
+          $ref: '#/components/responses/FacilityMutation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/dcim/zones:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    get:
+      tags:
+      - DCIM / Facilities
+      operationId: listDcimZones
+      summary: List DCIM zones
+      x-infranexum-permission: dcim.zone.read
+      x-infranexum-capability: dcim.facilities
+      parameters:
+      - name: organization_id
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/UuidV7'
+      - name: subdivision_id
+        in: query
+        schema:
+          $ref: '#/components/schemas/UuidV7'
+      - name: parent_id
+        in: query
+        schema:
+          $ref: '#/components/schemas/UuidV7'
+      - name: status
+        in: query
+        schema:
+          $ref: '#/components/schemas/FacilityStatus'
+      - name: cursor
+        in: query
+        schema:
+          $ref: '#/components/schemas/UuidV7'
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+      responses:
+        '200':
+          description: Stable UUIDv7 cursor page.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FacilityPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags:
+      - DCIM / Facilities
+      operationId: createDcimZone
+      summary: Create a DCIM zone
+      x-infranexum-permission: dcim.zone.create
+      x-infranexum-capability: dcim.facilities
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateZoneFacility'
+      responses:
+        '201':
+          $ref: '#/components/responses/FacilityMutation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/dcim/zones/{facilityId}:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - $ref: '#/components/parameters/FacilityId'
+    get:
+      tags:
+      - DCIM / Facilities
+      operationId: getDcimZone
+      summary: Get a DCIM zone
+      x-infranexum-permission: dcim.zone.read
+      x-infranexum-capability: dcim.facilities
+      responses:
+        '200':
+          $ref: '#/components/responses/FacilityMutation'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags:
+      - DCIM / Facilities
+      operationId: updateDcimZone
+      summary: Update DCIM zone metadata
+      x-infranexum-permission: dcim.zone.update
+      x-infranexum-capability: dcim.facilities
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateZoneFacility'
+      responses:
+        '200':
+          $ref: '#/components/responses/FacilityMutation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/dcim/zones/{facilityId}/status:
+    post:
+      tags:
+      - DCIM / Facilities
+      operationId: changeDcimZoneStatus
+      summary: Change DCIM zone lifecycle status
+      description: 'The Server resolves the atomic permission from the target transition:
+        update by default, archive/delete when applicable, and dcim.room.lock for
+        room lock.'
+      x-infranexum-permission: dcim.zone.update
+      x-infranexum-capability: dcim.facilities
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/FacilityId'
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FacilityStatusChange'
+      responses:
+        '200':
+          $ref: '#/components/responses/FacilityMutation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+components:
+  securitySchemes:
+    LocalSessionCookie:
+      type: apiKey
+      in: cookie
+      name: INFRANEXUM_SESSION
+  parameters:
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: false
+      schema:
+        type: string
+        maxLength: 128
+    CsrfToken:
+      name: X-CSRF-Token
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 512
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 200
+        pattern: ^[A-Za-z0-9][A-Za-z0-9._:-]{7,199}$
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      schema:
+        type: string
+        pattern: ^(W/)?"?ver-[1-9][0-9]*"?$
+    FacilityId:
+      name: facilityId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UuidV7'
+  schemas:
+    UuidV7:
+      type: string
+      format: uuid
+      pattern: ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
+    FacilityStatus:
+      type: string
+      enum:
+      - draft
+      - active
+      - suspended
+      - maintenance
+      - locked
+      - inactive
+      - archived
+      - deleted
+    CreateSiteFacility:
+      type: object
+      additionalProperties: false
+      required: [organizationId, subdivisionId, code, displayName, addressLine1, postalCode, city, countryCode, timezone, reason]
+      properties:
+        organizationId: { $ref: '#/components/schemas/UuidV7' }
+        subdivisionId: { $ref: '#/components/schemas/UuidV7' }
+        code: { type: string, pattern: '^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$' }
+        displayName: { type: string, minLength: 3, maxLength: 128 }
+        addressLine1: { type: string, minLength: 1, maxLength: 128 }
+        addressLine2: { type: string, minLength: 1, maxLength: 128 }
+        postalCode: { type: string, minLength: 1, maxLength: 16 }
+        city: { type: string, minLength: 1, maxLength: 64 }
+        countryCode: { type: string, pattern: '^[A-Za-z]{2}$' }
+        timezone: { type: string, minLength: 1, maxLength: 64 }
+        latitude: { type: number, minimum: -90, maximum: 90 }
+        longitude: { type: number, minimum: -180, maximum: 180 }
+        description: { type: string, minLength: 1, maxLength: 2000 }
+        reason: { type: string, minLength: 2, maxLength: 1024 }
+    UpdateSiteFacility:
+      type: object
+      additionalProperties: false
+      required: [displayName, addressLine1, postalCode, city, countryCode, timezone, reason]
+      properties:
+        displayName: { type: string, minLength: 3, maxLength: 128 }
+        addressLine1: { type: string, minLength: 1, maxLength: 128 }
+        addressLine2: { type: string, minLength: 1, maxLength: 128 }
+        postalCode: { type: string, minLength: 1, maxLength: 16 }
+        city: { type: string, minLength: 1, maxLength: 64 }
+        countryCode: { type: string, pattern: '^[A-Za-z]{2}$' }
+        timezone: { type: string, minLength: 1, maxLength: 64 }
+        latitude: { type: number, minimum: -90, maximum: 90 }
+        longitude: { type: number, minimum: -180, maximum: 180 }
+        description: { type: string, minLength: 1, maxLength: 2000 }
+        reason: { type: string, minLength: 2, maxLength: 1024 }
+    CreateBuildingFacility:
+      type: object
+      additionalProperties: false
+      required: [organizationId, subdivisionId, parentId, code, displayName, floorCount, reason]
+      properties:
+        organizationId: { $ref: '#/components/schemas/UuidV7' }
+        subdivisionId: { $ref: '#/components/schemas/UuidV7' }
+        parentId: { $ref: '#/components/schemas/UuidV7' }
+        code: { type: string, pattern: '^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$' }
+        displayName: { type: string, minLength: 3, maxLength: 128 }
+        floorCount: { type: integer, minimum: 1 }
+        areaM2: { type: number, exclusiveMinimum: 0 }
+        latitude: { type: number, minimum: -90, maximum: 90 }
+        longitude: { type: number, minimum: -180, maximum: 180 }
+        description: { type: string, minLength: 1, maxLength: 4096 }
+        reason: { type: string, minLength: 2, maxLength: 1024 }
+    UpdateBuildingFacility:
+      type: object
+      additionalProperties: false
+      required: [displayName, floorCount, reason]
+      properties:
+        displayName: { type: string, minLength: 3, maxLength: 128 }
+        floorCount: { type: integer, minimum: 1 }
+        areaM2: { type: number, exclusiveMinimum: 0 }
+        latitude: { type: number, minimum: -90, maximum: 90 }
+        longitude: { type: number, minimum: -180, maximum: 180 }
+        description: { type: string, minLength: 1, maxLength: 4096 }
+        reason: { type: string, minLength: 2, maxLength: 1024 }
+    CreateFloorFacility:
+      type: object
+      additionalProperties: false
+      required: [organizationId, subdivisionId, parentId, code, displayName, levelNumber, reason]
+      properties:
+        organizationId: { $ref: '#/components/schemas/UuidV7' }
+        subdivisionId: { $ref: '#/components/schemas/UuidV7' }
+        parentId: { $ref: '#/components/schemas/UuidV7' }
+        code: { type: string, pattern: '^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$' }
+        displayName: { type: string, minLength: 3, maxLength: 128 }
+        levelNumber: { type: integer }
+        areaM2: { type: number, exclusiveMinimum: 0 }
+        levelHeightM: { type: number, exclusiveMinimum: 0 }
+        capacityKw: { type: number, exclusiveMinimum: 0 }
+        description: { type: string, minLength: 1, maxLength: 4096 }
+        reason: { type: string, minLength: 2, maxLength: 1024 }
+    UpdateFloorFacility:
+      type: object
+      additionalProperties: false
+      required: [displayName, levelNumber, reason]
+      properties:
+        displayName: { type: string, minLength: 3, maxLength: 128 }
+        levelNumber: { type: integer }
+        areaM2: { type: number, exclusiveMinimum: 0 }
+        levelHeightM: { type: number, exclusiveMinimum: 0 }
+        capacityKw: { type: number, exclusiveMinimum: 0 }
+        description: { type: string, minLength: 1, maxLength: 4096 }
+        reason: { type: string, minLength: 2, maxLength: 1024 }
+    CreateRoomFacility:
+      type: object
+      additionalProperties: false
+      required: [organizationId, subdivisionId, parentId, code, displayName, areaM2, reason]
+      properties:
+        organizationId: { $ref: '#/components/schemas/UuidV7' }
+        subdivisionId: { $ref: '#/components/schemas/UuidV7' }
+        parentId: { $ref: '#/components/schemas/UuidV7' }
+        code: { type: string, pattern: '^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$' }
+        displayName: { type: string, minLength: 3, maxLength: 128 }
+        areaM2: { type: number, exclusiveMinimum: 0 }
+        capacityKw: { type: number, exclusiveMinimum: 0 }
+        accessRestriction: { type: string, enum: [open, restricted, secure] }
+        description: { type: string, minLength: 1, maxLength: 4096 }
+        reason: { type: string, minLength: 2, maxLength: 1024 }
+    UpdateRoomFacility:
+      type: object
+      additionalProperties: false
+      required: [displayName, areaM2, reason]
+      properties:
+        displayName: { type: string, minLength: 3, maxLength: 128 }
+        areaM2: { type: number, exclusiveMinimum: 0 }
+        capacityKw: { type: number, exclusiveMinimum: 0 }
+        accessRestriction: { type: string, enum: [open, restricted, secure] }
+        description: { type: string, minLength: 1, maxLength: 4096 }
+        reason: { type: string, minLength: 2, maxLength: 1024 }
+    CreateZoneFacility:
+      type: object
+      additionalProperties: false
+      required: [organizationId, subdivisionId, parentId, code, displayName, zoneType, reason]
+      properties:
+        organizationId: { $ref: '#/components/schemas/UuidV7' }
+        subdivisionId: { $ref: '#/components/schemas/UuidV7' }
+        parentId: { $ref: '#/components/schemas/UuidV7' }
+        code: { type: string, pattern: '^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$' }
+        displayName: { type: string, minLength: 3, maxLength: 128 }
+        zoneType: { type: string, enum: [cooling, power_distribution, airflow, security] }
+        description: { type: string, minLength: 1, maxLength: 4096 }
+        reason: { type: string, minLength: 2, maxLength: 1024 }
+    UpdateZoneFacility:
+      type: object
+      additionalProperties: false
+      required: [displayName, zoneType, reason]
+      properties:
+        displayName: { type: string, minLength: 3, maxLength: 128 }
+        zoneType: { type: string, enum: [cooling, power_distribution, airflow, security] }
+        description: { type: string, minLength: 1, maxLength: 4096 }
+        reason: { type: string, minLength: 2, maxLength: 1024 }
+    FacilityStatusChange:
+      type: object
+      additionalProperties: false
+      required:
+      - targetStatus
+      - reason
+      properties:
+        targetStatus:
+          $ref: '#/components/schemas/FacilityStatus'
+        reason:
+          type: string
+          minLength: 2
+          maxLength: 1024
+    Facility:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - kind
+      - organizationId
+      - subdivisionId
+      - scopeId
+      - code
+      - displayName
+      - status
+      - version
+      - createdAt
+      - updatedAt
+      - createdBy
+      - updatedBy
+      - lastReason
+      properties:
+        id:
+          $ref: '#/components/schemas/UuidV7'
+        kind:
+          type: string
+          enum:
+          - site
+          - building
+          - floor
+          - room
+          - zone
+        organizationId:
+          $ref: '#/components/schemas/UuidV7'
+        subdivisionId:
+          $ref: '#/components/schemas/UuidV7'
+        parentId:
+          $ref: '#/components/schemas/UuidV7'
+        scopeId:
+          $ref: '#/components/schemas/UuidV7'
+        code:
+          type: string
+        displayName:
+          type: string
+        status:
+          $ref: '#/components/schemas/FacilityStatus'
+        addressLine1:
+          type:
+          - string
+          - 'null'
+        addressLine2:
+          type:
+          - string
+          - 'null'
+        postalCode:
+          type:
+          - string
+          - 'null'
+        city:
+          type:
+          - string
+          - 'null'
+        countryCode:
+          type:
+          - string
+          - 'null'
+        timezone:
+          type:
+          - string
+          - 'null'
+        latitude:
+          type:
+          - number
+          - 'null'
+        longitude:
+          type:
+          - number
+          - 'null'
+        floorCount:
+          type:
+          - integer
+          - 'null'
+        levelNumber:
+          type:
+          - integer
+          - 'null'
+        areaM2:
+          type:
+          - number
+          - 'null'
+        levelHeightM:
+          type:
+          - number
+          - 'null'
+        capacityKw:
+          type:
+          - number
+          - 'null'
+        accessRestriction:
+          type:
+          - string
+          - 'null'
+        zoneType:
+          type:
+          - string
+          - 'null'
+        description:
+          type:
+          - string
+          - 'null'
+        version:
+          type: integer
+          format: int64
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: '#/components/schemas/UuidV7'
+        updatedBy:
+          $ref: '#/components/schemas/UuidV7'
+        lastReason:
+          type: string
+    FacilityPage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Facility'
+        nextCursor:
+          oneOf:
+          - $ref: '#/components/schemas/UuidV7'
+          - type: 'null'
+    Problem:
+      type: object
+      additionalProperties: true
+      required:
+      - type
+      - title
+      - status
+      - detail
+      - instance
+      - code
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        code:
+          type: string
+        occurredAt:
+          type: string
+          format: date-time
+        traceId:
+          type:
+          - string
+          - 'null'
+  responses:
+    FacilityMutation:
+      description: Facility state with a strong ETag.
+      headers:
+        ETag:
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Facility'
+    BadRequest:
+      description: Invalid request.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: Authentication required.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: Authorization or capability denied.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Facility not found.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: Version, idempotency, quota or hierarchy conflict.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UnprocessableEntity:
+      description: Governance scope or hierarchy constraint rejected.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'

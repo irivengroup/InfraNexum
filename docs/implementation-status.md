@@ -1,3 +1,21 @@
+# InfraNexum 2.0.0-alpha.0.81 — état d’implémentation
+
+## alpha.0.81 — PGM-07-E04 sites, bâtiments, étages, salles et zones
+
+`alpha.0.81` implémente le gate roadmap **« hiérarchie physique, adresses et contrôles de cohérence »**. Le bounded context DCIM possède désormais un registre canonique Site/Building/Floor/Room/Zone. Organisation/Subdivision restent des références faibles ; la seule relation forte inter-objet est le parentage interne DCIM. L’unicité du code est évaluée dans le scope normatif : Subdivision pour Site, parent direct pour Building/Floor/Room, Site racine pour Zone.
+
+Le Site exige une adresse structurée complète (ligne 1, code postal, ville, pays ISO alpha-2, timezone IANA), avec latitude/longitude optionnelles. Building exige `floorCount`; Floor exige `levelNumber`; Room exige `areaM2` et peut être `LOCKED`; Zone exige un type technique parmi cooling/power_distribution/airflow/security. Les champs propres à un type sont rejetés sur les autres types dans le domaine **et** par les contraintes SQL PostgreSQL/Oracle. L’archivage/suppression d’un Site est bloqué uniquement par ses Buildings actifs, conformément au CDC.
+
+La tranche comprend capability `dcim.facilities`, 26 permissions organisation-scoped, transactions JDBC/outbox/idempotence/version optimiste, migrations `0026/0027`, API/OpenAPI 3.1 avec 25 opérations explicites, CLI Server et parité Web immédiate. Le workspace DCIM fournit navigation capability-gated, listes/détail/formulaires/transitions et sélecteurs en cascade Organisation→Subdivision→Site→Building→Floor→Room sans saisie libre d’UUID, ainsi que les cinq locales DE/EN/ES/FR/IT.
+
+**EXÉCUTÉ à ce stade** — Source Integrity **45/45 à 100 %**, 0 violation ; Architecture fonctionnelle **140/140** et Architecture-as-Code `PASS` ; migrations **104/104**, couverture **99 %**, 0 violation ; Web **144/144**, couverture **99,71 % lignes / 98,49 % branches / 100 % fonctions**, process smoke `passed` ; **18** targets Java dependency-free ; Toolchains **25/25** (99 %), Eventing **10/10** (100 %), Persistence **12/12** (98 %), Capabilities **10/10** (99 %), Entitlements **10/10** (100 %), Audit **8/8** (100 %), tous les checkers à 0 violation ; Compose **63/63** ; Agent local Go 1.23.2 `vet + race + tests + build`, couverture **98,4 %**. La compilation syntaxique des JUnit DCIM passe sous `javac -Xlint:all -Werror` avec stubs JUnit temporaires hors produit.
+
+**NON EXÉCUTÉ** — couverture Architecture instrumentée complète : même fragmentée, l’instrumentation des scans de dépôt dépasse la limite du runner ; les 140 tests fonctionnels restent distinctement exécutés. Les gates exacts JDK25/Maven, Go 1.26.5, Node 24.18.1, Docker Desktop PRO/HA et migrations PostgreSQL/Oracle live restent obligatoires avant promotion lorsqu’ils sont indisponibles dans l’environnement de génération.
+
+Voir `docs/dcim-facility-hierarchy.md`.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.80 — état d’implémentation
 
 ## alpha.0.80 — parité fonctionnelle Web RSOT / ITAM

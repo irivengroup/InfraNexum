@@ -1,0 +1,38 @@
+{
+  "schema": "infranexum.logical-model/v1",
+  "context": "identity-access",
+  "objects": [
+    {
+      "name": "dcim-facility-permissions",
+      "kind": "permission_seed",
+      "permissions": [
+        "dcim.site.read",
+        "dcim.site.create",
+        "dcim.site.update",
+        "dcim.site.archive",
+        "dcim.site.delete",
+        "dcim.site.audit",
+        "dcim.building.read",
+        "dcim.building.create",
+        "dcim.building.update",
+        "dcim.building.archive",
+        "dcim.building.delete",
+        "dcim.floor.read",
+        "dcim.floor.create",
+        "dcim.floor.update",
+        "dcim.floor.archive",
+        "dcim.floor.delete",
+        "dcim.room.read",
+        "dcim.room.create",
+        "dcim.room.update",
+        "dcim.room.lock",
+        "dcim.room.archive",
+        "dcim.room.delete",
+        "dcim.zone.read",
+        "dcim.zone.create",
+        "dcim.zone.update",
+        "dcim.zone.delete"
+      ]
+    }
+  ]
+}

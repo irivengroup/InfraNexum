@@ -1,3 +1,13 @@
+# InfraNexum 2.0.0-alpha.0.81 — PGM-07-E04 DCIM physical facilities hierarchy
+
+`alpha.0.81` implements **PGM-07-E04** as a same-release vertical slice for Sites, Buildings, Floors, Rooms and technical Zones. The DCIM aggregate enforces hierarchy, kind-specific metadata, optimistic concurrency, idempotency and lifecycle while Organization/Subdivision remain weak cross-context references. Sites now carry the structured address required by the CDC (line 1, postal code, city, ISO country and IANA timezone), and Site archival/deletion is blocked only by active Buildings.
+
+The slice adds capability `dcim.facilities`, 26 organization-scoped atomic permissions, paired PostgreSQL/Oracle migrations `0026`/`0027`, JDBC persistence, transactional events/outbox, HTTP/OpenAPI 3.1 with 25 native operations, Server CLI and **real Web administration in the same release**. The Web workspace provides governed cascading selectors `Organization → Subdivision → Site → Building → Floor → Room`, a Site country filter, resource-specific forms, lifecycle actions and DE/EN/ES/FR/IT vocabulary; no parent entity is entered as a free-form UUID.
+
+See `docs/dcim-facility-hierarchy.md`, `docs/web-functional-parity.md` and `docs/implementation-status.md`. PGM-07-E05 may start only after target-runtime promotion gates for this snapshot are evaluated.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.80 — Web Functional Parity for RSOT and ITAM
 
 `alpha.0.80` is a corrective vertical-integration release. It does not add a new PGM business epic: it closes the Web delivery gap discovered after `alpha.0.79`, where RSOT and ITAM had domain, persistence, API/CLI and browser HTTP clients but no real administration routes, navigation or operator workspaces. A feature intended for administration is no longer counted as Web-supported merely because a JavaScript API client exists.

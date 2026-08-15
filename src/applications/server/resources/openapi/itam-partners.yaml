@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum ITAM Partner Catalogue API
-  version: 2.0.0-alpha.0.80
+  version: 2.0.0-alpha.0.81
   description: Governed Partner aggregate and role-filtered manufacturer/publisher/support catalogues for PGM-07-E01.
 servers:
   - url: /

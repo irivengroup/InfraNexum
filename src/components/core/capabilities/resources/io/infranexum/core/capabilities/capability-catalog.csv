@@ -6,6 +6,7 @@ rsot.core,lite;pro;enterprise,server,single-node;split-web;high-availability;dis
 itam.partners,lite;pro;enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,,false
 itam.assets,lite;pro;enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,,false
 itam.compliance,lite;pro;enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,,false
+dcim.facilities,lite;pro;enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,,false
 agent.enabled,enterprise,agent,distributed-sites;regional;multi-region,,true
 automation.multi_region,enterprise,server,regional;multi-region,,true
 database.oracle,enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,oracle-backend,true

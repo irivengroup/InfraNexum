@@ -13,7 +13,8 @@
     "components.core.workers",
     "components.core.audit",
     "components.core.compatibility",
-    "components.domains.itam"
+    "components.domains.itam",
+    "components.domains.dcim"
   ],
   "source_baseline": [
     "PGM-04-E01",
@@ -23,6 +24,7 @@
     "ADR-0024",
     "PGM-02-E07",
     "PGM-06-E03",
-    "PGM-07-E01"
+    "PGM-07-E01",
+    "PGM-07-E04"
   ]
 }

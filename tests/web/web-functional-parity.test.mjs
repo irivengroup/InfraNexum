@@ -5,6 +5,8 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { SUPPORTED_LOCALES, translate } from '../../src/applications/web/public/assets/i18n.mjs';
+import { DcimFacilityClient } from '../../src/applications/web/public/assets/dcim-facilities.mjs';
+import { dcimWorkspaceTemplate } from '../../src/applications/web/public/assets/dcim-workspace.mjs';
 import { ItamComplianceClient } from '../../src/applications/web/public/assets/itam-compliance.mjs';
 import { itamWorkspaceTemplate } from '../../src/applications/web/public/assets/itam-workspace.mjs';
 import { RsotCanonicalObjectClient } from '../../src/applications/web/public/assets/rsot-canonical-objects.mjs';
@@ -20,6 +22,7 @@ function configuration(overrides = {}) {
     itamPartnersEnabled: true,
     itamAssetsEnabled: true,
     itamComplianceEnabled: true,
+    dcimFacilitiesEnabled: true,
     ...overrides,
   };
 }
@@ -33,25 +36,28 @@ function response(payload, { status = 200, headers = {} } = {}) {
   };
 }
 
-test('RSOT and ITAM are real first-level administration routes with concrete workspaces', async () => {
+test('RSOT, ITAM and DCIM are real first-level administration routes with concrete workspaces', async () => {
   const html = await readFile(path.join(PUBLIC, 'index.html'), 'utf8');
   const shell = await readFile(path.join(PUBLIC, 'assets/admin-shell.mjs'), 'utf8');
   const bootstrap = await readFile(path.join(PUBLIC, 'assets/bootstrap.mjs'), 'utf8');
 
-  for (const route of ['rsot', 'itam']) {
+  for (const route of ['rsot', 'itam', 'dcim']) {
     assert.match(html, new RegExp(`id="nav-${route}"[^>]+data-route="${route}"`));
     assert.match(html, new RegExp(`id="${route}-workspace"[^>]+data-view="${route}"`));
     assert.match(shell, new RegExp(`${route}: Object\\.freeze`));
   }
   assert.match(bootstrap, /initializeRsotWorkspace\(document, configuration, fetch\)/);
   assert.match(bootstrap, /initializeItamWorkspace\(document, configuration, fetch\)/);
+  assert.match(bootstrap, /initializeDcimWorkspace\(document, configuration, fetch\)/);
   assert.match(bootstrap, /setRsotAvailability\(documentObject, configuration\.rsotCoreEnabled\)/);
   assert.match(bootstrap, /setItamAvailability\(documentObject, configuration\.itamPartnersEnabled \|\| configuration\.itamAssetsEnabled \|\| configuration\.itamComplianceEnabled\)/);
+  assert.match(bootstrap, /setDcimAvailability\(documentObject, configuration\.dcimFacilitiesEnabled\)/);
 });
 
 test('functional workspaces expose lists, create workflows and governed lifecycle actions', () => {
   const rsot = rsotWorkspaceTemplate();
   const itam = itamWorkspaceTemplate(configuration());
+  const dcim = dcimWorkspaceTemplate();
   for (const id of [
     'rsot-object-table-body', 'rsot-schema-table-body', 'rsot-profile-table-body', 'rsot-schema-form', 'rsot-schema-lifecycle', 'rsot-profile-form', 'rsot-profile-lifecycle',
   ]) assert.match(rsot, new RegExp(`id="${id}"`));
@@ -60,6 +66,9 @@ test('functional workspaces expose lists, create workflows and governed lifecycl
     'itam-asset-table-body', 'itam-asset-create', 'itam-asset-lifecycle', 'itam-custody-table-body',
     'itam-warranty-form', 'itam-license-form', 'itam-coverage-form', 'itam-authorization-create', 'itam-warranty-type-create', 'itam-alert-table-body', 'itam-history-filter',
   ]) assert.match(itam, new RegExp(`id="${id}"`));
+  for (const resource of ['sites', 'buildings', 'floors', 'rooms', 'zones']) {
+    for (const suffix of ['rows', 'detail', 'form', 'status-form']) assert.match(dcim, new RegExp(`id=\"dcim-${resource}-${suffix}\"`));
+  }
 });
 
 test('entity identifiers are selected from governed catalogues instead of raw UUID text inputs', () => {
@@ -77,6 +86,16 @@ test('entity identifiers are selected from governed catalogues instead of raw UU
   assert.match(html, /id="itam-subdivision"[^>]*class="form-select"/);
 });
 
+test('DCIM hierarchy uses governed cascading selectors and never exposes parent UUID text inputs', () => {
+  const html = dcimWorkspaceTemplate();
+  for (const id of ['dcim-organization', 'dcim-subdivision', 'dcim-site-context', 'dcim-building-context', 'dcim-floor-context', 'dcim-room-context', 'dcim-zone-parent-kind', 'dcim-zone-parent']) {
+    assert.match(html, new RegExp(`<select[^>]+id=\"${id}\"`), `${id} must be a select`);
+  }
+  assert.doesNotMatch(html, /<input[^>]+name="(?:organizationId|subdivisionId|parentId)"/);
+  for (const field of ['addressLine1', 'postalCode', 'city', 'countryCode', 'timezone']) assert.match(html, new RegExp(`name="${field}"[^>]+required`));
+  assert.match(html, /id="dcim-sites-country-filter"/);
+});
+
 test('date and datetime workflows use InfraNexum temporal controls', () => {
   const html = rsotWorkspaceTemplate() + itamWorkspaceTemplate(configuration());
   for (const id of ['rsot-schema-effective', 'rsot-schema-sunset', 'itam-partner-valid-from', 'itam-asset-date', 'itam-warranty-start', 'itam-license-start', 'itam-coverage-start', 'itam-auth-from']) {
@@ -86,10 +105,11 @@ test('date and datetime workflows use InfraNexum temporal controls', () => {
 
 test('new administration vocabulary is translated in every supported locale', () => {
   const keys = [
-    'nav.rsot', 'nav.itam', 'topbar.rsot', 'topbar.itam', 'command.rsot.title', 'command.itam.title',
+    'nav.rsot', 'nav.itam', 'nav.dcim', 'topbar.rsot', 'topbar.itam', 'topbar.dcim', 'command.rsot.title', 'command.itam.title', 'command.dcim.title',
     'workspace.ready', 'workspace.restricted', 'rsot.objects', 'rsot.schemas', 'rsot.profiles',
     'itam.partners', 'itam.assets', 'itam.compliance', 'itam.role.manufacturer', 'itam.role.software_publisher',
     'itam.warranties', 'itam.licenses', 'itam.supportCoverage', 'itam.licenseSecretNotice',
+    'dcim.sites', 'dcim.buildings', 'dcim.floors', 'dcim.rooms', 'dcim.zones', 'dcim.addressLine1', 'dcim.postalCode', 'dcim.city', 'dcim.countryFilter', 'dcim.status.draft', 'dcim.status.active', 'dcim.status.archived',
   ];
   assert.deepEqual(SUPPORTED_LOCALES, ['de', 'en', 'es', 'fr', 'it']);
   for (const locale of SUPPORTED_LOCALES) {
@@ -114,6 +134,12 @@ test('compliance client exposes selectors and detail reads required by editable 
   for (const method of ['getWarranty', 'getLicense', 'getSupportCoverage', 'listSupportAuthorizations', 'warrantyTypes']) {
     assert.equal(typeof client[method], 'function', `${method} must be available`);
   }
+});
+
+test('DCIM client is capability gated and publishes the five governed facility collections', () => {
+  assert.throws(() => new DcimFacilityClient(configuration({ dcimFacilitiesEnabled: false })), /disabled/);
+  const client = new DcimFacilityClient(configuration(), { fetchFunction: async () => response({}), cookieProvider: () => 'INX_XSRF=x' });
+  for (const method of ['list', 'get', 'create', 'update', 'changeStatus']) assert.equal(typeof client[method], 'function');
 });
 
 test('browser source tree contains no NUL bytes', async () => {

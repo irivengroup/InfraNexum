@@ -17,7 +17,8 @@
     "components.domains.organization",
     "components.domains.rsot",
     "components.core.compatibility",
-    "components.domains.itam"
+    "components.domains.itam",
+    "components.domains.dcim"
   ],
   "source_baseline": [
     "PGM-02-E01",
@@ -32,6 +33,7 @@
     "PGM-06-E01",
     "PGM-03-E04",
     "PGM-06-E03",
-    "PGM-07-E01"
+    "PGM-07-E01",
+    "PGM-07-E04"
   ]
 }

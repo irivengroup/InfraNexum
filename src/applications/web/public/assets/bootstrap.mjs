@@ -1,4 +1,4 @@
-import { initializeAdminShell, setIdentityAccessAvailability, setItamAvailability, setOrganizationAvailability, setRsotAvailability } from './admin-shell.mjs';
+import { initializeAdminShell, setDcimAvailability, setIdentityAccessAvailability, setItamAvailability, setOrganizationAvailability, setRsotAvailability } from './admin-shell.mjs';
 import { initializeLocalAuthentication } from './auth.mjs';
 import { initializeIdentityAccess } from './identity-access.mjs';
 import { initializePolicyAuthorization } from './policy-authorization.mjs';
@@ -9,6 +9,7 @@ import { initializeStableSelects } from './stable-select.mjs';
 import { initializeTemporalPickers } from './temporal-picker.mjs';
 import { initializeRsotWorkspace } from './rsot-workspace.mjs';
 import { initializeItamWorkspace } from './itam-workspace.mjs';
+import { initializeDcimWorkspace } from './dcim-workspace.mjs';
 import {
   initializeLocalization,
   setLocalizedAriaLabel,
@@ -61,6 +62,9 @@ export function validatePublicConfiguration(value) {
   if (typeof value.itamComplianceEnabled !== 'boolean') {
     throw new Error('Runtime configuration itamComplianceEnabled is invalid');
   }
+  if (typeof value.dcimFacilitiesEnabled !== 'boolean') {
+    throw new Error('Runtime configuration dcimFacilitiesEnabled is invalid');
+  }
   if (value.itamAssetsEnabled && !value.itamPartnersEnabled) {
     throw new Error('Runtime configuration ITAM assets require ITAM partners');
   }
@@ -107,6 +111,7 @@ export function renderRuntimeConfiguration(documentObject, configuration) {
   setOrganizationAvailability(documentObject, configuration.organizationFoundationEnabled);
   setRsotAvailability(documentObject, configuration.rsotCoreEnabled);
   setItamAvailability(documentObject, configuration.itamPartnersEnabled || configuration.itamAssetsEnabled || configuration.itamComplianceEnabled);
+  setDcimAvailability(documentObject, configuration.dcimFacilitiesEnabled);
   if (configuration.organizationFoundationEnabled) {
     void loadOrganizations(documentObject, configuration);
   } else {
@@ -124,6 +129,7 @@ export function renderRuntimeFailure(documentObject) {
   setIdentityAccessAvailability(documentObject, false);
   setRsotAvailability(documentObject, false);
   setItamAvailability(documentObject, false);
+  setDcimAvailability(documentObject, false);
 }
 
 export function initializeTheme(documentObject = document, storageObject = globalThis.localStorage) {
@@ -338,6 +344,7 @@ if (typeof document !== 'undefined') {
     let notificationCenter = null;
     try { await initializeRsotWorkspace(document, configuration, fetch); } catch (error) { console.error('RSOT workspace initialization failed', error); }
     try { await initializeItamWorkspace(document, configuration, fetch); } catch (error) { console.error('ITAM workspace initialization failed', error); }
+    try { await initializeDcimWorkspace(document, configuration, fetch); } catch (error) { console.error('DCIM workspace initialization failed', error); }
     try { preferenceController = initializePreferences(document); } catch { /* non-critical */ }
     try { initializeStableSelects(document); } catch { /* native selects remain as safe fallback */ }
     try { initializeTemporalPickers(document); } catch { /* native temporal inputs remain as safe fallback */ }

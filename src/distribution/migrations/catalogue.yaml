@@ -1,5 +1,5 @@
 schema: infranexum.migration-catalogue/v1
-version: 1.24.0
+version: 1.26.0
 entries:
 - id: '0001'
   path: 0001-core-schema-history/migration.yaml
@@ -51,3 +51,7 @@ entries:
   path: 0024-identity-access-itam-compliance-permissions/migration.yaml
 - id: '0025'
   path: 0025-identity-access-rsot-read-permission/migration.yaml
+- id: '0026'
+  path: 0026-dcim-facility-hierarchy/migration.yaml
+- id: '0027'
+  path: 0027-identity-access-dcim-facility-permissions/migration.yaml

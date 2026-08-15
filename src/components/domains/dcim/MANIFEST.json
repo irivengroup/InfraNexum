@@ -1,0 +1,19 @@
+{
+  "schema": "infranexum.component-manifest/v1",
+  "id": "components.domains.dcim",
+  "kind": "component",
+  "owner": "team.data-rsot",
+  "lifecycle": "active",
+  "languages": [
+    "java"
+  ],
+  "dependencies": [
+    "components.core.contracts",
+    "components.core.events"
+  ],
+  "source_baseline": [
+    "CDC-DCIM-DCIM",
+    "CDC-DCIM sections 06-10",
+    "PGM-07-E04"
+  ]
+}

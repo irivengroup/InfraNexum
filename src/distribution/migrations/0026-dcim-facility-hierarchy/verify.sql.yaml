@@ -1,0 +1,11 @@
+schema: infranexum.verify/v1
+checks:
+- id: dcim-facility-table
+  postgresql: "SELECT COUNT(*)=1 FROM information_schema.tables WHERE table_schema='infranexum_dcim' AND table_name='facility_node'"
+  oracle: "SELECT COUNT(*)=1 FROM user_tables WHERE table_name='INFRANEXUM_DCIM_FACILITY'"
+- id: dcim-facility-dedup
+  postgresql: "SELECT COUNT(*)=1 FROM information_schema.tables WHERE table_schema='infranexum_dcim' AND table_name='facility_command_dedup'"
+  oracle: "SELECT COUNT(*)=1 FROM user_tables WHERE table_name='INFRANEXUM_DCIM_FAC_DEDUP'"
+- id: dcim-site-address-columns
+  postgresql: "SELECT COUNT(*)=4 FROM information_schema.columns WHERE table_schema='infranexum_dcim' AND table_name='facility_node' AND column_name IN ('address_line_1','address_line_2','postal_code','city')"
+  oracle: "SELECT COUNT(*)=4 FROM user_tab_columns WHERE table_name='INFRANEXUM_DCIM_FACILITY' AND column_name IN ('ADDRESS_LINE_1','ADDRESS_LINE_2','POSTAL_CODE','CITY')"

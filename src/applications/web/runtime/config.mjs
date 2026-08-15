@@ -26,6 +26,7 @@ export class WebRuntimeConfiguration {
   #itamPartnersEnabled;
   #itamAssetsEnabled;
   #itamComplianceEnabled;
+  #dcimFacilitiesEnabled;
 
   constructor({
     listenHost,
@@ -44,6 +45,7 @@ export class WebRuntimeConfiguration {
     itamPartnersEnabled,
     itamAssetsEnabled,
     itamComplianceEnabled,
+    dcimFacilitiesEnabled,
   }) {
     this.#listenHost = listenHost;
     this.#listenPort = listenPort;
@@ -61,6 +63,7 @@ export class WebRuntimeConfiguration {
     this.#itamPartnersEnabled = itamPartnersEnabled;
     this.#itamAssetsEnabled = itamAssetsEnabled;
     this.#itamComplianceEnabled = itamComplianceEnabled;
+    this.#dcimFacilitiesEnabled = dcimFacilitiesEnabled;
     Object.freeze(this);
   }
 
@@ -154,6 +157,11 @@ export class WebRuntimeConfiguration {
       'INFRANEXUM_WEB_ITAM_COMPLIANCE_ENABLED',
       false,
     );
+    const dcimFacilitiesEnabled = readBoolean(
+      environment,
+      'INFRANEXUM_WEB_DCIM_FACILITIES_ENABLED',
+      false,
+    );
     if (itamComplianceEnabled && (!itamPartnersEnabled || !itamAssetsEnabled)) {
       throw new Error('ITAM Compliance UI requires Partner catalogue and Asset lifecycle capabilities');
     }
@@ -178,6 +186,7 @@ export class WebRuntimeConfiguration {
       itamPartnersEnabled,
       itamAssetsEnabled,
       itamComplianceEnabled,
+      dcimFacilitiesEnabled,
     });
   }
 
@@ -197,6 +206,7 @@ export class WebRuntimeConfiguration {
   get itamPartnersEnabled() { return this.#itamPartnersEnabled; }
   get itamAssetsEnabled() { return this.#itamAssetsEnabled; }
   get itamComplianceEnabled() { return this.#itamComplianceEnabled; }
+  get dcimFacilitiesEnabled() { return this.#dcimFacilitiesEnabled; }
 
   publicConfiguration() {
     return Object.freeze({
@@ -215,6 +225,7 @@ export class WebRuntimeConfiguration {
       itamPartnersEnabled: this.#itamPartnersEnabled,
       itamAssetsEnabled: this.#itamAssetsEnabled,
       itamComplianceEnabled: this.#itamComplianceEnabled,
+      dcimFacilitiesEnabled: this.#dcimFacilitiesEnabled,
     });
   }
 }

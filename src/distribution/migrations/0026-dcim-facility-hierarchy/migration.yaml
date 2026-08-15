@@ -1,0 +1,25 @@
+schema: infranexum.migration/v1
+id: '0026'
+name: dcim-facility-hierarchy
+owner_context: dcim
+dependencies:
+- '0025'
+preconditions:
+- organization-foundation-declared
+postconditions:
+- dcim-facility-hierarchy-created
+- dcim-facility-deduplication-enforced
+recovery: rerun-idempotent-ddl-after-correcting-database-connectivity
+rollback: drops-only-dcim-owned-objects
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 30
+checksums:
+  postgresql.sql: 437d3f4215b4c926cd51e5ddf6a6eab78479a0d429f2d572b77674708655fd15
+  oracle.sql: 8b670d27108b960aac646ecff0b83e6623df1cd932c79e4b4689f8da4d110633
+  rollback/postgresql.sql: 2140da16130c3e40c7e8406d9a87bb464c4fc07081cd1d4ab272cc11b6e42112
+  rollback/oracle.sql: 77a9c149158930fbad8080a1454999f6b15265327c0e35862f91adca4e8bea69
+  logical-model.json: 5e2db83cb24e84bcda758acb3fef7e1c266de6a8137b7b395df2b879804484c3
+  verify.sql.yaml: 23263d2b395e69ee06da53a99de82d8d7f6b207efd015971191544a107f05bdf

@@ -19,8 +19,11 @@ class WebParityRsotReadMigrationTest(unittest.TestCase):
         catalogue = yaml.safe_load((self.MIGRATIONS / "catalogue.yaml").read_text(encoding="utf-8"))
         ids = [str(entry["id"]).zfill(4) for entry in catalogue["entries"]]
         self.assertLess(ids.index("0024"), ids.index("0025"))
-        self.assertEqual("1.24.0", catalogue["version"])
-        self.assertEqual("0025-identity-access-rsot-read-permission/migration.yaml", catalogue["entries"][-1]["path"])
+        self.assertLess(ids.index("0025"), ids.index("0026"))
+        self.assertLess(ids.index("0026"), ids.index("0027"))
+        self.assertGreaterEqual(tuple(map(int, catalogue["version"].split("."))), (1, 24, 0))
+        entry_by_id = {str(entry["id"]).zfill(4): entry for entry in catalogue["entries"]}
+        self.assertEqual("0025-identity-access-rsot-read-permission/migration.yaml", entry_by_id["0025"]["path"])
 
     def test_permission_is_cdc_named_organization_scoped_and_bootstrapped(self) -> None:
         logical = json.loads((self.MIGRATION / "logical-model.json").read_text(encoding="utf-8"))

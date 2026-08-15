@@ -5,7 +5,7 @@ import test from 'node:test';
 
 import { WebRuntimeConfiguration } from '../../src/applications/web/runtime/config.mjs';
 
-const options = { version: '2.0.0-alpha.0.80', baseDirectory: os.tmpdir() };
+const options = { version: '2.0.0-alpha.0.81', baseDirectory: os.tmpdir() };
 
 test('configuration applies safe defaults and exposes only public values', () => {
   const configuration = WebRuntimeConfiguration.fromEnvironment({}, options);
@@ -33,6 +33,7 @@ test('configuration applies safe defaults and exposes only public values', () =>
     itamPartnersEnabled: false,
     itamAssetsEnabled: false,
     itamComplianceEnabled: false,
+  dcimFacilitiesEnabled: false,
   });
   assert.equal(Object.isFrozen(configuration), true);
   assert.equal(Object.isFrozen(configuration.publicConfiguration()), true);
@@ -228,4 +229,12 @@ test('ITAM Compliance publication is fail-closed and requires Partner and Asset 
   assert.equal(enabled.itamComplianceEnabled, true);
   assert.equal(enabled.publicConfiguration().itamComplianceEnabled, true);
   assert.throws(() => WebRuntimeConfiguration.fromEnvironment({ INFRANEXUM_WEB_ITAM_COMPLIANCE_ENABLED: 'yes' }, options), /ITAM_COMPLIANCE_ENABLED/);
+});
+
+
+test('DCIM Facility publication is fail-closed and validates explicit booleans', () => {
+  const enabled = WebRuntimeConfiguration.fromEnvironment({ INFRANEXUM_WEB_DCIM_FACILITIES_ENABLED: 'true' }, options);
+  assert.equal(enabled.dcimFacilitiesEnabled, true);
+  assert.equal(enabled.publicConfiguration().dcimFacilitiesEnabled, true);
+  assert.throws(() => WebRuntimeConfiguration.fromEnvironment({ INFRANEXUM_WEB_DCIM_FACILITIES_ENABLED: 'yes' }, options), /DCIM_FACILITIES_ENABLED/);
 });
