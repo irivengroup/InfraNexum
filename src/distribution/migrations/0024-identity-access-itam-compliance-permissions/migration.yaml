@@ -1,0 +1,26 @@
+schema: infranexum.migration/v1
+id: '0024'
+name: identity-access-itam-compliance-permissions
+owner_context: identity-access
+dependencies:
+- '0023'
+preconditions:
+- itam-contractual-compliance-declared
+- identity-access-rbac-foundation-declared
+postconditions:
+- seven-draft21-itam-compliance-permissions-seeded
+- platform-admin-upgrade-access-preserved
+recovery: rerun-idempotent-ddl-or-seeds-after-correcting-database-connectivity
+rollback: removes-only-itam-compliance-permission-grants-and-permissions
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 20
+checksums:
+  postgresql.sql: ee8d01eb1d426e36e685b8cc03402fecc623d3fd4f0c6696622c00174bc64813
+  oracle.sql: 444248e3fabcb57a07b61fee734c7af2220a3ce7651dee74472af5f6485c5555
+  rollback/postgresql.sql: 73c0e082f481b3ae5f3051d1f728d79c8473ff37472b70ded2fb2e101d804191
+  rollback/oracle.sql: 54906ae6a65d7af017fb841861d9494ad75a6a046205881cd6d42612af04ca20
+  logical-model.json: 4e627f64b74da1b05c3a5146bee67b3de75fe7b1e867f92f32b90d9ba0c301cb
+  verify.sql.yaml: 24708add2b0bb5fa981f9e61a41cfb476b48a26c4e68b7d338bd5e826cae7c25

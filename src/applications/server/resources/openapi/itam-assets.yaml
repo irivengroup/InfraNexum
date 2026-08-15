@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum ITAM Asset Lifecycle API
-  version: 2.0.0-alpha.0.78
+  version: 2.0.0-alpha.0.79
   description: PGM-07-E02 acquisition, custody, maintenance, retirement and disposition lifecycle for canonical ITAM assets.
 servers:
 - url: /
@@ -22,6 +22,7 @@ x-infranexum-published-events:
 - itam.asset.returned.v1
 - itam.asset.retired.v1
 - itam.asset.disposed.v1
+- itam.asset.producer_updated.v1
 tags:
 - name: ITAM / Assets
   description: Organization-governed asset lifecycle with append-only chain of custody.
@@ -209,7 +210,7 @@ paths:
       - ITAM / Assets
       operationId: stockItamAsset
       summary: Move an asset into governed stock
-      description: Fails closed until PGM-07-E03 proves mandatory warranty or license readiness.
+      description: Requires PGM-07-E03 verified warranty for hardware or verified license contract for software; support coverage may extend hardware supportability only within an active authorized scope.
       x-infranexum-permission: itam.asset.update
       x-infranexum-capability: itam.assets
       parameters:
@@ -245,7 +246,7 @@ paths:
       - ITAM / Assets
       operationId: assignItamAsset
       summary: Assign an asset to an accountable internal custodian
-      description: Fails closed until PGM-07-E03 proves mandatory warranty or license readiness.
+      description: Requires PGM-07-E03 verified warranty for hardware or verified license contract for software; support coverage may extend hardware supportability only within an active authorized scope.
       x-infranexum-permission: itam.asset.update
       x-infranexum-capability: itam.assets
       parameters:
@@ -281,7 +282,7 @@ paths:
       - ITAM / Assets
       operationId: deployItamAsset
       summary: Deploy an assigned asset
-      description: Fails closed until PGM-07-E03 proves mandatory warranty or license readiness.
+      description: Requires PGM-07-E03 verified warranty for hardware or verified license contract for software; support coverage may extend hardware supportability only within an active authorized scope.
       x-infranexum-permission: itam.asset.update
       x-infranexum-capability: itam.assets
       parameters:
@@ -486,6 +487,42 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/itam/assets/{assetId}/producer:
+    post:
+      tags:
+      - ITAM / Assets
+      operationId: setItamAssetProducer
+      summary: Set or correct the governed manufacturer or software publisher
+      description: Existing assets migrated without a producer remain readable but cannot pass the PGM-07-E03 operational readiness gate until this reference is set.
+      x-infranexum-permission: itam.asset.update
+      x-infranexum-capability: itam.assets
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/AssetId'
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetProducer'
+      responses:
+        '200':
+          $ref: '#/components/responses/AssetMutation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
 components:
   securitySchemes:
     LocalSessionCookie:
@@ -589,6 +626,22 @@ components:
           pattern: ^[A-Za-z]{3}$
         acquiredFromPartnerId:
           $ref: '#/components/schemas/UuidV7'
+        producerPartnerId:
+          $ref: '#/components/schemas/UuidV7'
+          description: Canonical active manufacturer for hardware or software publisher for software. Optional only for backward-compatible migration; operational transitions require it.
+        reason:
+          type: string
+          minLength: 2
+          maxLength: 1024
+    SetProducer:
+      type: object
+      additionalProperties: false
+      required:
+      - producerPartnerId
+      - reason
+      properties:
+        producerPartnerId:
+          $ref: '#/components/schemas/UuidV7'
         reason:
           type: string
           minLength: 2
@@ -647,6 +700,8 @@ components:
           type: string
           pattern: ^[A-Z]{3}$
         acquiredFromPartnerId:
+          $ref: '#/components/schemas/UuidV7'
+        producerPartnerId:
           $ref: '#/components/schemas/UuidV7'
         lifecycleStatus:
           $ref: '#/components/schemas/LifecycleStatus'

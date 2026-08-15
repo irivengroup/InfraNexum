@@ -1,0 +1,15 @@
+DROP TABLE IF EXISTS infranexum_itam.compliance_alert_dedup;
+DROP TABLE IF EXISTS infranexum_itam.compliance_command_dedup;
+DROP TABLE IF EXISTS infranexum_itam.compliance_revision;
+DROP TABLE IF EXISTS infranexum_itam.support_coverage;
+DROP TABLE IF EXISTS infranexum_itam.support_authorization_escalation_contact;
+DROP TABLE IF EXISTS infranexum_itam.support_authorization_service_level;
+DROP TABLE IF EXISTS infranexum_itam.support_authorization_subdivision;
+DROP TABLE IF EXISTS infranexum_itam.support_authorization_object_type;
+DROP TABLE IF EXISTS infranexum_itam.support_authorization_manufacturer;
+DROP TABLE IF EXISTS infranexum_itam.support_provider_authorization;
+DROP TABLE IF EXISTS infranexum_itam.software_license_contract;
+DROP TABLE IF EXISTS infranexum_itam.warranty;
+DROP TABLE IF EXISTS infranexum_itam.warranty_type;
+DROP INDEX IF EXISTS infranexum_itam.ix_inx_itam_asset_producer;
+ALTER TABLE infranexum_itam.asset DROP COLUMN IF EXISTS producer_partner_id;

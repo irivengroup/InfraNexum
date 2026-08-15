@@ -20,9 +20,18 @@ Every mutation increments the optimistic `version` exactly once and appends one 
 
 ## Mandatory warranty/license readiness
 
-The CDC requires complete warranty/support information for physical hardware and complete license-contract information for software before those assets become operational. `PGM-07-E03`, which follows this epic in the roadmap, owns those contracts. Consequently `alpha.0.78` exposes a mandatory `AssetOperationalReadinessPolicy` port and the current Server composition supplies `PendingAssetComplianceReadinessPolicy`.
+The CDC requires complete warranty/support information for physical hardware and complete license-contract information for software before those assets become operational. `PGM-07-E03` is implemented in `alpha.0.79` and now provides the concrete readiness policy consumed by E02.
 
-That implementation is intentionally **fail-closed**: transitions to `IN_STOCK`, `ASSIGNED` or `DEPLOYED` fail with `ITAM_ASSET_COMPLIANCE_GATE_UNAVAILABLE` until `PGM-07-E03` replaces the pending policy with the warranty/license-aware implementation. Acquisition, receipt, transfer, maintenance, return, retirement and evidenced disposition remain governed by E02 and do not bypass this gate.
+The policy is fail-closed:
+
+- a hardware asset requires a canonical manufacturer Partner plus verified manufacturer warranty evidence; after the manufacturer warranty period, an active authorized third-party coverage may extend supportability only when manufacturer, RSOT object type, subdivision/geography, SLA and date all match;
+- a software asset requires a canonical software-publisher Partner plus an active verified software-license contract matching that publisher;
+- if `itam.compliance` or one of its prerequisite capabilities is unavailable, operational readiness is false;
+- rejected `IN_STOCK`, `ASSIGNED` or `DEPLOYED` transitions do not mutate the asset version, custody chain or outbox.
+
+Legacy pre-E03 assets may have a null `producerPartnerId`; migration `0023` intentionally does not invent one. The governed producer-correction command/API sets it with optimistic versioning, idempotency, RBAC/ABAC and audit/outbox semantics. Backward-compatible E02 Java acquisition/restoration signatures remain available and map missing producers to null.
+
+See `docs/itam-compliance.md` for warranty, software-license, support-authorization, coverage, alert and evidence-history contracts.
 
 ## Persistence and concurrency
 

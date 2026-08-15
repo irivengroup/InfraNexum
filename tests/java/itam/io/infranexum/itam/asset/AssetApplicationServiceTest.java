@@ -56,6 +56,7 @@ final class AssetApplicationServiceTest {
     private static final DomainIdentifier CORR = id(4);
     private static final DomainIdentifier SUPPLIER = id(5);
     private static final DomainIdentifier MAINTAINER = id(6);
+    private static final DomainIdentifier PRODUCER = id(7);
 
     private Repository repository;
     private Idempotency idempotency;
@@ -96,6 +97,23 @@ final class AssetApplicationServiceTest {
         assertThrows(AssetQuotaException.class, () -> service.create(command(id(12)), context("acquire-0003", "Quota validation", null)));
         features.enabled = false;
         assertCode("ITAM_ASSET_CAPABILITY_UNAVAILABLE", () -> service.get(created.id()));
+    }
+
+    @Test
+    void producerCorrectionIsVersionedIdempotentAndValidatedWithoutBreakingLegacyAcquisition() {
+        Asset legacy = service.create(command(id(18)), context("acquire-0018", "Legacy acquisition without producer", null));
+        assertNull(legacy.producerPartnerId());
+        Asset corrected = service.setProducer(legacy.id(), 1, PRODUCER,
+                context("producer-0018", "Canonical manufacturer correction", "evidence:producer:18"));
+        assertEquals(PRODUCER, corrected.producerPartnerId());
+        assertEquals(2, corrected.version());
+        assertEquals(1, references.producerChecks);
+        assertEquals(corrected.id(), service.setProducer(legacy.id(), 1, PRODUCER,
+                context("producer-0018", "Canonical manufacturer correction", "evidence:producer:18")).id());
+        assertCode("VERSION_CONFLICT", () -> service.setProducer(corrected.id(), 1, PRODUCER,
+                context("producer-stale-0018", "Stale producer correction", null)));
+        assertTrue(events.outboxSnapshot().stream().anyMatch(record ->
+                "itam.asset.producer_updated.v1".equals(record.event().eventType().value())));
     }
 
     @Test
@@ -249,6 +267,7 @@ final class AssetApplicationServiceTest {
         int canonicalChecks;
         int subdivisionChecks;
         int acquisitionPartnerChecks;
+        int producerChecks;
         boolean lastMaintenance;
         RuntimeException failure;
         @Override public void validateCanonicalObject(DomainIdentifier rsotObjectId, DomainIdentifier organizationId) {
@@ -261,6 +280,10 @@ final class AssetApplicationServiceTest {
         }
         @Override public void validateAcquisitionPartner(DomainIdentifier partnerId, DomainIdentifier organizationId, LocalDate effectiveOn) {
             acquisitionPartnerChecks++;
+            failIfRequested();
+        }
+        @Override public void validateProducerPartner(DomainIdentifier partnerId, DomainIdentifier organizationId, AssetType assetType, LocalDate effectiveOn) {
+            producerChecks++;
             failIfRequested();
         }
         @Override public void validateCustodian(AssetCustodian custodian, DomainIdentifier organizationId, LocalDate effectiveOn, boolean maintenance) {
@@ -294,6 +317,11 @@ final class AssetApplicationServiceTest {
             if (current == null || current.version() != expectedVersion) throw new AssetConflictException("VERSION_CONFLICT", "asset version changed");
             values.put(asset.id(), asset);
             custody.computeIfAbsent(asset.id(), ignored -> new ArrayList<>()).add(custodyEvent);
+        }
+        @Override public void updateMetadata(Asset asset, long expectedVersion) {
+            Asset current = values.get(asset.id());
+            if (current == null || current.version() != expectedVersion) throw new AssetConflictException("VERSION_CONFLICT", "asset version changed");
+            values.put(asset.id(), asset);
         }
         @Override public AssetPage search(AssetSearchCriteria criteria) {
             lastSearch = criteria;

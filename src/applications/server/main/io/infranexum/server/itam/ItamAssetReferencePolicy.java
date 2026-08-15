@@ -4,6 +4,7 @@ import io.infranexum.core.contracts.DomainIdentifier;
 import io.infranexum.itam.asset.domain.AssetConflictException;
 import io.infranexum.itam.asset.domain.AssetCustodian;
 import io.infranexum.itam.asset.domain.AssetCustodianKind;
+import io.infranexum.itam.asset.domain.AssetType;
 import io.infranexum.itam.asset.ports.AssetReferencePolicy;
 import io.infranexum.itam.partner.application.PartnerApplicationService;
 import io.infranexum.itam.partner.domain.Partner;
@@ -64,6 +65,20 @@ final class ItamAssetReferencePolicy implements AssetReferencePolicy {
         if (!partner.roles().contains(PartnerRole.SUPPLIER) && !partner.roles().contains(PartnerRole.MANUFACTURER)) {
             throw new AssetConflictException(
                     "ITAM_ASSET_ACQUISITION_PARTNER_INVALID", "acquisition partner must be a supplier or manufacturer");
+        }
+    }
+
+    @Override
+    public void validateProducerPartner(
+            DomainIdentifier partnerId, DomainIdentifier organizationId, AssetType assetType, LocalDate effectiveOn) {
+        Partner partner = requirePartner(partnerId, organizationId, effectiveOn);
+        PartnerRole required = assetType == AssetType.HARDWARE ? PartnerRole.MANUFACTURER : PartnerRole.SOFTWARE_PUBLISHER;
+        if (!partner.roles().contains(required)) {
+            throw new AssetConflictException(
+                    "ITAM_ASSET_PRODUCER_INVALID",
+                    assetType == AssetType.HARDWARE
+                            ? "hardware producer must be an authorized manufacturer"
+                            : "software producer must be an authorized software publisher");
         }
     }
 

@@ -1,0 +1,62 @@
+{
+  "schema": "infranexum.logical-schema/v1",
+  "objects": [
+    {
+      "kind": "column",
+      "logical_name": "itam.asset.producer_partner_id",
+      "invariant": "nullable on upgrade for legacy assets; governed manufacturer or software publisher is required before E03 operational readiness can pass"
+    },
+    {
+      "kind": "table",
+      "logical_name": "itam.warranty_type",
+      "invariant": "warranty types are governed catalogue entries rather than free text"
+    },
+    {
+      "kind": "table",
+      "logical_name": "itam.warranty",
+      "invariant": "hardware warranty stores manufacturer, type, warranty/support dates, evidence, verifier and optimistic version"
+    },
+    {
+      "kind": "table",
+      "logical_name": "itam.software_license_contract",
+      "invariant": "software license contract stores complete contractual entitlement metadata and evidence without raw license key material"
+    },
+    {
+      "kind": "table",
+      "logical_name": "itam.support_provider_authorization",
+      "invariant": "third-party provider authorization scopes manufacturer, product/object type, geography, period, service levels and escalation contacts"
+    },
+    {
+      "kind": "table",
+      "logical_name": "itam.support_coverage",
+      "invariant": "third-party support coverage snapshots authorized provider scope and never rewrites manufacturer warranty dates"
+    },
+    {
+      "kind": "table",
+      "logical_name": "itam.compliance_revision",
+      "invariant": "each contractual version is retained append-only with reason, evidence reference and immutable snapshot"
+    },
+    {
+      "kind": "table",
+      "logical_name": "itam.compliance_command_dedup",
+      "invariant": "contractual mutations are replay-safe through payload-bound idempotency keys"
+    },
+    {
+      "kind": "table",
+      "logical_name": "itam.compliance_alert_dedup",
+      "invariant": "deadline events are emitted at most once per contractual date and threshold"
+    },
+    {
+      "kind": "weak_reference",
+      "logical_name": "itam.compliance.external_authorities",
+      "invariant": "Partner, Organization, IAM and RSOT identifiers remain weak references with no cross-context foreign keys"
+    }
+  ],
+  "invariants": {
+    "cross_context_foreign_keys": false,
+    "raw_license_key_storage": false,
+    "versioned_evidence_history": true,
+    "deadline_alerts_independent_of_updated_at": true,
+    "legacy_asset_producer_nullable": true
+  }
+}

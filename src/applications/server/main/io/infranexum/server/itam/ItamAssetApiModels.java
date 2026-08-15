@@ -25,6 +25,11 @@ final class ItamAssetApiModels {
             @NotNull @DecimalMin("0.0000") BigDecimal acquisitionValue,
             @NotBlank @Pattern(regexp = "[A-Za-z]{3}") String currencyCode,
             String acquiredFromPartnerId,
+            String producerPartnerId,
+            @NotBlank @Size(min = 2, max = 1024) String reason) {}
+
+    record SetAssetProducerRequest(
+            @NotBlank String producerPartnerId,
             @NotBlank @Size(min = 2, max = 1024) String reason) {}
 
     record AssetTransitionRequest(
@@ -43,6 +48,7 @@ final class ItamAssetApiModels {
             BigDecimal acquisitionValue,
             String currencyCode,
             String acquiredFromPartnerId,
+            String producerPartnerId,
             String lifecycleStatus,
             String custodianKind,
             String custodianId,
@@ -54,7 +60,7 @@ final class ItamAssetApiModels {
                     asset.id().toString(), asset.rsotObjectId().toString(), asset.assetType().wireValue(),
                     asset.owningOrganizationId().toString(), text(asset.owningSubdivisionId()), asset.acquisitionDate(),
                     asset.acquisitionValue().amount(), asset.acquisitionValue().currencyCode(), text(asset.acquiredFromPartnerId()),
-                    asset.lifecycleStatus().wireValue(), asset.custodian().kind().wireValue(),
+                    text(asset.producerPartnerId()), asset.lifecycleStatus().wireValue(), asset.custodian().kind().wireValue(),
                     text(asset.custodian().referenceId()), asset.version(), asset.createdAt(), asset.updatedAt());
         }
     }

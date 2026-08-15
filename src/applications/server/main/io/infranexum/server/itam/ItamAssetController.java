@@ -100,9 +100,21 @@ public final class ItamAssetController {
                 AuthorizationScope.organization(organization), "itam-asset", "collection");
         Asset asset = service.create(new CreateAssetCommand(
                         id(body.rsotObjectId()), body.assetType(), organization, nullableId(body.owningSubdivisionId()),
-                        body.acquisitionDate(), body.acquisitionValue(), body.currencyCode(), nullableId(body.acquiredFromPartnerId())),
+                        body.acquisitionDate(), body.acquisitionValue(), body.currencyCode(), nullableId(body.acquiredFromPartnerId()),
+                        nullableId(body.producerPartnerId())),
                 context(request, idempotencyKey, body.reason(), null));
         return assetResponse(asset, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/{assetId}/producer")
+    ResponseEntity<AssetResponse> setProducer(
+            @PathVariable String assetId, @RequestHeader(HttpHeaders.IF_MATCH) String ifMatch,
+            @RequestHeader("Idempotency-Key") String idempotencyKey, @Valid @RequestBody SetAssetProducerRequest body,
+            HttpServletRequest request, HttpServletResponse response) {
+        Asset current = scopedCurrent(assetId, PermissionCodes.ITAM_ASSET_UPDATE, request, response);
+        Asset changed = service.setProducer(current.id(), version(ifMatch), id(body.producerPartnerId()),
+                context(request, idempotencyKey, body.reason(), null));
+        return assetResponse(changed, HttpStatus.OK);
     }
 
     @PostMapping("/{assetId}/receive")

@@ -5,7 +5,7 @@ import test from 'node:test';
 
 import { WebRuntimeConfiguration } from '../../src/applications/web/runtime/config.mjs';
 
-const options = { version: '2.0.0-alpha.0.78', baseDirectory: os.tmpdir() };
+const options = { version: '2.0.0-alpha.0.79', baseDirectory: os.tmpdir() };
 
 test('configuration applies safe defaults and exposes only public values', () => {
   const configuration = WebRuntimeConfiguration.fromEnvironment({}, options);
@@ -31,8 +31,8 @@ test('configuration applies safe defaults and exposes only public values', () =>
     advancedAuthorizationEnabled: false,
     rsotCoreEnabled: false,
     itamPartnersEnabled: false,
-  itamAssetsEnabled: false,
     itamAssetsEnabled: false,
+    itamComplianceEnabled: false,
   });
   assert.equal(Object.isFrozen(configuration), true);
   assert.equal(Object.isFrozen(configuration.publicConfiguration()), true);
@@ -214,4 +214,18 @@ test('ITAM Asset publication is fail-closed and requires Partner catalogue capab
   assert.equal(enabled.itamAssetsEnabled, true);
   assert.equal(enabled.publicConfiguration().itamAssetsEnabled, true);
   assert.throws(() => WebRuntimeConfiguration.fromEnvironment({ INFRANEXUM_WEB_ITAM_ASSETS_ENABLED: 'yes' }, options), /ITAM_ASSETS_ENABLED/);
+});
+
+
+test('ITAM Compliance publication is fail-closed and requires Partner and Asset capabilities', () => {
+  assert.throws(() => WebRuntimeConfiguration.fromEnvironment({ INFRANEXUM_WEB_ITAM_COMPLIANCE_ENABLED: 'true' }, options), /requires Partner catalogue and Asset lifecycle/);
+  assert.throws(() => WebRuntimeConfiguration.fromEnvironment({ INFRANEXUM_WEB_ITAM_PARTNERS_ENABLED: 'true', INFRANEXUM_WEB_ITAM_COMPLIANCE_ENABLED: 'true' }, options), /requires Partner catalogue and Asset lifecycle/);
+  const enabled = WebRuntimeConfiguration.fromEnvironment({
+    INFRANEXUM_WEB_ITAM_PARTNERS_ENABLED: 'true',
+    INFRANEXUM_WEB_ITAM_ASSETS_ENABLED: 'true',
+    INFRANEXUM_WEB_ITAM_COMPLIANCE_ENABLED: 'true',
+  }, options);
+  assert.equal(enabled.itamComplianceEnabled, true);
+  assert.equal(enabled.publicConfiguration().itamComplianceEnabled, true);
+  assert.throws(() => WebRuntimeConfiguration.fromEnvironment({ INFRANEXUM_WEB_ITAM_COMPLIANCE_ENABLED: 'yes' }, options), /ITAM_COMPLIANCE_ENABLED/);
 });

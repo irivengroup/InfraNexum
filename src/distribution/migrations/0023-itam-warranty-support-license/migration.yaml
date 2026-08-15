@@ -1,0 +1,27 @@
+schema: infranexum.migration/v1
+id: '0023'
+name: itam-warranty-support-license
+owner_context: itam
+dependencies:
+- '0022'
+preconditions:
+- itam-asset-lifecycle-declared
+- itam-partner-foundation-declared
+postconditions:
+- itam-contractual-compliance-created
+- itam-compliance-history-versioned
+- itam-deadline-alert-dedup-created
+recovery: rerun-idempotent-ddl-or-seeds-after-correcting-database-connectivity
+rollback: drops-only-itam-compliance-owned-objects-and-producer-column
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 45
+checksums:
+  postgresql.sql: 9df9f292c44fbd8c6afcd66d7538da04f1630cd70540e3fc78fba22dabbdb6ac
+  oracle.sql: a458d3234fae78ad8adcbe6a7d0b4e4cd39258c376ee25e136c399f3e85d02a2
+  rollback/postgresql.sql: 82d6689269e8a39f84acbdbf97bc93b40e6fc975e6dafe40faeb88a4f3ad8a62
+  rollback/oracle.sql: 591efc9ab87710a208b191e66e64f9893c9c838a7d115d4092c6d5afa3f441c1
+  logical-model.json: 89ae4e21f4aaf6226abe2dfca8bc4b28a1494cf984568a6335d1cb6d239640a2
+  verify.sql.yaml: 654adafbceb25680b80c01b976baab6e845a6b3aa11108cfa9a2e69facb0ca17

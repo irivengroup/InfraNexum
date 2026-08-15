@@ -1,0 +1,17 @@
+schema: infranexum.migration-verification/v1
+checks:
+- id: itam-compliance-warranty-date-order
+  postgresql: "SELECT COUNT(*) = 0 FROM infranexum_itam.warranty WHERE warranty_end_date<warranty_start_date OR manufacturer_support_end_date<warranty_start_date"
+  oracle: "SELECT CASE WHEN COUNT(*)=0 THEN 1 ELSE 0 END FROM INX_ITAM_WARRANTY WHERE WARRANTY_END_DATE<WARRANTY_START_DATE OR MANUFACTURER_SUPPORT_END_DATE<WARRANTY_START_DATE"
+- id: itam-compliance-license-date-order
+  postgresql: "SELECT COUNT(*) = 0 FROM infranexum_itam.software_license_contract WHERE (ends_on IS NOT NULL AND ends_on<starts_on) OR publisher_support_end_date<starts_on"
+  oracle: "SELECT CASE WHEN COUNT(*)=0 THEN 1 ELSE 0 END FROM INX_ITAM_SW_LICENSE WHERE (ENDS_ON IS NOT NULL AND ENDS_ON<STARTS_ON) OR PUBLISHER_SUPPORT_END_DATE<STARTS_ON"
+- id: itam-compliance-support-scope-date-order
+  postgresql: "SELECT COUNT(*) = 0 FROM infranexum_itam.support_provider_authorization WHERE valid_until IS NOT NULL AND valid_until<valid_from"
+  oracle: "SELECT CASE WHEN COUNT(*)=0 THEN 1 ELSE 0 END FROM INX_ITAM_SUPPORT_AUTH WHERE VALID_UNTIL IS NOT NULL AND VALID_UNTIL<VALID_FROM"
+- id: itam-compliance-support-coverage-date-order
+  postgresql: "SELECT COUNT(*) = 0 FROM infranexum_itam.support_coverage WHERE ends_on<starts_on"
+  oracle: "SELECT CASE WHEN COUNT(*)=0 THEN 1 ELSE 0 END FROM INX_ITAM_SUPPORT_COVERAGE WHERE ENDS_ON<STARTS_ON"
+- id: itam-compliance-current-version-has-revision
+  postgresql: "SELECT COUNT(*) = 0 FROM (SELECT 'warranty' t,id,version FROM infranexum_itam.warranty UNION ALL SELECT 'license',id,version FROM infranexum_itam.software_license_contract UNION ALL SELECT 'support_authorization',id,version FROM infranexum_itam.support_provider_authorization UNION ALL SELECT 'support_coverage',id,version FROM infranexum_itam.support_coverage) x LEFT JOIN infranexum_itam.compliance_revision r ON r.record_type=x.t AND r.record_id=x.id AND r.version=x.version WHERE r.record_id IS NULL"
+  oracle: "SELECT CASE WHEN COUNT(*)=0 THEN 1 ELSE 0 END FROM (SELECT 'warranty' T,ID,VERSION FROM INX_ITAM_WARRANTY UNION ALL SELECT 'license',ID,VERSION FROM INX_ITAM_SW_LICENSE UNION ALL SELECT 'support_authorization',ID,VERSION FROM INX_ITAM_SUPPORT_AUTH UNION ALL SELECT 'support_coverage',ID,VERSION FROM INX_ITAM_SUPPORT_COVERAGE) X LEFT JOIN INX_ITAM_COMP_REVISION R ON R.RECORD_TYPE=X.T AND R.RECORD_ID=X.ID AND R.VERSION=X.VERSION WHERE R.RECORD_ID IS NULL"

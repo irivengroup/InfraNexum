@@ -74,6 +74,14 @@ record AuthorizationRequirement(
         if (normalized.equals("/api/v1/itam/assets") || normalized.startsWith("/api/v1/itam/assets/")) {
             return controllerScoped("itam-asset", normalized);
         }
+        if (normalized.equals("/api/v1/itam/warranty-types")
+                || normalized.startsWith("/api/v1/itam/warranties/")
+                || normalized.startsWith("/api/v1/itam/licenses/")
+                || normalized.startsWith("/api/v1/itam/support-coverages/")
+                || normalized.equals("/api/v1/itam/support-authorizations")
+                || normalized.startsWith("/api/v1/itam/support-authorizations/")) {
+            return controllerScoped("itam-compliance", normalized);
+        }
 
         if (normalized.equals("/api/v1/iam/policies") && (verb.equals("GET") || verb.equals("POST"))) {
             return platformAdmin("policy", "collection");

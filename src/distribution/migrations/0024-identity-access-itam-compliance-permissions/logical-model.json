@@ -1,0 +1,24 @@
+{
+  "schema": "infranexum.logical-schema/v1",
+  "objects": [
+    {
+      "kind": "permission_seed",
+      "logical_name": "identity_access.itam_compliance_permissions",
+      "invariant": "PGM-07-E03 warranty, support and software-license permissions are organization-scoped and bootstrap-accessible to system.platform_admin"
+    }
+  ],
+  "permissions": [
+    "itam.warranty.read",
+    "itam.warranty.manage",
+    "itam.support_coverage.read",
+    "itam.support_coverage.manage",
+    "itam.support_catalog.manage",
+    "itam.license.read",
+    "itam.license.manage"
+  ],
+  "bootstrap_role": "system.platform_admin",
+  "scope_kind": "ORGANIZATION",
+  "invariants": {
+    "cross_context_business_tables": false
+  }
+}

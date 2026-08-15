@@ -7,7 +7,10 @@ server:
 spring:
   application:
     name: infranexum-server
-    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.78}
+    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.79}
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
   datasource:
     url: ${INFRANEXUM_DATABASE_URL:}
     username: ${INFRANEXUM_DATABASE_USERNAME:}
@@ -27,7 +30,7 @@ infranexum:
     topology: ${INFRANEXUM_TOPOLOGY:SINGLE_NODE}
     roles: ${INFRANEXUM_ROLES:SERVER,WEB}
     traits: ${INFRANEXUM_TRAITS:}
-    installed-capabilities: ${INFRANEXUM_INSTALLED_CAPABILITIES:iam.local-auth,database.postgresql,discovery.agentless,rsot.core,itam.partners,itam.assets}
+    installed-capabilities: ${INFRANEXUM_INSTALLED_CAPABILITIES:iam.local-auth,database.postgresql,discovery.agentless,rsot.core,itam.partners,itam.assets,itam.compliance}
     entitled-capabilities: ${INFRANEXUM_ENTITLED_CAPABILITIES:}
     activation-state: ${INFRANEXUM_ACTIVATION_STATE:NOT_REQUIRED}
     catalog-version: ${INFRANEXUM_CAPABILITY_CATALOG_VERSION:2.0.0-draft.20}
@@ -63,6 +66,9 @@ infranexum:
   itam:
     partner-api-enabled: ${INFRANEXUM_ITAM_PARTNER_API_ENABLED:false}
     asset-api-enabled: ${INFRANEXUM_ITAM_ASSET_API_ENABLED:false}
+    compliance-api-enabled: ${INFRANEXUM_ITAM_COMPLIANCE_API_ENABLED:false}
+    compliance-alert-interval: ${INFRANEXUM_ITAM_COMPLIANCE_ALERT_INTERVAL:PT1H}
+    compliance-alert-thresholds: ${INFRANEXUM_ITAM_COMPLIANCE_ALERT_THRESHOLDS:180,120,90,60,30,15,7,1}
   identity:
     local:
       enabled: ${INFRANEXUM_LOCAL_AUTH_ENABLED:false}
@@ -81,7 +87,7 @@ infranexum:
     mode: ${INFRANEXUM_SERVER_MODE:STANDALONE}
     region: ${INFRANEXUM_SERVER_REGION:local}
     site: ${INFRANEXUM_SERVER_SITE:local}
-    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.78}
+    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.79}
     architecture-baseline: ${INFRANEXUM_ARCHITECTURE_BASELINE:2.0.0-draft.21}
 
 logging:
@@ -97,7 +103,7 @@ logging:
         include-hashes: true
     ecs:
       service:
-        version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.78}
+        version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.79}
         environment: ${INFRANEXUM_ENVIRONMENT:local}
         node-name: ${INFRANEXUM_SERVER_INSTANCE_ID:server-local-1}
 
@@ -122,7 +128,7 @@ management:
     map-environment-variables: false
     resource-attributes:
       service.namespace: infranexum
-      service.version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.78}
+      service.version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.79}
       service.instance.id: ${INFRANEXUM_SERVER_INSTANCE_ID:server-local-1}
       deployment.environment.name: ${INFRANEXUM_ENVIRONMENT:local}
     tracing:

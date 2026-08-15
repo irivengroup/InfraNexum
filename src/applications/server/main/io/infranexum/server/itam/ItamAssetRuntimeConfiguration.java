@@ -9,6 +9,7 @@ import io.infranexum.adapters.persistence.jdbc.JdbcTransactionalEventStore;
 import io.infranexum.core.contracts.UuidV7Generator;
 import io.infranexum.core.events.TransactionalEventStore;
 import io.infranexum.itam.asset.application.AssetApplicationService;
+import io.infranexum.itam.compliance.application.ComplianceApplicationService;
 import io.infranexum.identity.access.application.PolicyDecisionService;
 import io.infranexum.identity.access.application.RbacAuthorizationService;
 import io.infranexum.identity.access.ports.IdentityAccessFeaturePolicy;
@@ -36,10 +37,10 @@ public class ItamAssetRuntimeConfiguration {
         @Bean
         AssetApplicationService assetApplicationService(
                 DataSource dataSource, TransactionalEventStore eventStore, PlatformCapabilityService capabilities,
-                PartnerApplicationService partners, RsotQueryService rsot,
+                PartnerApplicationService partners, RsotQueryService rsot, ComplianceApplicationService compliance,
                 @Qualifier("platformClock") Clock clock,
                 @Qualifier("correlationIdentifiers") UuidV7Generator identifiers) {
-            return service(dataSource, eventStore, capabilities, partners, rsot, clock, identifiers,
+            return service(dataSource, eventStore, capabilities, partners, rsot, compliance, clock, identifiers,
                     JdbcDatabaseDialect.POSTGRESQL);
         }
     }
@@ -50,10 +51,10 @@ public class ItamAssetRuntimeConfiguration {
         @Bean
         AssetApplicationService assetApplicationService(
                 DataSource dataSource, TransactionalEventStore eventStore, PlatformCapabilityService capabilities,
-                PartnerApplicationService partners, RsotQueryService rsot,
+                PartnerApplicationService partners, RsotQueryService rsot, ComplianceApplicationService compliance,
                 @Qualifier("platformClock") Clock clock,
                 @Qualifier("correlationIdentifiers") UuidV7Generator identifiers) {
-            return service(dataSource, eventStore, capabilities, partners, rsot, clock, identifiers,
+            return service(dataSource, eventStore, capabilities, partners, rsot, compliance, clock, identifiers,
                     JdbcDatabaseDialect.ORACLE);
         }
     }
@@ -70,7 +71,7 @@ public class ItamAssetRuntimeConfiguration {
 
     private static AssetApplicationService service(
             DataSource dataSource, TransactionalEventStore eventStore, PlatformCapabilityService capabilities,
-            PartnerApplicationService partners, RsotQueryService rsot, @Qualifier("platformClock") Clock clock, UuidV7Generator identifiers,
+            PartnerApplicationService partners, RsotQueryService rsot, ComplianceApplicationService compliance, @Qualifier("platformClock") Clock clock, UuidV7Generator identifiers,
             JdbcDatabaseDialect dialect) {
         if (!(eventStore instanceof JdbcTransactionalEventStore jdbcEvents)) {
             throw new IllegalStateException("ITAM asset lifecycle requires durable JDBC transactional events");
@@ -82,7 +83,7 @@ public class ItamAssetRuntimeConfiguration {
                 new JdbcAssetIdempotencyRepository(jdbcEvents, dialect),
                 featurePolicy(capabilities),
                 new ItamAssetReferencePolicy(rsot, organizations, subdivisions, partners),
-                new PendingAssetComplianceReadinessPolicy(), eventStore, identifiers, clock);
+                new ItamComplianceReadinessPolicy(compliance, clock), eventStore, identifiers, clock);
     }
 
     static AssetFeaturePolicy featurePolicy(PlatformCapabilityService capabilities) {

@@ -15,6 +15,7 @@ public interface AssetRepository {
     Optional<Asset> findById(DomainIdentifier id);
     void insert(Asset asset, AssetCustodyEvent acquisitionEvent);
     void update(Asset asset, long expectedVersion, AssetCustodyEvent custodyEvent);
+    void updateMetadata(Asset asset, long expectedVersion);
     AssetPage search(AssetSearchCriteria criteria);
     List<AssetCustodyEvent> custodyHistory(DomainIdentifier assetId, long afterSequence, int limit);
 }

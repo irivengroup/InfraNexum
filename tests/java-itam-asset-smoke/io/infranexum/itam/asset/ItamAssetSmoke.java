@@ -50,25 +50,27 @@ public final class ItamAssetSmoke {
         DomainIdentifier subdivision = ids.next();
         DomainIdentifier actor = ids.next();
         DomainIdentifier supplier = ids.next();
+        DomainIdentifier producer = ids.next();
         DomainIdentifier maintenancePartner = ids.next();
         DomainIdentifier rsot = ids.next();
         DomainIdentifier correlation = ids.next();
-        References references = new References(organization, subdivision, supplier, maintenancePartner);
+        References references = new References(organization, subdivision, supplier, producer, maintenancePartner);
 
         AssetApplicationService service = service(repository, idempotency, events, ids, references, new Readiness(true), true, 2);
-        CreateAssetCommand command = command(rsot, organization, subdivision, supplier);
+        CreateAssetCommand command = command(rsot, organization, subdivision, supplier, producer);
         AssetCommandContext createContext = context(actor, correlation, "asset-acquire-0001", "Acquisition accepted by ITAM", null);
         Asset acquired = service.create(command, createContext);
         require(acquired.lifecycleStatus() == AssetLifecycleStatus.ACQUIRED, "asset must start acquired");
         require(acquired.version() == 1, "asset version must start at one");
         require(acquired.assetType() == AssetType.HARDWARE, "asset type was not normalized");
+        require(producer.equals(acquired.producerPartnerId()), "canonical producer was not retained");
 
         Asset replay = service.create(command, createContext);
         require(replay.id().equals(acquired.id()), "idempotent acquire did not replay the aggregate");
         expectCode("IDEMPOTENCY_CONFLICT", () -> service.create(
-                command(ids.next(), organization, subdivision, supplier), createContext));
+                command(ids.next(), organization, subdivision, supplier, producer), createContext));
         expectCode("ITAM_ASSET_RSOT_CONFLICT", () -> service.create(
-                command(rsot, organization, subdivision, supplier),
+                command(rsot, organization, subdivision, supplier, producer),
                 context(actor, correlation, "asset-acquire-0002", "Duplicate canonical link validation", null)));
 
         Asset received = service.receive(acquired.id(), 1, AssetCustodian.organization(organization),
@@ -127,9 +129,9 @@ public final class ItamAssetSmoke {
                         "itam.asset.disposed.v1".equals(record.event().eventType().value())),
                 "disposition event missing");
 
-        service.create(command(ids.next(), organization, subdivision, supplier),
+        service.create(command(ids.next(), organization, subdivision, supplier, producer),
                 context(actor, correlation, "asset-acquire-0003", "Second governed acquisition", null));
-        expect(AssetQuotaException.class, () -> service.create(command(ids.next(), organization, subdivision, supplier),
+        expect(AssetQuotaException.class, () -> service.create(command(ids.next(), organization, subdivision, supplier, producer),
                 context(actor, correlation, "asset-acquire-0004", "Quota boundary verification", null)));
 
         AssetApplicationService disabled = service(
@@ -148,9 +150,10 @@ public final class ItamAssetSmoke {
     }
 
     private static CreateAssetCommand command(
-            DomainIdentifier rsot, DomainIdentifier organization, DomainIdentifier subdivision, DomainIdentifier supplier) {
+            DomainIdentifier rsot, DomainIdentifier organization, DomainIdentifier subdivision,
+            DomainIdentifier supplier, DomainIdentifier producer) {
         return new CreateAssetCommand(rsot, "hardware", organization, subdivision, LocalDate.of(2026, 8, 1),
-                new BigDecimal("2500.0000"), "eur", supplier);
+                new BigDecimal("2500.0000"), "eur", supplier, producer);
     }
 
     private static AssetCommandContext context(
@@ -172,7 +175,7 @@ public final class ItamAssetSmoke {
 
     private record References(
             DomainIdentifier organization, DomainIdentifier subdivision,
-            DomainIdentifier supplier, DomainIdentifier maintenancePartner) implements AssetReferencePolicy {
+            DomainIdentifier supplier, DomainIdentifier producer, DomainIdentifier maintenancePartner) implements AssetReferencePolicy {
         @Override public void validateCanonicalObject(DomainIdentifier rsotObjectId, DomainIdentifier organizationId) {
             if (!organization.equals(organizationId)) throw new IllegalArgumentException("unknown organization");
         }
@@ -185,6 +188,12 @@ public final class ItamAssetSmoke {
                 DomainIdentifier partnerId, DomainIdentifier organizationId, LocalDate effectiveOn) {
             if (!organization.equals(organizationId) || !supplier.equals(partnerId)) {
                 throw new IllegalArgumentException("invalid acquisition partner");
+            }
+        }
+        @Override public void validateProducerPartner(
+                DomainIdentifier partnerId, DomainIdentifier organizationId, AssetType assetType, LocalDate effectiveOn) {
+            if (!organization.equals(organizationId) || !producer.equals(partnerId) || assetType != AssetType.HARDWARE) {
+                throw new IllegalArgumentException("invalid producer partner");
             }
         }
         @Override public void validateCustodian(
@@ -227,6 +236,13 @@ public final class ItamAssetSmoke {
             }
             values.put(asset.id(), asset);
             custody.computeIfAbsent(asset.id(), ignored -> new ArrayList<>()).add(custodyEvent);
+        }
+        @Override public void updateMetadata(Asset asset, long expectedVersion) {
+            Asset current = values.get(asset.id());
+            if (current == null || current.version() != expectedVersion) {
+                throw new AssetConflictException("VERSION_CONFLICT", "asset version changed");
+            }
+            values.put(asset.id(), asset);
         }
         @Override public AssetPage search(AssetSearchCriteria criteria) {
             List<Asset> filtered = values.values().stream()

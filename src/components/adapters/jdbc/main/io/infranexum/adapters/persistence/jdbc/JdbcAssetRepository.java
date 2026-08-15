@@ -28,7 +28,7 @@ import javax.sql.DataSource;
 /** PostgreSQL/Oracle ITAM asset repository with append-only custody history. */
 public final class JdbcAssetRepository implements AssetRepository {
     private static final String COLUMNS = "id,rsot_object_id,asset_type,owning_organization_id,owning_subdivision_id,"
-            + "acquisition_date,acquisition_value,currency_code,acquired_from_partner_id,lifecycle_status,"
+            + "acquisition_date,acquisition_value,currency_code,acquired_from_partner_id,producer_partner_id,lifecycle_status,"
             + "current_custodian_kind,current_custodian_id,version,created_at,updated_at,created_by,updated_by,last_reason";
 
     private final DataSource dataSource;
@@ -81,7 +81,7 @@ public final class JdbcAssetRepository implements AssetRepository {
     public void insert(Asset asset, AssetCustodyEvent acquisitionEvent) {
         Objects.requireNonNull(asset, "asset");
         Objects.requireNonNull(acquisitionEvent, "acquisitionEvent");
-        String sql = "INSERT INTO " + assetTable() + " (" + COLUMNS + ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        String sql = "INSERT INTO " + assetTable() + " (" + COLUMNS + ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
         try (PreparedStatement statement = transaction.requireCurrentConnection().prepareStatement(sql)) {
             bindAsset(statement, asset);
             if (statement.executeUpdate() != 1) throw new SQLException("asset insert affected unexpected rows");
@@ -91,6 +91,27 @@ public final class JdbcAssetRepository implements AssetRepository {
                 throw new AssetConflictException("ITAM_ASSET_RSOT_CONFLICT", "ITAM asset or canonical RSOT link was committed concurrently");
             }
             throw fail("insert ITAM asset", failure);
+        }
+    }
+
+    @Override
+    public void updateMetadata(Asset asset, long expectedVersion) {
+        Objects.requireNonNull(asset, "asset");
+        String sql = "UPDATE " + assetTable()
+                + " SET producer_partner_id=?,version=?,updated_at=?,updated_by=?,last_reason=? WHERE id=? AND version=?";
+        try (PreparedStatement statement = transaction.requireCurrentConnection().prepareStatement(sql)) {
+            dialect.bindNullableIdentifier(statement, 1, asset.producerPartnerId());
+            statement.setLong(2, asset.version());
+            JdbcTemporal.bindInstant(statement, 3, asset.updatedAt());
+            dialect.bindIdentifier(statement, 4, asset.updatedBy());
+            statement.setString(5, asset.lastReason());
+            dialect.bindIdentifier(statement, 6, asset.id());
+            statement.setLong(7, expectedVersion);
+            if (statement.executeUpdate() != 1) {
+                throw new AssetConflictException("VERSION_CONFLICT", "asset version changed");
+            }
+        } catch (SQLException failure) {
+            throw fail("update ITAM asset metadata", failure);
         }
     }
 
@@ -204,7 +225,8 @@ public final class JdbcAssetRepository implements AssetRepository {
                 AssetType.valueOf(resultSet.getString("asset_type")), dialect.readIdentifier(resultSet, "owning_organization_id"),
                 nullableIdentifier(resultSet, "owning_subdivision_id"), resultSet.getDate("acquisition_date").toLocalDate(),
                 new AssetValue(resultSet.getBigDecimal("acquisition_value"), resultSet.getString("currency_code")),
-                nullableIdentifier(resultSet, "acquired_from_partner_id"), AssetLifecycleStatus.valueOf(resultSet.getString("lifecycle_status")),
+                nullableIdentifier(resultSet, "acquired_from_partner_id"), nullableIdentifier(resultSet, "producer_partner_id"),
+                AssetLifecycleStatus.valueOf(resultSet.getString("lifecycle_status")),
                 new AssetCustodian(AssetCustodianKind.valueOf(resultSet.getString("current_custodian_kind")),
                         nullableIdentifier(resultSet, "current_custodian_id")),
                 resultSet.getLong("version"), JdbcTemporal.readRequired(resultSet, "created_at"),
@@ -223,6 +245,7 @@ public final class JdbcAssetRepository implements AssetRepository {
         statement.setBigDecimal(index++, asset.acquisitionValue().amount());
         statement.setString(index++, asset.acquisitionValue().currencyCode());
         dialect.bindNullableIdentifier(statement, index++, asset.acquiredFromPartnerId());
+        dialect.bindNullableIdentifier(statement, index++, asset.producerPartnerId());
         statement.setString(index++, asset.lifecycleStatus().name());
         statement.setString(index++, asset.custodian().kind().name());
         dialect.bindNullableIdentifier(statement, index++, asset.custodian().referenceId());

@@ -25,6 +25,7 @@ class ItamAssetLifecycleArchitectureTest(unittest.TestCase):
         self.assertIn("rsotObjectId", asset)
         self.assertIn("owningOrganizationId", asset)
         self.assertIn("acquiredFromPartnerId", asset)
+        self.assertIn("producerPartnerId", asset)
         self.assertIn("append-only custody history", repository)
         for forbidden in ("Warranty", "LicenseContract", "Dcim", "Rack", "Room"):
             self.assertNotIn(forbidden, asset)
@@ -32,13 +33,15 @@ class ItamAssetLifecycleArchitectureTest(unittest.TestCase):
     def test_operational_states_are_protected_by_explicit_e03_readiness_port_and_fail_closed_runtime(self) -> None:
         port = (self.ITAM / "main/io/infranexum/itam/asset/ports/AssetOperationalReadinessPolicy.java").read_text(encoding="utf-8")
         service = (self.ITAM / "main/io/infranexum/itam/asset/application/AssetApplicationService.java").read_text(encoding="utf-8")
-        pending = (self.SERVER / "main/io/infranexum/server/itam/PendingAssetComplianceReadinessPolicy.java").read_text(encoding="utf-8")
+        readiness = (self.SERVER / "main/io/infranexum/server/itam/ItamComplianceReadinessPolicy.java").read_text(encoding="utf-8")
         self.assertIn("PGM-07-E03", port)
         self.assertGreaterEqual(service.count("readiness.requireReady"), 1)
         for transition in ("stock", "assign", "deploy"):
             self.assertIn(f'"{transition}"', service)
-        self.assertIn("ITAM_ASSET_COMPLIANCE_GATE_UNAVAILABLE", pending)
-        self.assertNotIn("return;", pending)
+        self.assertIn("ITAM_ASSET_WARRANTY_REQUIRED", readiness)
+        self.assertIn("ITAM_ASSET_LICENSE_REQUIRED", readiness)
+        self.assertIn("compliance.hardwareReady", readiness)
+        self.assertIn("compliance.softwareReady", readiness)
 
     def test_mutations_are_idempotent_versioned_transactional_and_emit_minimized_events(self) -> None:
         service = (self.ITAM / "main/io/infranexum/itam/asset/application/AssetApplicationService.java").read_text(encoding="utf-8")
@@ -78,8 +81,8 @@ class ItamAssetLifecycleArchitectureTest(unittest.TestCase):
         operations = []
         for path_item in spec["paths"].values():
             operations.extend(value for key, value in path_item.items() if key.lower() in {"get", "post", "put", "patch", "delete"})
-        self.assertEqual(13, len(operations))
-        self.assertEqual(13, len({operation["operationId"] for operation in operations}))
+        self.assertEqual(14, len(operations))
+        self.assertEqual(14, len({operation["operationId"] for operation in operations}))
         for operation in operations:
             self.assertEqual("itam.assets", operation["x-infranexum-capability"])
             self.assertTrue(operation["x-infranexum-permission"].startswith("itam.asset."))

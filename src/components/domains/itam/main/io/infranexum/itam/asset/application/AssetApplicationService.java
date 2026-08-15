@@ -73,11 +73,15 @@ public final class AssetApplicationService {
         if (command.acquiredFromPartnerId() != null) {
             references.validateAcquisitionPartner(command.acquiredFromPartnerId(), command.owningOrganizationId(), command.acquisitionDate());
         }
+        if (command.producerPartnerId() != null) {
+            references.validateProducerPartner(command.producerPartnerId(), command.owningOrganizationId(), type, command.acquisitionDate());
+        }
         Asset prototype = Asset.acquired(ids.next(), command.rsotObjectId(), type, command.owningOrganizationId(),
                 command.owningSubdivisionId(), command.acquisitionDate(), value, command.acquiredFromPartnerId(),
-                context.actorId(), context.reason(), clock.instant());
+                command.producerPartnerId(), context.actorId(), context.reason(), clock.instant());
         String fingerprint = fingerprint("acquire", command.rsotObjectId(), type, command.owningOrganizationId(),
-                command.owningSubdivisionId(), command.acquisitionDate(), value, command.acquiredFromPartnerId());
+                command.owningSubdivisionId(), command.acquisitionDate(), value, command.acquiredFromPartnerId(),
+                command.producerPartnerId());
         return execute(transaction -> {
             Optional<AssetIdempotencyRepository.Record> prior = idempotency.find(context.idempotencyKey());
             if (prior.isPresent()) return replay(prior.orElseThrow(), fingerprint, "acquire");
@@ -91,6 +95,30 @@ public final class AssetApplicationService {
             idempotency.insert(new AssetIdempotencyRepository.Record(
                     context.idempotencyKey(), fingerprint, "acquire", prototype.id(), prototype.createdAt()));
             return prototype;
+        });
+    }
+
+    /** Governed manufacturer/publisher correction used by PGM-07-E03 readiness. */
+    public Asset setProducer(DomainIdentifier id, long expectedVersion, DomainIdentifier producerId, AssetCommandContext context) {
+        requireEnabled(); Objects.requireNonNull(id, "id"); Objects.requireNonNull(producerId, "producerId");
+        Objects.requireNonNull(context, "context");
+        if (expectedVersion < 1) throw new IllegalArgumentException("expectedVersion must be positive");
+        String fingerprint = fingerprint("set-producer", id, expectedVersion, producerId, context.reason());
+        return execute(transaction -> {
+            Optional<AssetIdempotencyRepository.Record> prior = idempotency.find(context.idempotencyKey());
+            if (prior.isPresent()) return replay(prior.orElseThrow(), fingerprint, "set-producer");
+            Asset current = requireAsset(id);
+            if (current.version() != expectedVersion) throw new AssetConflictException("VERSION_CONFLICT", "asset version changed");
+            references.validateProducerPartner(producerId, current.owningOrganizationId(), current.assetType(), LocalDate.now(clock));
+            Asset changed = current.setProducer(producerId, context.actorId(), context.reason(), clock.instant());
+            if (changed == current) {
+                idempotency.insert(new AssetIdempotencyRepository.Record(context.idempotencyKey(), fingerprint, "set-producer", current.id(), clock.instant()));
+                return current;
+            }
+            assets.updateMetadata(changed, expectedVersion);
+            transaction.append(event("itam.asset.producer_updated.v1", changed, context));
+            idempotency.insert(new AssetIdempotencyRepository.Record(context.idempotencyKey(), fingerprint, "set-producer", changed.id(), clock.instant()));
+            return changed;
         });
     }
 
@@ -225,6 +253,7 @@ public final class AssetApplicationService {
                 "\"asset_id\":\"" + asset.id() + "\"," +
                 "\"rsot_object_id\":\"" + asset.rsotObjectId() + "\"," +
                 "\"organization_id\":\"" + asset.owningOrganizationId() + "\"," +
+                "\"producer_partner_id\":" + (asset.producerPartnerId() == null ? "null" : "\"" + asset.producerPartnerId() + "\"") + "," +
                 "\"lifecycle_status\":\"" + asset.lifecycleStatus().wireValue() + "\"," +
                 "\"version\":" + asset.version() + "}";
         return new EventEnvelope(ids.next(), new EventType(type), EVENT_VERSION, clock.instant(), SOURCE,

@@ -28,7 +28,7 @@ const valid = {
   schema: 'infranexum.web-runtime-config/v1',
   product: 'InfraNexum',
   component: 'web',
-  version: '2.0.0-alpha.0.78',
+  version: '2.0.0-alpha.0.79',
   architectureBaseline: '2.0.0-draft.21',
   environment: 'test',
   apiBaseUrl: '/api',
@@ -39,6 +39,7 @@ const valid = {
   rsotCoreEnabled: false,
   itamPartnersEnabled: false,
   itamAssetsEnabled: false,
+  itamComplianceEnabled: false,
 };
 
 test('browser bootstrap validates and renders public configuration', async () => {
@@ -62,7 +63,7 @@ test('browser bootstrap validates and renders public configuration', async () =>
 });
 
 test('browser bootstrap rejects malformed configuration and renders a safe failure', async () => {
-  for (const value of [null, [], {}, { ...valid, schema: 'wrong' }, { ...valid, version: '' }, { ...valid, advancedAuthorizationEnabled: 'true' }, { ...valid, rsotCoreEnabled: 'true' }, { ...valid, itamPartnersEnabled: 'true' }, { ...valid, itamAssetsEnabled: 'true' }, { ...valid, itamAssetsEnabled: true, itamPartnersEnabled: false }, { ...valid, advancedAuthorizationEnabled: true, identityAccessEnabled: false }]) {
+  for (const value of [null, [], {}, { ...valid, schema: 'wrong' }, { ...valid, version: '' }, { ...valid, advancedAuthorizationEnabled: 'true' }, { ...valid, rsotCoreEnabled: 'true' }, { ...valid, itamPartnersEnabled: 'true' }, { ...valid, itamAssetsEnabled: 'true' }, { ...valid, itamComplianceEnabled: 'true' }, { ...valid, itamAssetsEnabled: true, itamPartnersEnabled: false }, { ...valid, itamComplianceEnabled: true, itamAssetsEnabled: false, itamPartnersEnabled: true }, { ...valid, advancedAuthorizationEnabled: true, identityAccessEnabled: false }]) {
     assert.throws(() => validatePublicConfiguration(value), /configuration/i);
   }
   const documentObject = documentFixture();

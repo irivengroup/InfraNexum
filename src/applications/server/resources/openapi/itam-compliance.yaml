@@ -1,0 +1,1506 @@
+openapi: 3.1.0
+info:
+  title: InfraNexum ITAM Warranty, Support and License API
+  version: 2.0.0-alpha.0.79
+  description: PGM-07-E03 contractual governance. Warranty, support-provider authorization,
+    third-party support coverage, software-license metadata, immutable revision evidence
+    and deterministic deadline alerts.
+servers:
+- url: /
+security:
+- LocalSessionCookie: []
+x-tagGroups:
+- name: ITAM
+  tags:
+  - ITAM / Compliance
+x-infranexum-published-events:
+- itam.warranty.created.v1
+- itam.warranty.updated.v1
+- itam.warranty.expiring.v1
+- itam.warranty.expired.v1
+- itam.warranty.support_expiring.v1
+- itam.license.created.v1
+- itam.license.updated.v1
+- itam.license.expiring.v1
+- itam.license.expired.v1
+- itam.license.support_expiring.v1
+- itam.support_authorization.created.v1
+- itam.support_authorization.activated.v1
+- itam.support_authorization.suspended.v1
+- itam.support_coverage.created.v1
+- itam.support_coverage.updated.v1
+- itam.support_coverage.activated.v1
+- itam.support_coverage.expiring.v1
+- itam.support_coverage.expired.v1
+- itam.support_coverage.review_required.v1
+tags:
+- name: ITAM / Compliance
+  description: Organization-governed warranties, support scopes, license contracts
+    and contractual evidence.
+paths:
+  /api/v1/itam/assets/{assetId}/warranties:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - $ref: '#/components/parameters/AssetId'
+    - &id002
+      name: cursor
+      in: query
+      schema: &id001
+        type: string
+        format: uuid
+        pattern: ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
+    - &id003
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+    get:
+      tags:
+      - ITAM / Compliance
+      operationId: listItamAssetWarrantys
+      summary: List asset warranties
+      x-infranexum-permission: itam.warranty.read
+      x-infranexum-capability: itam.compliance
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Warranty'
+                  nextCursor: *id001
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      tags:
+      - ITAM / Compliance
+      operationId: createItamWarranty
+      summary: Create warrantie draft
+      x-infranexum-permission: itam.warranty.manage
+      x-infranexum-capability: itam.compliance
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WarrantyRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Warranty'
+          headers:
+            ETag:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/itam/warranties/{warrantyId}:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - name: warrantyId
+      in: path
+      required: true
+      schema: *id001
+    patch:
+      tags:
+      - ITAM / Compliance
+      operationId: reviseItamWarranty
+      summary: Revise warrantie with a new version
+      x-infranexum-permission: itam.warranty.manage
+      x-infranexum-capability: itam.compliance
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WarrantyRequest'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Warranty'
+          headers:
+            ETag:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/itam/warranties/{warrantyId}/activate:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - name: warrantyId
+      in: path
+      required: true
+      schema: *id001
+    post:
+      tags:
+      - ITAM / Compliance
+      operationId: activateItamWarranty
+      summary: Activate warrantie
+      x-infranexum-permission: itam.warranty.manage
+      x-infranexum-capability: itam.compliance
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reason'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Warranty'
+          headers:
+            ETag:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/itam/warranties/{warrantyId}/expire:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - name: warrantyId
+      in: path
+      required: true
+      schema: *id001
+    post:
+      tags:
+      - ITAM / Compliance
+      operationId: expireItamWarranty
+      summary: Expire warrantie
+      x-infranexum-permission: itam.warranty.manage
+      x-infranexum-capability: itam.compliance
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reason'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Warranty'
+          headers:
+            ETag:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/itam/assets/{assetId}/licenses:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - $ref: '#/components/parameters/AssetId'
+    - *id002
+    - *id003
+    get:
+      tags:
+      - ITAM / Compliance
+      operationId: listItamAssetLicenses
+      summary: List asset licenses
+      x-infranexum-permission: itam.license.read
+      x-infranexum-capability: itam.compliance
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/License'
+                  nextCursor: *id001
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      tags:
+      - ITAM / Compliance
+      operationId: createItamLicense
+      summary: Create license draft
+      x-infranexum-permission: itam.license.manage
+      x-infranexum-capability: itam.compliance
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LicenseRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/License'
+          headers:
+            ETag:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/itam/licenses/{licenseId}:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - name: licenseId
+      in: path
+      required: true
+      schema: *id001
+    patch:
+      tags:
+      - ITAM / Compliance
+      operationId: reviseItamLicense
+      summary: Revise license with a new version
+      x-infranexum-permission: itam.license.manage
+      x-infranexum-capability: itam.compliance
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LicenseRequest'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/License'
+          headers:
+            ETag:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/itam/licenses/{licenseId}/activate:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - name: licenseId
+      in: path
+      required: true
+      schema: *id001
+    post:
+      tags:
+      - ITAM / Compliance
+      operationId: activateItamLicense
+      summary: Activate license
+      x-infranexum-permission: itam.license.manage
+      x-infranexum-capability: itam.compliance
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reason'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/License'
+          headers:
+            ETag:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/itam/licenses/{licenseId}/expire:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - name: licenseId
+      in: path
+      required: true
+      schema: *id001
+    post:
+      tags:
+      - ITAM / Compliance
+      operationId: expireItamLicense
+      summary: Expire license
+      x-infranexum-permission: itam.license.manage
+      x-infranexum-capability: itam.compliance
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reason'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/License'
+          headers:
+            ETag:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/itam/assets/{assetId}/support-coverages:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - $ref: '#/components/parameters/AssetId'
+    - *id002
+    - *id003
+    get:
+      tags:
+      - ITAM / Compliance
+      operationId: listItamAssetSupportCoverages
+      summary: List asset support-coverages
+      x-infranexum-permission: itam.support_coverage.read
+      x-infranexum-capability: itam.compliance
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SupportCoverage'
+                  nextCursor: *id001
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      tags:
+      - ITAM / Compliance
+      operationId: createItamSupportCoverage
+      summary: Create support-coverage draft
+      x-infranexum-permission: itam.support_coverage.manage
+      x-infranexum-capability: itam.compliance
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupportCoverageRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportCoverage'
+          headers:
+            ETag:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/itam/support-coverages/{coverageId}:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - name: coverageId
+      in: path
+      required: true
+      schema: *id001
+    patch:
+      tags:
+      - ITAM / Compliance
+      operationId: reviseItamSupportCoverage
+      summary: Revise support-coverage with a new version
+      x-infranexum-permission: itam.support_coverage.manage
+      x-infranexum-capability: itam.compliance
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupportCoverageRequest'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportCoverage'
+          headers:
+            ETag:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/itam/support-coverages/{coverageId}/activate:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - name: coverageId
+      in: path
+      required: true
+      schema: *id001
+    post:
+      tags:
+      - ITAM / Compliance
+      operationId: activateItamSupportCoverage
+      summary: Activate support-coverage
+      x-infranexum-permission: itam.support_coverage.manage
+      x-infranexum-capability: itam.compliance
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reason'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportCoverage'
+          headers:
+            ETag:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/itam/support-coverages/{coverageId}/expire:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - name: coverageId
+      in: path
+      required: true
+      schema: *id001
+    post:
+      tags:
+      - ITAM / Compliance
+      operationId: expireItamSupportCoverage
+      summary: Expire support-coverage
+      x-infranexum-permission: itam.support_coverage.manage
+      x-infranexum-capability: itam.compliance
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reason'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportCoverage'
+          headers:
+            ETag:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/itam/support-authorizations:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    post:
+      tags:
+      - ITAM / Compliance
+      operationId: createItamSupportAuthorization
+      summary: Create third-party support authorization
+      x-infranexum-permission: itam.support_catalog.manage
+      x-infranexum-capability: itam.compliance
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupportAuthorizationRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportAuthorization'
+          headers:
+            ETag:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/itam/support-authorizations/{authorizationId}:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - name: authorizationId
+      in: path
+      required: true
+      schema: *id001
+    get:
+      tags:
+      - ITAM / Compliance
+      operationId: getItamSupportAuthorization
+      summary: Get third-party support authorization
+      x-infranexum-permission: itam.support_catalog.manage
+      x-infranexum-capability: itam.compliance
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportAuthorization'
+          headers:
+            ETag:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/itam/support-authorizations/{authorizationId}/activate:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - name: authorizationId
+      in: path
+      required: true
+      schema: *id001
+    post:
+      tags:
+      - ITAM / Compliance
+      operationId: activateItamSupportAuthorization
+      summary: Activate third-party support authorization
+      x-infranexum-permission: itam.support_catalog.manage
+      x-infranexum-capability: itam.compliance
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reason'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportAuthorization'
+          headers:
+            ETag:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/itam/support-authorizations/{authorizationId}/suspend:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - name: authorizationId
+      in: path
+      required: true
+      schema: *id001
+    post:
+      tags:
+      - ITAM / Compliance
+      operationId: suspendItamSupportAuthorization
+      summary: Suspend third-party support authorization
+      x-infranexum-permission: itam.support_catalog.manage
+      x-infranexum-capability: itam.compliance
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reason'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportAuthorization'
+          headers:
+            ETag:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/itam/warranty-types:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    get:
+      tags:
+      - ITAM / Compliance
+      operationId: listItamWarrantyTypes
+      summary: List governed warranty types
+      x-infranexum-permission: itam.warranty.read
+      x-infranexum-capability: itam.compliance
+      parameters:
+      - name: organization_id
+        in: query
+        required: true
+        schema: *id001
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WarrantyType'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags:
+      - ITAM / Compliance
+      operationId: createItamWarrantyType
+      summary: Create governed warranty type
+      x-infranexum-permission: itam.support_catalog.manage
+      x-infranexum-capability: itam.compliance
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WarrantyTypeRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WarrantyType'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/itam/assets/{assetId}/compliance-alerts:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - $ref: '#/components/parameters/AssetId'
+    get:
+      tags:
+      - ITAM / Compliance
+      operationId: listItamComplianceAlerts
+      summary: List deterministic contractual deadline alerts
+      x-infranexum-permission: itam.audit.read
+      x-infranexum-capability: itam.compliance
+      parameters:
+      - name: as_of
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: horizon_days
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 3650
+          default: 180
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Alert'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/itam/{recordType}/{recordId}/history:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - $ref: '#/components/parameters/RecordId'
+    - name: recordType
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - warranties
+        - licenses
+        - support-coverages
+    get:
+      tags:
+      - ITAM / Compliance
+      operationId: listItamComplianceHistory
+      summary: List immutable contractual revision history
+      x-infranexum-permission: itam.audit.read
+      x-infranexum-capability: itam.compliance
+      parameters:
+      - name: after_version
+        in: query
+        schema:
+          type: integer
+          format: int64
+          minimum: 0
+          default: 0
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 100
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Revision'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  securitySchemes:
+    LocalSessionCookie:
+      type: apiKey
+      in: cookie
+      name: INX_SESSION
+  parameters:
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: false
+      schema: *id001
+    CsrfToken:
+      name: X-CSRF-Token
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 512
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 200
+        pattern: ^[A-Za-z0-9][A-Za-z0-9._:-]{7,199}$
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      schema:
+        type: string
+        pattern: ^(?:W/)?"?ver-[1-9][0-9]*"?$
+    AssetId:
+      name: assetId
+      in: path
+      required: true
+      schema: *id001
+    RecordId:
+      name: recordId
+      in: path
+      required: true
+      schema: *id001
+  schemas:
+    UuidV7: *id001
+    Reason:
+      type: object
+      additionalProperties: false
+      required:
+      - reason
+      properties:
+        reason:
+          type: string
+          minLength: 2
+          maxLength: 1024
+    PageQuery:
+      type: object
+    WarrantyRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - manufacturerPartnerId
+      - warrantyTypeId
+      - coverageLevel
+      - warrantyStartDate
+      - warrantyEndDate
+      - manufacturerSupportEndDate
+      - proofReference
+      - source
+      - reason
+      properties:
+        manufacturerPartnerId: *id001
+        warrantyTypeId: *id001
+        coverageLevel:
+          type: string
+          minLength: 2
+          maxLength: 120
+        warrantyStartDate:
+          type: string
+          format: date
+        warrantyEndDate:
+          type: string
+          format: date
+        manufacturerSupportEndDate:
+          type: string
+          format: date
+        contractOrCertificateNumber:
+          type: string
+          maxLength: 160
+        proofReference:
+          type: string
+          minLength: 2
+          maxLength: 240
+        source:
+          type: string
+          enum:
+          - manual
+          - import
+          - integration
+          - migration
+        reason:
+          type: string
+          minLength: 2
+          maxLength: 1024
+    LicenseRequest:
+      type: object
+      additionalProperties: false
+      description: Contract metadata only. Raw license/product/serial keys are deliberately
+        not accepted until Secret Service/PKI/KMS is available.
+      required:
+      - publisherPartnerId
+      - contractNumber
+      - licenseModel
+      - usageRights
+      - entitlementQuantity
+      - startsOn
+      - publisherSupportEndDate
+      - proofReference
+      - source
+      - reason
+      properties:
+        publisherPartnerId: *id001
+        contractNumber:
+          type: string
+          minLength: 1
+          maxLength: 160
+        licenseModel:
+          type: string
+          minLength: 1
+          maxLength: 120
+        usageRights:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        entitlementQuantity:
+          type: integer
+          format: int64
+          minimum: 1
+        startsOn:
+          type: string
+          format: date
+        endsOn:
+          type: string
+          format: date
+        publisherSupportEndDate:
+          type: string
+          format: date
+        proofReference:
+          type: string
+          minLength: 2
+          maxLength: 240
+        source:
+          type: string
+          enum:
+          - manual
+          - import
+          - integration
+          - migration
+        reason:
+          type: string
+          minLength: 2
+          maxLength: 1024
+    SupportCoverageRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - providerPartnerId
+      - authorizationId
+      - coverageType
+      - serviceLevel
+      - startsOn
+      - endsOn
+      - proofReference
+      - reason
+      properties:
+        providerPartnerId: *id001
+        authorizationId: *id001
+        contractReference:
+          type: string
+          maxLength: 160
+        coverageType:
+          type: string
+          minLength: 1
+          maxLength: 120
+        serviceLevel:
+          type: string
+          minLength: 1
+          maxLength: 160
+        startsOn:
+          type: string
+          format: date
+        endsOn:
+          type: string
+          format: date
+        proofReference:
+          type: string
+          minLength: 2
+          maxLength: 240
+        reason:
+          type: string
+          minLength: 2
+          maxLength: 1024
+    SupportAuthorizationRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - providerPartnerId
+      - organizationId
+      - supportedManufacturerIds
+      - supportedObjectTypes
+      - serviceHours
+      - timeZoneId
+      - serviceLevels
+      - escalationContactTypes
+      - validFrom
+      - reason
+      properties:
+        providerPartnerId: *id001
+        organizationId: *id001
+        supportedManufacturerIds:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: *id001
+        supportedObjectTypes:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            type: string
+        subdivisionScopes:
+          type: array
+          uniqueItems: true
+          items: *id001
+        serviceHours:
+          type: string
+          minLength: 1
+          maxLength: 240
+        timeZoneId:
+          type: string
+          minLength: 1
+          maxLength: 80
+        serviceLevels:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            type: string
+        escalationContactTypes:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            type: string
+        validFrom:
+          type: string
+          format: date
+        validUntil:
+          type: string
+          format: date
+        reason:
+          type: string
+          minLength: 2
+          maxLength: 1024
+    WarrantyTypeRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - organizationId
+      - code
+      - displayName
+      - reason
+      properties:
+        organizationId: *id001
+        code:
+          type: string
+          minLength: 2
+          maxLength: 64
+        displayName:
+          type: string
+          minLength: 2
+          maxLength: 160
+        reason:
+          type: string
+          minLength: 2
+          maxLength: 1024
+    Warranty:
+      type: object
+      required:
+      - id
+      - status
+      - version
+      properties:
+        id: *id001
+        assetId: *id001
+        organizationId: *id001
+        status:
+          type: string
+        version:
+          type: integer
+          format: int64
+          minimum: 1
+    License:
+      type: object
+      required:
+      - id
+      - status
+      - version
+      properties:
+        id: *id001
+        assetId: *id001
+        organizationId: *id001
+        status:
+          type: string
+        version:
+          type: integer
+          format: int64
+          minimum: 1
+    SupportCoverage:
+      type: object
+      required:
+      - id
+      - status
+      - version
+      properties:
+        id: *id001
+        assetId: *id001
+        organizationId: *id001
+        status:
+          type: string
+        version:
+          type: integer
+          format: int64
+          minimum: 1
+    SupportAuthorization:
+      type: object
+      required:
+      - id
+      - status
+      - version
+      properties:
+        id: *id001
+        assetId: *id001
+        organizationId: *id001
+        status:
+          type: string
+        version:
+          type: integer
+          format: int64
+          minimum: 1
+    WarrantyType:
+      type: object
+      required:
+      - id
+      - code
+      - displayName
+      - active
+      properties:
+        id: *id001
+        code:
+          type: string
+        displayName:
+          type: string
+        active:
+          type: boolean
+    Alert:
+      type: object
+      required:
+      - kind
+      - recordId
+      - assetId
+      - dueDate
+      - daysRemaining
+      - thresholdDays
+      properties:
+        kind:
+          type: string
+        recordId: *id001
+        assetId: *id001
+        dueDate:
+          type: string
+          format: date
+        daysRemaining:
+          type: integer
+          minimum: 0
+        thresholdDays:
+          type: integer
+          minimum: 1
+    Revision:
+      type: object
+      required:
+      - recordType
+      - recordId
+      - version
+      - status
+      - reason
+      - snapshotJson
+      - recordedAt
+      - recordedBy
+      properties:
+        recordType:
+          type: string
+        recordId: *id001
+        version:
+          type: integer
+          minimum: 1
+        status:
+          type: string
+        proofReference:
+          type: string
+        reason:
+          type: string
+        snapshotJson:
+          type: string
+        recordedAt:
+          type: string
+          format: date-time
+        recordedBy: *id001
+    Problem:
+      type: object
+      required:
+      - type
+      - title
+      - status
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          type: string
+        correlationId: *id001
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+      x-status: '400'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+      x-status: '401'
+    Forbidden:
+      description: Authorization denied
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+      x-status: '403'
+    NotFound:
+      description: Record not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+      x-status: '404'
+    Conflict:
+      description: Optimistic/idempotency/state conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+      x-status: '409'
+    UnprocessableEntity:
+      description: Contractual invariant rejected
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+      x-status: '422'

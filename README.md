@@ -1,10 +1,12 @@
-# InfraNexum 2.0.0-alpha.0.78 — PGM-07-E02 ITAM Asset lifecycle
+# InfraNexum 2.0.0-alpha.0.79 — PGM-07-E03 ITAM warranty, support and license compliance
 
-`alpha.0.78` implements **PGM-07-E02** as the canonical patrimonial ITAM asset lifecycle. Assets keep weak references to RSOT canonical objects, Organization/Subdivision ownership, acquisition Partners and custody actors/partners while ITAM owns acquisition value/date, lifecycle state, optimistic version and append-only chain of custody. Acquisition, receipt, stock, assignment, deployment, transfer, maintenance, return, retirement and evidenced disposition are explicit commands; one RSOT object can back at most one ITAM asset.
+`alpha.0.79` implements **PGM-07-E03** on top of the canonical Partner and Asset contexts. Hardware warranties, software-license contracts, third-party support authorizations/coverages, governed warranty types, append-only contractual revisions and deterministic deadline alerts are now first-class ITAM state. The E02 `AssetOperationalReadinessPolicy` is backed by real compliance evidence: hardware must match its canonical manufacturer and verified warranty/support coverage; software must match its canonical publisher and verified license contract.
 
-The slice includes paired PostgreSQL/Oracle migrations `0021`/`0022`, capability `itam.assets`, the effective `itam.assets.max` quota, three organization-scoped RBAC permissions, dynamic RBAC/ABAC, HTTP/OpenAPI, Server CLI and a capability-gated Web client. The mandatory hardware warranty/software-license readiness defined by the CDC remains owned by the subsequent `PGM-07-E03`; therefore transitions to `in_stock`, `assigned` and `deployed` are deliberately fail-closed in `alpha.0.78` until E03 supplies verified compliance data. See `docs/itam-asset-lifecycle.md`.
+The slice adds paired PostgreSQL/Oracle migrations `0023`/`0024`, capability `itam.compliance`, seven organization-scoped atomic permissions, transactional outbox/idempotency/versioning, HTTP/OpenAPI 3.1, Server CLI and capability-gated Web client. The asset model gains a backward-compatible nullable `producerPartnerId`: legacy assets are never silently backfilled, and source-compatible E02 Java factories remain available, but operational readiness stays fail-closed until a governed producer and required evidence exist.
 
-`alpha.0.77` remains the canonical Partner catalogue baseline used for acquisition and maintenance weak references.
+Raw software activation secrets (`licenseKey`, `productKey`, `serialKey`, etc.) are intentionally **not stored or accepted** because `PGM-13-E02 — Secret Service/PKI/KMS` is not implemented. Contractual metadata/evidence is complete for E03; future secret-bearing licensing functions must use the dedicated secret service rather than adding plaintext fields. See `docs/itam-compliance.md` and `docs/itam-asset-lifecycle.md`.
+
+`alpha.0.78` remains the canonical PGM-07-E02 asset-lifecycle baseline and `alpha.0.77` the Partner-catalogue baseline consumed by this increment.
 
 ---
 

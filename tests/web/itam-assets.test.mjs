@@ -64,3 +64,15 @@ test('mutations require a CSRF cookie and safe idempotency key', async () => {
   const client = new ItamAssetClient(configuration, { fetchFunction: async () => response({}), cookieProvider });
   await assert.rejects(async () => client.retire(assetId, 1, 'Retire asset', 'short'), /8 to 200/);
 });
+
+
+test('producer correction uses optimistic concurrency and governed UUIDs', async () => {
+  let call;
+  const producerId = '019ffbda-2202-7003-8003-000000000003';
+  const client = new ItamAssetClient(configuration, { fetchFunction: async (url, options) => { call = { url, options }; return response({ id: assetId, producerPartnerId: producerId }); }, cookieProvider });
+  await client.setProducer(assetId, 2, producerId, 'Correct manufacturer authority', 'asset-key-0006');
+  assert.equal(call.url, `/api/v1/itam/assets/${assetId}/producer`);
+  assert.equal(call.options.headers['If-Match'], '"ver-2"');
+  assert.deepEqual(JSON.parse(call.options.body), { producerPartnerId: producerId, reason: 'Correct manufacturer authority' });
+  await assert.rejects(async () => client.setProducer(assetId, 2, 'not-a-uuid', 'Correct manufacturer authority', 'asset-key-0007'), /producerPartnerId/);
+});

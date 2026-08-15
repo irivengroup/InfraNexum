@@ -1,3 +1,27 @@
+# InfraNexum 2.0.0-alpha.0.79 — état d’implémentation
+
+## alpha.0.79 — PGM-07-E03 garanties, supports et licences ITAM
+
+`alpha.0.79` remplace le verrou transitoire de conformité d’E02 par la gouvernance contractuelle réelle requise par le CDC. Le matériel porte désormais une référence canonique nullable `producerPartnerId` vers son constructeur et le logiciel vers son éditeur. Cette évolution reste rétrocompatible pour les actifs historiques : aucune valeur n’est inventée lors de la migration, les anciens appels Java restent compilables, mais un actif dépourvu de producteur ne peut pas franchir un état opérationnel tant qu’il n’est pas corrigé par la mutation versionnée `setProducer`.
+
+Les garanties constructeurs, contrats de licence logiciels, autorisations de supports tiers, couvertures de support et types de garantie sont des agrégats ITAM versionnés et audités. Une garantie opérationnelle doit être active, vérifiée, complète et correspondre au constructeur canonique de l’actif. Une licence doit être active et correspondre à l’éditeur canonique. Une couverture tierce n’est recevable que si l’autorisation active du prestataire couvre explicitement le constructeur, le type d’objet RSOT, la subdivision, la période et le niveau de service. La suspension d’une autorisation place transactionnellement les couvertures actives correspondantes en `REVIEW_REQUIRED`; elle ne réécrit jamais les dates de garantie ou de support constructeur.
+
+Le service de readiness E02 est maintenant alimenté par les contrats E03. Les transitions `IN_STOCK`, `ASSIGNED` et `DEPLOYED` restent fail-closed lorsque la capability `itam.compliance` est indisponible ou lorsque la preuve requise manque. Les échéances sont surveillées sur les seuils configurables `180,120,90,60,30,15,7,1` jours par défaut, avec déduplication persistante et transitions explicites vers `EXPIRED`. Un journal de révisions contractuelles append-only conserve chaque version de preuve indépendamment de l’audit transverse.
+
+Les clés de licence, product keys, serial keys et secrets d’activation restent hors contrat E03 tant que `PGM-13-E02` Secret Service/PKI/KMS n’est pas livré. L’API rejette les propriétés JSON inconnues et la CLI/Web refusent explicitement les noms de champs de secrets connus au lieu de les ignorer ou de les stocker. Les migrations `0023-itam-warranty-support-license` et `0024-identity-access-itam-compliance-permissions` sont symétriques PostgreSQL/Oracle et ne créent aucune FK inter-bounded-context.
+
+La tranche expose `itam.compliance`, les permissions `itam.warranty.read/manage`, `itam.support_coverage.read/manage`, `itam.support_catalog.manage` et `itam.license.read/manage`, tout en réutilisant `itam.audit.read`. Elle fournit API/OpenAPI 3.1, CLI Server, client Web capability-gated et scheduler contractuel multi-nœud dédupliqué.
+
+### Validation alpha.0.79
+
+**EXÉCUTÉ** — Architecture fonctionnelle **130/130**, couverture instrumentée **100 %** et Architecture-as-Code `PASS`; migrations **95/95**, checker à 0 violation; Compose **63/63**; Web **127/127**, couverture **99,71 % lignes / 98,48 % branches / 100 % fonctions**, process smoke `passed`; **17** targets Java dependency-free passent, dont Partner, Asset, Compliance, JDBC, capabilities et Policy/RBAC. Les tests JUnit ITAM existants et E03 ont été compilés strictement contre les contrats réels avec `javac -Xlint:all -Werror` au moyen de stubs JUnit temporaires hors produit; cette preuve de compilation ne remplace pas l’exécution Maven/JUnit.
+
+**EXÉCUTÉ sur toolchain locale** — l’Agent passe `vet`, tests `-race`, couverture et build avec `GOTOOLCHAIN=local` sous Go 1.23.2; couverture **98,4 %**. **NON EXÉCUTÉ sur toolchain cible** — Go 1.26.5 ne peut pas être téléchargé par ce runner isolé. Maven/JUnit/JaCoCo cible requiert JDK 25 et Maven 3.9.16 (runner JDK 21.0.11, Maven absent, wrapper en sortie 2); Node cible 24.18.1 (runner Node 22.16.0); Docker/PowerShell, PostgreSQL live et Oracle live sont indisponibles. Les applications/verify/rollback live de `0023/0024`, `up`, `smoke` et `ha-smoke` PRO restent obligatoires avant promotion.
+
+Voir `docs/itam-compliance.md`.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.78 — état d’implémentation
 
 ## alpha.0.78 — PGM-07-E02 cycle de vie des actifs ITAM
