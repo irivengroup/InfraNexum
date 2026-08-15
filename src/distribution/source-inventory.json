@@ -956,6 +956,7 @@
     "tests/architecture/test_rsot_authority_foundation.py",
     "tests/architecture/test_rsot_schema_registry.py",
     "tests/architecture/test_scheduling_ownership.py",
+    "tests/architecture/test_server_repository_composition_contracts.py",
     "tests/architecture/test_web_functional_parity.py",
     "tests/architecture/test_worker_observability.py",
     "tests/archive_compatibility/test_checker.py",

@@ -1,7 +1,7 @@
 {
   "schema": "infranexum.source-baseline/v1",
   "product": "InfraNexum — Infrastructure Control & Governance Platform",
-  "implementation_version": "2.0.0-alpha.0.84",
+  "implementation_version": "2.0.0-alpha.0.85",
   "architecture_baseline": "2.0.0-draft.21",
   "roadmap_baseline": "2.0.0-draft.21",
   "architecture_archive_sha256": "372cf19929f8ea3b7586c3af3e7c5004e590cf746ff2d6d59d4d0b88912aea64",
@@ -85,5 +85,25 @@
     "alpha.0.84 corrective stabilization: malformed Java CLI text blocks repaired; Compose health diagnostics distinguish absent containers after failed build from unhealthy running services; Web presentation realigned on native Bootstrap 5.3.6 components/tokens only, with Bootstrap alerts, native form-select controls and native date/datetime-local inputs; no new business epic, next dependency prerequisite is PGM-05-E01 before PGM-10-E05 and DNS/DHCP."
   ],
   "roadmap_archive_sha256": "11db7d27bbc79f688cd1fda31a24aaf31b56a56db36b6487b64154c148ab54d3",
-  "engineering_governance_sha256": "f24357051a5401f598c3d77bbe5814d3759a176095537659243658ba3ff109c7"
+  "engineering_governance_sha256": "f24357051a5401f598c3d77bbe5814d3759a176095537659243658ba3ff109c7",
+  "runtime_validation_note": "alpha.0.85 is a corrective Server contract stabilization release over alpha.0.84: DCIM Physical now uses the authoritative ITAM Asset.owningOrganizationId() accessor and DDI/IPAM composes the read-only JdbcRsotRepository with its current two-argument contract. No new business epic, migration, public API or Web behavior is claimed. Exact JDK25 Maven/JUnit/JaCoCo and Docker Desktop PRO up/smoke/ha-smoke remain promotion gates.",
+  "server_contract_stabilization_alpha085": "EXECUTED_15_OF_15_TARGETED_DCIM_DDI_TEXT_BLOCK_AND_REPOSITORY_COMPOSITION_REGRESSIONS_PASS_JDBC_REPOSITORY_CONSTRUCTOR_ARITY_SCAN_ZERO_MISMATCHES",
+  "maven_target_jdk25_alpha085": "NON_EXECUTED_LOCAL_JDK21_0_11_TARGET_TEMURIN25_0_4_DOWNLOAD_FAILED_DNS_GITHUB_COM_OPERATOR_DOCKER_REVALIDATION_REQUIRED",
+  "docker_runtime_alpha085": "NON_EXECUTED_LOCAL_DOCKER_AND_PWSH_UNAVAILABLE_OPERATOR_PRO_UP_SMOKE_HA_SMOKE_REQUIRED",
+  "roadmap_next_alpha085": "PGM05E01_THEN_PGM10E05_THEN_PGM08E02_PGM08E03",
+  "architecture_check_alpha085": "EXECUTED_PASS_ZERO_VIOLATIONS",
+  "source_integrity_prepack_alpha085": "EXECUTED_45_OF_45_ZERO_VIOLATIONS_CANONICAL_INVENTORY_1216_PATHS",
+  "toolchain_alpha085": "EXECUTED_25_OF_25_99_PERCENT_ZERO_VIOLATIONS",
+  "migration_alpha085": "EXECUTED_114_OF_114_99_PERCENT_ZERO_VIOLATIONS_NO_MIGRATION_CHANGE",
+  "eventing_alpha085": "EXECUTED_10_OF_10_100_PERCENT_ZERO_VIOLATIONS",
+  "persistence_alpha085": "EXECUTED_12_OF_12_98_PERCENT_ZERO_VIOLATIONS",
+  "capabilities_alpha085": "EXECUTED_10_OF_10_99_PERCENT_ZERO_VIOLATIONS",
+  "entitlements_alpha085": "EXECUTED_10_OF_10_100_PERCENT_ZERO_VIOLATIONS",
+  "audit_alpha085": "EXECUTED_8_OF_8_100_PERCENT_ZERO_VIOLATIONS",
+  "compose_contract_alpha085": "EXECUTED_64_OF_64",
+  "web_local_runtime_alpha085": "EXECUTED_LOCAL_NODE_155_OF_155_LINE99_73_BRANCH98_53_FUNCTION100_PROCESS_SMOKE_PASS_TARGET_NODE24_18_1_PENDING",
+  "java_relevant_smokes_alpha085": "EXECUTED_DCIM_PHYSICAL_AND_DDI_IPAM_EXIT_ZERO_LOCAL_JAVA21_XLINT_ALL_WERROR",
+  "source_integrity_alpha085": "EXECUTED_45_OF_45_STAGED_SNAPSHOT_1219_TRACKED_PATHS_1218_GIT_BLOB_CHECKSUMS_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
+  "archive_compatibility_unit_alpha085": "EXECUTED_12_OF_12_100_PERCENT",
+  "archive_compatibility_alpha085": "EXECUTED_CANDIDATE_GIT_ARCHIVE_ZERO_VIOLATIONS_AND_GIT_ARCHIVE_PARITY"
 }

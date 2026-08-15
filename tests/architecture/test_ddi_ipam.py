@@ -103,6 +103,13 @@ class DdiIpamArchitectureTest(unittest.TestCase):
         self.assertIn("If-Match", client)
         self.assertIn("Idempotency-Key", client)
 
+    def test_runtime_uses_the_current_read_only_rsot_repository_contract(self) -> None:
+        runtime = (self.SERVER / "main/io/infranexum/server/ddi/IpamRuntimeConfiguration.java").read_text(encoding="utf-8")
+        repository = (self.ROOT / "src/components/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/JdbcRsotRepository.java").read_text(encoding="utf-8")
+        self.assertIn("JdbcRsotRepository(DataSource dataSource, JdbcDatabaseDialect dialect)", repository)
+        self.assertIn("new JdbcRsotRepository(ds,dialect)", runtime)
+        self.assertNotIn("new JdbcRsotRepository(ds,events,dialect)", runtime)
+
     def test_same_tranche_is_wired_into_compose_jdbc_and_foundation_gate(self) -> None:
         makefile = (self.ROOT / "Makefile").read_text(encoding="utf-8")
         compose = (self.ROOT / "docker/compose.yaml").read_text(encoding="utf-8")

@@ -1,3 +1,15 @@
+# InfraNexum 2.0.0-alpha.0.85 — Server contract stabilization
+
+**Nature : correction de non-régression, sans nouvel epic métier.** Le build Docker Java 25 de `alpha.0.84` a franchi les défauts de text blocks corrigés précédemment puis a révélé deux incompatibilités de contrat internes au Server. DCIM Physical appelait `Asset.organizationId()` alors que l'agrégat ITAM expose contractuellement `owningOrganizationId()`. DDI/IPAM construisait `JdbcRsotRepository` avec `(DataSource, JdbcTransactionalEventStore, JdbcDatabaseDialect)` alors que ce repository RSOT est read-only et expose `(DataSource, JdbcDatabaseDialect)`. `alpha.0.85` corrige ces deux call sites sans modifier le modèle métier, les migrations, les endpoints, les permissions ni les contrats Web.
+
+**Non-régression :** les tests d'architecture DCIM et DDI vérifient désormais explicitement l'accesseur ITAM et la signature du repository RSOT. Une passe transversale compare également l'arité de tous les constructeurs `Jdbc*Repository` aux instanciations présentes sous `src/applications/server/main`; aucun autre mismatch n'est détecté après correction.
+
+**Dépendance roadmap :** aucun epic n'est avancé dans cette corrective. La chaîne reste `PGM-05-E01 → PGM-10-E05 → PGM-08-E02/PGM-08-E03`.
+
+**Promotion runtime :** le build Maven/JDK 25 exact et `docker/dev-compose.ps1 up`, `smoke`, `ha-smoke` de `alpha.0.85` restent obligatoires sur Docker Desktop PRO. Le runner de livraison fournit Java 21 et ne peut pas résoudre l'archive Temurin 25 exacte ; il ne peut donc pas certifier la compilation Maven cible.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.84 — build stabilization and Bootstrap 5 Web contract
 
 **Nature : correction de non-régression, sans nouvel epic métier.** La baseline fonctionnelle reste PGM-08-E01 livrée en `alpha.0.83`. Cette révision corrige deux text blocks Java invalides dans les CLI DCIM Physical et DDI/IPAM qui faisaient échouer la compilation Server du build Docker Java 25. Un gate statique parcourt désormais toutes les sources Java et refuse un `return """` dont le contenu commence avant le saut de ligne obligatoire. Le diagnostic PowerShell Compose distingue aussi explicitement un service sans conteneur — typiquement après un build avorté — d'un conteneur réellement démarré mais unhealthy.

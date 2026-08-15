@@ -77,7 +77,7 @@ class IdentityAccessRbacArchitectureTest(unittest.TestCase):
 
     def test_openapi_is_rbac_secured_tagged_and_operation_ids_are_unique(self) -> None:
         self.assertEqual("3.1.0", self.openapi["openapi"])
-        self.assertEqual("2.0.0-alpha.0.84", self.openapi["info"]["version"])
+        self.assertEqual("2.0.0-alpha.0.85", self.openapi["info"]["version"])
         self.assertTrue(self.openapi["x-infranexum-rbac-deny-by-default"])
         self.assertEqual([{"LocalSessionCookie": []}], self.openapi["security"])
         self.assertEqual(
@@ -137,7 +137,7 @@ class IdentityAccessRbacArchitectureTest(unittest.TestCase):
         organization = yaml.safe_load(
             (self.ROOT / "src/applications/server/resources/openapi/organization-foundation.yaml").read_text(encoding="utf-8")
         )
-        self.assertEqual("2.0.0-alpha.0.84", local_auth["info"]["version"])
+        self.assertEqual("2.0.0-alpha.0.85", local_auth["info"]["version"])
         self.assertIn("RBAC PEP", local_auth["info"]["description"])
         self.assertTrue(organization["x-infranexum-rbac-enforced"])
         self.assertNotIn("x-infranexum-pre-iam-local-only", organization)

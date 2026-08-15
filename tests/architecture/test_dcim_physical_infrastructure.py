@@ -83,6 +83,13 @@ class DcimPhysicalInfrastructureArchitectureTest(unittest.TestCase):
         self.assertIn("Idempotency-Key", client)
         self.assertIn("dcimPhysicalEnabled", config)
 
+    def test_itam_asset_reference_uses_the_current_ownership_contract(self) -> None:
+        adapter = (self.SERVER / "main/io/infranexum/server/dcim/DcimPhysicalReferencePolicyAdapter.java").read_text(encoding="utf-8")
+        asset = (self.ROOT / "src/components/domains/itam/main/io/infranexum/itam/asset/domain/Asset.java").read_text(encoding="utf-8")
+        self.assertIn("public DomainIdentifier owningOrganizationId()", asset)
+        self.assertIn("asset.owningOrganizationId().equals(organizationId)", adapter)
+        self.assertNotIn("asset.organizationId()", adapter)
+
     def test_same_tranche_is_wired_into_server_compose_and_foundation_gate(self) -> None:
         makefile = (self.ROOT / "Makefile").read_text(encoding="utf-8")
         compose = (self.ROOT / "docker/compose.yaml").read_text(encoding="utf-8")

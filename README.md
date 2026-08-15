@@ -1,3 +1,13 @@
+# InfraNexum 2.0.0-alpha.0.85 — Server contract stabilization
+
+`alpha.0.85` is a corrective release over `alpha.0.84`. The operator Java 25 Docker build confirmed the previous text-block repair and then exposed two stale Server composition contracts: DCIM Physical referenced the obsolete `Asset.organizationId()` accessor instead of the authoritative ITAM `Asset.owningOrganizationId()`, and DDI/IPAM still called an obsolete three-argument `JdbcRsotRepository` constructor even though the RSOT repository is read-only and its current contract is `(DataSource, JdbcDatabaseDialect)`. Both call sites are corrected against the existing domain/JDBC contracts; no public API, migration or business rule changes.
+
+Regression tests now pin these two contracts explicitly, and a repository-wide constructor-arity scan covers all `Jdbc*Repository` instantiations in the Server composition root. The business dependency chain remains **PGM-05-E01 → PGM-10-E05 → PGM-08-E02/PGM-08-E03**; this corrective release does not claim a new epic.
+
+Target Java 25 Maven/Docker compilation of `alpha.0.85` remains a promotion gate because the delivery runner provides Java 21 and cannot resolve the exact Temurin 25 archive. The operator Docker Desktop PRO build is therefore the authoritative next runtime verification.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.84 — build stabilization and Bootstrap 5 Web contract
 
 `alpha.0.84` is a corrective release over the `alpha.0.83` PGM-08-E01 DDI/IPAM baseline. It repairs malformed Java text-block openings in the DCIM Physical and DDI/IPAM Server CLIs that prevented the Java 25 Docker build from compiling, and hardens the developer Compose diagnostics so a build/start failure with no container is reported as such instead of being misreported as `health=unknown`.
