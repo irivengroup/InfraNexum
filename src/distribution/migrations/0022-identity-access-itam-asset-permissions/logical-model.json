@@ -1,0 +1,20 @@
+{
+  "schema": "infranexum.logical-schema/v1",
+  "objects": [
+    {
+      "kind": "permission_seed",
+      "logical_name": "identity_access.itam_asset_permissions",
+      "invariant": "PGM-07-E02 ITAM asset lifecycle permissions are organization-scoped and bootstrap-accessible to system.platform_admin"
+    }
+  ],
+  "permissions": [
+    "itam.asset.read",
+    "itam.asset.create",
+    "itam.asset.update"
+  ],
+  "bootstrap_role": "system.platform_admin",
+  "scope_kind": "ORGANIZATION",
+  "invariants": {
+    "cross_context_business_tables": false
+  }
+}

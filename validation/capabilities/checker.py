@@ -66,7 +66,7 @@ class CapabilityChecker:
         expected = {
             "schema": "infranexum.capability-contract-pack/v1",
             "catalog_version": "2.0.0-draft.20",
-            "capability_count": 23,
+            "capability_count": 24,
             "quota_count": 119,
             "quota_thresholds_percent": [80, 90, 100],
             "functional_surface_rule": "allocation-tiers-do-not-change-capabilities",
@@ -176,8 +176,8 @@ class CapabilityChecker:
         policy = self._read_json(policy_path, "CHECK-CAP-CATALOG-002")
         if rows is None or policy is None:
             return
-        if len(rows) != 23:
-            self._add("CHECK-CAP-CATALOG-003", csv_path, f"expected 23 capabilities, found {len(rows)}")
+        if len(rows) != 24:
+            self._add("CHECK-CAP-CATALOG-003", csv_path, f"expected 24 capabilities, found {len(rows)}")
         by_code = {row.get("capability_code", ""): row for row in rows}
         if len(by_code) != len(rows):
             self._add("CHECK-CAP-CATALOG-004", csv_path, "duplicate capability codes")

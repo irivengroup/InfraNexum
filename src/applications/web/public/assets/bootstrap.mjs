@@ -53,6 +53,12 @@ export function validatePublicConfiguration(value) {
   if (typeof value.itamPartnersEnabled !== 'boolean') {
     throw new Error('Runtime configuration itamPartnersEnabled is invalid');
   }
+  if (typeof value.itamAssetsEnabled !== 'boolean') {
+    throw new Error('Runtime configuration itamAssetsEnabled is invalid');
+  }
+  if (value.itamAssetsEnabled && !value.itamPartnersEnabled) {
+    throw new Error('Runtime configuration ITAM assets require ITAM partners');
+  }
   if (value.advancedAuthorizationEnabled && !value.identityAccessEnabled) {
     throw new Error('Runtime configuration advanced authorization requires identity access');
   }

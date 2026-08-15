@@ -1,3 +1,13 @@
+# InfraNexum 2.0.0-alpha.0.78 — PGM-07-E02 ITAM Asset lifecycle
+
+`alpha.0.78` implements **PGM-07-E02** as the canonical patrimonial ITAM asset lifecycle. Assets keep weak references to RSOT canonical objects, Organization/Subdivision ownership, acquisition Partners and custody actors/partners while ITAM owns acquisition value/date, lifecycle state, optimistic version and append-only chain of custody. Acquisition, receipt, stock, assignment, deployment, transfer, maintenance, return, retirement and evidenced disposition are explicit commands; one RSOT object can back at most one ITAM asset.
+
+The slice includes paired PostgreSQL/Oracle migrations `0021`/`0022`, capability `itam.assets`, the effective `itam.assets.max` quota, three organization-scoped RBAC permissions, dynamic RBAC/ABAC, HTTP/OpenAPI, Server CLI and a capability-gated Web client. The mandatory hardware warranty/software-license readiness defined by the CDC remains owned by the subsequent `PGM-07-E03`; therefore transitions to `in_stock`, `assigned` and `deployed` are deliberately fail-closed in `alpha.0.78` until E03 supplies verified compliance data. See `docs/itam-asset-lifecycle.md`.
+
+`alpha.0.77` remains the canonical Partner catalogue baseline used for acquisition and maintenance weak references.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.77 — PGM-07-E01 ITAM Partner catalogues
 
 `alpha.0.77` implements **PGM-07-E01** as the first ITAM catalogue slice: one governed `Partner` aggregate is authoritative for manufacturers, software publishers, suppliers, third-party support providers, integrators and recyclers. Partner lifecycle is explicit (`draft → pending_approval → active`, with `suspended` and terminal `retired` states), organization/subdivision references remain weak cross-context references, and duplicate identities, quotas, optimistic versions and idempotent mutations are enforced fail-closed. Role-filtered catalogues are views of the same aggregate; no duplicate Manufacturer or Support Provider aggregate is introduced.

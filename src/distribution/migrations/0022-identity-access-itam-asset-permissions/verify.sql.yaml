@@ -1,0 +1,8 @@
+schema: infranexum.migration-verification/v1
+checks:
+- id: itam-asset-permissions-present
+  postgresql: "SELECT COUNT(*) = 3 FROM infranexum_iam.permission WHERE organization_id IS NULL AND code IN ('itam.asset.read','itam.asset.create','itam.asset.update')"
+  oracle: "SELECT CASE WHEN COUNT(*) = 3 THEN 1 ELSE 0 END FROM INFRANEXUM_IAM_PERMISSION WHERE ORGANIZATION_ID IS NULL AND CODE IN ('itam.asset.read','itam.asset.create','itam.asset.update')"
+- id: platform-admin-itam-asset-permissions-present
+  postgresql: "SELECT COUNT(*) = 3 FROM infranexum_iam.role_permission rp JOIN infranexum_iam.permission p ON p.id=rp.permission_id WHERE rp.role_id='019ffbda-1001-7e80-9ec8-7580467e9a85' AND p.code IN ('itam.asset.read','itam.asset.create','itam.asset.update')"
+  oracle: "SELECT CASE WHEN COUNT(*) = 3 THEN 1 ELSE 0 END FROM INFRANEXUM_IAM_ROLE_PERMISSION rp JOIN INFRANEXUM_IAM_PERMISSION p ON p.ID=rp.PERMISSION_ID WHERE rp.ROLE_ID='019ffbda-1001-7e80-9ec8-7580467e9a85' AND p.CODE IN ('itam.asset.read','itam.asset.create','itam.asset.update')"

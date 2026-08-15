@@ -1,0 +1,812 @@
+openapi: 3.1.0
+info:
+  title: InfraNexum ITAM Asset Lifecycle API
+  version: 2.0.0-alpha.0.78
+  description: PGM-07-E02 acquisition, custody, maintenance, retirement and disposition lifecycle for canonical ITAM assets.
+servers:
+- url: /
+security:
+- LocalSessionCookie: []
+x-tagGroups:
+- name: ITAM
+  tags:
+  - ITAM / Assets
+x-infranexum-published-events:
+- itam.asset.acquired.v1
+- itam.asset.received.v1
+- itam.asset.stocked.v1
+- itam.asset.assigned.v1
+- itam.asset.deployed.v1
+- itam.asset.transferred.v1
+- itam.asset.maintenance_started.v1
+- itam.asset.returned.v1
+- itam.asset.retired.v1
+- itam.asset.disposed.v1
+tags:
+- name: ITAM / Assets
+  description: Organization-governed asset lifecycle with append-only chain of custody.
+paths:
+  /api/v1/itam/assets:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    get:
+      tags:
+      - ITAM / Assets
+      operationId: listItamAssets
+      summary: List ITAM assets
+      description: Organization-scoped callers provide organization_id; an unscoped collection read requires platform scope.
+      x-infranexum-permission: itam.asset.read
+      x-infranexum-capability: itam.assets
+      parameters:
+      - name: organization_id
+        in: query
+        schema:
+          $ref: '#/components/schemas/UuidV7'
+      - name: asset_type
+        in: query
+        schema:
+          $ref: '#/components/schemas/AssetType'
+      - name: lifecycle_status
+        in: query
+        schema:
+          $ref: '#/components/schemas/LifecycleStatus'
+      - name: rsot_object_id
+        in: query
+        schema:
+          $ref: '#/components/schemas/UuidV7'
+      - name: cursor
+        in: query
+        schema:
+          $ref: '#/components/schemas/UuidV7'
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+      responses:
+        '200':
+          description: Stable UUIDv7-cursor page.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags:
+      - ITAM / Assets
+      operationId: acquireItamAsset
+      summary: Acquire an ITAM asset
+      x-infranexum-permission: itam.asset.create
+      x-infranexum-capability: itam.assets
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAsset'
+      responses:
+        '201':
+          $ref: '#/components/responses/AssetMutation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/itam/assets/{assetId}:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - $ref: '#/components/parameters/AssetId'
+    get:
+      tags:
+      - ITAM / Assets
+      operationId: getItamAsset
+      summary: Get an ITAM asset
+      x-infranexum-permission: itam.asset.read
+      x-infranexum-capability: itam.assets
+      responses:
+        '200':
+          $ref: '#/components/responses/AssetMutation'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/itam/assets/{assetId}/custody:
+    parameters:
+    - $ref: '#/components/parameters/CorrelationId'
+    - $ref: '#/components/parameters/AssetId'
+    get:
+      tags:
+      - ITAM / Assets
+      operationId: listItamAssetCustody
+      summary: List append-only asset custody history
+      x-infranexum-permission: itam.asset.read
+      x-infranexum-capability: itam.assets
+      parameters:
+      - name: after_sequence
+        in: query
+        schema:
+          type: integer
+          format: int64
+          minimum: 0
+          default: 0
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 100
+      responses:
+        '200':
+          description: Ordered custody events.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CustodyEvent'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/itam/assets/{assetId}/receive:
+    post:
+      tags:
+      - ITAM / Assets
+      operationId: receiveItamAsset
+      summary: Record physical or contractual receipt
+      x-infranexum-permission: itam.asset.update
+      x-infranexum-capability: itam.assets
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/AssetId'
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transition'
+      responses:
+        '200':
+          $ref: '#/components/responses/AssetMutation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/itam/assets/{assetId}/stock:
+    post:
+      tags:
+      - ITAM / Assets
+      operationId: stockItamAsset
+      summary: Move an asset into governed stock
+      description: Fails closed until PGM-07-E03 proves mandatory warranty or license readiness.
+      x-infranexum-permission: itam.asset.update
+      x-infranexum-capability: itam.assets
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/AssetId'
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transition'
+      responses:
+        '200':
+          $ref: '#/components/responses/AssetMutation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/itam/assets/{assetId}/assign:
+    post:
+      tags:
+      - ITAM / Assets
+      operationId: assignItamAsset
+      summary: Assign an asset to an accountable internal custodian
+      description: Fails closed until PGM-07-E03 proves mandatory warranty or license readiness.
+      x-infranexum-permission: itam.asset.update
+      x-infranexum-capability: itam.assets
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/AssetId'
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transition'
+      responses:
+        '200':
+          $ref: '#/components/responses/AssetMutation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/itam/assets/{assetId}/deploy:
+    post:
+      tags:
+      - ITAM / Assets
+      operationId: deployItamAsset
+      summary: Deploy an assigned asset
+      description: Fails closed until PGM-07-E03 proves mandatory warranty or license readiness.
+      x-infranexum-permission: itam.asset.update
+      x-infranexum-capability: itam.assets
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/AssetId'
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transition'
+      responses:
+        '200':
+          $ref: '#/components/responses/AssetMutation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/itam/assets/{assetId}/transfer:
+    post:
+      tags:
+      - ITAM / Assets
+      operationId: transferItamAsset
+      summary: Transfer custody without changing lifecycle state
+      x-infranexum-permission: itam.asset.update
+      x-infranexum-capability: itam.assets
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/AssetId'
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transition'
+      responses:
+        '200':
+          $ref: '#/components/responses/AssetMutation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/itam/assets/{assetId}/maintenance/start:
+    post:
+      tags:
+      - ITAM / Assets
+      operationId: startItamAssetMaintenance
+      summary: Place an asset under maintenance custody
+      x-infranexum-permission: itam.asset.update
+      x-infranexum-capability: itam.assets
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/AssetId'
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transition'
+      responses:
+        '200':
+          $ref: '#/components/responses/AssetMutation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/itam/assets/{assetId}/maintenance/return:
+    post:
+      tags:
+      - ITAM / Assets
+      operationId: returnItamAssetFromMaintenance
+      summary: Return an asset from maintenance
+      x-infranexum-permission: itam.asset.update
+      x-infranexum-capability: itam.assets
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/AssetId'
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transition'
+      responses:
+        '200':
+          $ref: '#/components/responses/AssetMutation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/itam/assets/{assetId}/retire:
+    post:
+      tags:
+      - ITAM / Assets
+      operationId: retireItamAsset
+      summary: Retire an asset while preserving custody history
+      x-infranexum-permission: itam.asset.update
+      x-infranexum-capability: itam.assets
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/AssetId'
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transition'
+      responses:
+        '200':
+          $ref: '#/components/responses/AssetMutation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /api/v1/itam/assets/{assetId}/dispose:
+    post:
+      tags:
+      - ITAM / Assets
+      operationId: disposeItamAsset
+      summary: Close an asset with disposition evidence
+      x-infranexum-permission: itam.asset.update
+      x-infranexum-capability: itam.assets
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/AssetId'
+      - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transition'
+      responses:
+        '200':
+          $ref: '#/components/responses/AssetMutation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+components:
+  securitySchemes:
+    LocalSessionCookie:
+      type: apiKey
+      in: cookie
+      name: INX_SESSION
+  parameters:
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: false
+      schema:
+        $ref: '#/components/schemas/UuidV7'
+    CsrfToken:
+      name: X-CSRF-Token
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 512
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 200
+        pattern: ^[A-Za-z0-9][A-Za-z0-9._:-]{7,199}$
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      schema:
+        type: string
+        pattern: ^"ver-[1-9][0-9]*"$
+    AssetId:
+      name: assetId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UuidV7'
+  schemas:
+    UuidV7:
+      type: string
+      format: uuid
+      pattern: ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
+    AssetType:
+      type: string
+      enum:
+      - hardware
+      - software
+    LifecycleStatus:
+      type: string
+      enum:
+      - acquired
+      - received
+      - in_stock
+      - assigned
+      - deployed
+      - maintenance
+      - returned
+      - retired
+      - disposed
+    CustodianKind:
+      type: string
+      enum:
+      - organization
+      - subdivision
+      - actor
+      - partner
+    CreateAsset:
+      type: object
+      additionalProperties: false
+      required:
+      - rsotObjectId
+      - assetType
+      - owningOrganizationId
+      - acquisitionDate
+      - acquisitionValue
+      - currencyCode
+      - reason
+      properties:
+        rsotObjectId:
+          $ref: '#/components/schemas/UuidV7'
+        assetType:
+          $ref: '#/components/schemas/AssetType'
+        owningOrganizationId:
+          $ref: '#/components/schemas/UuidV7'
+        owningSubdivisionId:
+          $ref: '#/components/schemas/UuidV7'
+        acquisitionDate:
+          type: string
+          format: date
+        acquisitionValue:
+          type: number
+          minimum: 0
+        currencyCode:
+          type: string
+          pattern: ^[A-Za-z]{3}$
+        acquiredFromPartnerId:
+          $ref: '#/components/schemas/UuidV7'
+        reason:
+          type: string
+          minLength: 2
+          maxLength: 1024
+    Transition:
+      type: object
+      additionalProperties: false
+      required:
+      - reason
+      properties:
+        custodianKind:
+          $ref: '#/components/schemas/CustodianKind'
+        custodianId:
+          $ref: '#/components/schemas/UuidV7'
+        reason:
+          type: string
+          minLength: 2
+          maxLength: 1024
+        evidenceReference:
+          type: string
+          minLength: 1
+          maxLength: 240
+    Asset:
+      type: object
+      required:
+      - id
+      - rsotObjectId
+      - assetType
+      - owningOrganizationId
+      - acquisitionDate
+      - acquisitionValue
+      - currencyCode
+      - lifecycleStatus
+      - custodianKind
+      - version
+      - createdAt
+      - updatedAt
+      properties:
+        id:
+          $ref: '#/components/schemas/UuidV7'
+        rsotObjectId:
+          $ref: '#/components/schemas/UuidV7'
+        assetType:
+          $ref: '#/components/schemas/AssetType'
+        owningOrganizationId:
+          $ref: '#/components/schemas/UuidV7'
+        owningSubdivisionId:
+          $ref: '#/components/schemas/UuidV7'
+        acquisitionDate:
+          type: string
+          format: date
+        acquisitionValue:
+          type: number
+          minimum: 0
+        currencyCode:
+          type: string
+          pattern: ^[A-Z]{3}$
+        acquiredFromPartnerId:
+          $ref: '#/components/schemas/UuidV7'
+        lifecycleStatus:
+          $ref: '#/components/schemas/LifecycleStatus'
+        custodianKind:
+          type: string
+          enum:
+          - none
+          - organization
+          - subdivision
+          - actor
+          - partner
+        custodianId:
+          $ref: '#/components/schemas/UuidV7'
+        version:
+          type: integer
+          format: int64
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    AssetPage:
+      type: object
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Asset'
+        nextCursor:
+          $ref: '#/components/schemas/UuidV7'
+    CustodyEvent:
+      type: object
+      required:
+      - eventId
+      - sequence
+      - eventType
+      - toStatus
+      - custodianKind
+      - occurredAt
+      - actorId
+      - correlationId
+      - reason
+      properties:
+        eventId:
+          $ref: '#/components/schemas/UuidV7'
+        sequence:
+          type: integer
+          format: int64
+          minimum: 1
+        eventType:
+          type: string
+        fromStatus:
+          $ref: '#/components/schemas/LifecycleStatus'
+        toStatus:
+          $ref: '#/components/schemas/LifecycleStatus'
+        custodianKind:
+          type: string
+          enum:
+          - none
+          - organization
+          - subdivision
+          - actor
+          - partner
+        custodianId:
+          $ref: '#/components/schemas/UuidV7'
+        occurredAt:
+          type: string
+          format: date-time
+        actorId:
+          $ref: '#/components/schemas/UuidV7'
+        correlationId:
+          $ref: '#/components/schemas/UuidV7'
+        reason:
+          type: string
+          minLength: 2
+          maxLength: 1024
+        evidenceReference:
+          type: string
+          maxLength: 240
+    Problem:
+      type: object
+      required:
+      - type
+      - title
+      - status
+      - detail
+      - instance
+      - code
+      - occurredAt
+      - traceId
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        code:
+          type: string
+        occurredAt:
+          type: string
+          format: date-time
+        traceId:
+          type: string
+  responses:
+    AssetMutation:
+      description: Current asset state.
+      headers:
+        ETag:
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Asset'
+    BadRequest:
+      description: Invalid request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: Authorization
+      capability or compliance gate denied the operation: null
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Asset not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: State
+      quota: null
+      optimistic-version or idempotency conflict: null
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UnprocessableEntity:
+      description: Cross-context reference or custody validation failed
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'

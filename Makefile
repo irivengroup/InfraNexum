@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 
-.PHONY: compose-contract-test compose-config compose-build compose-up compose-down compose-smoke compose-backup compose-restore compose-rollback compose-reset compose-logs postgresql-test-schema archive-compatibility-test archive-compatibility-check source-integrity-test source-integrity-check source-integrity-precommit source-integrity-hook-install source-integrity-update source-checksum-update architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke java-observability-smoke java-rsot-smoke java-schema-registry-smoke java-itam-partner-smoke java-policy-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-module-verify java-test verify-foundation verify clean-generated
+.PHONY: compose-contract-test compose-config compose-build compose-up compose-down compose-smoke compose-backup compose-restore compose-rollback compose-reset compose-logs postgresql-test-schema archive-compatibility-test archive-compatibility-check source-integrity-test source-integrity-check source-integrity-precommit source-integrity-hook-install source-integrity-update source-checksum-update architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke java-observability-smoke java-rsot-smoke java-schema-registry-smoke java-itam-partner-smoke java-itam-asset-smoke java-policy-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-module-verify java-test verify-foundation verify clean-generated
 
 PYTHON ?= python3
 GO ?= go
@@ -37,7 +37,10 @@ JDBC_DOMAIN_SOURCES := \
 	$(COMPONENT_ROOT)/domains/rsot/main/io/infranexum/rsot/ports/*.java \
 	$(COMPONENT_ROOT)/domains/itam/main/io/infranexum/itam/partner/domain/*.java \
 	$(COMPONENT_ROOT)/domains/itam/main/io/infranexum/itam/partner/application/*.java \
-	$(COMPONENT_ROOT)/domains/itam/main/io/infranexum/itam/partner/ports/*.java
+	$(COMPONENT_ROOT)/domains/itam/main/io/infranexum/itam/partner/ports/*.java \
+	$(COMPONENT_ROOT)/domains/itam/main/io/infranexum/itam/asset/domain/*.java \
+	$(COMPONENT_ROOT)/domains/itam/main/io/infranexum/itam/asset/application/*.java \
+	$(COMPONENT_ROOT)/domains/itam/main/io/infranexum/itam/asset/ports/*.java
 
 
 # Python validation packages live at repository root outside the src/ product boundary.
@@ -205,6 +208,18 @@ java-itam-partner-smoke:
 		$(COMPONENT_ROOT)/domains/itam/main/io/infranexum/itam/partner/application/*.java \
 		$(TEST_ROOT)/java-itam-partner-smoke/io/infranexum/itam/partner/ItamPartnerSmoke.java; \
 	$(JAVA) -ea -cp "$$build_dir" io.infranexum.itam.partner.ItamPartnerSmoke
+
+java-itam-asset-smoke:
+	@build_dir="$$(mktemp -d)"; \
+	trap 'rm -rf "$$build_dir"' EXIT; \
+	$(JAVAC) -Xlint:all -Werror -d "$$build_dir" \
+		$(COMPONENT_ROOT)/core/contracts/main/io/infranexum/core/contracts/*.java \
+		$(COMPONENT_ROOT)/core/events/main/io/infranexum/core/events/*.java \
+		$(COMPONENT_ROOT)/domains/itam/main/io/infranexum/itam/asset/domain/*.java \
+		$(COMPONENT_ROOT)/domains/itam/main/io/infranexum/itam/asset/ports/*.java \
+		$(COMPONENT_ROOT)/domains/itam/main/io/infranexum/itam/asset/application/*.java \
+		$(TEST_ROOT)/java-itam-asset-smoke/io/infranexum/itam/asset/ItamAssetSmoke.java; \
+	$(JAVA) -ea -cp "$$build_dir" io.infranexum.itam.asset.ItamAssetSmoke
 
 java-policy-smoke:
 	@build_dir="$$(mktemp -d)"; \
@@ -436,7 +451,7 @@ java-module-verify:
 java-test:
 	./mvnw --batch-mode --no-transfer-progress --fail-at-end verify
 
-verify-foundation: compose-contract-test source-integrity-test source-integrity-check archive-compatibility-test archive-compatibility-check architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke java-observability-smoke java-rsot-smoke java-schema-registry-smoke java-itam-partner-smoke java-policy-smoke agent-vet agent-test agent-build web-verify
+verify-foundation: compose-contract-test source-integrity-test source-integrity-check archive-compatibility-test archive-compatibility-check architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke java-observability-smoke java-rsot-smoke java-schema-registry-smoke java-itam-partner-smoke java-itam-asset-smoke java-policy-smoke agent-vet agent-test agent-build web-verify
 
 verify: verify-foundation java-test
 

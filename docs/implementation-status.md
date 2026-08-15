@@ -1,3 +1,25 @@
+# InfraNexum 2.0.0-alpha.0.78 — état d’implémentation
+
+## alpha.0.78 — PGM-07-E02 cycle de vie des actifs ITAM
+
+`alpha.0.78` introduit l’actif patrimonial ITAM canonique sans dupliquer les autorités RSOT, Organization, Partner, IAM ou DCIM. L’agrégat conserve des weak references vers ces contextes et porte exclusivement les données patrimoniales de l’epic : date et valeur d’acquisition, devise, état de cycle de vie, gardien courant, version optimiste et chaîne de possession append-only. Le cycle couvre acquisition, réception, stock, affectation, déploiement, transfert de garde, maintenance, retour, retrait et disposition certifiée.
+
+Chaque mutation est idempotente, vérifie `expectedVersion`, s’exécute dans la même unité de travail JDBC que l’outbox et ajoute un événement de garde dont la séquence correspond à la version résultante. La disposition est impossible sans référence de preuve. Le lien RSOT est unique et les migrations `0021-itam-asset-lifecycle` / `0022-identity-access-itam-asset-permissions` restent symétriques PostgreSQL/Oracle et sans FK inter-bounded-context.
+
+Le CDC exige une garantie/support complet pour le matériel et un contrat de licence complet pour le logiciel avant exploitation. Ces contrats appartiennent à `PGM-07-E03`, dépendant de cet epic. Pour empêcher une fenêtre de non-conformité, le port `AssetOperationalReadinessPolicy` est obligatoire dès E02 et le runtime `alpha.0.78` fournit une implémentation transitoire fail-closed : `IN_STOCK`, `ASSIGNED` et `DEPLOYED` sont refusés avec `ITAM_ASSET_COMPLIANCE_GATE_UNAVAILABLE` tant que E03 n’est pas présent.
+
+La tranche expose `itam.assets`, le quota `itam.assets.max`, les permissions `itam.asset.read/create/update`, l’API/OpenAPI 3.1, la CLI Server et le client Web capability-gated. L’API HTTP reste désactivée par défaut par `INFRANEXUM_ITAM_ASSET_API_ENABLED=false`.
+
+### Validation alpha.0.78
+
+**EXÉCUTÉ** — Architecture **123/123** et couverture instrumentée **100 %**, Architecture-as-Code `PASS`; migrations **87/87**, couverture **99 %**, checker à 0 violation; Source Integrity **45/45** à **100 %**; Toolchains **25/25** (99 %), Eventing **10/10** (100 %), Persistence **12/12** (98 %), Capabilities **10/10** (99 %), Entitlements **10/10** (100 %) et Audit **8/8** (100 %), tous les checkers à 0 violation; Compose **63/63**; Web **119/119**, couverture **99,70 % lignes / 98,46 % branches / 100 % fonctions**, process smoke `passed`; **16** targets Java dependency-free passent sous Java 21 avec `javac -Xlint:all -Werror`, dont le smoke Asset. Les **14** méthodes JUnit Asset ont en outre été compilées strictement contre les contrats réels au moyen de stubs JUnit temporaires hors produit; elles n'ont pas été exécutées comme tests JUnit.
+
+**EXÉCUTÉ sur toolchain locale** — l'Agent passe `vet`, tests `-race`, couverture et build avec `GOTOOLCHAIN=local` sous Go 1.23.2; couverture **98,4 %**. **NON EXÉCUTÉ sur toolchain cible** — Go 1.26.5 ne peut pas être téléchargé par ce runner isolé. Maven/JUnit/JaCoCo cible requiert JDK 25 et Maven 3.9.16 (runner JDK 21.0.11, Maven absent, wrapper en sortie 2); Node cible 24.18.1 (runner Node 22.16.0); Docker/PowerShell, PostgreSQL live et Oracle live sont indisponibles. Les applications/verify/rollback live de `0021/0022`, `up`, `smoke` et `ha-smoke` PRO restent obligatoires avant promotion.
+
+Voir `docs/itam-asset-lifecycle.md`.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.77 — état d’implémentation
 
 ## alpha.0.77 — PGM-07-E01 Partenaires et catalogues ITAM

@@ -1,5 +1,5 @@
 schema: infranexum.migration-catalogue/v1
-version: 1.19.0
+version: 1.21.0
 entries:
 - id: '0001'
   path: 0001-core-schema-history/migration.yaml
@@ -41,3 +41,7 @@ entries:
   path: 0019-itam-partner-foundation/migration.yaml
 - id: '0020'
   path: 0020-identity-access-itam-partner-permissions/migration.yaml
+- id: '0021'
+  path: 0021-itam-asset-lifecycle/migration.yaml
+- id: '0022'
+  path: 0022-identity-access-itam-asset-permissions/migration.yaml

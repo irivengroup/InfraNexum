@@ -1,0 +1,14 @@
+schema: infranexum.migration-verification/v1
+checks:
+- id: itam-asset-rsot-link-unique
+  postgresql: "SELECT COUNT(*) = COUNT(DISTINCT rsot_object_id) FROM infranexum_itam.asset"
+  oracle: "SELECT CASE WHEN COUNT(*) = COUNT(DISTINCT RSOT_OBJECT_ID) THEN 1 ELSE 0 END FROM INFRANEXUM_ITAM_ASSET"
+- id: itam-asset-custody-sequence-contiguous
+  postgresql: "SELECT COUNT(*) = 0 FROM (SELECT asset_id,COUNT(*) c,MAX(sequence_no) m FROM infranexum_itam.asset_custody_event GROUP BY asset_id) x WHERE c<>m"
+  oracle: "SELECT CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END FROM (SELECT ASSET_ID,COUNT(*) C,MAX(SEQUENCE_NO) M FROM INFRANEXUM_ITAM_ASSET_CUSTODY GROUP BY ASSET_ID) WHERE C<>M"
+- id: itam-asset-current-version-matches-custody
+  postgresql: "SELECT COUNT(*) = 0 FROM infranexum_itam.asset a LEFT JOIN (SELECT asset_id,MAX(sequence_no) seq FROM infranexum_itam.asset_custody_event GROUP BY asset_id) c ON c.asset_id=a.id WHERE c.seq IS NULL OR c.seq<>a.version"
+  oracle: "SELECT CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END FROM INFRANEXUM_ITAM_ASSET a LEFT JOIN (SELECT ASSET_ID,MAX(SEQUENCE_NO) SEQ FROM INFRANEXUM_ITAM_ASSET_CUSTODY GROUP BY ASSET_ID) c ON c.ASSET_ID=a.ID WHERE c.SEQ IS NULL OR c.SEQ<>a.VERSION"
+- id: itam-asset-disposition-evidence-present
+  postgresql: "SELECT COUNT(*) = 0 FROM infranexum_itam.asset_custody_event WHERE event_type='DISPOSED' AND evidence_reference IS NULL"
+  oracle: "SELECT CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END FROM INFRANEXUM_ITAM_ASSET_CUSTODY WHERE EVENT_TYPE='DISPOSED' AND EVIDENCE_REFERENCE IS NULL"

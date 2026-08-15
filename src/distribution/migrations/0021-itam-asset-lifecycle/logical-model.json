@@ -1,0 +1,32 @@
+{
+  "schema": "infranexum.logical-schema/v1",
+  "objects": [
+    {
+      "kind": "table",
+      "logical_name": "itam.asset",
+      "invariant": "one canonical ITAM asset per RSOT canonical object with organization ownership, acquisition value, lifecycle state and optimistic version"
+    },
+    {
+      "kind": "table",
+      "logical_name": "itam.asset_custody_event",
+      "invariant": "append-only lifecycle and custody chronology uses the asset version as a contiguous sequence and requires disposition evidence"
+    },
+    {
+      "kind": "table",
+      "logical_name": "itam.asset_command_dedup",
+      "invariant": "idempotency keys bind one lifecycle mutation fingerprint to one ITAM asset"
+    },
+    {
+      "kind": "weak_reference",
+      "logical_name": "itam.asset.external_authorities",
+      "invariant": "RSOT object, organization, subdivision, partner and actor identifiers remain weak references validated through owning bounded-context ports"
+    }
+  ],
+  "invariants": {
+    "cross_context_foreign_keys": false,
+    "rsot_link_unique": true,
+    "custody_history_append_only": true,
+    "disposal_evidence_required": true,
+    "optimistic_version_required": true
+  }
+}

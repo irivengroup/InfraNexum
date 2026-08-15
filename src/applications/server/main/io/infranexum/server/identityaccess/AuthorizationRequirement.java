@@ -71,6 +71,9 @@ record AuthorizationRequirement(
         if (normalized.equals("/api/v1/itam/partners") || normalized.startsWith("/api/v1/itam/partners/")) {
             return controllerScoped("itam-partner", normalized);
         }
+        if (normalized.equals("/api/v1/itam/assets") || normalized.startsWith("/api/v1/itam/assets/")) {
+            return controllerScoped("itam-asset", normalized);
+        }
 
         if (normalized.equals("/api/v1/iam/policies") && (verb.equals("GET") || verb.equals("POST"))) {
             return platformAdmin("policy", "collection");

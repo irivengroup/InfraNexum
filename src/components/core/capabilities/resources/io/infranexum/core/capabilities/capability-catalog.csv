@@ -4,6 +4,7 @@ database.postgresql,lite;pro;enterprise,server,single-node;split-web;high-availa
 discovery.agentless,lite;pro;enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,,false
 rsot.core,lite;pro;enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,,false
 itam.partners,lite;pro;enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,,false
+itam.assets,lite;pro;enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,,false
 agent.enabled,enterprise,agent,distributed-sites;regional;multi-region,,true
 automation.multi_region,enterprise,server,regional;multi-region,,true
 database.oracle,enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,oracle-backend,true

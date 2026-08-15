@@ -24,6 +24,7 @@ export class WebRuntimeConfiguration {
   #advancedAuthorizationEnabled;
   #rsotCoreEnabled;
   #itamPartnersEnabled;
+  #itamAssetsEnabled;
 
   constructor({
     listenHost,
@@ -40,6 +41,7 @@ export class WebRuntimeConfiguration {
     advancedAuthorizationEnabled,
     rsotCoreEnabled,
     itamPartnersEnabled,
+    itamAssetsEnabled,
   }) {
     this.#listenHost = listenHost;
     this.#listenPort = listenPort;
@@ -55,6 +57,7 @@ export class WebRuntimeConfiguration {
     this.#advancedAuthorizationEnabled = advancedAuthorizationEnabled;
     this.#rsotCoreEnabled = rsotCoreEnabled;
     this.#itamPartnersEnabled = itamPartnersEnabled;
+    this.#itamAssetsEnabled = itamAssetsEnabled;
     Object.freeze(this);
   }
 
@@ -135,6 +138,14 @@ export class WebRuntimeConfiguration {
       'INFRANEXUM_WEB_ITAM_PARTNERS_ENABLED',
       false,
     );
+    const itamAssetsEnabled = readBoolean(
+      environment,
+      'INFRANEXUM_WEB_ITAM_ASSETS_ENABLED',
+      false,
+    );
+    if (itamAssetsEnabled && !itamPartnersEnabled) {
+      throw new Error('ITAM Asset UI requires the Partner catalogue capability');
+    }
     if (advancedAuthorizationEnabled && !identityAccessEnabled) {
       throw new Error('Advanced-authorization UI requires identity-access capability');
     }
@@ -154,6 +165,7 @@ export class WebRuntimeConfiguration {
       advancedAuthorizationEnabled,
       rsotCoreEnabled,
       itamPartnersEnabled,
+      itamAssetsEnabled,
     });
   }
 
@@ -171,6 +183,7 @@ export class WebRuntimeConfiguration {
   get advancedAuthorizationEnabled() { return this.#advancedAuthorizationEnabled; }
   get rsotCoreEnabled() { return this.#rsotCoreEnabled; }
   get itamPartnersEnabled() { return this.#itamPartnersEnabled; }
+  get itamAssetsEnabled() { return this.#itamAssetsEnabled; }
 
   publicConfiguration() {
     return Object.freeze({
@@ -187,6 +200,7 @@ export class WebRuntimeConfiguration {
       advancedAuthorizationEnabled: this.#advancedAuthorizationEnabled,
       rsotCoreEnabled: this.#rsotCoreEnabled,
       itamPartnersEnabled: this.#itamPartnersEnabled,
+      itamAssetsEnabled: this.#itamAssetsEnabled,
     });
   }
 }

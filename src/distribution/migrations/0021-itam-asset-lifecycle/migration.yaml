@@ -1,0 +1,27 @@
+schema: infranexum.migration/v1
+id: '0021'
+name: itam-asset-lifecycle
+owner_context: itam
+dependencies:
+- '0020'
+preconditions:
+- rsot-authority-foundation-declared
+- itam-partner-foundation-declared
+postconditions:
+- itam-asset-lifecycle-created
+- itam-custody-history-append-only
+- itam-asset-idempotency-enforced
+recovery: rerun-idempotent-ddl-after-correcting-database-connectivity
+rollback: drops-only-itam-asset-owned-objects
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 30
+checksums:
+  postgresql.sql: 82b4c764c69a1e86f86f97b94a35d3d2454dccbddf478665e5aeca744a94f250
+  oracle.sql: 094cd67d7aec9644f49f2026240fb11dacde1ca6a7de084937ce238d8e1fb382
+  rollback/postgresql.sql: 3d3f890a7f81fcd11656a015554e120aeeda8d33f5b64e416b0e22fbc7cd4f44
+  rollback/oracle.sql: efc1c7331663ebe562558316a9079945b056d97f46661d164bc1f765179391a3
+  logical-model.json: 1cb9ff22e9276f17dbd48b85ba1b34efed527945487afa3ea5a1117c83c755ad
+  verify.sql.yaml: 05ff2f07976f4cd99131ec9becbd855b980cb408425795532a9de0dc3f73143b
