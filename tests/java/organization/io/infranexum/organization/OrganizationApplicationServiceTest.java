@@ -55,7 +55,7 @@ class OrganizationApplicationServiceTest {
 
         assertEquals(first.id(), replay.id());
         assertEquals(OrganizationState.ACTIVE, first.state());
-        assertEquals(1, fixture.events.snapshotOutbox().size());
+        assertEquals(1, fixture.events.outboxSnapshot().size());
     }
 
     @Test

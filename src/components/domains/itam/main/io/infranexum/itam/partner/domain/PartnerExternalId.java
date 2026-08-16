@@ -9,6 +9,9 @@ public record PartnerExternalId(String authority, String value) {
     private static final Pattern AUTHORITY = Pattern.compile("[a-z][a-z0-9._-]{1,63}");
     public PartnerExternalId {
         Objects.requireNonNull(authority, "authority"); Objects.requireNonNull(value, "value");
+        if (authority.chars().anyMatch(Character::isISOControl) || value.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException("invalid external identifier");
+        }
         authority = authority.strip().toLowerCase(Locale.ROOT);
         value = value.strip();
         if (!AUTHORITY.matcher(authority).matches() || value.isEmpty() || value.length() > 240

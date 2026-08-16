@@ -94,7 +94,8 @@ class CapabilityRegistryTest {
                 Set.of(new CapabilityCode("iam.ldap")), Map.of()));
         CapabilitySnapshot second = registry.evaluate(pro(AllocationTier.STANDARD, ActivationState.ACTIVE,
                 Set.of(new CapabilityCode("iam.ldap")), Map.of()));
-        assertEquals(22, first.decisions().size());
+        assertEquals(catalog.codes().size(), first.decisions().size());
+        assertEquals(32, catalog.codes().size());
         assertEquals(first.capabilityHash(), second.capabilityHash());
         assertEquals(first.require(new CapabilityCode("iam.ldap")), second.require(new CapabilityCode("iam.ldap")));
         assertThrows(IllegalArgumentException.class, () -> first.require(new CapabilityCode("unknown.value")));

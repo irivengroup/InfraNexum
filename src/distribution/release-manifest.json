@@ -2,7 +2,7 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.102",
+  "version": "2.0.0-alpha.0.103",
   "profile": "alpha102-ci-web-ux-corrective-pro-enterprise",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
@@ -624,15 +624,15 @@
     "pre_commit_hook": ".githooks/pre-commit"
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.102",
+    "prefix": "infranexum-2.0.0-alpha.0.103",
     "archive_entries": 1344,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
     "source_recorded_files": 1343,
     "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
-    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.102-validation-evidence.zip"
+    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.103-validation-evidence.zip"
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.102-validation-evidence.zip",
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.103-validation-evidence.zip",
   "runtime_validation": {
     "web_local_runtime_alpha058": "EXECUTED_38_OF_38_LINE_99_67_BRANCH_98_33_FUNCTION_100_PROCESS_SMOKE_PASS_LOCAL_NODE22_BOOTSTRAP5_3_6_PROFESSIONAL_ADMIN_DASHBOARD_THEME_TOGGLE_TRUTHFUL_KPI_SAME_ORIGIN_ORGANIZATION_UI",
     "architecture_functional_alpha058": "EXECUTED_57_OF_57",
@@ -1019,7 +1019,7 @@
     "archive_compatibility_unit_alpha102": "EXECUTED_12_OF_12_100_PERCENT",
     "archive_compatibility_alpha102": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS_AND_POST_EXTRACTION_SOURCE_INTEGRITY_ZERO_VIOLATIONS"
   },
-  "runtime_validation_note": "alpha.0.102 corrects the alpha.0.101 hosted-JDK and Web/UX regressions without advancing the roadmap. Locally executed corrective gates include API checker 48/48 plus 15 fragments/179 operations at debt 0/0/0/0, Architecture 199/199 plus Architecture-as-Code PASS, Web 192/192 with 99.73% lines / 98.53% branches / 100% functions plus process smoke and ReDoc local-spec initialization, Java schema-registry/integrations/contracts/JDBC/API-capability offline smokes, and Java21 syntax compilation of Core Contracts/Compatibility tests. Exact alpha.0.102 Temurin25 Maven/JaCoCo, live PostgreSQL17/18 and real-browser review remain required before PGM-10-E05 promotion; Chromium policy in the delivery runner blocks loopback/file navigation.",
+  "runtime_validation_note": "alpha.0.103 closes the complete hosted-JDK25 diagnostics exposed by alpha.0.102 without reducing coverage thresholds. Auxiliary local Java21 JUnit-compatible execution passes 228 affected JDK-only Core/domain tests plus 56 non-PostgreSQL JDBC tests, including JdbcInfrastructureCoverageTest 8/8; exact Temurin25 Maven/JUnit/JaCoCo and live PostgreSQL17/18 remain required before formal PGM-10-E05 promotion. Python, architecture, Web, source-integrity and archive gates are recorded in the external validation evidence.",
   "pgm08e01_ddi_ipam_alpha083": "EXECUTED_DOMAIN_JDBC_API_CLI_WEB_MIGRATION_ARCHITECTURE_AND_OFFLINE_SMOKE_TARGET_JDK25_MAVEN_AND_LIVE_DATABASES_PENDING",
   "architecture_functional_alpha083": "EXECUTED_151_OF_151_SPLIT_DETERMINISTIC_GROUPS",
   "architecture_check_alpha083": "EXECUTED_PASS_ZERO_VIOLATIONS",

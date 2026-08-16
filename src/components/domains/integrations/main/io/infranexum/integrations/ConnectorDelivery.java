@@ -52,6 +52,7 @@ public record ConnectorDelivery(
 
     private static String text(String value, String field, int max) {
         Objects.requireNonNull(value, field);
+        if (value.chars().anyMatch(Character::isISOControl)) throw new IllegalArgumentException("invalid " + field);
         String normalized = value.strip();
         if (normalized.isEmpty() || normalized.length() > max || normalized.chars().anyMatch(Character::isISOControl)) throw new IllegalArgumentException("invalid " + field);
         return normalized;

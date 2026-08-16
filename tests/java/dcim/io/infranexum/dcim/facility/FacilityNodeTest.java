@@ -130,6 +130,7 @@ final class FacilityNodeTest {
         assertEquals("FR", criteria.countryCode());
         assertThrows(IllegalArgumentException.class, () -> new io.infranexum.dcim.facility.application.FacilitySearchCriteria(ORG, SUB, FacilityKind.ROOM, null, null, "FR", null, 20));
         assertThrows(IllegalArgumentException.class, () -> new io.infranexum.dcim.facility.application.FacilitySearchCriteria(ORG, SUB, FacilityKind.SITE, null, null, null, null, 201));
+        assertThrows(IllegalArgumentException.class, () -> new io.infranexum.dcim.facility.application.FacilitySearchCriteria(ORG, SUB, FacilityKind.SITE, null, null, "FR\n", null, 20));
     }
 
     private static FacilityNode site(String country, String timezone, String description) {

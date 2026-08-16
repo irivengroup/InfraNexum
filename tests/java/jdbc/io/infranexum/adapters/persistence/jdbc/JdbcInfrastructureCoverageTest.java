@@ -40,6 +40,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -547,7 +548,7 @@ class JdbcInfrastructureCoverageTest {
     }
 
     private static Object defaultValue(Class<?> type) {
-        if (!type.isPrimitive()) return null;
+        if (type == void.class || !type.isPrimitive()) return null;
         if (type == boolean.class) return false;
         if (type == byte.class) return (byte) 0;
         if (type == short.class) return (short) 0;

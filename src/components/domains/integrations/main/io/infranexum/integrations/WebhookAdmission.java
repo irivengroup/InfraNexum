@@ -16,6 +16,6 @@ public record WebhookAdmission(DomainIdentifier deliveryId, ConnectorKey connect
         payload = payload(payload);
         if (!SHA256.matcher(Objects.requireNonNull(payloadSha256, "payloadSha256")).matches()) throw new IllegalArgumentException("invalid payloadSha256");
     }
-    private static String required(String value,String field,int maximum){Objects.requireNonNull(value,field);String normalized=value.strip();if(normalized.isEmpty()||normalized.length()>maximum)throw new IllegalArgumentException("invalid "+field);return normalized;}
+    private static String required(String value,String field,int maximum){Objects.requireNonNull(value,field);if(value.chars().anyMatch(Character::isISOControl))throw new IllegalArgumentException("invalid "+field);String normalized=value.strip();if(normalized.isEmpty()||normalized.length()>maximum)throw new IllegalArgumentException("invalid "+field);return normalized;}
     private static String payload(String value){Objects.requireNonNull(value,"payload");if(value.isBlank()||value.length()>1_048_576)throw new IllegalArgumentException("invalid payload");return value;}
 }

@@ -10,6 +10,9 @@ public record ConnectorKey(String value) {
 
     public ConnectorKey {
         Objects.requireNonNull(value, "value");
+        if (value.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException("connector key must not contain control characters");
+        }
         value = value.strip().toLowerCase(Locale.ROOT);
         if (!VALUE.matcher(value).matches()) {
             throw new IllegalArgumentException("connector key must match " + VALUE.pattern());

@@ -15,7 +15,9 @@ class PlatformObservabilityConfigurationTest {
         Clock clock = Clock.systemUTC();
         assertNotNull(configuration.sensitiveDataRedactor());
         var identifiers = configuration.correlationIdentifiers(clock);
-        var filter = configuration.correlationIdFilter(identifiers, clock, new SimpleMeterRegistry());
+        var redactor = configuration.sensitiveDataRedactor();
+        var problems = configuration.apiProblemSupport(clock, redactor, new tools.jackson.databind.ObjectMapper());
+        var filter = configuration.correlationIdFilter(identifiers, new SimpleMeterRegistry(), problems);
         var workerBridge = configuration.workerCorrelationBridge(Tracer.NOOP);
 
         assertNotNull(identifiers.next());

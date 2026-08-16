@@ -39,7 +39,7 @@ class CompatibilityModelTest {
         assertThrows(IllegalArgumentException.class, () -> schema(RegistryStatus.DRAFT, 1, T, null, null, null));
         assertThrows(IllegalArgumentException.class, () -> schema(RegistryStatus.PUBLISHED, 1, null, null, null, null));
         assertThrows(IllegalArgumentException.class, () -> schema(RegistryStatus.DEPRECATED, 1, T, null, null, null));
-        assertThrows(IllegalArgumentException.class, () -> draft.deprecate(T, T.plusSeconds(1), "x"));
+        assertThrows(SchemaRegistryException.class, () -> draft.deprecate(T, T.plusSeconds(1), "x"));
         assertThrows(IllegalArgumentException.class, () -> draft.publish(T, CompatibilityReport.compatible(), "ok", null).deprecate(T, T.plusSeconds(1), " "));
     }
 

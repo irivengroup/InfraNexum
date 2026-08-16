@@ -22,6 +22,9 @@ public record ConnectorWebhookEndpoint(
 
     private static String token(String value, String field) {
         Objects.requireNonNull(value, field);
+        if (value.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException(field + " is invalid");
+        }
         String normalized = value.strip();
         if (normalized.isEmpty() || normalized.length() > 160 || normalized.chars().anyMatch(Character::isISOControl)) {
             throw new IllegalArgumentException(field + " is invalid");

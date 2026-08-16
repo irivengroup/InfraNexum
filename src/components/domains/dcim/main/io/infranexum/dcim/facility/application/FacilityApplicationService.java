@@ -77,7 +77,7 @@ public final class FacilityApplicationService {
 
     public FacilityNode update(DomainIdentifier id, long expectedVersion, UpdateFacilityCommand command, FacilityCommandContext context) {
         Objects.requireNonNull(command,"command");
-        return mutate(id,expectedVersion,context,"update", "updated", current -> current.updateMetadata(command.displayName(),
+        return mutate(id,expectedVersion,context,"update", "updated", command, current -> current.updateMetadata(command.displayName(),
                 current.kind()==FacilityKind.SITE?command.addressLine1():current.addressLine1(), current.kind()==FacilityKind.SITE?command.addressLine2():current.addressLine2(),
                 current.kind()==FacilityKind.SITE?command.postalCode():current.postalCode(), current.kind()==FacilityKind.SITE?command.city():current.city(),
                 current.kind()==FacilityKind.SITE?command.countryCode():current.countryCode(), current.kind()==FacilityKind.SITE?command.timezone():current.timezone(),
@@ -87,7 +87,7 @@ public final class FacilityApplicationService {
 
     public FacilityNode changeStatus(DomainIdentifier id, long expectedVersion, FacilityStatus target, FacilityCommandContext context) {
         Objects.requireNonNull(target,"target");
-        return mutate(id,expectedVersion,context,"status:"+target.wireValue(),"status_changed",current -> {
+        return mutate(id,expectedVersion,context,"status:"+target.wireValue(),"status_changed",target,current -> {
             if (current.kind()==FacilityKind.SITE && (target==FacilityStatus.ARCHIVED || target==FacilityStatus.DELETED)
                     && facilities.activeBuildingsForSite(current.id())>0) {
                 throw new FacilityConflictException("DCIM_SITE_ARCHIVE_BLOCKED","active buildings prevent site archival/deletion");
@@ -103,9 +103,9 @@ public final class FacilityApplicationService {
     public FacilityNode get(DomainIdentifier id) { requireEnabled(); return requireFacility(id); }
     public FacilityPage search(FacilitySearchCriteria criteria) { requireEnabled(); Objects.requireNonNull(criteria,"criteria"); return facilities.search(criteria); }
 
-    private FacilityNode mutate(DomainIdentifier id,long expectedVersion,FacilityCommandContext context,String operation,String eventSuffix,Transition transition) {
-        requireEnabled(); Objects.requireNonNull(id,"id"); Objects.requireNonNull(context,"context"); if(expectedVersion<1) throw new IllegalArgumentException("expectedVersion must be positive");
-        String fingerprint=fingerprint(operation,id,expectedVersion,context.reason());
+    private FacilityNode mutate(DomainIdentifier id,long expectedVersion,FacilityCommandContext context,String operation,String eventSuffix,Object mutationPayload,Transition transition) {
+        requireEnabled(); Objects.requireNonNull(id,"id"); Objects.requireNonNull(context,"context"); Objects.requireNonNull(mutationPayload,"mutationPayload"); if(expectedVersion<1) throw new IllegalArgumentException("expectedVersion must be positive");
+        String fingerprint=fingerprint(operation,id,expectedVersion,mutationPayload,context.reason());
         return execute(tx -> {
             Optional<FacilityIdempotencyRepository.Record> prior=idempotency.find(context.idempotencyKey());
             if(prior.isPresent()) return replay(prior.orElseThrow(),fingerprint,operation);

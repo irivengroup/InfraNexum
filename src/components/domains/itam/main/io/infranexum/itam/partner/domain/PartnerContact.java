@@ -24,8 +24,12 @@ public record PartnerContact(String type, String name, String email, String phon
     }
 
     private static String normalized(String value, String field, int min, int max) {
-        Objects.requireNonNull(value, field); String result = value.strip();
-        if (result.length() < min || result.length() > max || result.chars().anyMatch(Character::isISOControl)) {
+        Objects.requireNonNull(value, field);
+        if (value.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException("invalid contact " + field);
+        }
+        String result = value.strip();
+        if (result.length() < min || result.length() > max) {
             throw new IllegalArgumentException("invalid contact " + field);
         }
         return result;

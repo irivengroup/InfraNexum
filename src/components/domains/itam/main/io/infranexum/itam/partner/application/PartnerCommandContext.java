@@ -10,12 +10,18 @@ public record PartnerCommandContext(
         Objects.requireNonNull(actorId, "actorId");
         Objects.requireNonNull(correlationId, "correlationId");
         Objects.requireNonNull(idempotencyKey, "idempotencyKey");
+        if (idempotencyKey.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException("invalid idempotency key");
+        }
         idempotencyKey = idempotencyKey.strip();
         if (idempotencyKey.length() < 8 || idempotencyKey.length() > 200
                 || idempotencyKey.chars().anyMatch(Character::isISOControl)) {
             throw new IllegalArgumentException("invalid idempotency key");
         }
         Objects.requireNonNull(reason, "reason");
+        if (reason.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException("invalid partner mutation reason");
+        }
         reason = reason.strip();
         if (reason.length() < 2 || reason.length() > 1024 || reason.chars().anyMatch(Character::isISOControl)) {
             throw new IllegalArgumentException("invalid partner mutation reason");

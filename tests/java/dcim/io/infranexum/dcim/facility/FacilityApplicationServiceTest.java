@@ -10,6 +10,7 @@ import io.infranexum.dcim.facility.application.FacilityApplicationService;
 import io.infranexum.dcim.facility.application.FacilityCommandContext;
 import io.infranexum.dcim.facility.application.FacilityPage;
 import io.infranexum.dcim.facility.application.FacilitySearchCriteria;
+import io.infranexum.dcim.facility.application.UpdateFacilityCommand;
 import io.infranexum.dcim.facility.domain.FacilityCode;
 import io.infranexum.dcim.facility.domain.FacilityConflictException;
 import io.infranexum.dcim.facility.domain.FacilityKind;
@@ -143,6 +144,39 @@ final class FacilityApplicationServiceTest {
         assertTrue(events.outboxSnapshot().stream().anyMatch(record -> "dcim.room.locked.v1".equals(record.event().eventType().value())));
         assertThrows(io.infranexum.dcim.facility.domain.FacilityNotFoundException.class,
                 () -> service.get(DomainIdentifier.parse("01900000-0000-7000-8000-000000000099")));
+    }
+
+    @Test
+    void updateIdempotencyPaginationAndLifecycleEdgeBranchesRemainGoverned() {
+        FacilityNode site = service.create(site("PAR01"), context("dcim-site-create-100", "Register site"));
+        UpdateFacilityCommand first = new UpdateFacilityCommand(
+                "Paris primary site updated", "10 Rue de Rivoli", null, "75001", "Paris", "FR", "Europe/Paris",
+                new BigDecimal("48.8566"), new BigDecimal("2.3522"), null, null, null, null, null, null, null, "updated");
+        FacilityCommandContext updateContext = context("dcim-site-update-100", "Update site metadata");
+        FacilityNode updated = service.update(site.id(), 1, first, updateContext);
+        assertEquals("Paris primary site updated", updated.displayName());
+        assertEquals(updated.id(), service.update(site.id(), 1, first, updateContext).id());
+
+        UpdateFacilityCommand changedPayload = new UpdateFacilityCommand(
+                "Different display name", "10 Rue de Rivoli", null, "75001", "Paris", "FR", "Europe/Paris",
+                new BigDecimal("48.8566"), new BigDecimal("2.3522"), null, null, null, null, null, null, null, "updated");
+        assertCode("IDEMPOTENCY_CONFLICT", () -> service.update(site.id(), 1, changedPayload, updateContext));
+        assertThrows(IllegalArgumentException.class, () -> service.update(site.id(), 0, first, context("dcim-site-update-101", "Bad version")));
+        assertThrows(NullPointerException.class, () -> service.update(site.id(), 1, null, updateContext));
+        assertThrows(NullPointerException.class, () -> service.search(null));
+
+        FacilityNode activeSite = service.changeStatus(updated.id(), 2, FacilityStatus.ACTIVE, context("dcim-site-active-100", "Activate site"));
+        FacilityCommandContext suspend = context("dcim-site-suspend-100", "Suspend site");
+        FacilityNode suspended = service.changeStatus(activeSite.id(), 3, FacilityStatus.SUSPENDED, suspend);
+        assertEquals(suspended.id(), service.changeStatus(activeSite.id(), 3, FacilityStatus.SUSPENDED, suspend).id());
+        FacilityNode resumed = service.changeStatus(suspended.id(), 4, FacilityStatus.ACTIVE, context("dcim-site-resume-100", "Resume site"));
+        FacilityNode archived = service.changeStatus(resumed.id(), 5, FacilityStatus.ARCHIVED, context("dcim-site-archive-100", "Archive site"));
+        FacilityNode deleted = service.changeStatus(archived.id(), 6, FacilityStatus.DELETED, context("dcim-site-delete-100", "Delete site"));
+        assertEquals(FacilityStatus.DELETED, deleted.status());
+        assertTrue(events.outboxSnapshot().stream().anyMatch(record -> "dcim.site.deleted.v1".equals(record.event().eventType().value())));
+
+        assertThrows(IllegalArgumentException.class, () -> new FacilityCommandContext(ACTOR, CORR, "dcim-valid-100\n", "reason"));
+        assertThrows(IllegalArgumentException.class, () -> new FacilityCommandContext(ACTOR, CORR, "dcim-valid-100", "reason\n"));
     }
 
     private static FacilityNode active(FacilityNode node, String prefix, FacilityApplicationService app) {

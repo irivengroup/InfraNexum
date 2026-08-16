@@ -208,6 +208,91 @@ final class ConnectorRuntimeTest {
         assertNull(state.suspendedUntil());
     }
 
+    @Test
+    void remainingValidationBranchesAreCoveredIndependently() {
+        ConnectorKey key = new ConnectorKey("jira.prod");
+        DomainIdentifier id = ids().next();
+        String hash = "a".repeat(64);
+
+        assertThrows(IllegalArgumentException.class, () -> new ConnectorKey("a"));
+        assertThrows(IllegalArgumentException.class, () -> new ConnectorKey("abc$"));
+        assertThrows(IllegalArgumentException.class, () -> new ConnectorKey("jira.prod\n"));
+        assertEquals("jira.prod", key.toString());
+
+        assertThrows(NullPointerException.class, () -> new ConnectorWebhookEndpoint(key, null, "env:S", Duration.ofSeconds(1), true));
+        assertThrows(IllegalArgumentException.class, () -> new ConnectorWebhookEndpoint(key, "x".repeat(161), "env:S", Duration.ofSeconds(1), true));
+        assertThrows(IllegalArgumentException.class, () -> new ConnectorWebhookEndpoint(key, "bad\nname", "env:S", Duration.ofSeconds(1), true));
+        assertThrows(IllegalArgumentException.class, () -> new ConnectorWebhookEndpoint(key, "handler\n", "env:S", Duration.ofSeconds(1), true));
+        assertThrows(NullPointerException.class, () -> new ConnectorWebhookEndpoint(key, "handler", null, Duration.ofSeconds(1), true));
+        assertThrows(IllegalArgumentException.class, () -> new ConnectorWebhookEndpoint(key, "handler", "x".repeat(161), Duration.ofSeconds(1), true));
+        assertThrows(IllegalArgumentException.class, () -> new ConnectorWebhookEndpoint(key, "handler", "bad\nsecret", Duration.ofSeconds(1), true));
+        assertThrows(IllegalArgumentException.class, () -> new ConnectorWebhookEndpoint(key, "handler", "env:S", Duration.ofSeconds(-1), true));
+        assertThrows(IllegalArgumentException.class, () -> new ConnectorWebhookEndpoint(key, "handler", "env:S", Duration.ofMinutes(16), true));
+
+        assertThrows(NullPointerException.class, () -> new WebhookAdmission(null, key, "delivery-1", "{}", hash, NOW));
+        assertThrows(NullPointerException.class, () -> new WebhookAdmission(id, null, "delivery-1", "{}", hash, NOW));
+        assertThrows(NullPointerException.class, () -> new WebhookAdmission(id, key, null, "{}", hash, NOW));
+        assertThrows(IllegalArgumentException.class, () -> new WebhookAdmission(id, key, " ", "{}", hash, NOW));
+        assertThrows(IllegalArgumentException.class, () -> new WebhookAdmission(id, key, "x".repeat(201), "{}", hash, NOW));
+        assertThrows(IllegalArgumentException.class, () -> new WebhookAdmission(id, key, "delivery-1\n", "{}", hash, NOW));
+        assertThrows(NullPointerException.class, () -> new WebhookAdmission(id, key, "delivery-1", null, hash, NOW));
+        assertThrows(IllegalArgumentException.class, () -> new WebhookAdmission(id, key, "delivery-1", " ", hash, NOW));
+        assertThrows(IllegalArgumentException.class, () -> new WebhookAdmission(id, key, "delivery-1", "x".repeat(1_048_577), hash, NOW));
+        assertThrows(NullPointerException.class, () -> new WebhookAdmission(id, key, "delivery-1", "{}", null, NOW));
+        assertThrows(NullPointerException.class, () -> new WebhookAdmission(id, key, "delivery-1", "{}", hash, null));
+
+        assertThrows(NullPointerException.class, () -> new ConnectorDelivery(null, key, "delivery-1", "{}", hash, ConnectorDeliveryStatus.PENDING, 0, NOW, NOW, null, null, null, null, 0, null));
+        assertThrows(NullPointerException.class, () -> new ConnectorDelivery(id, null, "delivery-1", "{}", hash, ConnectorDeliveryStatus.PENDING, 0, NOW, NOW, null, null, null, null, 0, null));
+        assertThrows(IllegalArgumentException.class, () -> new ConnectorDelivery(id, key, " ", "{}", hash, ConnectorDeliveryStatus.PENDING, 0, NOW, NOW, null, null, null, null, 0, null));
+        assertThrows(IllegalArgumentException.class, () -> new ConnectorDelivery(id, key, "x".repeat(201), "{}", hash, ConnectorDeliveryStatus.PENDING, 0, NOW, NOW, null, null, null, null, 0, null));
+        assertThrows(IllegalArgumentException.class, () -> new ConnectorDelivery(id, key, "delivery-1\n", "{}", hash, ConnectorDeliveryStatus.PENDING, 0, NOW, NOW, null, null, null, null, 0, null));
+        assertThrows(IllegalArgumentException.class, () -> new ConnectorDelivery(id, key, "bad id", "{}", hash, ConnectorDeliveryStatus.PENDING, 0, NOW, NOW, null, null, null, null, 0, null));
+        assertThrows(NullPointerException.class, () -> new ConnectorDelivery(id, key, "delivery-1", null, hash, ConnectorDeliveryStatus.PENDING, 0, NOW, NOW, null, null, null, null, 0, null));
+        assertThrows(IllegalArgumentException.class, () -> new ConnectorDelivery(id, key, "delivery-1", " ", hash, ConnectorDeliveryStatus.PENDING, 0, NOW, NOW, null, null, null, null, 0, null));
+        assertThrows(IllegalArgumentException.class, () -> new ConnectorDelivery(id, key, "delivery-1", "x".repeat(1_048_577), hash, ConnectorDeliveryStatus.PENDING, 0, NOW, NOW, null, null, null, null, 0, null));
+        assertThrows(NullPointerException.class, () -> new ConnectorDelivery(id, key, "delivery-1", "{}", null, ConnectorDeliveryStatus.PENDING, 0, NOW, NOW, null, null, null, null, 0, null));
+        assertThrows(NullPointerException.class, () -> new ConnectorDelivery(id, key, "delivery-1", "{}", hash, null, 0, NOW, NOW, null, null, null, null, 0, null));
+        assertThrows(IllegalArgumentException.class, () -> new ConnectorDelivery(id, key, "delivery-1", "{}", hash, ConnectorDeliveryStatus.PENDING, 0, NOW, NOW, null, null, null, null, -1, null));
+        assertThrows(NullPointerException.class, () -> new ConnectorDelivery(id, key, "delivery-1", "{}", hash, ConnectorDeliveryStatus.PENDING, 0, null, NOW, null, null, null, null, 0, null));
+        assertThrows(NullPointerException.class, () -> new ConnectorDelivery(id, key, "delivery-1", "{}", hash, ConnectorDeliveryStatus.PENDING, 0, NOW, null, null, null, null, null, 0, null));
+        assertThrows(IllegalArgumentException.class, () -> new ConnectorDelivery(id, key, "delivery-1", "{}", hash, ConnectorDeliveryStatus.IN_FLIGHT, 0, NOW, NOW, "worker", null, null, null, 0, null));
+        assertThrows(IllegalArgumentException.class, () -> new ConnectorDelivery(id, key, "delivery-1", "{}", hash, ConnectorDeliveryStatus.PENDING, 0, NOW, NOW, "worker", NOW, null, null, 0, null));
+        assertThrows(IllegalArgumentException.class, () -> new ConnectorDelivery(id, key, "delivery-1", "{}", hash, ConnectorDeliveryStatus.PENDING, 0, NOW, NOW, null, null, null, "x".repeat(1_025), 0, null));
+        assertThrows(IllegalArgumentException.class, () -> new ConnectorDelivery(id, key, "delivery-1", "{}", hash, ConnectorDeliveryStatus.DEAD_LETTER, 1, NOW, NOW, null, null, null, "failed", 0, NOW));
+        assertEquals(ConnectorDeliveryStatus.IN_FLIGHT, new ConnectorDelivery(id, key, "delivery-1", "{}", hash, ConnectorDeliveryStatus.IN_FLIGHT, 1, NOW, NOW, "worker", NOW.plusSeconds(5), null, null, 0, null).status());
+        assertEquals(ConnectorDeliveryStatus.PROCESSED, new ConnectorDelivery(id, key, "delivery-1", "{}", hash, ConnectorDeliveryStatus.PROCESSED, 1, NOW, NOW, null, null, NOW, null, 1, NOW).status());
+
+        assertThrows(IllegalArgumentException.class, () -> new ConnectorDispatchReport(0, 0, -1, 0));
+        assertThrows(IllegalArgumentException.class, () -> new ConnectorDispatchReport(0, 0, 0, -1));
+        assertEquals(new ConnectorDispatchReport(3, 1, 1, 1), new ConnectorDispatchReport(3, 1, 1, 1));
+
+        assertThrows(NullPointerException.class, () -> new ConnectorRuntimeState(null, 0, null, null, null));
+        ConnectorRuntimeState suspended = new ConnectorRuntimeState(key, 1, NOW.plusSeconds(5), null, NOW);
+        assertThrows(NullPointerException.class, () -> suspended.suspendedAt(null));
+
+        ConnectorEndpointRegistry emptyRegistry = new ConnectorEndpointRegistry() {
+            @Override public Optional<ConnectorWebhookEndpoint> find(ConnectorKey connectorKey) { return Optional.empty(); }
+            @Override public Collection<ConnectorWebhookEndpoint> endpoints() { return List.of(); }
+        };
+        RetryPolicy retry = policy(1);
+        ConnectorRuntimeObserver observer = ConnectorRuntimeObserver.NOOP;
+        ConnectorInboxRepository inbox = new InMemoryConnectorInboxRepository();
+        assertThrows(NullPointerException.class, () -> new ConnectorInboxDispatcher(null, emptyRegistry, ignored -> null, observer, retry, CLOCK, "w", 1, Duration.ofSeconds(1), 1, Duration.ofSeconds(1)));
+        assertThrows(NullPointerException.class, () -> new ConnectorInboxDispatcher(inbox, null, ignored -> null, observer, retry, CLOCK, "w", 1, Duration.ofSeconds(1), 1, Duration.ofSeconds(1)));
+        assertThrows(NullPointerException.class, () -> new ConnectorInboxDispatcher(inbox, emptyRegistry, null, observer, retry, CLOCK, "w", 1, Duration.ofSeconds(1), 1, Duration.ofSeconds(1)));
+        assertThrows(NullPointerException.class, () -> new ConnectorInboxDispatcher(inbox, emptyRegistry, ignored -> null, null, retry, CLOCK, "w", 1, Duration.ofSeconds(1), 1, Duration.ofSeconds(1)));
+        assertThrows(NullPointerException.class, () -> new ConnectorInboxDispatcher(inbox, emptyRegistry, ignored -> null, observer, null, CLOCK, "w", 1, Duration.ofSeconds(1), 1, Duration.ofSeconds(1)));
+        assertThrows(NullPointerException.class, () -> new ConnectorInboxDispatcher(inbox, emptyRegistry, ignored -> null, observer, retry, null, "w", 1, Duration.ofSeconds(1), 1, Duration.ofSeconds(1)));
+        assertThrows(NullPointerException.class, () -> new ConnectorInboxDispatcher(inbox, emptyRegistry, ignored -> null, observer, retry, CLOCK, null, 1, Duration.ofSeconds(1), 1, Duration.ofSeconds(1)));
+        assertThrows(IllegalArgumentException.class, () -> new ConnectorInboxDispatcher(inbox, emptyRegistry, ignored -> null, observer, retry, CLOCK, "w", 1001, Duration.ofSeconds(1), 1, Duration.ofSeconds(1)));
+        assertThrows(NullPointerException.class, () -> new ConnectorInboxDispatcher(inbox, emptyRegistry, ignored -> null, observer, retry, CLOCK, "w", 1, null, 1, Duration.ofSeconds(1)));
+        assertThrows(IllegalArgumentException.class, () -> new ConnectorInboxDispatcher(inbox, emptyRegistry, ignored -> null, observer, retry, CLOCK, "w", 1, Duration.ofSeconds(1), 101, Duration.ofSeconds(1)));
+        assertThrows(NullPointerException.class, () -> new ConnectorInboxDispatcher(inbox, emptyRegistry, ignored -> null, observer, retry, CLOCK, "w", 1, Duration.ofSeconds(1), 1, null));
+
+        assertThrows(NullPointerException.class, () -> HmacSha256WebhookAuthenticator.signature(SECRET, NOW.getEpochSecond(), null));
+        assertThrows(WebhookAuthenticationException.class, () -> authenticator().verify(endpoint(true), Long.MAX_VALUE, "sha256=" + "0".repeat(64), new byte[] {1}));
+    }
+
     private static WebhookAdmissionOutcome admit(ConnectorWebhookService service, String externalId, String json) {
         byte[] payload = json.getBytes(StandardCharsets.UTF_8);
         return service.admit("jira.prod", externalId, NOW.getEpochSecond(),

@@ -1,3 +1,13 @@
+# InfraNexum 2.0.0-alpha.0.103 — hosted JDK25 qualification corrective
+
+`alpha.0.103` is a qualification corrective over `alpha.0.102`; it does **not** advance the roadmap. It closes the complete fail-at-end diagnostics exposed by the hosted JDK 25 run instead of stopping at the first reactor failure.
+
+The corrective repairs stale test contracts (`outboxSnapshot`, pagination imports, current Server composition signatures and immutable lambda fixtures), updates the capability snapshot guard to the authoritative 32-capability catalogue, restores the stable ITAM asset-not-found contract, and rejects raw ISO control characters **before** whitespace normalization in ITAM, DCIM, DDI and connector boundaries. DCIM update idempotency now fingerprints the complete mutation payload, preventing semantic reuse of one key with a different update. DDI parent/child prefixes are now actually composable: overlap detection excludes only the declared parent after containment validation, while sibling and unrelated overlap remain fail-closed.
+
+Coverage-oriented regression suites are expanded for Workers, RSOT, DCIM, DDI and Integrations without changing the JaCoCo 98 % lines/branches policy or adding exclusions. The deterministic JDBC Oracle fixture now supports void setter calls exposed after its missing `Duration` import was repaired. Exact hosted Temurin 25/Maven/JaCoCo and PostgreSQL 17/18 remain the formal qualification authority for PGM-10-E05.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.102 — CI closure and Web/UX consistency corrective
 
 `alpha.0.102` is a corrective over `alpha.0.101`; it does **not** advance the roadmap or add a provider connector. It closes the hosted-JDK defects exposed after the PGM-10-E05 runtime implementation and aligns the Web shell with the validated product ergonomics.

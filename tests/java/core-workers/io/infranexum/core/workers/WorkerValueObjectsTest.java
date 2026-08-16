@@ -153,6 +153,46 @@ final class WorkerValueObjectsTest {
     }
 
     @Test
+    void remainingWorkerContractBranchesStayExplicitlyGuarded() {
+        assertFalse(TaskStatus.PENDING.terminal());
+        assertFalse(TaskStatus.RUNNING.terminal());
+        assertTrue(TaskStatus.SUCCEEDED.terminal());
+        assertTrue(TaskStatus.FAILED.terminal());
+        assertTrue(TaskStatus.CANCELLED.terminal());
+
+        assertTrue(TaskCorrelationProvider.none().current().isEmpty());
+        assertEquals(0, new TaskHandlerRegistry(java.util.List.of()).size());
+        assertThrows(NullPointerException.class, () -> new TaskId(null));
+        assertThrows(NullPointerException.class, () -> id(1).compareTo(null));
+        assertThrows(NullPointerException.class, () -> TYPE.compareTo(null));
+        assertThrows(NullPointerException.class, () -> new TaskSubmissionResult(null, true));
+        assertThrows(NullPointerException.class, () -> TaskExecutionScopeFactory.TaskExecutionScope.require(null));
+        assertEquals(TaskExecutionScopeFactory.TaskExecutionScope.NOOP,
+                TaskExecutionScopeFactory.TaskExecutionScope.require(TaskExecutionScopeFactory.TaskExecutionScope.NOOP));
+
+        assertThrows(IllegalArgumentException.class, () -> new ShutdownReport(false, false, false, 1, Duration.ZERO));
+        assertThrows(IllegalArgumentException.class, () -> new ShutdownReport(true, true, true, 1, Duration.ZERO));
+        assertThrows(IllegalArgumentException.class, () -> new ShutdownReport(true, false, false, 1, Duration.ZERO));
+        assertThrows(IllegalArgumentException.class, () -> new ShutdownReport(false, true, false, 0, Duration.ZERO));
+        assertThrows(NullPointerException.class, () -> new ShutdownReport(false, true, false, 1, null));
+        assertThrows(IllegalArgumentException.class,
+                () -> new ShutdownReport(false, true, false, 1, Duration.ofNanos(-1)));
+
+        assertThrows(NullPointerException.class, () -> new TaskCheckpoint(1, null, START));
+        assertThrows(IllegalArgumentException.class, () -> new TaskCheckpoint(1, "x".repeat(4_097), START));
+        assertThrows(NullPointerException.class, () -> new TaskCheckpoint(1, "token", null));
+
+        assertThrows(NullPointerException.class, () -> new WorkerPoolConfiguration(
+                1, null, Duration.ofSeconds(2), Duration.ofMillis(100), Duration.ofSeconds(1)));
+        assertThrows(IllegalArgumentException.class, () -> new WorkerPoolConfiguration(
+                1, Duration.ofMillis(1), Duration.ofSeconds(-1), Duration.ofMillis(100), Duration.ofSeconds(1)));
+        assertThrows(IllegalArgumentException.class, () -> new WorkerPoolConfiguration(
+                1, Duration.ofMillis(1), Duration.ofSeconds(2), Duration.ofDays(31), Duration.ofSeconds(1)));
+        assertThrows(IllegalArgumentException.class, () -> new WorkerPoolConfiguration(
+                1, Duration.ofMillis(1), Duration.ofSeconds(2), Duration.ofMillis(100), Duration.ofDays(31)));
+    }
+
+    @Test
     void shutdownReportCannotClaimAFalseTermination() {
         ShutdownReport graceful = new ShutdownReport(true, false, true, 2, Duration.ZERO);
         ShutdownReport forcedIncomplete = new ShutdownReport(false, true, false, 2, Duration.ofSeconds(1));

@@ -11,6 +11,9 @@ public record FacilitySearchCriteria(DomainIdentifier organizationId, DomainIden
         DomainIdentifier parentId, FacilityStatus status, String countryCode, DomainIdentifier afterId, int limit) {
     public FacilitySearchCriteria {
         if (limit < 1 || limit > 200) throw new IllegalArgumentException("limit must be between 1 and 200");
+        if (countryCode != null && countryCode.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException("invalid countryCode filter");
+        }
         if (countryCode != null && !countryCode.isBlank()) {
             if (kind != FacilityKind.SITE) throw new IllegalArgumentException("countryCode filter is only valid for sites");
             countryCode = countryCode.strip().toUpperCase(Locale.ROOT);

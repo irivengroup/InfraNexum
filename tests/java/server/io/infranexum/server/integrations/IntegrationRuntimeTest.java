@@ -287,7 +287,7 @@ class IntegrationRuntimeTest {
     void controllerValidatesJsonTimestampPaginationAndOperatorContext() {
         ConnectorWebhookService webhooks = mock(ConnectorWebhookService.class);
         IntegrationOperationsService operations = mock(IntegrationOperationsService.class);
-        IntegrationController controller = new IntegrationController(webhooks, operations, new ObjectMapper(), CLOCK, properties());
+        IntegrationController controller = new IntegrationController(webhooks, operations, new ObjectMapper(), CLOCK, properties(Map.of()));
         ConnectorDelivery admitted = delivery(30, ConnectorDeliveryStatus.PENDING, 0, null, 0, null);
         when(webhooks.admit(eq(KEY.value()), eq("delivery-30"), eq(NOW.getEpochSecond()), eq("sha256=abc"), any(byte[].class)))
                 .thenReturn(new WebhookAdmissionOutcome(admitted, false));

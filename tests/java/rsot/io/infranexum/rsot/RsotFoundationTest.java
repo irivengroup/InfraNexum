@@ -283,6 +283,39 @@ class RsotFoundationTest {
         assertEquals(InitialRsotGovernance.contextMap(), service.contextMap());
     }
 
+
+    @Test
+    void remainingPublicAccessorsAndOrganizationScopedQueriesStayCovered() {
+        CanonicalLifecycle lifecycle = new CanonicalLifecycle(
+                CanonicalObjectStatus.VALIDATED, " certified ", NOW, NOW.plusSeconds(60), null, null);
+        CanonicalObject object = object(70, lifecycle);
+        assertEquals("1.0.0", object.schemaVersion());
+        assertEquals(NOW, object.createdAt());
+        assertEquals(NOW, object.updatedAt());
+        assertEquals("certified", object.lifecycle().statusReason());
+        assertEquals(NOW.plusSeconds(60), object.lifecycle().effectiveUntil());
+
+        InMemoryRepository repository = new InMemoryRepository();
+        repository.objects.add(object);
+        repository.objects.add(new CanonicalObject(
+                id(71), "rsot.asset", 1, id(999), "1.0.0", lifecycle, NOW, NOW));
+        RsotQueryService query = new RsotQueryService(repository);
+        assertEquals(List.of(object), query.list(ORG, 0, 200, false));
+        assertEquals(List.of(object), query.list(ORG, 0, 200, true));
+        assertThrows(NullPointerException.class, () -> query.list(null, 0, 1, false));
+        assertThrows(IllegalArgumentException.class, () -> query.list(ORG, -1, 1, false));
+        assertThrows(IllegalArgumentException.class, () -> query.list(ORG, 0, 0, false));
+
+        AuthorityMatrixEntry row = InitialRsotGovernance.authorityMatrix().getFirst();
+        assertEquals(1, row.position());
+        assertFalse(row.rsotContribution().isBlank());
+        assertFalse(row.conflictStrategy().isBlank());
+        ContextRelationship relation = InitialRsotGovernance.contextMap().getFirst();
+        assertEquals(1, relation.position());
+        assertFalse(relation.contribution().isBlank());
+        assertEquals(9, AuthorityContext.values().length);
+    }
+
     private static CanonicalObject object(int seed, CanonicalLifecycle lifecycle) {
         return new CanonicalObject(id(seed), "RSOT.Asset", 1, ORG, "1.0.0", lifecycle, NOW, NOW);
     }

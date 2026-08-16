@@ -9,6 +9,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.infranexum.core.audit.AuditScope;
 import io.infranexum.core.audit.InMemoryAppendOnlyAuditJournal;
 import io.infranexum.core.contracts.DomainIdentifier;
+import io.infranexum.core.contracts.OffsetPage;
+import io.infranexum.core.contracts.PaginationConstraints;
 import io.infranexum.core.contracts.UuidV7Generator;
 import io.infranexum.core.events.InMemoryEventStore;
 import io.infranexum.identity.access.application.IdentityAccessAdminService;

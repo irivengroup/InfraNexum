@@ -215,10 +215,10 @@ class LocalAuthenticationServiceTest {
         assertThrows(RuntimeException.class, () -> service.changePassword(validated, current, weak));
         assertTrue(allZero(current)); assertTrue(allZero(weak));
 
-        current = "Bootstrap-Password!Aa1".toCharArray();
+        char[] validCurrent = "Bootstrap-Password!Aa1".toCharArray();
         char[] next = "New-Secure-Password!Aa1".toCharArray();
-        AuthenticatedSession replacement = service.changePassword(validated, current, next);
-        assertTrue(allZero(current)); assertTrue(allZero(next));
+        AuthenticatedSession replacement = service.changePassword(validated, validCurrent, next);
+        assertTrue(allZero(validCurrent)); assertTrue(allZero(next));
         assertEquals(account.securityEpoch() + 1, replacement.account().securityEpoch());
         assertFalse(replacement.account().mustChange());
         assertThrows(LocalSessionException.class, () -> service.validate(authenticated.bearerToken()));
