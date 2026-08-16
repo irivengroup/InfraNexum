@@ -27,12 +27,12 @@ class PlatformCapabilityPropertiesTest {
                 Set.of("iam.ldap", "deployment.split_web"),
                 Map.of("iam.ldap", DependencyStatus.OPERATIONAL),
                 ActivationState.ACTIVE,
-                " 2.0.0-draft.20 ",
+                " 2.0.0-draft.21 ",
                 3,
                 Map.of("iam.users.max", 1_000L));
         var environment = properties.toEnvironment();
         assertEquals(InstallationProfile.PRO, environment.profile());
-        assertEquals("2.0.0-draft.20", environment.catalogVersion());
+        assertEquals("2.0.0-draft.21", environment.catalogVersion());
         assertEquals(3, environment.profileVersion());
         assertEquals(1_000L, properties.quotaOverrides().get("iam.users.max"));
     }

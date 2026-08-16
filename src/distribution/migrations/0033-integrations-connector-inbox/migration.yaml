@@ -1,0 +1,27 @@
+schema: infranexum.migration/v1
+id: '0033'
+name: integrations-connector-inbox
+owner_context: integrations
+dependencies:
+- '0032'
+preconditions:
+- core-schema-history-created
+- core-transactional-events-created
+postconditions:
+- connector-inbox-created
+- connector-dlq-created
+- connector-runtime-suspension-created
+recovery: rerun-idempotent-ddl-after-correcting-database-connectivity
+rollback: drops-only-connector-inbox-dlq-and-runtime-state
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 45
+checksums:
+  postgresql.sql: 6d5e7a0e178c5d6a16a36e36b9327f109821975e0f0f69e19e000122026630e0
+  oracle.sql: 01e741b4d6edbf2ce56c6e3ab3cfbe4376f8034dc12368e9ad0967bc81cb0411
+  rollback/postgresql.sql: 2379490bd520d53dde3000b526f91760f3b5aa2954e959d502578c4fb8efe3cc
+  rollback/oracle.sql: 324aab9de0b129655925bf6a43f94872bfeae51901c0492c4fd1ea403ea62ca9
+  logical-model.json: 507ddd693e52c6297d560e60edbbaad6b29b8b9055b6182cd4f610e241552fe5
+  verify.sql.yaml: a33bc77f5b8308021212cdbc0f09956e7ec581c6a2285651d0e7cdf67b9ea1fb

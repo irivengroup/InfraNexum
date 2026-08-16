@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 class PlatformCapabilityServiceTest {
     @Test
     void publishesOneImmutableStartupSnapshotAndQuotaPlan() {
-        String version = "2.0.0-draft.20";
+        String version = "2.0.0-draft.21";
         var environment = new CapabilityEnvironment(
                 InstallationProfile.LITE, AllocationTier.STANDARD, InstallationTopology.SINGLE_NODE,
                 Set.of(DeploymentRole.SERVER, DeploymentRole.WEB), Set.of(),
@@ -48,7 +48,7 @@ class PlatformCapabilityServiceTest {
     }
     @Test
     void remainsUnavailableUntilTheAuthoritativeEntitlementDecisionAndThenRefreshesAtomically() {
-        String version = "2.0.0-draft.20";
+        String version = "2.0.0-draft.21";
         var properties = new PlatformCapabilityProperties(
                 InstallationProfile.PRO,
                 AllocationTier.STANDARD,

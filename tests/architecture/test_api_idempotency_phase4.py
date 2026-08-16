@@ -40,7 +40,7 @@ class ApiIdempotencyPhase4ArchitectureTest(unittest.TestCase):
         self.assertIn("INFRANEXUM_IDEMPOTENCY_CONFLICT", filter_source)
         self.assertIn("INFRANEXUM_IDEMPOTENCY_INDETERMINATE", filter_source)
         required = set(re.findall(r'rule\("([A-Za-z0-9]+)"', policy))
-        self.assertEqual(32, len(required))
+        self.assertEqual(34, len(required))
         self.assertIn("createIamUser", required)
         self.assertIn("deprecateRsotSchemaProfile", required)
 

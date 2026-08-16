@@ -1,5 +1,5 @@
 schema: infranexum.migration-catalogue/v1
-version: 1.31.0
+version: 1.33.0
 entries:
 - id: '0001'
   path: 0001-core-schema-history/migration.yaml
@@ -65,3 +65,7 @@ entries:
   path: 0031-identity-access-ddi-ipam-permissions/migration.yaml
 - id: '0032'
   path: 0032-core-api-idempotency/migration.yaml
+- id: '0033'
+  path: 0033-integrations-connector-inbox/migration.yaml
+- id: '0034'
+  path: 0034-identity-access-integrations-permissions/migration.yaml

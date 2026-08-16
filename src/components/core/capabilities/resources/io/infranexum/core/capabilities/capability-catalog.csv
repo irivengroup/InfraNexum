@@ -9,6 +9,7 @@ itam.compliance,lite;pro;enterprise,server,single-node;split-web;high-availabili
 dcim.facilities,lite;pro;enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,,false
 dcim.physical,lite;pro;enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,,false
 ddi.ipam,lite;pro;enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,,false
+integrations.connectors,pro;enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,,true
 agent.enabled,enterprise,agent,distributed-sites;regional;multi-region,,true
 automation.multi_region,enterprise,server,regional;multi-region,,true
 database.oracle,enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,oracle-backend,true

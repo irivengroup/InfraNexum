@@ -1,11 +1,12 @@
 {
   "schema": "infranexum.source-baseline/v1",
   "product": "InfraNexum — Infrastructure Control & Governance Platform",
-  "implementation_version": "2.0.0-alpha.0.100",
+  "implementation_version": "2.0.0-alpha.0.101",
   "architecture_baseline": "2.0.0-draft.21",
   "roadmap_baseline": "2.0.0-draft.21",
   "architecture_archive_sha256": "372cf19929f8ea3b7586c3af3e7c5004e590cf746ff2d6d59d4d0b88912aea64",
   "implemented_scope": [
+    "PGM-10-E05 phase 2 alpha.0.101: provider-neutral durable connector runtime with HMAC-authenticated bounded JSON webhook admission, external-only env/file secret references and startup fail-closed validation; durable PostgreSQL/Oracle inbox keyed by connector+delivery-id with semantic-drift conflict detection and raw authenticated payload preservation; bounded SKIP LOCKED leasing, at-least-once dispatch, retry/backoff/jitter, DLQ and automatic suspension; RBAC/audited DLQ list/replay, connector runtime read/resume, replay without implicit resume; low-cardinality Micrometer backlog/DLQ/admission/rejection/processing/replay/suspension metrics; migrations 0033/0034; dedicated OpenAPI connector-signature and connector-delivery governance. Implementation is complete for phase 2, but formal PGM-10-E05 delivery remains gated on exact JDK25 Maven/JaCoCo and live PostgreSQL 17/18 CI execution.",
     "PGM-10-E05 phase 1 alpha.0.100: versioned Python 3.13 connector SDK 1.0.0 with object-oriented Connector contract, strict infranexum.connector-manifest/v1 JSON/schema semantics, offline non-importing certification, canonical SHA-256 fingerprints, deeply immutable validated manifests, explicit provider/capability/permission/secret-name/HTTPS-egress/authority/data-classification/delivery/limits/support governance, future-SDK compatibility rejection, and bounded HMAC-SHA256 webhook signing/verification plus local-only replay guard. Dedicated CI builds/imports the wheel and enforces >=98% branch-aware coverage. No provider connector, Server route, migration or credential persistence is introduced; durable webhook admission, connector inbox/DLQ, audited controlled replay and runtime metrics remain PGM-10-E05 phase 2.",
     "Web/UX corrective alpha.0.99: enterprise list-first CRUD navigation across IAM/RSOT/ITAM/DCIM/DDI; sortable DataTables with contextual Actions, dedicated create/edit/lifecycle editor views and automatic return to list after success; confirmation for user-initiated deletion; restrained continuous table headers and IAM tab visual parity; topbar environment duplication removed; accepted login product-promise proportions restored; DOCUMENTATION sidebar section adds Swagger/ReDoc over a deterministic generated OpenAPI projection. PGM-05-E01 remains delivered with API debt 0/0/0/0; no business epic, API route, migration or authorization contract is added.",
     "PGM-05-E01 phase 5 alpha.0.98: epic delivered; the canonical Server API surface now contains 14 OpenAPI 3.1 fragments / 174 operations including Platform Runtime build/capability/quota routes; every operation has a registry-backed capability and structured authorization mode, the API ratchet is fully closed at idempotency=0, pagination=0, capability=0, permission=0, ApiCapabilityFilter enforces installed capabilities fail-closed at runtime while platform.bootstrap preserves non-circular bootstrap diagnostics, and deterministic product-complete plus installation-effective OpenAPI contracts are generated from the same canonical fragments. The roadmap exit gate is satisfied and PGM-10-E05 is unblocked.",
@@ -99,7 +100,7 @@
   ],
   "roadmap_archive_sha256": "11db7d27bbc79f688cd1fda31a24aaf31b56a56db36b6487b64154c148ab54d3",
   "engineering_governance_sha256": "f24357051a5401f598c3d77bbe5814d3759a176095537659243658ba3ff109c7",
-  "runtime_validation_note": "alpha.0.100 starts PGM-10-E05 phase 1. Executed locally: Connector SDK 19/19 at 99% branch-aware coverage, reproducible double-wheel build/import and packaged schema resource loaded from the built wheel; API Contracts 45/45 at 99%, 14 fragments / 174 operations, debt 0/0/0/0; Source Integrity 45/45 at 100% and zero checker violations; Architecture-as-Code PASS; Toolchains 25/25 at 99%; Migrations 114/114 at 99%; Eventing 10/10 at 100%; Persistence 12/12 at 98%; Capabilities 10/10 at 99%; Entitlements 10/10 at 100%; Audit 8/8 at 100%; Compose 64/64; Web 189/189 at 99.73% lines / 98.53% branches / 100% functions plus smoke; Java offline contract/eventing/JDBC/capability/entitlement/ITAM/DCIM/DDI/policy smokes exit zero. Full instrumented Architecture timed out after 14 tests with no observed assertion failure. Exact JDK25 Maven verification, Go1.26.5 Agent gate, Node24/pnpm exact gate, Docker/pwsh and browser runtime remain external/unavailable locally.",
+  "runtime_validation_note": "alpha.0.101 implements PGM-10-E05 phase 2: authenticated durable webhook admission, PostgreSQL/Oracle connector inbox and DLQ, controlled RBAC/audited replay and resume, bounded retries/automatic suspension, and per-connector metrics. Executed locally: Connector SDK 19/19 package gate; API Contracts 46/46 at 99%, 15 fragments / 179 operations, debt 0/0/0/0; directly affected Architecture 35/35 plus Architecture-as-Code PASS; Migrations 114/114 and zero checker violations; Capabilities 10/10 with 32 capabilities / 119 quotas; Compose 64/64; Web 189/189 at 99.73% lines / 98.53% branches / 100% functions plus smoke; affected Java offline integrations/eventing/JDBC/audit/entitlement/ITAM/DCIM/DDI/policy/capability smokes exit zero and affected domain/JDBC sources compile strictly on Java 21. Exact JDK25 Maven/JUnit/JaCoCo and live PostgreSQL 17/18 integration tests, Go1.26.5 Agent, exact Node24/pnpm11, Docker/pwsh and browser runtime remain unavailable locally; full instrumented Architecture is not claimed as completed.",
   "server_contract_stabilization_alpha085": "EXECUTED_15_OF_15_TARGETED_DCIM_DDI_TEXT_BLOCK_AND_REPOSITORY_COMPOSITION_REGRESSIONS_PASS_JDBC_REPOSITORY_CONSTRUCTOR_ARITY_SCAN_ZERO_MISMATCHES",
   "maven_target_jdk25_alpha085": "NON_EXECUTED_LOCAL_JDK21_0_11_TARGET_TEMURIN25_0_4_DOWNLOAD_FAILED_DNS_GITHUB_COM_OPERATOR_DOCKER_REVALIDATION_REQUIRED",
   "docker_runtime_alpha085": "NON_EXECUTED_LOCAL_DOCKER_AND_PWSH_UNAVAILABLE_OPERATOR_PRO_UP_SMOKE_HA_SMOKE_REQUIRED",
@@ -133,7 +134,8 @@
   "archive_compatibility_alpha086": "EXECUTED_CANDIDATE_GIT_ARCHIVE_ZERO_VIOLATIONS_AND_GIT_ARCHIVE_PARITY",
   "implemented_features": [
     "alpha.0.87 premium admin UX corrective: end-to-end Bootstrap 5.3.6 administration template from login through all published workspaces; IONOS-inspired midnight/blue/cyan/orange visual hierarchy; responsive mobile navigation drawer; governed select cascades auto-populate and authorized empty selects remain operable; shared async mutation/filter form controller adds native/Bootstrap validation, duplicate-submit protection, busy semantics and deterministic error feedback; no new business epic, migration, public API or authorization contract change.",
-    "alpha.0.100 PGM-10-E05 phase 1: Python connector SDK v1, strict versioned manifest and offline certification, HMAC-SHA256 webhook primitives, dedicated >=98% coverage/package CI; runtime webhook inbox/DLQ/replay/metrics deliberately remain the next phase of the same epic."
+    "alpha.0.100 PGM-10-E05 phase 1: Python connector SDK v1, strict versioned manifest and offline certification, HMAC-SHA256 webhook primitives, dedicated >=98% coverage/package CI; runtime webhook inbox/DLQ/replay/metrics deliberately remain the next phase of the same epic.",
+    "alpha.0.101 PGM-10-E05 phase 2: durable provider-neutral webhook/inbox/DLQ runtime, controlled audited replay/resume, bounded retries/suspension, connector metrics, PostgreSQL/Oracle migrations and zero-debt OpenAPI integration; exact target JDK25/live PostgreSQL promotion gates remain pending."
   ],
   "source_integrity_prepack_alpha088": "EXECUTED_45_OF_45_100_PERCENT_ZERO_VIOLATIONS_CANONICAL_INVENTORY_1217_PATHS",
   "packaging_tracked_files_alpha088": 1219,
@@ -212,5 +214,28 @@
   "source_integrity_prepack_alpha100": "EXECUTED_45_OF_45_100_PERCENT_ZERO_VIOLATIONS_CANONICAL_INVENTORY_1282_PATHS",
   "source_integrity_alpha100": "EXECUTED_45_OF_45_100_PERCENT_STAGED_SNAPSHOT_1285_TRACKED_PATHS_1284_GIT_BLOB_CHECKSUMS_1282_CANONICAL_INVENTORY_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
   "archive_compatibility_unit_alpha100": "EXECUTED_12_OF_12_100_PERCENT",
-  "archive_compatibility_alpha100": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS_GIT_ARCHIVE_PARITY"
+  "archive_compatibility_alpha100": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS_GIT_ARCHIVE_PARITY",
+  "pgm10e05_alpha101": "IN_PROGRESS_PHASE2_IMPLEMENTED_DURABLE_WEBHOOK_INBOX_DLQ_REPLAY_RESUME_METRICS_TARGET_JDK25_LIVE_POSTGRES_VALIDATION_PENDING",
+  "api_contracts_alpha101": "EXECUTED_46_OF_46_99_PERCENT_15_FRAGMENTS_179_OPERATIONS_ZERO_VIOLATIONS_DEBT_0_0_0_0",
+  "architecture_targeted_alpha101": "EXECUTED_35_OF_35_DIRECTLY_AFFECTED_PLUS_ARCHITECTURE_AS_CODE_PASS",
+  "architecture_global_alpha101": "NON_EXECUTED_TO_COMPLETION_GLOBAL_INSTRUMENTED_RUNNER_NOT_CLAIMED_AS_PASS",
+  "migration_alpha101": "EXECUTED_114_OF_114_ZERO_VIOLATIONS_MIGRATIONS_0033_0034_POSTGRESQL_ORACLE",
+  "capabilities_alpha101": "EXECUTED_10_OF_10_32_CAPABILITIES_119_QUOTAS_INTEGRATIONS_CONNECTORS_PRO_ENTERPRISE",
+  "compose_contract_alpha101": "EXECUTED_64_OF_64",
+  "web_local_runtime_alpha101": "EXECUTED_LOCAL_NODE22_16_0_189_OF_189_LINE99_73_BRANCH98_53_FUNCTION100_PROCESS_SMOKE_PASS_TARGET_NODE24_18_1_PNPM11_17_0_PENDING",
+  "connector_sdk_alpha101": "EXECUTED_19_OF_19_PACKAGE_GATE_SDK1_0_0_PRESERVED",
+  "java_offline_smokes_alpha101": "EXECUTED_INTEGRATIONS_EVENTING_JDBC_AUDIT_ENTITLEMENT_ITAM_DCIM_DDI_POLICY_CAPABILITY_TARGETS_EXIT_ZERO_LOCAL_JAVA21",
+  "maven_target_jdk25_alpha101": "NON_EXECUTED_LOCAL_JAVA21_TARGET_TEMURIN25_0_4_PLUS_7_REQUIRED",
+  "postgresql_live_alpha101": "NON_EXECUTED_LOCAL_TARGET_POSTGRESQL17_18_TESTS_DEFINED_AND_CI_WIRED",
+  "agent_target_go1265_alpha101": "NON_EXECUTED_TARGET_GO1_26_5_AUTO_TOOLCHAIN_DOWNLOAD_BLOCKED_LOCAL_GO1_23_2",
+  "web_target_node24_alpha101": "NON_EXECUTED_LOCAL_NODE22_16_0_TARGET_NODE24_18_1_PNPM11_17_0_REQUIRED",
+  "docker_runtime_alpha101": "NON_EXECUTED_LOCAL_DOCKER_PWSH_UNAVAILABLE_OPERATOR_DOCKER_DESKTOP_PRO_UP_SMOKE_HA_SMOKE_REQUIRED",
+  "roadmap_next_alpha101": "CLOSE_PGM10E05_AFTER_TARGET_CI_THEN_START_NEXT_DEPENDENCY_ELIGIBLE_ROADMAP_INCREMENT",
+  "source_inventory_paths_alpha101": 1340,
+  "packaging_tracked_files_alpha101": 1343,
+  "git_blob_checksums_alpha101": 1342,
+  "source_integrity_prepack_alpha101": "EXECUTED_45_OF_45_100_PERCENT_ZERO_VIOLATIONS_CANONICAL_INVENTORY_1340_PATHS",
+  "source_integrity_alpha101": "EXECUTED_45_OF_45_100_PERCENT_STAGED_SNAPSHOT_1343_TRACKED_PATHS_1342_GIT_BLOB_CHECKSUMS_1340_CANONICAL_INVENTORY_ZERO_VIOLATIONS",
+  "archive_compatibility_unit_alpha101": "EXECUTED_12_OF_12_100_PERCENT",
+  "archive_compatibility_alpha101": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS_AND_POST_EXTRACTION_SOURCE_INTEGRITY_ZERO_VIOLATIONS"
 }

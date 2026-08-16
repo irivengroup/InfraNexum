@@ -29,6 +29,7 @@ public final class LocalAuthenticationFilter extends OncePerRequestFilter implem
     private static final String API_PREFIX = "/api/v1/";
     private static final String AUTH_PREFIX = "/api/v1/iam/local-auth";
     private static final String PUBLIC_BUILD_PATH = "/api/v1/system/build";
+    private static final String WEBHOOK_PREFIX = "/api/v1/integrations/webhooks/";
     private static final Set<String> SAFE_METHODS = Set.of("GET", "HEAD", "OPTIONS");
 
     private final LocalAuthenticationService service;
@@ -47,7 +48,7 @@ public final class LocalAuthenticationFilter extends OncePerRequestFilter implem
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return !path.startsWith(API_PREFIX) || path.equals(AUTH_PREFIX) || path.startsWith(AUTH_PREFIX + "/") || PUBLIC_BUILD_PATH.equals(path);
+        return !path.startsWith(API_PREFIX) || path.equals(AUTH_PREFIX) || path.startsWith(AUTH_PREFIX + "/") || PUBLIC_BUILD_PATH.equals(path) || path.startsWith(WEBHOOK_PREFIX);
     }
 
     @Override

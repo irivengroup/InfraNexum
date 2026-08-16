@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum — Product API
-  version: 2.0.0-alpha.0.100
+  version: 2.0.0-alpha.0.101
   description: Generated complete product contract; installation availability remains capability-gated.
 servers:
 - url: /
@@ -21,6 +21,12 @@ tags:
 - name: IAM / Access / Groups
 - name: IAM / Access / Roles
 - name: IAM / Access / Permissions
+- name: Integrations / Connectors / Webhooks
+  description: Authenticated connector webhook admission into the durable inbox.
+- name: Integrations / Connectors / Dead Letter Queue
+  description: Operational dead-letter inspection and controlled replay.
+- name: Integrations / Connectors / Runtime
+  description: Connector runtime health, suspension state and operator recovery.
 - name: ITAM / Assets
   description: Organization-governed asset lifecycle with append-only chain of custody.
 - name: ITAM / Compliance
@@ -73,6 +79,11 @@ x-tagGroups:
   - ITAM / Assets
   - ITAM / Compliance
   - ITAM / Partners
+- name: Integrations
+  tags:
+  - Integrations / Connectors / Webhooks
+  - Integrations / Connectors / Dead Letter Queue
+  - Integrations / Connectors / Runtime
 - name: Platform
   tags:
   - Platform / Entitlements / Evaluation
@@ -90,6 +101,7 @@ x-infranexum-generated-from:
 - ddi-ipam.yaml
 - identity-access-policy.yaml
 - identity-access-rbac.yaml
+- integrations-connectors.yaml
 - itam-assets.yaml
 - itam-compliance.yaml
 - itam-partners.yaml
@@ -3972,6 +3984,241 @@ paths:
         code: iam.permission.delete
       security:
       - LocalSessionCookie: []
+  /api/v1/integrations/webhooks/{connectorKey}:
+    parameters:
+    - $ref: '#/components/parameters/integrations-connectors__CorrelationId'
+    - $ref: '#/components/parameters/integrations-connectors__ConnectorKey'
+    post:
+      tags:
+      - Integrations / Connectors / Webhooks
+      operationId: admitConnectorWebhook
+      summary: Authenticate and durably admit a connector webhook delivery
+      security:
+      - WebhookHmac: []
+      parameters:
+      - $ref: '#/components/parameters/integrations-connectors__ConnectorDeliveryId'
+      - $ref: '#/components/parameters/integrations-connectors__WebhookTimestamp'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - type: object
+                additionalProperties: true
+              - type: array
+                items: {}
+      responses:
+        '202':
+          description: Delivery admitted or recognized as an identical duplicate.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/integrations-connectors__CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/integrations-connectors__NoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/integrations-connectors__WebhookAdmission'
+        '400':
+          $ref: '#/components/responses/integrations-connectors__BadRequest'
+        '401':
+          $ref: '#/components/responses/integrations-connectors__Unauthorized'
+        '404':
+          $ref: '#/components/responses/integrations-connectors__NotFound'
+        '409':
+          $ref: '#/components/responses/integrations-connectors__Conflict'
+        '415':
+          $ref: '#/components/responses/integrations-connectors__UnsupportedMediaType'
+        '503':
+          $ref: '#/components/responses/integrations-connectors__ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: connector-signature
+      x-infranexum-idempotency: connector-delivery
+  /api/v1/integrations/dlq:
+    get:
+      tags:
+      - Integrations / Connectors / Dead Letter Queue
+      operationId: listConnectorDeadLetters
+      summary: List connector deliveries in the dead-letter queue
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/integrations-connectors__CorrelationId'
+      - $ref: '#/components/parameters/integrations-connectors__OptionalConnectorKey'
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 1000000
+          default: 0
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+      responses:
+        '200':
+          description: Bounded dead-letter page. Payload bodies are deliberately excluded.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/integrations-connectors__CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/integrations-connectors__NoStore'
+            X-Page-Limit:
+              $ref: '#/components/headers/integrations-connectors__PageLimit'
+            X-Next-Offset:
+              $ref: '#/components/headers/integrations-connectors__NextOffset'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/integrations-connectors__DeadLetter'
+        '400':
+          $ref: '#/components/responses/integrations-connectors__BadRequest'
+        '401':
+          $ref: '#/components/responses/integrations-connectors__Unauthorized'
+        '403':
+          $ref: '#/components/responses/integrations-connectors__Forbidden'
+        '503':
+          $ref: '#/components/responses/integrations-connectors__ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.dlq.read
+      x-infranexum-pagination: offset
+  /api/v1/integrations/dlq/{deliveryId}/replay:
+    post:
+      tags:
+      - Integrations / Connectors / Dead Letter Queue
+      operationId: replayConnectorDeadLetter
+      summary: Requeue one dead-letter delivery for controlled replay
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/integrations-connectors__CorrelationId'
+      - $ref: '#/components/parameters/integrations-connectors__DeliveryId'
+      - $ref: '#/components/parameters/integrations-connectors__IdempotencyKey'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/integrations-connectors__ReasonRequest'
+      responses:
+        '200':
+          description: Delivery requeued as pending.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/integrations-connectors__CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/integrations-connectors__NoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/integrations-connectors__DeadLetter'
+        '400':
+          $ref: '#/components/responses/integrations-connectors__BadRequest'
+        '401':
+          $ref: '#/components/responses/integrations-connectors__Unauthorized'
+        '403':
+          $ref: '#/components/responses/integrations-connectors__Forbidden'
+        '404':
+          $ref: '#/components/responses/integrations-connectors__NotFound'
+        '409':
+          $ref: '#/components/responses/integrations-connectors__Conflict'
+        '503':
+          $ref: '#/components/responses/integrations-connectors__ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.dlq.replay
+      x-infranexum-idempotency: required
+  /api/v1/integrations/connectors/{connectorKey}/runtime:
+    get:
+      tags:
+      - Integrations / Connectors / Runtime
+      operationId: getConnectorRuntimeState
+      summary: Read connector processing and suspension state
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/integrations-connectors__CorrelationId'
+      - $ref: '#/components/parameters/integrations-connectors__ConnectorKey'
+      responses:
+        '200':
+          description: Connector runtime state and durable queue gauges.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/integrations-connectors__CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/integrations-connectors__NoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/integrations-connectors__RuntimeState'
+        '400':
+          $ref: '#/components/responses/integrations-connectors__BadRequest'
+        '401':
+          $ref: '#/components/responses/integrations-connectors__Unauthorized'
+        '403':
+          $ref: '#/components/responses/integrations-connectors__Forbidden'
+        '503':
+          $ref: '#/components/responses/integrations-connectors__ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.connector.read
+  /api/v1/integrations/connectors/{connectorKey}/resume:
+    post:
+      tags:
+      - Integrations / Connectors / Runtime
+      operationId: resumeConnector
+      summary: Explicitly clear a connector runtime suspension
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/integrations-connectors__CorrelationId'
+      - $ref: '#/components/parameters/integrations-connectors__ConnectorKey'
+      - $ref: '#/components/parameters/integrations-connectors__IdempotencyKey'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/integrations-connectors__ReasonRequest'
+      responses:
+        '200':
+          description: Connector runtime state after explicit resume.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/integrations-connectors__CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/integrations-connectors__NoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/integrations-connectors__RuntimeState'
+        '400':
+          $ref: '#/components/responses/integrations-connectors__BadRequest'
+        '401':
+          $ref: '#/components/responses/integrations-connectors__Unauthorized'
+        '403':
+          $ref: '#/components/responses/integrations-connectors__Forbidden'
+        '503':
+          $ref: '#/components/responses/integrations-connectors__ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.connector.resume
+      x-infranexum-idempotency: required
   /api/v1/itam/assets:
     parameters:
     - $ref: '#/components/parameters/itam-assets__CorrelationId'
@@ -7387,6 +7634,15 @@ components:
       type: apiKey
       in: cookie
       name: INX_SESSION
+    integrations-connectors__LocalSessionCookie:
+      type: apiKey
+      in: cookie
+      name: INX_SESSION
+    integrations-connectors__WebhookHmac:
+      type: apiKey
+      in: header
+      name: X-InfraNexum-Webhook-Signature
+      description: HMAC-SHA256 over `<epoch-second>.<raw-body>`, paired with X-InfraNexum-Webhook-Timestamp.
     itam-assets__LocalSessionCookie:
       type: apiKey
       in: cookie
@@ -7651,6 +7907,77 @@ components:
         minLength: 8
         maxLength: 200
         pattern: ^[A-Za-z0-9._:-]+$
+    integrations-connectors__CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: false
+      description: Optional canonical lowercase RFC 9562 UUIDv7 correlation identifier.
+      schema:
+        $ref: '#/components/schemas/integrations-connectors__UuidV7'
+    integrations-connectors__ConnectorKey:
+      name: connectorKey
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/integrations-connectors__ConnectorKey'
+    integrations-connectors__OptionalConnectorKey:
+      name: connectorKey
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/integrations-connectors__ConnectorKey'
+    integrations-connectors__DeliveryId:
+      name: deliveryId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/integrations-connectors__UuidV7'
+    integrations-connectors__ConnectorDeliveryId:
+      name: X-InfraNexum-Delivery-ID
+      in: header
+      required: true
+      description: Provider delivery identifier. Reuse with a different payload hash returns HTTP 409.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 200
+        pattern: ^[A-Za-z0-9._:-]+$
+    integrations-connectors__WebhookTimestamp:
+      name: X-InfraNexum-Webhook-Timestamp
+      in: header
+      required: true
+      description: Unix epoch seconds included in the HMAC canonical bytes and checked against endpoint clock skew.
+      schema:
+        type: string
+        pattern: ^[0-9]{1,12}$
+    integrations-connectors__IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Caller-generated retry key scoped to the authenticated actor and operation.
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 200
+        pattern: ^[A-Za-z0-9._:-]+$
+    integrations-connectors__Offset:
+      name: offset
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        maximum: 1000000
+        default: 0
+    integrations-connectors__Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
     itam-assets__CorrelationId:
       name: X-Correlation-ID
       in: header
@@ -10849,6 +11176,190 @@ components:
           pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
           description: Compatibility trace identifier equal to correlation_id.
       additionalProperties: false
+    integrations-connectors__UuidV7:
+      type: string
+      format: uuid
+      pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+    integrations-connectors__ConnectorKey:
+      type: string
+      minLength: 3
+      maxLength: 80
+      pattern: ^[a-z0-9][a-z0-9._-]{2,79}$
+    integrations-connectors__WebhookAdmission:
+      type: object
+      additionalProperties: false
+      required:
+      - deliveryId
+      - connectorKey
+      - externalDeliveryId
+      - status
+      - receivedAt
+      properties:
+        deliveryId:
+          $ref: '#/components/schemas/integrations-connectors__UuidV7'
+        connectorKey:
+          $ref: '#/components/schemas/integrations-connectors__ConnectorKey'
+        externalDeliveryId:
+          type: string
+          minLength: 1
+          maxLength: 200
+        status:
+          type: string
+          enum:
+          - ADMITTED
+          - DUPLICATE
+        receivedAt:
+          type: string
+          format: date-time
+    integrations-connectors__DeadLetter:
+      type: object
+      additionalProperties: false
+      required:
+      - deliveryId
+      - connectorKey
+      - externalDeliveryId
+      - status
+      - receivedAt
+      - attempts
+      - replayCount
+      properties:
+        deliveryId:
+          $ref: '#/components/schemas/integrations-connectors__UuidV7'
+        connectorKey:
+          $ref: '#/components/schemas/integrations-connectors__ConnectorKey'
+        externalDeliveryId:
+          type: string
+          minLength: 1
+          maxLength: 200
+        receivedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+          - PENDING
+          - DEAD_LETTER
+        attempts:
+          type: integer
+          minimum: 0
+        failureClass:
+          type:
+          - string
+          - 'null'
+          minLength: 1
+          maxLength: 1024
+        replayCount:
+          type: integer
+          minimum: 0
+        lastReplayAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+    integrations-connectors__RuntimeState:
+      type: object
+      additionalProperties: false
+      required:
+      - connectorKey
+      - consecutiveDeadLetters
+      - suspended
+      - backlog
+      - deadLetters
+      properties:
+        connectorKey:
+          $ref: '#/components/schemas/integrations-connectors__ConnectorKey'
+        consecutiveDeadLetters:
+          type: integer
+          minimum: 0
+        suspended:
+          type: boolean
+        suspendedUntil:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        backlog:
+          type: integer
+          minimum: 0
+        deadLetters:
+          type: integer
+          minimum: 0
+    integrations-connectors__ReasonRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        reason:
+          type: string
+          minLength: 2
+          maxLength: 512
+    integrations-connectors__Problem:
+      type: object
+      required:
+      - type
+      - title
+      - status
+      - detail
+      - instance
+      - code
+      - message
+      - details
+      - metadata
+      - occurred_at
+      - timestamp
+      - correlation_id
+      - trace_id
+      properties:
+        type:
+          type: string
+          description: Stable InfraNexum problem type URI.
+        title:
+          type: string
+          description: Short human-readable problem summary.
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+          description: Safe redacted problem detail.
+        instance:
+          type: string
+          description: Request URI associated with this occurrence.
+        code:
+          type: string
+          description: Stable machine-readable InfraNexum error code.
+        message:
+          type: string
+          deprecated: true
+          description: Legacy compatibility alias of detail.
+        details:
+          type: object
+          additionalProperties: true
+          description: Structured validation or conflict details.
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Reserved non-sensitive problem metadata.
+        occurred_at:
+          type: string
+          format: date-time
+          description: UTC timestamp of this problem occurrence.
+        timestamp:
+          type: string
+          format: date-time
+          deprecated: true
+          description: Legacy compatibility alias of occurred_at.
+        correlation_id:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+          description: Canonical request UUIDv7 correlation identifier.
+        trace_id:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+          description: Compatibility trace identifier equal to correlation_id.
+      additionalProperties: false
     itam-assets__UuidV7:
       type: string
       format: uuid
@@ -13744,6 +14255,69 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/identity-access-rbac__Problem'
+    integrations-connectors__BadRequest:
+      description: Invalid connector request, header or payload.
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/integrations-connectors__CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/integrations-connectors__Problem'
+    integrations-connectors__Unauthorized:
+      description: Webhook signature or local session authentication failed.
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/integrations-connectors__CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/integrations-connectors__Problem'
+    integrations-connectors__Forbidden:
+      description: Authenticated operator lacks the required integration permission.
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/integrations-connectors__CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/integrations-connectors__Problem'
+    integrations-connectors__NotFound:
+      description: Connector endpoint or delivery is unavailable.
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/integrations-connectors__CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/integrations-connectors__Problem'
+    integrations-connectors__Conflict:
+      description: Delivery identifier conflict or delivery state prevents the requested transition.
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/integrations-connectors__CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/integrations-connectors__Problem'
+    integrations-connectors__UnsupportedMediaType:
+      description: Webhook admission requires application/json.
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/integrations-connectors__CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/integrations-connectors__Problem'
+    integrations-connectors__ServiceUnavailable:
+      description: Durable integration runtime is unavailable or failed closed.
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/integrations-connectors__CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/integrations-connectors__Problem'
     itam-assets__AssetMutation:
       description: Current asset state.
       headers:
@@ -14237,6 +14811,27 @@ components:
         type: string
         format: uuid
         pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+    integrations-connectors__CorrelationId:
+      description: Canonical UUIDv7 correlation identifier assigned to the request.
+      schema:
+        $ref: '#/components/schemas/integrations-connectors__UuidV7'
+    integrations-connectors__NoStore:
+      description: Prevents caching of connector operational state.
+      schema:
+        type: string
+        const: no-store
+    integrations-connectors__PageLimit:
+      description: Effective bounded page size.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+    integrations-connectors__NextOffset:
+      description: Offset to request for the next page; omitted only when no later records exist.
+      schema:
+        type: integer
+        minimum: 0
+        maximum: 1000000
     itam-assets__CorrelationId:
       description: Canonical UUIDv7 correlation identifier assigned to the request.
       schema:

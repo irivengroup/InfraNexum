@@ -76,7 +76,7 @@ final class ActivationTestFixtures {
                 new ManifestInstallation(INSTALLATION_ID, "v1", "a".repeat(64)),
                 InstallationProfile.PRO,
                 AllocationTier.STANDARD,
-                "2.0.0-draft.20",
+                "2.0.0-draft.21",
                 10,
                 Set.of("iam.local-auth"),
                 Map.of("iam.users.max", 10L),

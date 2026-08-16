@@ -38,7 +38,7 @@ import org.postgresql.ds.PGSimpleDataSource;
 /** Live PostgreSQL contracts for activation, runtime-state and revocation persistence. */
 class PostgreSqlJdbcEntitlementPersistenceTest {
     private static final Instant NOW = Instant.parse("2026-08-11T12:00:00Z");
-    private static final String CATALOG = "2.0.0-draft.20";
+    private static final String CATALOG = "2.0.0-draft.21";
 
     private PGSimpleDataSource dataSource;
     private JdbcActivationOperationalRepository repository;

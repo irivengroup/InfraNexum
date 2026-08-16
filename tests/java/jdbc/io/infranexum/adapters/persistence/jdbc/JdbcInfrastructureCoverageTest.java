@@ -195,6 +195,33 @@ class JdbcInfrastructureCoverageTest {
     }
 
     @Test
+    void oracleConnectorInboxCoversDialectSpecificReadAndControlPathsWithoutExternalDatabase() {
+        NoOpDataSource dataSource = new NoOpDataSource();
+        JdbcConnectorInboxRepository repository =
+                new JdbcConnectorInboxRepository(dataSource, JdbcDatabaseDialect.ORACLE);
+        io.infranexum.integrations.ConnectorKey key = new io.infranexum.integrations.ConnectorKey("oracle.connector");
+
+        assertTrue(repository.claimBatch("oracle-worker", 10, NOW, Duration.ofSeconds(30)).isEmpty());
+        assertTrue(repository.listDeadLetters(null, 0, 10).isEmpty());
+        assertTrue(repository.listDeadLetters(key, 0, 10).isEmpty());
+        assertEquals(0, repository.runtimeState(key).consecutiveDeadLetters());
+        assertEquals(0, repository.resume(key, NOW.plusSeconds(1)).consecutiveDeadLetters());
+        assertTrue(dataSource.sql.stream().anyMatch(value -> value.contains("INFRANEXUM_INTEGRATION_INBOX")));
+        assertTrue(dataSource.sql.stream().anyMatch(value -> value.contains("INFRANEXUM_INTEGRATION_STATE")));
+        assertTrue(dataSource.sql.stream().anyMatch(value -> value.contains("MERGE INTO INFRANEXUM_INTEGRATION_STATE")));
+
+        assertThrows(IllegalArgumentException.class, () -> repository.claimBatch("worker", 0, NOW, Duration.ofSeconds(1)));
+        assertThrows(IllegalArgumentException.class, () -> repository.claimBatch("worker", 1001, NOW, Duration.ofSeconds(1)));
+        assertThrows(IllegalArgumentException.class, () -> repository.claimBatch("worker", 1, NOW, Duration.ZERO));
+        assertThrows(IllegalArgumentException.class, () -> repository.listDeadLetters(key, -1, 10));
+        assertThrows(IllegalArgumentException.class, () -> repository.listDeadLetters(key, 0, 0));
+        assertThrows(NullPointerException.class, () -> new JdbcConnectorInboxRepository(null, JdbcDatabaseDialect.ORACLE));
+        assertThrows(NullPointerException.class, () -> new JdbcConnectorInboxRepository(dataSource, null));
+        assertThrows(JdbcPersistenceException.class, () -> repository.backlogSize(key, NOW));
+        assertThrows(JdbcPersistenceException.class, () -> repository.deadLetterCount(key));
+    }
+
+    @Test
     void oracleActivationRepositoryExercisesOracleSqlBranchesWithoutExternalDatabase() {
         NoOpDataSource dataSource = new NoOpDataSource();
         JdbcActivationOperationalRepository repository =
@@ -220,7 +247,7 @@ class JdbcInfrastructureCoverageTest {
         ActivationManifest manifest = new ActivationManifest(payload, signature());
         ActivationVerificationResult result = new ActivationVerificationResult(
                 ActivationUsageState.ACTIVE, payload,
-                new QuotaAllocationPlan("2.0.0-draft.20", InstallationProfile.PRO, AllocationTier.STANDARD,
+                new QuotaAllocationPlan("2.0.0-draft.21", InstallationProfile.PRO, AllocationTier.STANDARD,
                         Map.of("rsot.managed_hosts.max", 10L)),
                 payload.capabilities(), payload.validUntil().plus(30, ChronoUnit.DAYS));
         repository.accept(identity, manifest, result, proof(identity, NOW.plusSeconds(4), 3), NOW.plusSeconds(4));
@@ -241,7 +268,7 @@ class JdbcInfrastructureCoverageTest {
         ActivationManifest manifest = new ActivationManifest(payload, signature());
         ActivationVerificationResult result = new ActivationVerificationResult(
                 ActivationUsageState.ACTIVE, payload,
-                new QuotaAllocationPlan("2.0.0-draft.20", InstallationProfile.PRO, AllocationTier.STANDARD,
+                new QuotaAllocationPlan("2.0.0-draft.21", InstallationProfile.PRO, AllocationTier.STANDARD,
                         Map.of("rsot.managed_hosts.max", 10L)),
                 payload.capabilities(), payload.validUntil().plus(30, ChronoUnit.DAYS));
 
@@ -317,7 +344,7 @@ class JdbcInfrastructureCoverageTest {
                 ActivationManifestPayload.SCHEMA, id(100 + (int) sequence),
                 new CustomerIdentity("customer-1", "Customer One"),
                 new ManifestInstallation(identity.installationId(), identity.fingerprintVersion(), identity.fingerprint()),
-                InstallationProfile.PRO, AllocationTier.STANDARD, "2.0.0-draft.20", 10,
+                InstallationProfile.PRO, AllocationTier.STANDARD, "2.0.0-draft.21", 10,
                 Set.of("iam.local-auth"), Map.of("rsot.managed_hosts.max", 10L), validFrom,
                 validFrom.plus(365, ChronoUnit.DAYS), 30, NOW, "InfraNexum Licensing", sequence, "key-1");
     }

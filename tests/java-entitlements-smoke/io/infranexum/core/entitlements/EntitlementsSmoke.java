@@ -30,7 +30,7 @@ public final class EntitlementsSmoke {
         if (args.length != 2) {
             throw new IllegalArgumentException("expected capability and quota catalogue paths");
         }
-        String catalogVersion = "2.0.0-draft.20";
+        String catalogVersion = "2.0.0-draft.21";
         CapabilityCatalog capabilityCatalog = CapabilityCatalog.load(catalogVersion, Path.of(args[0]));
         QuotaCatalog quotaCatalog = QuotaCatalog.load(catalogVersion, Path.of(args[1]));
         Instant t0 = Instant.parse("2026-01-01T00:00:00Z");
@@ -163,7 +163,7 @@ public final class EntitlementsSmoke {
             AcceptedSequence acceptedSequence,
             RevocationRegistry revocations) {
         return new ActivationValidationContext(
-                identity, "customer-001", InstallationProfile.PRO, "2.0.0-draft.20",
+                identity, "customer-001", InstallationProfile.PRO, "2.0.0-draft.21",
                 capabilityCatalog, quotaCatalog, acceptedSequence, keyStore, revocations, now);
     }
 

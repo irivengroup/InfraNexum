@@ -29,9 +29,9 @@ class ApiAuthorizationMetadataPhase5Tests(unittest.TestCase):
                         result.append((method, path, operation))
         return result
 
-    def test_all_174_operations_have_registry_backed_capability_and_structured_authorization(self) -> None:
+    def test_all_179_operations_have_registry_backed_capability_and_structured_authorization(self) -> None:
         operations = self.operations()
-        self.assertEqual(174, len(operations))
+        self.assertEqual(179, len(operations))
         with (ROOT / "src/components/core/capabilities/resources/io/infranexum/core/capabilities/capability-catalog.csv").open(
             encoding="utf-8", newline=""
         ) as stream:
@@ -66,12 +66,13 @@ class ApiAuthorizationMetadataPhase5Tests(unittest.TestCase):
         self.assertEqual(
             Counter(
                 {
-                    "permission": 153,
+                    "permission": 157,
                     "platform-admin": 9,
                     "conditional": 4,
                     "authenticated-self": 3,
                     "organization-visibility": 2,
                     "anonymous": 3,
+                    "connector-signature": 1,
                 }
             ),
             modes,
@@ -120,7 +121,7 @@ class ApiAuthorizationMetadataPhase5Tests(unittest.TestCase):
             / "tests/java-api-capability-smoke/io/infranexum/server/platform/ApiCapabilityRequirementSmoke.java"
         ).read_text(encoding="utf-8")
         self.assertIn('operation["x-infranexum-capability"]', generator)
-        self.assertIn("rows.size() == 174", smoke)
+        self.assertIn("rows.size() == 179", smoke)
 
     def test_special_authorization_modes_match_runtime_boundary_semantics(self) -> None:
         local_auth = yaml.safe_load((OPENAPI / "local-auth.yaml").read_text(encoding="utf-8"))
@@ -138,6 +139,10 @@ class ApiAuthorizationMetadataPhase5Tests(unittest.TestCase):
         self.assertIn("PLATFORM_ADMINISTRATOR", authorization)
         self.assertIn("ORGANIZATION_VISIBILITY", authorization)
         self.assertIn("CONTROLLER_SCOPED", authorization)
+        integrations = yaml.safe_load((OPENAPI / "integrations-connectors.yaml").read_text(encoding="utf-8"))
+        webhook = integrations["paths"]["/api/v1/integrations/webhooks/{connectorKey}"]["post"]
+        self.assertEqual("connector-signature", webhook["x-infranexum-permission"]["mode"])
+        self.assertEqual("connector-delivery", webhook["x-infranexum-idempotency"])
 
     def test_effective_contract_filter_is_available_for_installation_specific_publication(self) -> None:
         checker = (ROOT / "validation/api_contracts/checker.py").read_text(encoding="utf-8")

@@ -38,7 +38,7 @@ class ApiContractGovernanceArchitectureTests(unittest.TestCase):
         self.assertEqual(version, catalogue["version"])
         self.assertEqual("infranexum.openapi-catalogue/v1", catalogue["schema"])
         self.assertEqual("infranexum.api-contract-debt/v1", baseline["schema"])
-        self.assertEqual(14, len(catalogue["fragments"]))
+        self.assertEqual(15, len(catalogue["fragments"]))
 
     def test_generated_product_contract_is_not_a_canonical_source(self) -> None:
         self.assertFalse((ROOT / "src/applications/server/resources/openapi/openapi-product.yaml").exists())

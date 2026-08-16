@@ -63,8 +63,8 @@ class ApiContractCheckerTest(unittest.TestCase):
     def test_reference_contract_catalogue_is_valid_and_debt_is_frozen(self) -> None:
         checker = ApiContractChecker(SOURCE)
         self.assertEqual((), checker.run())
-        self.assertEqual(14, len(checker.documents))
-        self.assertEqual(174, len(checker.operations))
+        self.assertEqual(15, len(checker.documents))
+        self.assertEqual(179, len(checker.operations))
         self.assertEqual(0, len(checker.current_debt.idempotency))
         self.assertEqual(0, len(checker.current_debt.pagination))
         self.assertEqual(0, len(checker.current_debt.capability))
@@ -91,7 +91,7 @@ class ApiContractCheckerTest(unittest.TestCase):
         path = self.spec("catalogue.yaml")
         path.write_text("[]\n", encoding="utf-8")
         self.assertIn("CHECK-API-001", self.violations())
-        path.write_text("schema: infranexum.openapi-catalogue/v1\nversion: 2.0.0-alpha.0.100\nfragments: []\n", encoding="utf-8")
+        path.write_text("schema: infranexum.openapi-catalogue/v1\nversion: 2.0.0-alpha.0.101\nfragments: []\n", encoding="utf-8")
         self.assertIn("CHECK-API-005", self.violations())
 
     def test_duplicate_yaml_keys_are_rejected_but_merge_overrides_are_supported(self) -> None:
@@ -177,6 +177,49 @@ class ApiContractCheckerTest(unittest.TestCase):
         self.save("platform-entitlements.yaml", payload)
         ids = self.violations()
         self.assertTrue({"CHECK-API-024", "CHECK-API-025", "CHECK-API-030"} <= ids)
+
+    def test_connector_delivery_idempotency_and_signature_authorization_are_strict(self) -> None:
+        shutil.copy2(
+            SOURCE / "src/applications/server/resources/openapi/integrations-connectors.yaml",
+            self.spec("integrations-connectors.yaml"),
+        )
+        catalogue = self.load("catalogue.yaml")
+        catalogue["fragments"].append(
+            {"file": "integrations-connectors.yaml", "component": "Integrations", "context": "Connectors"}
+        )
+        self.save("catalogue.yaml", catalogue)
+        self.assertEqual(set(), self.violations())
+
+        payload = self.load("integrations-connectors.yaml")
+        webhook = payload["paths"]["/api/v1/integrations/webhooks/{connectorKey}"]["post"]
+        webhook["parameters"] = [
+            parameter for parameter in webhook["parameters"]
+            if parameter.get("$ref") != "#/components/parameters/ConnectorDeliveryId"
+        ]
+        self.save("integrations-connectors.yaml", payload)
+        self.assertIn("CHECK-API-032", self.violations())
+
+        payload = self.load("integrations-connectors.yaml")
+        webhook = payload["paths"]["/api/v1/integrations/webhooks/{connectorKey}"]["post"]
+        webhook["parameters"].append({
+            "name": "Idempotency-Key", "in": "header", "required": True,
+            "schema": {"type": "string", "minLength": 8, "maxLength": 200, "pattern": "^[A-Za-z0-9._:-]+$"},
+        })
+        self.save("integrations-connectors.yaml", payload)
+        self.assertIn("CHECK-API-032", self.violations())
+
+        payload = self.load("integrations-connectors.yaml")
+        webhook = payload["paths"]["/api/v1/integrations/webhooks/{connectorKey}"]["post"]
+        webhook["x-infranexum-permission"] = {"mode": "connector-signature", "code": "integrations.dlq.read"}
+        self.save("integrations-connectors.yaml", payload)
+        self.assertIn("CHECK-API-034", self.violations())
+
+        payload = self.load("integrations-connectors.yaml")
+        webhook = payload["paths"]["/api/v1/integrations/webhooks/{connectorKey}"]["post"]
+        webhook["x-infranexum-permission"] = {"mode": "connector-signature"}
+        webhook["security"] = []
+        self.save("integrations-connectors.yaml", payload)
+        self.assertIn("CHECK-API-034", self.violations())
 
     def test_declared_pagination_contract_requires_bounded_position_and_response_headers(self) -> None:
         payload = self.load("identity-access-rbac.yaml")
@@ -481,7 +524,7 @@ class ApiContractCheckerTest(unittest.TestCase):
             def run(self):
                 base = {
                     "openapi": "3.1.0",
-                    "info": {"version": "2.0.0-alpha.0.100"},
+                    "info": {"version": "2.0.0-alpha.0.101"},
                     "tags": [{"name": "X / Shared"}],
                     "x-tagGroups": [{"name": "X", "tags": ["X / Shared", "X / Shared"]}],
                     "components": {"schemas": {"Thing": {"type": "object"}}},
@@ -504,7 +547,7 @@ class ApiContractCheckerTest(unittest.TestCase):
         class DuplicateRouteChecker(BaseChecker):
             def run(self):
                 op = {"operationId": "x", "tags": ["X / Y"], "summary": "X", "responses": {"200": {"description": "OK"}}}
-                doc = {"openapi": "3.1.0", "info": {"version": "2.0.0-alpha.0.100"}, "tags": [{"name": "X / Y"}], "x-tagGroups": [{"name": "X", "tags": ["X / Y"]}], "paths": {"/api/v1/x": {"get": op}}, "components": {}}
+                doc = {"openapi": "3.1.0", "info": {"version": "2.0.0-alpha.0.101"}, "tags": [{"name": "X / Y"}], "x-tagGroups": [{"name": "X", "tags": ["X / Y"]}], "paths": {"/api/v1/x": {"get": op}}, "components": {}}
                 self.documents = {"one.yaml": doc, "two.yaml": doc}
                 return ()
         with self.assertRaises(ValueError):

@@ -24,8 +24,8 @@ public final class EntitlementRuntimeSmoke {
 
     public static void main(String[] args) throws Exception {
         require(args.length == 2, "capability and quota catalog paths are required");
-        CapabilityCatalog capabilities = CapabilityCatalog.load("2.0.0-draft.20", java.nio.file.Path.of(args[0]));
-        QuotaCatalog quotas = QuotaCatalog.load("2.0.0-draft.20", java.nio.file.Path.of(args[1]));
+        CapabilityCatalog capabilities = CapabilityCatalog.load("2.0.0-draft.21", java.nio.file.Path.of(args[0]));
+        QuotaCatalog quotas = QuotaCatalog.load("2.0.0-draft.21", java.nio.file.Path.of(args[1]));
         liteLifecycle(capabilities, quotas);
         paidLifecycle(capabilities, quotas);
         System.out.println("java-entitlement-runtime-smoke: PASS");
@@ -119,7 +119,7 @@ public final class EntitlementRuntimeSmoke {
             TrustedKeyStore keys,
             RevocationRegistry revocations) {
         return (actualIdentity, sequence, evaluatedAt) -> new ActivationValidationContext(
-                actualIdentity, "customer-1", profile, "2.0.0-draft.20",
+                actualIdentity, "customer-1", profile, "2.0.0-draft.21",
                 capabilities, quotas, sequence, keys, revocations, evaluatedAt);
     }
 
@@ -130,7 +130,7 @@ public final class EntitlementRuntimeSmoke {
             KeyPair pair,
             Instant now) throws Exception {
         Map<String, Long> limits = quotas.allocate(
-                InstallationProfile.PRO, AllocationTier.STANDARD, "2.0.0-draft.20", Map.of()).limits();
+                InstallationProfile.PRO, AllocationTier.STANDARD, "2.0.0-draft.21", Map.of()).limits();
         Set<String> entitled = capabilities.codes().stream()
                 .map(capabilities::find)
                 .filter(definition -> definition.allowedProfiles().contains(InstallationProfile.PRO))
@@ -143,7 +143,7 @@ public final class EntitlementRuntimeSmoke {
                 new ManifestInstallation(identity.installationId(), identity.fingerprintVersion(), identity.fingerprint()),
                 InstallationProfile.PRO,
                 AllocationTier.STANDARD,
-                "2.0.0-draft.20",
+                "2.0.0-draft.21",
                 limits.get("rsot.managed_hosts.max"),
                 entitled,
                 limits,

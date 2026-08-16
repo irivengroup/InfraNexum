@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 
 /** Exhaustive quota catalogue, value-object and arithmetic boundary coverage. */
 class QuotaCoverageTest {
-    private static final String VERSION = "2.0.0-draft.20";
+    private static final String VERSION = "2.0.0-draft.21";
     private static final String HEADER = String.join(",",
             "component", "quota_key", "unit", "quota_class", "generator_adjustable", "lite_fixed",
             "pro_standard", "pro_advanced_ceiling", "enterprise_standard", "enterprise_ultimate_ceiling",

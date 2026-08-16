@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 class CapabilityRegistryCoverageTest {
     @Test
     void constructorAndEvaluateNullBoundariesFailClosed() {
-        CapabilityCatalog catalog = CapabilityCatalog.loadEmbedded("2.0.0-draft.20");
+        CapabilityCatalog catalog = CapabilityCatalog.loadEmbedded("2.0.0-draft.21");
         Clock clock = Clock.fixed(Instant.EPOCH, ZoneOffset.UTC);
         assertThrows(NullPointerException.class, () -> new CapabilityRegistry(null, clock));
         assertThrows(NullPointerException.class, () -> new CapabilityRegistry(catalog, null));
@@ -28,7 +28,7 @@ class CapabilityRegistryCoverageTest {
         CapabilityEnvironment environment = new CapabilityEnvironment(
                 InstallationProfile.LITE, AllocationTier.STANDARD, InstallationTopology.SINGLE_NODE,
                 Set.of(DeploymentRole.SERVER), Set.of(), Set.of(new CapabilityCode("iam.local-auth")), Map.of(),
-                Set.of(), ActivationState.NOT_REQUIRED, "2.0.0-draft.20", 1);
+                Set.of(), ActivationState.NOT_REQUIRED, "2.0.0-draft.21", 1);
         assertThrows(NullPointerException.class, () -> registry.evaluate((CapabilityCode) null, environment));
         assertThrows(NullPointerException.class, () -> registry.evaluate(new CapabilityCode("iam.local-auth"), null));
     }

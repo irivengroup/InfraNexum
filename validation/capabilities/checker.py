@@ -65,8 +65,8 @@ class CapabilityChecker:
             return
         expected = {
             "schema": "infranexum.capability-contract-pack/v1",
-            "catalog_version": "2.0.0-draft.20",
-            "capability_count": 31,
+            "catalog_version": "2.0.0-draft.21",
+            "capability_count": 32,
             "quota_count": 119,
             "quota_thresholds_percent": [80, 90, 100],
             "functional_surface_rule": "allocation-tiers-do-not-change-capabilities",
@@ -161,7 +161,7 @@ class CapabilityChecker:
             self._add("CHECK-CAP-QUOTA-016", csv_path, f"unexpected quota class counts: {classes}")
         if set(policy.get("quotas", {})) != keys:
             self._add("CHECK-CAP-QUOTA-017", policy_path, "policy quota keys differ from CSV catalogue")
-        if policy.get("catalog_version") != "2.0.0-draft.20":
+        if policy.get("catalog_version") != "2.0.0-draft.21":
             self._add("CHECK-CAP-QUOTA-018", policy_path, "unexpected embedded catalog version")
         rules = policy.get("rules", {})
         if rules.get("tiers_do_not_unlock_capabilities") is not True:
@@ -176,8 +176,8 @@ class CapabilityChecker:
         policy = self._read_json(policy_path, "CHECK-CAP-CATALOG-002")
         if rows is None or policy is None:
             return
-        if len(rows) != 31:
-            self._add("CHECK-CAP-CATALOG-003", csv_path, f"expected 31 capabilities, found {len(rows)}")
+        if len(rows) != 32:
+            self._add("CHECK-CAP-CATALOG-003", csv_path, f"expected 32 capabilities, found {len(rows)}")
         by_code = {row.get("capability_code", ""): row for row in rows}
         if len(by_code) != len(rows):
             self._add("CHECK-CAP-CATALOG-004", csv_path, "duplicate capability codes")

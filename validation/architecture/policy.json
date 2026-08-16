@@ -38,6 +38,7 @@
     "components/domains/itam",
     "components/domains/dcim",
     "components/domains/ddi",
+    "components/domains/integrations",
     "deployment",
     "distribution",
     "engines",

@@ -12,13 +12,13 @@
       "advanced"
     ]
   },
-  "capability_count": 31,
-  "catalog_version": "2.0.0-draft.20",
+  "capability_count": 32,
+  "catalog_version": "2.0.0-draft.21",
   "domain_rule": "business-code-consumes-decisions-and-never-branches-on-profile-name",
   "files": {
-    "capability-catalog.csv": "af068b3ebd4edcb3afae83805dcc9c514f9e6afcb64f350cbecb31bae0414efc",
+    "capability-catalog.csv": "610ffc6bfc326f39a114358caba0a9f1ff25c875633dca49a94b6246c521f7bb",
     "quota-catalog.csv": "03ccb6d225410a06d5fad918549a4455ebca79a154f7f3e6be8e0e9f117413ea",
-    "quota-policy.json": "7e945ff83fb747e7545f477fef994c552d54fc5ab7f341ce0e8714b433db9125"
+    "quota-policy.json": "c7374a157d81c25e751c86c4e4375d9e1c0ab42725450a9a7ebdcc8798a1ecfc"
   },
   "functional_surface_rule": "allocation-tiers-do-not-change-capabilities",
   "id": "core.capabilities.v1",

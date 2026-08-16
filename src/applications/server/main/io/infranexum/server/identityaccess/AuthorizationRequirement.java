@@ -47,6 +47,22 @@ record AuthorizationRequirement(
         if (normalized.equals("/api/v1/platform/quotas")) {
             return permission(PermissionCodes.PLATFORM_CAPABILITY_READ, AuthorizationScope.platform(), "platform", "quotas");
         }
+
+        if (normalized.equals("/api/v1/integrations/dlq") && verb.equals("GET")) {
+            return permission(PermissionCodes.INTEGRATIONS_DLQ_READ, AuthorizationScope.platform(), "integration-dlq", "collection");
+        }
+        if (normalized.matches("^/api/v1/integrations/dlq/[^/]+/replay$") && verb.equals("POST")) {
+            String deliveryId = DomainIdentifier.parse(normalized.split("/")[5]).toString();
+            return permission(PermissionCodes.INTEGRATIONS_DLQ_REPLAY, AuthorizationScope.platform(), "integration-delivery", deliveryId);
+        }
+        if (normalized.matches("^/api/v1/integrations/connectors/[^/]+/runtime$") && verb.equals("GET")) {
+            String connectorKey = new io.infranexum.integrations.ConnectorKey(normalized.split("/")[5]).value();
+            return permission(PermissionCodes.INTEGRATIONS_CONNECTOR_READ, AuthorizationScope.platform(), "integration-connector", connectorKey);
+        }
+        if (normalized.matches("^/api/v1/integrations/connectors/[^/]+/resume$") && verb.equals("POST")) {
+            String connectorKey = new io.infranexum.integrations.ConnectorKey(normalized.split("/")[5]).value();
+            return permission(PermissionCodes.INTEGRATIONS_CONNECTOR_RESUME, AuthorizationScope.platform(), "integration-connector", connectorKey);
+        }
         if (normalized.equals("/api/v1/platform/evaluation/status")) {
             return permission(PermissionCodes.PLATFORM_PROFILE_READ, AuthorizationScope.platform(), "platform", "evaluation-status");
         }

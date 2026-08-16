@@ -242,7 +242,7 @@ class EntitlementRuntimeAuthorityTest {
     }
 
     private PaidFixture paidFixture(Instant validUntil) throws Exception {
-        String catalogVersion = "2.0.0-draft.20";
+        String catalogVersion = "2.0.0-draft.21";
         CapabilityCatalog capabilityCatalog = CapabilityCatalog.loadEmbedded(catalogVersion);
         QuotaCatalog quotaCatalog = QuotaCatalog.loadEmbedded(catalogVersion);
         QuotaAllocationPlan plan = quotaCatalog.allocate(InstallationProfile.PRO, AllocationTier.STANDARD, catalogVersion, Map.of());

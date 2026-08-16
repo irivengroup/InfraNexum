@@ -1,0 +1,10 @@
+{
+  "schema": "infranexum.component-manifest/v1",
+  "id": "components.domains.integrations",
+  "kind": "component",
+  "owner": "team.automation-ecosystem",
+  "lifecycle": "active",
+  "languages": ["java"],
+  "dependencies": ["components.core.contracts", "components.core.events"],
+  "source_baseline": ["PGM-10-E05", "PGM-02-E03", "PGM-05-E01"]
+}

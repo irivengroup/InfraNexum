@@ -49,9 +49,9 @@ class ActivationRuntimeConfigurationTest {
         DataSource dataSource = mock(DataSource.class);
         PlatformCapabilityProperties platform = mock(PlatformCapabilityProperties.class);
         when(platform.profile()).thenReturn(InstallationProfile.LITE);
-        when(platform.catalogVersion()).thenReturn("2.0.0-draft.20");
-        var capabilityCatalog = CapabilityCatalog.loadEmbedded("2.0.0-draft.20");
-        var quotaCatalog = QuotaCatalog.loadEmbedded("2.0.0-draft.20");
+        when(platform.catalogVersion()).thenReturn("2.0.0-draft.21");
+        var capabilityCatalog = CapabilityCatalog.loadEmbedded("2.0.0-draft.21");
+        var quotaCatalog = QuotaCatalog.loadEmbedded("2.0.0-draft.21");
 
         assertNotNull(configuration.entitlementClock());
         assertNotNull(configuration.activationManifestCodec(mapper, properties));

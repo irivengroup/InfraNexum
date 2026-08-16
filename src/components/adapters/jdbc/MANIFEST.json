@@ -15,7 +15,8 @@
     "components.core.compatibility",
     "components.domains.itam",
     "components.domains.dcim",
-    "components.domains.ddi"
+    "components.domains.ddi",
+    "components.domains.integrations"
   ],
   "source_baseline": [
     "PGM-04-E01",
@@ -27,6 +28,7 @@
     "PGM-06-E03",
     "PGM-07-E01",
     "PGM-07-E04",
-    "PGM-08-E01"
+    "PGM-08-E01",
+    "PGM-10-E05"
   ]
 }

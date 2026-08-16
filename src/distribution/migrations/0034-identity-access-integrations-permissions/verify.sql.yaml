@@ -1,0 +1,5 @@
+schema: infranexum.verify/v1
+checks:
+- id: integration-permissions
+  postgresql: "SELECT COUNT(*)=4 FROM infranexum_iam.permission WHERE organization_id IS NULL AND code IN ('integrations.connector.read','integrations.connector.resume','integrations.dlq.read','integrations.dlq.replay')"
+  oracle: "SELECT COUNT(*)=4 FROM INFRANEXUM_IAM_PERMISSION WHERE ORGANIZATION_ID IS NULL AND CODE IN ('integrations.connector.read','integrations.connector.resume','integrations.dlq.read','integrations.dlq.replay')"

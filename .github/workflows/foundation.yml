@@ -80,7 +80,7 @@ jobs:
       - name: Install pinned validation tooling
         run: python -m pip install --disable-pip-version-check --requirement requirements/ci.txt
       - name: Run architecture, toolchain, migration and contract gates
-        run: make api-contract-test api-contract-check architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-capabilities-smoke java-api-capability-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke java-jdbc-workers-smoke
+        run: make api-contract-test api-contract-check architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-capabilities-smoke java-api-capability-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke java-jdbc-workers-smoke java-integrations-smoke
 
   agent:
     needs: source-integrity
@@ -271,4 +271,4 @@ jobs:
           INFRANEXUM_POSTGRESQL_TEST_URL: jdbc:postgresql://127.0.0.1:5432/infranexum
           INFRANEXUM_POSTGRESQL_TEST_USERNAME: infranexum
           INFRANEXUM_POSTGRESQL_TEST_PASSWORD: infranexum-ci
-        run: ./mvnw --batch-mode --no-transfer-progress -pl src/components/adapters/jdbc -am -Dtest=PostgreSqlJdbcTransactionalEventStoreTest,PostgreSqlJdbcAuditJournalTest,PostgreSqlJdbcTaskStoreTest,PostgreSqlJdbcEntitlementPersistenceTest -Dinfranexum.surefire.failIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false test
+        run: ./mvnw --batch-mode --no-transfer-progress -pl src/components/adapters/jdbc -am -Dtest=PostgreSqlJdbcTransactionalEventStoreTest,PostgreSqlJdbcAuditJournalTest,PostgreSqlJdbcTaskStoreTest,PostgreSqlJdbcEntitlementPersistenceTest,PostgreSqlJdbcConnectorInboxRepositoryTest -Dinfranexum.surefire.failIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false test

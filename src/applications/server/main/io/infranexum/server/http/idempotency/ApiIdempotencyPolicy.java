@@ -47,7 +47,9 @@ public final class ApiIdempotencyPolicy {
         rule("deprecateRsotSchema","POST","/api/v1/rsot/schemas/"+UUID+"/deprecate"),
         rule("createRsotSchemaProfile","POST","/api/v1/rsot/schema-profiles"),
         rule("publishRsotSchemaProfile","POST","/api/v1/rsot/schema-profiles/"+UUID+"/publish"),
-        rule("deprecateRsotSchemaProfile","POST","/api/v1/rsot/schema-profiles/"+UUID+"/deprecate")
+        rule("deprecateRsotSchemaProfile","POST","/api/v1/rsot/schema-profiles/"+UUID+"/deprecate"),
+        rule("replayIntegrationDeadLetter","POST","/api/v1/integrations/dlq/"+UUID+"/replay"),
+        rule("resumeIntegrationConnector","POST","/api/v1/integrations/connectors/"+UUID+"/resume")
     );
 
     public Optional<String> operation(HttpServletRequest request) {

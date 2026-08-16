@@ -20,10 +20,11 @@
       "iam.mfa",
       "iam.oauth2",
       "iam.oidc",
-      "iam.saml"
+      "iam.saml",
+      "integrations.connectors"
     ]
   },
-  "catalog_version": "2.0.0-draft.20",
+  "catalog_version": "2.0.0-draft.21",
   "non_issuable_profiles": [
     "lite"
   ],

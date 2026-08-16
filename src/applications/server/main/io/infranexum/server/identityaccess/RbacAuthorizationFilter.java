@@ -23,13 +23,14 @@ public final class RbacAuthorizationFilter extends OncePerRequestFilter implemen
     private static final String API_PREFIX="/api/v1/";
     private static final String AUTH_PREFIX="/api/v1/iam/local-auth";
     private static final String PUBLIC_BUILD_PATH="/api/v1/system/build";
+    private static final String WEBHOOK_PREFIX = "/api/v1/integrations/webhooks/";
     private final RbacAuthorizationService authorization;
     private final ApiProblemSupport problems;
 
     public RbacAuthorizationFilter(RbacAuthorizationService authorization, ApiProblemSupport problems){this.authorization=Objects.requireNonNull(authorization,"authorization");this.problems=Objects.requireNonNull(problems,"problems");}
     @Override public int getOrder(){return ORDER;}
 
-    @Override protected boolean shouldNotFilter(HttpServletRequest request){String path=request.getRequestURI();return !path.startsWith(API_PREFIX)||path.equals(AUTH_PREFIX)||path.startsWith(AUTH_PREFIX+"/")||PUBLIC_BUILD_PATH.equals(path);}
+    @Override protected boolean shouldNotFilter(HttpServletRequest request){String path=request.getRequestURI();return !path.startsWith(API_PREFIX)||path.equals(AUTH_PREFIX)||path.startsWith(AUTH_PREFIX+"/")||PUBLIC_BUILD_PATH.equals(path)||path.startsWith(WEBHOOK_PREFIX);}
 
     @Override protected void doFilterInternal(HttpServletRequest request,HttpServletResponse response,FilterChain chain)throws ServletException,IOException{
         Object actorValue=request.getAttribute(LocalAuthenticationFilter.ACCOUNT_ATTRIBUTE);

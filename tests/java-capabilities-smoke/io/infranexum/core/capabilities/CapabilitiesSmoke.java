@@ -15,10 +15,10 @@ public final class CapabilitiesSmoke {
         if (args.length != 2) {
             throw new IllegalArgumentException("expected capability and quota catalogue paths");
         }
-        String catalogVersion = "2.0.0-draft.20";
+        String catalogVersion = "2.0.0-draft.21";
         CapabilityCatalog capabilities = CapabilityCatalog.load(catalogVersion, Path.of(args[0]));
         QuotaCatalog quotas = QuotaCatalog.load(catalogVersion, Path.of(args[1]));
-        assert capabilities.codes().size() == 31;
+        assert capabilities.codes().size() == 32;
         assert quotas.size() == 119;
 
         CapabilityCode ldap = new CapabilityCode("iam.ldap");
@@ -109,7 +109,7 @@ public final class CapabilitiesSmoke {
                 Map.of(new CapabilityCode("iam.ldap"), DependencyStatus.OPERATIONAL),
                 entitled,
                 ActivationState.ACTIVE,
-                "2.0.0-draft.20",
+                "2.0.0-draft.21",
                 2);
     }
 }

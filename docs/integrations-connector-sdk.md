@@ -1,5 +1,8 @@
 # PGM-10-E05 — Connector SDK v1 (phase 1)
 
+> **Runtime status (alpha.0.101):** the durable Server phase is now implemented in `docs/integrations-connector-runtime.md`: signed webhook admission, PostgreSQL/Oracle inbox, DLQ, audited replay/resume, bounded retry/suspension and per-connector metrics. The SDK remains independently versioned `1.0.0`. Formal epic closure still requires the exact target JDK 25 + live PostgreSQL CI gate.
+
+
 ## Status and scope
 
 `2.0.0-alpha.0.100` opens PGM-10-E05 with the stable authoring and certification boundary required before a connector runtime can accept external packages. This phase does **not** declare the epic delivered: durable incoming webhook admission, durable inbox/DLQ operations, controlled replay and per-connector runtime metrics remain phase 2 of PGM-10-E05.

@@ -1,3 +1,17 @@
+# InfraNexum 2.0.0-alpha.0.101 — PGM-10-E05 phase 2: durable connector runtime
+
+`alpha.0.101` implements the second PGM-10-E05 tranche on top of the versioned Connector SDK delivered in `alpha.0.100`. The Server now has a generic connector runtime for **authenticated durable webhook admission, connector inbox processing, operational DLQ, controlled replay/resume and per-connector observability**. This remains provider-neutral: no Jira, ServiceNow or other vendor connector is invented.
+
+Webhook endpoints are explicitly configured and fail closed. Secrets are never persisted in InfraNexum tables or configuration values: an endpoint references only an external `env:` or absolute `file:` secret. Admission validates the endpoint, JSON payload, bounded body, delivery ID, timestamp and HMAC-SHA256 signature before persistence. `(connector, delivery-id)` is a durable idempotency key: identical redelivery is accepted as duplicate while semantic drift returns a conflict. The authenticated raw payload is preserved byte-for-byte rather than normalized.
+
+The inbox is implemented for PostgreSQL and Oracle with bounded leasing/`SKIP LOCKED`, at-least-once dispatch, retries with bounded backoff/jitter, dead-letter transition, automatic connector suspension and explicit operator resume. DLQ replay is allowed only from `DEAD_LETTER`, is RBAC-protected and audited, and never silently resumes a suspended connector. Persisted failure diagnostics contain only the exception class; webhook payloads and secret material are excluded from operator responses, audit metadata and metric labels.
+
+OpenAPI now contains **15 fragments / 179 operations** and preserves the PGM-05-E01 zero-debt ratchet `0/0/0/0`. External webhook admission uses its own governed `connector-signature` authorization and `connector-delivery` idempotency modes rather than pretending to be an authenticated `Idempotency-Key` mutation. Migrations `0033` and `0034` add the durable runtime structures and IAM permissions symmetrically for PostgreSQL/Oracle.
+
+Under the strict delivery policy, PGM-10-E05 is **not yet promoted to DELIVERED in this local artifact**: the exact Temurin 25 Maven/JUnit/JaCoCo run and live PostgreSQL 17/18 integration gate are defined in CI but cannot execute in the current runner. All locally available targeted gates pass; see `docs/integrations-connector-runtime.md` and `docs/implementation-status.md` for exact executed/non-executed status.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.100 — PGM-10-E05 phase 1: versioned connector SDK
 
 `alpha.0.100` starts **PGM-10-E05** with the connector-authoring boundary required by draft.21: a dependency-free Python 3.13 SDK v1, a strict `infranexum.connector-manifest/v1` contract, deterministic offline certification and HMAC-SHA256 webhook signing/verification primitives. Manifests make provider compatibility, capabilities/permissions, secret declarations, exact HTTPS egress, synchronization authority, data classification, idempotency/checkpoint/replay policy, resource limits and support lifecycle explicit; wildcard compatibility/egress and embedded secret values fail closed.

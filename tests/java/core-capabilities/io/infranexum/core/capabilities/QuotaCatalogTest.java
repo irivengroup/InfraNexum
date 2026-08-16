@@ -7,7 +7,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class QuotaCatalogTest {
-    private static final String VERSION = "2.0.0-draft.20";
+    private static final String VERSION = "2.0.0-draft.21";
     private final QuotaCatalog catalog = QuotaCatalog.loadEmbedded(VERSION);
 
     @Test

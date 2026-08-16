@@ -7,7 +7,7 @@ server:
 spring:
   application:
     name: infranexum-server
-    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.100}
+    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.101}
   jackson:
     deserialization:
       fail-on-unknown-properties: true
@@ -33,7 +33,7 @@ infranexum:
     installed-capabilities: ${INFRANEXUM_INSTALLED_CAPABILITIES:iam.local-auth,iam.access,platform.bootstrap,platform.entitlements,database.postgresql,discovery.agentless,rsot.core,itam.partners,itam.assets,itam.compliance,dcim.facilities,dcim.physical}
     entitled-capabilities: ${INFRANEXUM_ENTITLED_CAPABILITIES:}
     activation-state: ${INFRANEXUM_ACTIVATION_STATE:NOT_REQUIRED}
-    catalog-version: ${INFRANEXUM_CAPABILITY_CATALOG_VERSION:2.0.0-draft.20}
+    catalog-version: ${INFRANEXUM_CAPABILITY_CATALOG_VERSION:2.0.0-draft.21}
     profile-version: ${INFRANEXUM_PROFILE_VERSION:1}
   persistence:
     mode: ${INFRANEXUM_PERSISTENCE_MODE:POSTGRESQL}
@@ -41,6 +41,19 @@ infranexum:
   scheduling:
     pool-size: ${INFRANEXUM_SCHEDULING_POOL_SIZE:2}
     shutdown-timeout: ${INFRANEXUM_SCHEDULING_SHUTDOWN_TIMEOUT:PT10S}
+  integrations:
+    enabled: ${INFRANEXUM_INTEGRATIONS_ENABLED:false}
+    webhook-max-payload-bytes: ${INFRANEXUM_INTEGRATIONS_WEBHOOK_MAX_PAYLOAD_BYTES:1048576}
+    claim-batch-size: ${INFRANEXUM_INTEGRATIONS_CLAIM_BATCH_SIZE:50}
+    poll-interval: ${INFRANEXUM_INTEGRATIONS_POLL_INTERVAL:PT1S}
+    lease-duration: ${INFRANEXUM_INTEGRATIONS_LEASE_DURATION:PT30S}
+    maximum-attempts: ${INFRANEXUM_INTEGRATIONS_MAXIMUM_ATTEMPTS:5}
+    initial-retry-delay: ${INFRANEXUM_INTEGRATIONS_INITIAL_RETRY_DELAY:PT1S}
+    maximum-retry-delay: ${INFRANEXUM_INTEGRATIONS_MAXIMUM_RETRY_DELAY:PT1M}
+    jitter-ratio: ${INFRANEXUM_INTEGRATIONS_JITTER_RATIO:0.2}
+    suspend-after-dead-letters: ${INFRANEXUM_INTEGRATIONS_SUSPEND_AFTER_DEAD_LETTERS:3}
+    suspension-duration: ${INFRANEXUM_INTEGRATIONS_SUSPENSION_DURATION:PT15M}
+    endpoints: {}
   workers:
     enabled: ${INFRANEXUM_WORKERS_ENABLED:true}
     concurrency: ${INFRANEXUM_WORKERS_CONCURRENCY:2}
@@ -90,7 +103,7 @@ infranexum:
     mode: ${INFRANEXUM_SERVER_MODE:STANDALONE}
     region: ${INFRANEXUM_SERVER_REGION:local}
     site: ${INFRANEXUM_SERVER_SITE:local}
-    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.100}
+    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.101}
     architecture-baseline: ${INFRANEXUM_ARCHITECTURE_BASELINE:2.0.0-draft.21}
 
 logging:
@@ -106,7 +119,7 @@ logging:
         include-hashes: true
     ecs:
       service:
-        version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.100}
+        version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.101}
         environment: ${INFRANEXUM_ENVIRONMENT:local}
         node-name: ${INFRANEXUM_SERVER_INSTANCE_ID:server-local-1}
 
@@ -131,7 +144,7 @@ management:
     map-environment-variables: false
     resource-attributes:
       service.namespace: infranexum
-      service.version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.100}
+      service.version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.101}
       service.instance.id: ${INFRANEXUM_SERVER_INSTANCE_ID:server-local-1}
       deployment.environment.name: ${INFRANEXUM_ENVIRONMENT:local}
     tracing:

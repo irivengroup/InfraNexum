@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 
 class ActivationManifestVerifierTest {
     private static final Instant T0 = Instant.parse("2026-01-01T00:00:00Z");
-    private static final String CATALOG = "2.0.0-draft.20";
+    private static final String CATALOG = "2.0.0-draft.21";
     private CapabilityCatalog capabilityCatalog;
     private QuotaCatalog quotaCatalog;
     private InstallationIdentity identity;

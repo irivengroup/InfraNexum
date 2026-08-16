@@ -14,7 +14,7 @@ public final class ApiCapabilityRequirementSmoke {
             throw new IllegalArgumentException("expected generated route capability case file");
         }
         List<String> rows = Files.readAllLines(Path.of(args[0]), StandardCharsets.UTF_8);
-        assert rows.size() == 174 : "expected all 174 product operations";
+        assert rows.size() == 179 : "expected all 179 product operations";
         int checked = 0;
         for (String row : rows) {
             if (row.isBlank()) continue;
@@ -25,7 +25,7 @@ public final class ApiCapabilityRequirementSmoke {
                     : fields[2] + " expected capability " + fields[1] + " but runtime resolved " + actual;
             checked++;
         }
-        assert checked == 174;
+        assert checked == 179;
         assert "iam.local-auth".equals(ApiCapabilityRequirement.resolve("/api/v1/iam/local-auth/sessions/?ignored=1"));
         assert ApiCapabilityRequirement.resolve("/api/v1/not-published") == null;
         System.out.println("api-capability-requirement-smoke: OK; operations=" + checked);

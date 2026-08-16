@@ -14,7 +14,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class CapabilityRegistryTest {
-    private static final String VERSION = "2.0.0-draft.20";
+    private static final String VERSION = "2.0.0-draft.21";
     private final CapabilityCatalog catalog = CapabilityCatalog.loadEmbedded(VERSION);
     private final CapabilityRegistry registry = new CapabilityRegistry(
             catalog, Clock.fixed(Instant.parse("2026-08-03T12:00:00Z"), ZoneOffset.UTC));
@@ -94,7 +94,7 @@ class CapabilityRegistryTest {
                 Set.of(new CapabilityCode("iam.ldap")), Map.of()));
         CapabilitySnapshot second = registry.evaluate(pro(AllocationTier.STANDARD, ActivationState.ACTIVE,
                 Set.of(new CapabilityCode("iam.ldap")), Map.of()));
-        assertEquals(21, first.decisions().size());
+        assertEquals(22, first.decisions().size());
         assertEquals(first.capabilityHash(), second.capabilityHash());
         assertEquals(first.require(new CapabilityCode("iam.ldap")), second.require(new CapabilityCode("iam.ldap")));
         assertThrows(IllegalArgumentException.class, () -> first.require(new CapabilityCode("unknown.value")));

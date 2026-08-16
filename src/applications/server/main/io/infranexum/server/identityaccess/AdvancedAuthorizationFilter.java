@@ -31,6 +31,7 @@ public final class AdvancedAuthorizationFilter extends OncePerRequestFilter impl
     private static final String API_PREFIX = "/api/v1/";
     private static final String AUTH_PREFIX = "/api/v1/iam/local-auth";
     private static final String PUBLIC_BUILD_PATH = "/api/v1/system/build";
+    private static final String WEBHOOK_PREFIX = "/api/v1/integrations/webhooks/";
 
     private final PolicyDecisionService decisions;
     private final IdentityAccessFeaturePolicy features;
@@ -54,7 +55,7 @@ public final class AdvancedAuthorizationFilter extends OncePerRequestFilter impl
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
         return !features.supportsAdvancedAuthorization() || !path.startsWith(API_PREFIX)
-                || path.equals(AUTH_PREFIX) || path.startsWith(AUTH_PREFIX + "/") || PUBLIC_BUILD_PATH.equals(path);
+                || path.equals(AUTH_PREFIX) || path.startsWith(AUTH_PREFIX + "/") || PUBLIC_BUILD_PATH.equals(path) || path.startsWith(WEBHOOK_PREFIX);
     }
 
     @Override

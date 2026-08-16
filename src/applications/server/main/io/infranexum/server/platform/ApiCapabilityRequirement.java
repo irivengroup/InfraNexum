@@ -26,6 +26,7 @@ public final class ApiCapabilityRequirement {
         if (dcimFacilityRoute(path)) return "dcim.facilities";
         if (dcimPhysicalRoute(path)) return "dcim.physical";
         if (route(path, "/api/v1/ddi/ipam")) return "ddi.ipam";
+        if (route(path, "/api/v1/integrations")) return "integrations.connectors";
         if (path.equals("/api/v1/platform/evaluation/status")) return "platform.entitlements";
         return null;
     }

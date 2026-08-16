@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 /** Regression coverage for durable activation import, temporal evidence and compensation. */
 class ActivationImportCoordinatorTest {
     private static final Instant NOW = Instant.parse("2026-03-01T00:00:00Z");
-    private static final String CATALOG = "2.0.0-draft.20";
+    private static final String CATALOG = "2.0.0-draft.21";
     private InstallationIdentity identity;
     private ActivationManifest manifest;
     private ActivationValidationContext context;

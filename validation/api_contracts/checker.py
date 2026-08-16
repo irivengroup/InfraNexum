@@ -21,7 +21,7 @@ _CANONICAL_PROBLEM_FIELDS = {
     "occurred_at", "timestamp", "correlation_id", "trace_id",
 }
 _CANONICAL_PROBLEM_REQUIRED = _CANONICAL_PROBLEM_FIELDS
-_AUTHORIZATION_MODES = {"permission", "conditional", "platform-admin", "organization-visibility", "authenticated-self", "anonymous"}
+_AUTHORIZATION_MODES = {"permission", "conditional", "platform-admin", "organization-visibility", "authenticated-self", "anonymous", "connector-signature"}
 
 
 class _UniqueKeyLoader(yaml.SafeLoader):
@@ -507,7 +507,7 @@ class ApiContractChecker:
         mode = item.operation.get("x-infranexum-idempotency")
         parameters = {parameter.get("name"): parameter for parameter in self._resolved_parameters(item) if isinstance(parameter.get("name"), str)}
         key = parameters.get("Idempotency-Key")
-        if mode is not None and mode not in {"required", "repeatable", "security-exempt"}:
+        if mode is not None and mode not in {"required", "repeatable", "security-exempt", "connector-delivery"}:
             self._add("CHECK-API-032", item.source, f"{item.operation_id} has unsupported idempotency mode {mode!r}")
             return
         if key is not None:
@@ -520,8 +520,17 @@ class ApiContractChecker:
                 self._add("CHECK-API-032", item.source, f"{item.operation_id} Idempotency-Key must use the canonical required 8..200 safe-character contract")
         if mode == "required" and key is None:
             self._add("CHECK-API-032", item.source, f"{item.operation_id} declares required idempotency without Idempotency-Key")
-        if mode in {"repeatable", "security-exempt"} and key is not None:
+        if mode in {"repeatable", "security-exempt", "connector-delivery"} and key is not None:
             self._add("CHECK-API-032", item.source, f"{item.operation_id} {mode} operations must not expose Idempotency-Key")
+        if mode == "connector-delivery":
+            delivery = parameters.get("X-InfraNexum-Delivery-ID")
+            schema = delivery.get("schema") if isinstance(delivery, dict) else None
+            valid = (isinstance(delivery, dict) and delivery.get("in") == "header" and delivery.get("required") is True
+                     and isinstance(schema, dict) and schema.get("type") == "string"
+                     and schema.get("minLength") == 1 and schema.get("maxLength") == 200
+                     and schema.get("pattern") == "^[A-Za-z0-9._:-]+$")
+            if not valid:
+                self._add("CHECK-API-032", item.source, f"{item.operation_id} connector-delivery idempotency requires canonical X-InfraNexum-Delivery-ID")
 
     def _validate_pagination_contract(self, item: _Operation) -> None:
         mode = item.operation.get("x-infranexum-pagination")
@@ -617,7 +626,7 @@ class ApiContractChecker:
         for item in self.operations:
             params = self._parameter_names(item)
             mode = item.operation.get("x-infranexum-idempotency")
-            if item.method in _MUTATING_METHODS and "Idempotency-Key" not in params and mode not in {"repeatable", "security-exempt"}:
+            if item.method in _MUTATING_METHODS and "Idempotency-Key" not in params and mode not in {"repeatable", "security-exempt", "connector-delivery"}:
                 idempotency.add(item.operation_id)
             if _LIST_OPERATION.match(item.operation_id):
                 has_size = "limit" in params or "page_size" in params
