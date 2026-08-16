@@ -1,145 +1,137 @@
-# API Platform contract governance — PGM-05-E01 phases 1–3
+# API Platform contract governance — PGM-05-E01 phases 1–5
 
 ## Status and scope
 
-InfraNexum `2.0.0-alpha.0.93` established the phase-1 contract-governance foundation for **PGM-05-E01 — REST/OpenAPI standard, errors, pagination and idempotency**. `2.0.0-alpha.0.95` added phase 2: the Server runtime emits the canonical problem contract certified by OpenAPI. `2.0.0-alpha.0.96` added phase 3: every historically unbounded list/search operation uses an explicit bounded cursor or offset contract. `2.0.0-alpha.0.97` adds phase 4: all historical idempotency debt is either protected by a canonical durable key contract or explicitly classified as repeatable/security-exempt. The epic remains **IN PROGRESS** while capability/permission metadata debt is remediated.
+InfraNexum `2.0.0-alpha.0.98` completes **PGM-05-E01 — REST/OpenAPI standard, errors, pagination and idempotency** against the `2.0.0-draft.21` exit gate: **OpenAPI source unique, component/context tags and contractual tests**.
 
-Canonical sources remain the registered OpenAPI 3.1 fragments under `src/applications/server/resources/openapi/` plus `catalogue.yaml`. The generated `artifacts/validation/openapi-product.yaml` is a certified build output, never a second manually maintained source of truth.
+The five implementation phases are cumulative:
+
+1. `alpha.0.93` — canonical OpenAPI catalogue, deterministic product contract and fail-closed debt ratchet;
+2. `alpha.0.95` — canonical RFC 9457-compatible runtime problem contract and correlation boundary;
+3. `alpha.0.96` — bounded cursor/keyset and offset pagination;
+4. `alpha.0.97` — canonical idempotency classification and durable IAM/RSOT replay ledger;
+5. `alpha.0.98` — registry-backed capability/authorization metadata, runtime capability gating, effective-installation contract filtering and runtime/OpenAPI route-capability coherence.
+
+PGM-05-E01 is **DELIVERED** at source/contract/runtime-governance level. Target JDK 25, Docker Desktop PRO and browser promotion gates remain separately identified as runtime validation gates; they are not represented as executed when unavailable in the delivery runner.
 
 ## Canonical catalogue
 
-`src/applications/server/resources/openapi/catalogue.yaml` registers every public Server OpenAPI fragment with its functional component and business context. The catalogue is exhaustive: an unregistered `*.yaml` fragment or a catalogue entry without a corresponding file fails certification.
+Canonical API sources are the registered OpenAPI 3.1 fragments under `src/applications/server/resources/openapi/` plus `catalogue.yaml`. Generated product/effective specifications are build artifacts and never become a second manually maintained source of truth.
 
-Current registered surface:
+Current certified surface:
 
-- 13 OpenAPI fragments;
-- 170 operations;
-- 120 distinct API paths;
+- **14 OpenAPI fragments**;
+- **174 operations**;
 - one global `operationId` namespace;
-- deterministic component/context tag hierarchy.
+- deterministic `component → context → tag → operation` organization;
+- all known public v1 product/runtime routes, including the previously undocumented bootstrap/runtime endpoints `/api/v1/system/build`, `/api/v1/platform/capabilities`, `/api/v1/platform/capabilities/{code}` and `/api/v1/platform/quotas`.
 
-The validator requires OpenAPI 3.1.x, release-version parity, unique routes and operation identifiers, functional tags, `x-tagGroups`, operation summaries, security declarations and structured error responses.
+The validator rejects unregistered fragments, version drift, route/operation collisions, technical catch-all tags, missing summaries/security, unresolved local references and non-canonical error responses.
 
-## Functional organization
+## Product-complete and effective-installation contracts
 
-OpenAPI navigation is business-oriented rather than implementation-oriented:
+`validation.api_contracts` assembles a deterministic product-complete specification from the certified fragments. Fragment-local components are namespaced and `$ref` targets are rewritten to prevent collisions.
 
-`component → business context/resource → operation`
+The same validator can generate an **installation-effective contract** from an explicit effective capability set:
 
-Technical catch-all tags such as `Default`, `Misc`, `Utils`, `Helpers`, `Common`, `Divers`, `Autres` or `Général` are rejected. Each operation belongs to exactly one declared functional tag, and each declared tag belongs to exactly one group.
+```bash
+python -m validation.api_contracts.cli \
+  --root . \
+  --effective-spec artifacts/validation/openapi-effective.yaml \
+  --effective-capability iam.access \
+  --effective-capability rsot.core
+```
 
-## Product-complete generated contract
+Only operations whose `x-infranexum-capability` is effective are retained. Tags and tag groups with no remaining operation are removed. The always-available `platform.bootstrap` contract is preserved so build/capability/quota diagnostics remain publishable even when optional business capabilities are absent.
 
-`validation.api_contracts` can assemble all certified fragments into a single deterministic OpenAPI 3.1 product contract. Assembly:
-
-- namespaces fragment-local reusable components to prevent collisions;
-- rewrites local `$ref` targets;
-- materializes inherited security on operations;
-- merges paths only when method/path pairs are unique;
-- merges functional tags and `x-tagGroups` deterministically;
-- records the exact source fragment list.
-
-Generate and validate with:
+The complete contract is generated by:
 
 ```bash
 make api-contract-test api-contract-check
 ```
 
-The generated artifacts are:
+Generated validation artifacts are excluded from canonical source archives.
 
-- `artifacts/validation/api-contracts.json` — machine-readable validation report;
-- `artifacts/validation/openapi-product.yaml` — complete generated product contract;
-- `artifacts/validation/api-contracts-coverage.txt` — validator coverage evidence.
+## Capability publication and runtime gate
 
-Generated validation artifacts are not product sources and are excluded from published source archives.
+Every operation declares a registry-backed `x-infranexum-capability`. The API checker loads the authoritative Core capability catalogue and rejects unknown capability codes.
 
-## Canonical error contract and runtime boundary
+`ApiCapabilityRequirement` maps the public route surface to the same capability families used by OpenAPI. `ApiCapabilityFilter` executes after correlation (`+10`) and before local authentication (`+20`) at order `+15`:
 
-Every documented HTTP 4xx/5xx response in the registered OpenAPI surface resolves to `application/problem+json`, the canonical `#/components/schemas/Problem`, and an `X-Correlation-ID` response header. The checker resolves reusable response `$ref` values before validating this contract, so an indirect legacy response can no longer escape certification.
+- unavailable capability → `404 INFRANEXUM_API_CAPABILITY_UNAVAILABLE`;
+- unavailable capability runtime → fail-closed `503 INFRANEXUM_CAPABILITY_RUNTIME_UNAVAILABLE`;
+- accepted request → capability code attached to the request as a canonical attribute.
 
-The Server runtime uses one immutable `ApiProblem` representation and one `ApiProblemSupport` factory/serializer across MVC exception handlers and terminal correlation, local-authentication, RBAC and ABAC filters. The canonical public fields are:
+`platform.bootstrap` is intentionally always routable and bypasses capability evaluation. It contains only non-mutating bootstrap/runtime registry surfaces and avoids a circular dependency where the capability registry would require itself in order to explain capability availability.
 
-- RFC 9457 core: `type`, `title`, `status`, `detail`, `instance`;
-- InfraNexum extensions: `code`, `details`, `metadata`, `occurred_at`, `correlation_id`, `trace_id`;
-- compatibility aliases: `message` (alias of `detail`) and `timestamp` (alias of `occurred_at`).
+CI generates **all 174 concrete OpenAPI operation cases** and executes them against the Java runtime resolver. A route/capability drift therefore fails the foundation gate instead of becoming documentation-only metadata.
 
-Compatibility aliases remain present during PGM-05-E01 so existing clients do not break. New clients should consume the canonical fields. Problem text and structured details are sanitized through the platform redactor, public text is bounded, terminal filters use the same serializer as MVC, and unexpected exceptions return a generic fail-closed detail rather than internal exception data. `correlation_id` is taken only from the validated `CorrelationContext`; raw untrusted correlation headers are never reflected.
+## Authorization metadata
 
-The checker additionally enforces the exact canonical `Problem` property/required set with `additionalProperties: false` and requires the reusable `CorrelationId` header contract.
+Every operation declares a structured `x-infranexum-permission` object. The allowed authorization modes are explicit:
 
-## Pagination and idempotency ratchet
+- `permission` — one atomic IAM permission code;
+- `conditional` — the runtime selects one of multiple registered permission codes from request semantics;
+- `platform-admin` — platform administrator boundary;
+- `organization-visibility` — membership/visibility policy rather than an atomic mutation permission;
+- `authenticated-self` — authenticated principal may operate on the current session/self context;
+- `anonymous` — explicitly public operation and `security: []` required.
 
-Historical API inconsistencies pre-date the platform standard. They are recorded by exact `operationId` in `validation/api_contracts/baseline.json`. The baseline is a **ratchet**, not an exemption:
+Atomic/conditional codes are validated against `PermissionCodes.java`. Architecture tests additionally require every OpenAPI permission code to be referenced by Server enforcement code. Unknown modes, unknown permissions, extraneous mode fields and inconsistent anonymous security all fail certification.
 
-- existing debt may be removed;
-- existing debt may never be replaced by another operation;
-- new debt is forbidden;
-- an operation absent from the historical baseline but violating the standard fails certification.
+Current 174-operation authorization distribution is intentionally explicit: **153 permission**, **9 platform-admin**, **4 conditional**, **3 authenticated-self**, **2 organization-visibility**, **3 anonymous**.
 
-Current machine-readable summary after phase 3: `idempotency=39, pagination=0, capability=56, permission=85`.
+## Canonical error contract
 
-| Dimension | Remaining operations |
+Every documented 4xx/5xx response resolves to `application/problem+json`, the canonical `Problem` schema and the `X-Correlation-ID` response header.
+
+Server MVC exception handlers and terminal correlation/authentication/RBAC/ABAC/capability boundaries share immutable `ApiProblem` + `ApiProblemSupport`. Canonical fields are `type`, `title`, `status`, `detail`, `instance`, `code`, `details`, `metadata`, `occurred_at`, `correlation_id` and `trace_id`; compatibility aliases `message` and `timestamp` remain available for existing clients.
+
+Unexpected errors are redacted and fail closed. Raw unvalidated correlation headers are never reflected.
+
+## Pagination
+
+The historical pagination debt is zero.
+
+- **8 cursor/keyset operations** cover mutable/high-volume DCIM/DDI collections;
+- **7 bounded-offset operations** cover administrative/reference collections.
+
+Cursor repositories use stable ordered identifiers and `limit + 1` lookahead. Offset is constrained to `0..1,000,000`. Existing JSON array response bodies remain unchanged; continuation is additive through `X-Page-Limit`, `X-Next-Cursor` or `X-Next-Offset`. Web adapters preserve `payload` and add `pagination` metadata.
+
+The checker validates `x-infranexum-pagination`, parameter types/bounds and continuation headers.
+
+## Idempotency
+
+The historical idempotency debt is zero.
+
+Required operations use canonical `Idempotency-Key` values matching `^[A-Za-z0-9._:-]+$` with 8..200 characters. Thirty-two IAM/RSOT mutations use the durable Core ledger introduced by migration `0032`; existing Organization/ITAM/DCIM/DDI domain-native transaction/idempotency mechanisms remain authoritative.
+
+The generic ledger scopes the key by authenticated actor + operation and fingerprints method/path/query/body. Same-key/same-request completed responses replay deterministically with `X-Idempotent-Replay: true`; same-key/different-request returns 409. `IN_PROGRESS`/`INDETERMINATE` executions are never automatically retried. This is deliberately fail-closed and does **not** claim exactly-once semantics across separate physical business transactions.
+
+Side-effect-free evaluations are explicitly `repeatable`; security-sensitive Local Auth mutations are explicitly `security-exempt` from generic response replay persistence.
+
+## Zero-debt ratchet
+
+`validation/api_contracts/baseline.json` is now fully closed:
+
+`idempotency=0, pagination=0, capability=0, permission=0`
+
+| Dimension | Remaining debt |
 |---|---:|
-| Mutations without canonical `Idempotency-Key` declaration | 39 |
-| List/search operations without recognized bounded pagination | **0** |
-| Operations without explicit capability metadata | 56 |
-| Operations without explicit permission metadata | 85 |
+| Idempotency | **0** |
+| Pagination | **0** |
+| Capability metadata | **0** |
+| Permission/authorization metadata | **0** |
 
-### Phase-3 bounded pagination contract
+The ratchet remains active. Any future operation that reintroduces one of these gaps fails CI; zero is not a one-time migration state.
 
-The 15 historical pagination-debt operations are now partitioned by data semantics rather than forced into one mechanism:
+## CI enforcement and exit gate
 
-- **cursor/keyset (8 operations):** DCIM racks, installed equipment and cables, plus IPAM VRFs, VLANs, networks, pools and addresses;
-- **bounded offset (7 operations):** DCIM equipment models and ports, IAM user memberships and role assignments, ITAM support authorizations, warranty types and compliance alerts.
+Blocking gates are part of `verify-foundation` and GitHub Actions:
 
-Cursor collections use the stable ordered identifier and a strict `id > cursor` predicate. Repositories fetch `limit + 1`, emit only `limit` items, and expose `X-Next-Cursor` only when another page exists. This avoids offset drift on mutable/high-volume collections.
+- `api-contract-test` — validator branch coverage at repository threshold;
+- `api-contract-check` — full registered contract validation and deterministic product specification;
+- `java-api-capability-smoke` — all OpenAPI operations checked against the Java runtime capability resolver;
+- Architecture-as-Code and targeted API authorization tests — filter ordering, registry binding, special authorization semantics, source uniqueness and effective-contract filtering.
 
-Offset collections use zero-based `offset` plus bounded `limit`. `offset` is constrained to **0..1,000,000** in the core domain contract, Server runtime, OpenAPI and Web adapters so pathological scans cannot be requested accidentally or used as a simple application-level resource-exhaustion vector.
-
-Every paginated operation declares `x-infranexum-pagination: cursor|offset`. The API checker validates the mode, parameter types/bounds and mandatory response headers:
-
-- `X-Page-Limit` for both modes;
-- `X-Next-Cursor` for cursor mode;
-- `X-Next-Offset` for offset mode.
-
-For backward compatibility, phase 3 deliberately preserves the existing **JSON array response bodies**. Continuation metadata is carried in response headers. Web adapters preserve their historical `payload` field and additionally expose immutable `pagination` metadata (`limit`, `nextCursor`, `nextOffset`, `hasNext`). Existing callers therefore continue to work while new callers can traverse pages explicitly.
-
-The pagination ratchet is now zero and cannot increase. PGM-05-E01 still remains open because idempotency and capability/permission metadata debt are non-zero.
-
-## CI enforcement
-
-`api-contract-test` runs branch coverage over the validator with the repository-wide minimum of 98%. `api-contract-check` validates the complete registered surface and generates the consolidated product contract. Both are part of `verify-foundation` and the GitHub Actions architecture job.
-
-Certification fails on, among other conditions:
-
-- duplicate YAML mapping keys;
-- catalogue drift;
-- OpenAPI version or release-version drift;
-- undeclared/duplicate technical tags;
-- route or global `operationId` collisions;
-- missing summaries or security declarations;
-- non-`problem+json` documented errors;
-- unresolved local operation references;
-- any increase in idempotency, pagination, capability or permission debt.
-
-## Compatibility and next remediation phases
-
-`alpha.0.97` remains additive/compatible at the API boundary. Existing HTTP routes, business status codes, authorization rules and JSON bodies are not removed or renamed. Phase 2 problem compatibility aliases and phase 3 pagination contracts remain available. Phase 4 requires a canonical `Idempotency-Key` only on the 32 IAM/RSOT mutations governed by the durable ledger; existing Organization/ITAM/DCIM/DDI domain-native idempotency semantics remain authoritative for those bounded contexts.
-
-PGM-05-E01 remains **IN PROGRESS**. The following work remains before the epic can unblock PGM-10-E05:
-
-1. implement/reconcile idempotency semantics and replay conflict behavior for every sensitive mutation;
-2. attach canonical capability and permission metadata to every protected operation and validate it against the authoritative registries;
-3. certify route/runtime/OpenAPI coherence and effective-installation contract filtering;
-4. reach zero ratchet debt and pass the complete target-runtime contract suite.
-
-Only after those acceptance conditions are closed can PGM-05-E01 be marked delivered and `PGM-10-E05` become the next dependency target.
-
-
-## Phase 4 — canonical idempotency (`2.0.0-alpha.0.97`)
-
-The mutation contract now distinguishes three explicit semantics. `required` operations expose the canonical required `Idempotency-Key` header (`^[A-Za-z0-9._:-]+$`, 8..200 characters); `repeatable` operations are side-effect-free POST evaluations that require no replay ledger; `security-exempt` Local Auth operations deliberately avoid generic replay because persisting/re-emitting session or credential rotation material would expand the security boundary.
-
-Thirty-two IAM/RSOT mutations are protected by the Core API idempotency ledger introduced by migration `0032`. Keys are scoped by authenticated actor and operation. The request fingerprint includes method, request URI, raw query and body bytes. Successful 2xx/3xx results are stored and replayed with `X-Idempotent-Replay: true`; semantic key reuse returns `409 INFRANEXUM_IDEMPOTENCY_CONFLICT`. A reservation that cannot be proven completed is retained as `IN_PROGRESS`/`INDETERMINATE` and is never automatically expired, because a business transaction may already have committed before the process interruption. This deliberately prefers fail-closed manual recovery over duplicate mutation execution.
-
-The phase-4 ratchet is `idempotency=0`, `pagination=0`, `capability=56`, `permission=85`.
+The roadmap `2.0.0-draft.21` gate for PGM-05-E01 is therefore satisfied at source/contract level: **OpenAPI source unique, tags composant/contexte et tests contractuels**. With PGM-05-E01 delivered, the dependency edge to **PGM-10-E05** is unblocked; PGM-02-E03 was already satisfied.

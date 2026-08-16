@@ -38,6 +38,12 @@ class ApiContractCheckerTest(unittest.TestCase):
         (self.root / "validation/api_contracts").mkdir(parents=True)
         shutil.copy2(SOURCE / "validation/api_contracts/baseline.json", self.root / "validation/api_contracts/baseline.json")
         shutil.copy2(SOURCE / "VERSION", self.root / "VERSION")
+        capability_target = self.root / "src/components/core/capabilities/resources/io/infranexum/core/capabilities/capability-catalog.csv"
+        capability_target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(SOURCE / "src/components/core/capabilities/resources/io/infranexum/core/capabilities/capability-catalog.csv", capability_target)
+        permission_target = self.root / "src/components/domains/identity-access/main/io/infranexum/identity/access/domain/PermissionCodes.java"
+        permission_target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(SOURCE / "src/components/domains/identity-access/main/io/infranexum/identity/access/domain/PermissionCodes.java", permission_target)
 
     def tearDown(self) -> None:
         self.temp.cleanup()
@@ -57,12 +63,12 @@ class ApiContractCheckerTest(unittest.TestCase):
     def test_reference_contract_catalogue_is_valid_and_debt_is_frozen(self) -> None:
         checker = ApiContractChecker(SOURCE)
         self.assertEqual((), checker.run())
-        self.assertEqual(13, len(checker.documents))
-        self.assertEqual(170, len(checker.operations))
+        self.assertEqual(14, len(checker.documents))
+        self.assertEqual(174, len(checker.operations))
         self.assertEqual(0, len(checker.current_debt.idempotency))
         self.assertEqual(0, len(checker.current_debt.pagination))
-        self.assertEqual(56, len(checker.current_debt.capability))
-        self.assertEqual(85, len(checker.current_debt.permission))
+        self.assertEqual(0, len(checker.current_debt.capability))
+        self.assertEqual(0, len(checker.current_debt.permission))
 
     def test_missing_or_invalid_version_is_rejected(self) -> None:
         (self.root / "VERSION").unlink()
@@ -85,7 +91,7 @@ class ApiContractCheckerTest(unittest.TestCase):
         path = self.spec("catalogue.yaml")
         path.write_text("[]\n", encoding="utf-8")
         self.assertIn("CHECK-API-001", self.violations())
-        path.write_text("schema: infranexum.openapi-catalogue/v1\nversion: 2.0.0-alpha.0.97\nfragments: []\n", encoding="utf-8")
+        path.write_text("schema: infranexum.openapi-catalogue/v1\nversion: 2.0.0-alpha.0.98\nfragments: []\n", encoding="utf-8")
         self.assertIn("CHECK-API-005", self.violations())
 
     def test_duplicate_yaml_keys_are_rejected_but_merge_overrides_are_supported(self) -> None:
@@ -270,6 +276,39 @@ class ApiContractCheckerTest(unittest.TestCase):
         text = yaml.safe_dump(product, sort_keys=False, allow_unicode=True)
         self.assertNotIn("#/components/schemas/Problem\n", text)
 
+    def test_effective_spec_filters_unavailable_capabilities_without_mutating_product_contract(self) -> None:
+        checker = ApiContractChecker(self.root)
+        product = checker.build_product_spec()
+        effective = checker.build_effective_spec(["iam.access"])
+        self.assertEqual("installation-effective", effective["x-infranexum-contract"])
+        self.assertEqual(["iam.access", "platform.bootstrap"], effective["x-infranexum-effective-capabilities"])
+        operations = [
+            operation
+            for item in effective["paths"].values()
+            for method, operation in item.items()
+            if method in {"get", "post", "put", "patch", "delete", "head", "options"}
+        ]
+        self.assertTrue(operations)
+        self.assertEqual({"iam.access"}, {op["x-infranexum-capability"] for op in operations})
+        self.assertGreater(len(product["paths"]), len(effective["paths"]))
+        self.assertEqual("product-complete", product["x-infranexum-contract"])
+        used_tags = {tag for op in operations for tag in op.get("tags", [])}
+        self.assertEqual(used_tags, {tag["name"] for tag in effective["tags"]})
+
+    def test_reference_effective_spec_always_preserves_bootstrap_routes(self) -> None:
+        effective = ApiContractChecker(SOURCE).build_effective_spec(["iam.access"])
+        self.assertIn("platform.bootstrap", effective["x-infranexum-effective-capabilities"])
+        self.assertIn("/api/v1/system/build", effective["paths"])
+        self.assertIn("/api/v1/platform/capabilities", effective["paths"])
+        self.assertNotIn("/api/v1/ddi/ipam/networks", effective["paths"])
+
+    def test_effective_spec_rejects_empty_or_unknown_capability_sets(self) -> None:
+        checker = ApiContractChecker(self.root)
+        with self.assertRaises(ValueError):
+            checker.build_effective_spec([])
+        with self.assertRaises(ValueError):
+            checker.build_effective_spec(["does.not.exist"])
+
     def test_product_spec_writer_and_report_are_machine_readable(self) -> None:
         checker = ApiContractChecker(self.root)
         destination = self.root / "build/openapi-product.yaml"
@@ -294,6 +333,28 @@ class ApiContractCheckerTest(unittest.TestCase):
         self.assertIn("api-contracts: PASS", output.getvalue())
         self.assertTrue(report.is_file())
         self.assertTrue(product.is_file())
+
+        effective = self.root / "reports/effective.yaml"
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            status = cli_main([
+                "--root", str(self.root),
+                "--effective-spec", str(effective),
+                "--effective-capability", "iam.access",
+            ])
+        self.assertEqual(0, status)
+        effective_payload = yaml.safe_load(effective.read_text(encoding="utf-8"))
+        self.assertEqual("installation-effective", effective_payload["x-infranexum-contract"])
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            self.assertEqual(1, cli_main(["--root", str(self.root), "--effective-spec", str(effective)]))
+        self.assertIn("CHECK-API-035", output.getvalue())
+
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            self.assertEqual(1, cli_main(["--root", str(self.root), "--effective-capability", "iam.access"]))
+        self.assertIn("CHECK-API-035", output.getvalue())
 
         self.spec("catalogue.yaml").write_text("[]\n", encoding="utf-8")
         output = io.StringIO()
@@ -420,7 +481,7 @@ class ApiContractCheckerTest(unittest.TestCase):
             def run(self):
                 base = {
                     "openapi": "3.1.0",
-                    "info": {"version": "2.0.0-alpha.0.97"},
+                    "info": {"version": "2.0.0-alpha.0.98"},
                     "tags": [{"name": "X / Shared"}],
                     "x-tagGroups": [{"name": "X", "tags": ["X / Shared", "X / Shared"]}],
                     "components": {"schemas": {"Thing": {"type": "object"}}},
@@ -443,7 +504,7 @@ class ApiContractCheckerTest(unittest.TestCase):
         class DuplicateRouteChecker(BaseChecker):
             def run(self):
                 op = {"operationId": "x", "tags": ["X / Y"], "summary": "X", "responses": {"200": {"description": "OK"}}}
-                doc = {"openapi": "3.1.0", "info": {"version": "2.0.0-alpha.0.97"}, "tags": [{"name": "X / Y"}], "x-tagGroups": [{"name": "X", "tags": ["X / Y"]}], "paths": {"/api/v1/x": {"get": op}}, "components": {}}
+                doc = {"openapi": "3.1.0", "info": {"version": "2.0.0-alpha.0.98"}, "tags": [{"name": "X / Y"}], "x-tagGroups": [{"name": "X", "tags": ["X / Y"]}], "paths": {"/api/v1/x": {"get": op}}, "components": {}}
                 self.documents = {"one.yaml": doc, "two.yaml": doc}
                 return ()
         with self.assertRaises(ValueError):
@@ -463,9 +524,129 @@ class ApiContractCheckerTest(unittest.TestCase):
         checker = ApiContractChecker(self.root)
         self.assertEqual({"tags": []}, checker._rewrite_fragment({"tags": []}, "x"))
 
+    def test_capability_metadata_must_reference_authoritative_catalogue(self) -> None:
+        payload = self.load("platform-entitlements.yaml")
+        operation = payload["paths"]["/api/v1/platform/evaluation/status"]["get"]
+        operation["x-infranexum-capability"] = "platform.unknown"
+        self.save("platform-entitlements.yaml", payload)
+        self.assertIn("CHECK-API-033", self.violations())
 
-if __name__ == "__main__":
-    unittest.main()
+    def test_permission_metadata_is_structured_and_registry_backed(self) -> None:
+        payload = self.load("identity-access-rbac.yaml")
+        operation = payload["paths"]["/api/v1/iam/users"]["get"]
+        operation["x-infranexum-permission"] = "iam.user.search"
+        self.save("identity-access-rbac.yaml", payload)
+        self.assertIn("CHECK-API-034", self.violations())
+
+        payload = self.load("identity-access-rbac.yaml")
+        operation = payload["paths"]["/api/v1/iam/users"]["get"]
+        operation["x-infranexum-permission"] = {"mode": "permission", "code": "iam.user.unknown"}
+        self.save("identity-access-rbac.yaml", payload)
+        self.assertIn("CHECK-API-034", self.violations())
+
+    def test_authorization_metadata_invalid_modes_conditionals_and_security_are_rejected(self) -> None:
+        payload = self.load("identity-access-rbac.yaml")
+        operation = payload["paths"]["/api/v1/iam/users"]["get"]
+        operation["x-infranexum-permission"] = {"mode": "unknown"}
+        self.save("identity-access-rbac.yaml", payload)
+        self.assertIn("CHECK-API-034", self.violations())
+
+        shutil.copy2(SOURCE / "src/applications/server/resources/openapi/identity-access-rbac.yaml", self.spec("identity-access-rbac.yaml"))
+        payload = self.load("identity-access-rbac.yaml")
+        operation = payload["paths"]["/api/v1/iam/users"]["get"]
+        operation["x-infranexum-permission"] = {
+            "mode": "conditional",
+            "codes": ["iam.user.read", "does.not.exist"],
+        }
+        self.save("identity-access-rbac.yaml", payload)
+        self.assertIn("CHECK-API-034", self.violations())
+
+        shutil.copy2(SOURCE / "src/applications/server/resources/openapi/identity-access-rbac.yaml", self.spec("identity-access-rbac.yaml"))
+        payload = self.load("identity-access-rbac.yaml")
+        operation = payload["paths"]["/api/v1/iam/users"]["get"]
+        operation["security"] = []
+        self.save("identity-access-rbac.yaml", payload)
+        self.assertIn("CHECK-API-034", self.violations())
+
+    def test_authoritative_registry_failures_and_duplicate_values_are_rejected(self) -> None:
+        capability = self.root / "src/components/core/capabilities/resources/io/infranexum/core/capabilities/capability-catalog.csv"
+        saved_capability = capability.read_text(encoding="utf-8")
+        capability.unlink()
+        self.assertIn("CHECK-API-033", self.violations())
+        capability.write_text(saved_capability + saved_capability.splitlines()[1] + "\n", encoding="utf-8")
+        self.assertIn("CHECK-API-033", self.violations())
+        capability.write_text(saved_capability, encoding="utf-8")
+
+        permissions = self.root / "src/components/domains/identity-access/main/io/infranexum/identity/access/domain/PermissionCodes.java"
+        saved_permissions = permissions.read_text(encoding="utf-8")
+        permissions.unlink()
+        self.assertIn("CHECK-API-034", self.violations())
+        permissions.write_text('final class PermissionCodes { static final String A="iam.user.read", B="iam.user.read"; }\n', encoding="utf-8")
+        self.assertIn("CHECK-API-034", self.violations())
+        permissions.write_text(saved_permissions, encoding="utf-8")
+
+    def test_effective_contract_rejects_invalid_source_and_cli_reports_unknown_capability(self) -> None:
+        self.spec("catalogue.yaml").write_text("[]\n", encoding="utf-8")
+        with self.assertRaises(ValueError):
+            ApiContractChecker(self.root).build_effective_spec(["iam.access"])
+        shutil.copy2(SOURCE / "src/applications/server/resources/openapi/identity-access-rbac.yaml", self.spec("identity-access-rbac.yaml"))
+        catalogue = {
+            "schema": "infranexum.openapi-catalogue/v1",
+            "product": "InfraNexum — Infrastructure Control & Governance Platform",
+            "version": (SOURCE / "VERSION").read_text(encoding="utf-8").strip(),
+            "fragments": [
+                {"file": "identity-access-rbac.yaml", "component": "IAM", "context": "Access"},
+                {"file": "platform-entitlements.yaml", "component": "Platform", "context": "Entitlements"},
+            ],
+        }
+        self.spec("catalogue.yaml").write_text(yaml.safe_dump(catalogue, sort_keys=False, allow_unicode=True), encoding="utf-8")
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            status = cli_main([
+                "--root", str(self.root), "--effective-spec", str(self.root / "effective.yaml"),
+                "--effective-capability", "unknown.capability",
+            ])
+        self.assertEqual(1, status)
+        self.assertIn("CHECK-API-035", output.getvalue())
+
+    def test_repeatable_operation_cannot_expose_idempotency_key_and_missing_metadata_is_debt(self) -> None:
+        payload = self.load("platform-entitlements.yaml")
+        operation = payload["paths"]["/api/v1/platform/evaluation/status"]["get"]
+        operation["x-infranexum-idempotency"] = "repeatable"
+        operation.setdefault("parameters", []).append({
+            "name": "Idempotency-Key", "in": "header", "required": True,
+            "schema": {"type": "string", "minLength": 8, "maxLength": 200, "pattern": "^[A-Za-z0-9._:-]+$"},
+        })
+        operation.pop("x-infranexum-capability", None)
+        operation.pop("x-infranexum-permission", None)
+        self.save("platform-entitlements.yaml", payload)
+        checker = ApiContractChecker(self.root)
+        ids = {item.check_id for item in checker.run()}
+        self.assertIn("CHECK-API-032", ids)
+        self.assertIn("CHECK-API-033", ids)
+        self.assertIn("CHECK-API-034", ids)
+        self.assertIn("getPlatformEvaluationStatus", checker.current_debt.capability)
+        self.assertIn("getPlatformEvaluationStatus", checker.current_debt.permission)
+
+    def test_special_authorization_modes_are_fail_closed(self) -> None:
+        payload = self.load("platform-entitlements.yaml")
+        operation = payload["paths"]["/api/v1/platform/evaluation/status"]["get"]
+        operation["x-infranexum-permission"] = {"mode": "anonymous", "code": "platform.profile.read"}
+        self.save("platform-entitlements.yaml", payload)
+        self.assertIn("CHECK-API-034", self.violations())
+
+        payload = self.load("platform-entitlements.yaml")
+        operation = payload["paths"]["/api/v1/platform/evaluation/status"]["get"]
+        operation["x-infranexum-permission"] = {"mode": "conditional", "codes": ["platform.profile.read"]}
+        self.save("platform-entitlements.yaml", payload)
+        self.assertIn("CHECK-API-034", self.violations())
+
+    def test_anonymous_mode_requires_explicit_empty_security(self) -> None:
+        payload = self.load("platform-entitlements.yaml")
+        operation = payload["paths"]["/api/v1/platform/evaluation/status"]["get"]
+        operation["x-infranexum-permission"] = {"mode": "anonymous"}
+        self.save("platform-entitlements.yaml", payload)
+        self.assertIn("CHECK-API-034", self.violations())
 
     def test_idempotency_contract_supports_required_repeatable_and_security_exempt_modes(self) -> None:
         payload = self.load("identity-access-rbac.yaml")
@@ -486,3 +667,7 @@ if __name__ == "__main__":
         payload["components"]["parameters"]["IdempotencyKey"]["schema"]["minLength"] = 1
         self.save("identity-access-rbac.yaml", payload)
         self.assertIn("CHECK-API-032", self.violations())
+
+
+if __name__ == "__main__":
+    unittest.main()

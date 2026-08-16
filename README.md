@@ -1,3 +1,13 @@
+# InfraNexum 2.0.0-alpha.0.98 — PGM-05-E01 delivered: zero-debt API contract governance
+
+`alpha.0.98` completes **PGM-05-E01**. The canonical Server API catalogue now governs **14 OpenAPI 3.1 fragments and 174 operations**, including the previously undocumented Platform Runtime routes for build diagnostics, capability discovery and quotas. The contract ratchet is fully closed at **idempotency=0, pagination=0, capability=0, permission=0**.
+
+Every operation declares a capability from the Core registry and a structured authorization mode rather than an arbitrary permission string. Permission-backed operations are checked against the IAM `PermissionCodes` registry and actual Server enforcement references; special boundaries are explicit (`anonymous`, `authenticated-self`, `organization-visibility`, `platform-admin`, `conditional`). Runtime publication is also capability-aware: `ApiCapabilityFilter` fail-closes unavailable business surfaces before authentication, while the minimal `platform.bootstrap` diagnostic/control surface remains available to avoid circular capability-registry gating.
+
+The API governance tool can now generate both the deterministic product-complete contract and an **installation-effective OpenAPI contract** filtered from the installed capability set. A Java route-capability smoke checks every one of the 174 registered operations against the runtime resolver. With the roadmap exit gate — unique OpenAPI source, component/context tags and contract tests — satisfied, **PGM-05-E01 is DELIVERED** and the dependency on **PGM-10-E05** is unblocked. See `docs/api-platform-contract-governance.md`.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.97 — PGM-05-E01 phase 4: canonical idempotency
 
 `alpha.0.97` closes the historical idempotency debt of **PGM-05-E01** from **39 to 0**. Thirty-two IAM/RSOT mutations now require the canonical `Idempotency-Key` contract (8..200 safe characters). A durable Core ledger scopes keys by authenticated actor and operation, fingerprints method/path/query/body, replays completed successful responses, rejects key reuse with different semantics, and blocks automatic re-execution when a process interruption leaves a mutation `IN_PROGRESS` or `INDETERMINATE`. The ledger is implemented for PostgreSQL and Oracle by migration `0032-core-api-idempotency`.

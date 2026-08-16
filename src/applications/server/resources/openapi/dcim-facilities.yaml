@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum DCIM Physical Facilities API
-  version: 2.0.0-alpha.0.97
+  version: 2.0.0-alpha.0.98
   description: PGM-07-E04 governed physical hierarchy for sites, buildings, floors, rooms and technical zones.
 servers:
 - url: /
@@ -42,7 +42,9 @@ paths:
       - DCIM / Facilities
       operationId: listDcimSites
       summary: List DCIM sites
-      x-infranexum-permission: dcim.site.read
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.site.read
       x-infranexum-capability: dcim.facilities
       parameters:
       - name: organization_id
@@ -97,7 +99,9 @@ paths:
       - DCIM / Facilities
       operationId: createDcimSite
       summary: Create a DCIM site
-      x-infranexum-permission: dcim.site.create
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.site.create
       x-infranexum-capability: dcim.facilities
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -130,7 +134,9 @@ paths:
       - DCIM / Facilities
       operationId: getDcimSite
       summary: Get a DCIM site
-      x-infranexum-permission: dcim.site.read
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.site.read
       x-infranexum-capability: dcim.facilities
       responses:
         '200':
@@ -146,7 +152,9 @@ paths:
       - DCIM / Facilities
       operationId: updateDcimSite
       summary: Update DCIM site metadata
-      x-infranexum-permission: dcim.site.update
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.site.update
       x-infranexum-capability: dcim.facilities
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -179,9 +187,11 @@ paths:
       - DCIM / Facilities
       operationId: changeDcimSiteStatus
       summary: Change DCIM site lifecycle status
-      description: 'The Server resolves the atomic permission from the target transition: update by default, archive/delete
-        when applicable, and dcim.room.lock for room lock.'
-      x-infranexum-permission: dcim.site.update
+      description: 'The Server resolves the atomic permission from the target transition: update by default, archive/delete when applicable, and
+        dcim.room.lock for room lock.'
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.site.update
       x-infranexum-capability: dcim.facilities
       parameters:
       - $ref: '#/components/parameters/CorrelationId'
@@ -218,7 +228,9 @@ paths:
       - DCIM / Facilities
       operationId: listDcimBuildings
       summary: List DCIM buildings
-      x-infranexum-permission: dcim.building.read
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.building.read
       x-infranexum-capability: dcim.facilities
       parameters:
       - name: organization_id
@@ -267,7 +279,9 @@ paths:
       - DCIM / Facilities
       operationId: createDcimBuilding
       summary: Create a DCIM building
-      x-infranexum-permission: dcim.building.create
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.building.create
       x-infranexum-capability: dcim.facilities
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -300,7 +314,9 @@ paths:
       - DCIM / Facilities
       operationId: getDcimBuilding
       summary: Get a DCIM building
-      x-infranexum-permission: dcim.building.read
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.building.read
       x-infranexum-capability: dcim.facilities
       responses:
         '200':
@@ -316,7 +332,9 @@ paths:
       - DCIM / Facilities
       operationId: updateDcimBuilding
       summary: Update DCIM building metadata
-      x-infranexum-permission: dcim.building.update
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.building.update
       x-infranexum-capability: dcim.facilities
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -349,9 +367,11 @@ paths:
       - DCIM / Facilities
       operationId: changeDcimBuildingStatus
       summary: Change DCIM building lifecycle status
-      description: 'The Server resolves the atomic permission from the target transition: update by default, archive/delete
-        when applicable, and dcim.room.lock for room lock.'
-      x-infranexum-permission: dcim.building.update
+      description: 'The Server resolves the atomic permission from the target transition: update by default, archive/delete when applicable, and
+        dcim.room.lock for room lock.'
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.building.update
       x-infranexum-capability: dcim.facilities
       parameters:
       - $ref: '#/components/parameters/CorrelationId'
@@ -388,7 +408,9 @@ paths:
       - DCIM / Facilities
       operationId: listDcimFloors
       summary: List DCIM floors
-      x-infranexum-permission: dcim.floor.read
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.floor.read
       x-infranexum-capability: dcim.facilities
       parameters:
       - name: organization_id
@@ -437,7 +459,9 @@ paths:
       - DCIM / Facilities
       operationId: createDcimFloor
       summary: Create a DCIM floor
-      x-infranexum-permission: dcim.floor.create
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.floor.create
       x-infranexum-capability: dcim.facilities
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -470,7 +494,9 @@ paths:
       - DCIM / Facilities
       operationId: getDcimFloor
       summary: Get a DCIM floor
-      x-infranexum-permission: dcim.floor.read
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.floor.read
       x-infranexum-capability: dcim.facilities
       responses:
         '200':
@@ -486,7 +512,9 @@ paths:
       - DCIM / Facilities
       operationId: updateDcimFloor
       summary: Update DCIM floor metadata
-      x-infranexum-permission: dcim.floor.update
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.floor.update
       x-infranexum-capability: dcim.facilities
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -519,9 +547,11 @@ paths:
       - DCIM / Facilities
       operationId: changeDcimFloorStatus
       summary: Change DCIM floor lifecycle status
-      description: 'The Server resolves the atomic permission from the target transition: update by default, archive/delete
-        when applicable, and dcim.room.lock for room lock.'
-      x-infranexum-permission: dcim.floor.update
+      description: 'The Server resolves the atomic permission from the target transition: update by default, archive/delete when applicable, and
+        dcim.room.lock for room lock.'
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.floor.update
       x-infranexum-capability: dcim.facilities
       parameters:
       - $ref: '#/components/parameters/CorrelationId'
@@ -558,7 +588,9 @@ paths:
       - DCIM / Facilities
       operationId: listDcimRooms
       summary: List DCIM rooms
-      x-infranexum-permission: dcim.room.read
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.room.read
       x-infranexum-capability: dcim.facilities
       parameters:
       - name: organization_id
@@ -607,7 +639,9 @@ paths:
       - DCIM / Facilities
       operationId: createDcimRoom
       summary: Create a DCIM room
-      x-infranexum-permission: dcim.room.create
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.room.create
       x-infranexum-capability: dcim.facilities
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -640,7 +674,9 @@ paths:
       - DCIM / Facilities
       operationId: getDcimRoom
       summary: Get a DCIM room
-      x-infranexum-permission: dcim.room.read
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.room.read
       x-infranexum-capability: dcim.facilities
       responses:
         '200':
@@ -656,7 +692,9 @@ paths:
       - DCIM / Facilities
       operationId: updateDcimRoom
       summary: Update DCIM room metadata
-      x-infranexum-permission: dcim.room.update
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.room.update
       x-infranexum-capability: dcim.facilities
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -689,9 +727,11 @@ paths:
       - DCIM / Facilities
       operationId: changeDcimRoomStatus
       summary: Change DCIM room lifecycle status
-      description: 'The Server resolves the atomic permission from the target transition: update by default, archive/delete
-        when applicable, and dcim.room.lock for room lock.'
-      x-infranexum-permission: dcim.room.update
+      description: 'The Server resolves the atomic permission from the target transition: update by default, archive/delete when applicable, and
+        dcim.room.lock for room lock.'
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.room.update
       x-infranexum-capability: dcim.facilities
       parameters:
       - $ref: '#/components/parameters/CorrelationId'
@@ -728,7 +768,9 @@ paths:
       - DCIM / Facilities
       operationId: listDcimZones
       summary: List DCIM zones
-      x-infranexum-permission: dcim.zone.read
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.zone.read
       x-infranexum-capability: dcim.facilities
       parameters:
       - name: organization_id
@@ -777,7 +819,9 @@ paths:
       - DCIM / Facilities
       operationId: createDcimZone
       summary: Create a DCIM zone
-      x-infranexum-permission: dcim.zone.create
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.zone.create
       x-infranexum-capability: dcim.facilities
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -810,7 +854,9 @@ paths:
       - DCIM / Facilities
       operationId: getDcimZone
       summary: Get a DCIM zone
-      x-infranexum-permission: dcim.zone.read
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.zone.read
       x-infranexum-capability: dcim.facilities
       responses:
         '200':
@@ -826,7 +872,9 @@ paths:
       - DCIM / Facilities
       operationId: updateDcimZone
       summary: Update DCIM zone metadata
-      x-infranexum-permission: dcim.zone.update
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.zone.update
       x-infranexum-capability: dcim.facilities
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -859,9 +907,11 @@ paths:
       - DCIM / Facilities
       operationId: changeDcimZoneStatus
       summary: Change DCIM zone lifecycle status
-      description: 'The Server resolves the atomic permission from the target transition: update by default, archive/delete
-        when applicable, and dcim.room.lock for room lock.'
-      x-infranexum-permission: dcim.zone.update
+      description: 'The Server resolves the atomic permission from the target transition: update by default, archive/delete when applicable, and
+        dcim.room.lock for room lock.'
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.zone.update
       x-infranexum-capability: dcim.facilities
       parameters:
       - $ref: '#/components/parameters/CorrelationId'
@@ -916,8 +966,8 @@ components:
       name: Idempotency-Key
       in: header
       required: true
-      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request
-        semantics returns HTTP 409.
+      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request semantics
+        returns HTTP 409.
       schema:
         type: string
         minLength: 8

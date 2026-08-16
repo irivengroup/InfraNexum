@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum RSOT Schema Registry API
-  version: 2.0.0-alpha.0.97
+  version: 2.0.0-alpha.0.98
   description: Versioned JSON Schema registry and composable schema profiles for PGM-06-E03.
 servers:
 - url: /
@@ -34,7 +34,9 @@ paths:
       - RSOT / Schemas
       operationId: listRsotSchemas
       summary: List schema revisions
-      x-infranexum-permission: rsot.schema.read
+      x-infranexum-permission:
+        mode: permission
+        code: rsot.schema.read
       x-infranexum-capability: rsot.core
       x-infranexum-minimum-installation-profile: lite
       parameters:
@@ -73,7 +75,9 @@ paths:
       - RSOT / Schemas
       operationId: createRsotSchema
       summary: Create a schema draft
-      x-infranexum-permission: rsot.schema.create
+      x-infranexum-permission:
+        mode: permission
+        code: rsot.schema.create
       x-infranexum-capability: rsot.core
       x-infranexum-minimum-installation-profile: lite
       parameters:
@@ -108,7 +112,9 @@ paths:
       - RSOT / Schemas
       operationId: getRsotSchema
       summary: Read one schema revision
-      x-infranexum-permission: rsot.schema.read
+      x-infranexum-permission:
+        mode: permission
+        code: rsot.schema.read
       x-infranexum-capability: rsot.core
       responses:
         '200':
@@ -127,7 +133,9 @@ paths:
       operationId: updateRsotSchemaDraft
       summary: Replace the definition of a schema draft
       description: Published and deprecated revisions are immutable. If-Match must carry the current registry revision.
-      x-infranexum-permission: rsot.schema.update
+      x-infranexum-permission:
+        mode: permission
+        code: rsot.schema.update
       x-infranexum-capability: rsot.core
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -164,7 +172,9 @@ paths:
       - RSOT / Schemas
       operationId: previewRsotSchemaCompatibility
       summary: Preview compatibility with the latest published revision
-      x-infranexum-permission: rsot.schema.read
+      x-infranexum-permission:
+        mode: permission
+        code: rsot.schema.read
       x-infranexum-capability: rsot.core
       responses:
         '200':
@@ -192,9 +202,11 @@ paths:
       - RSOT / Schemas
       operationId: publishRsotSchema
       summary: Publish a compatible schema revision
-      description: Breaking revisions require an explicit architecture approval reference; indeterminate compatibility is
-        rejected fail-closed.
-      x-infranexum-permission: rsot.schema.publish
+      description: Breaking revisions require an explicit architecture approval reference; indeterminate compatibility is rejected
+        fail-closed.
+      x-infranexum-permission:
+        mode: permission
+        code: rsot.schema.publish
       x-infranexum-capability: rsot.core
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -231,7 +243,9 @@ paths:
       - RSOT / Schemas
       operationId: deprecateRsotSchema
       summary: Deprecate a published schema revision
-      x-infranexum-permission: rsot.schema.deprecate
+      x-infranexum-permission:
+        mode: permission
+        code: rsot.schema.deprecate
       x-infranexum-capability: rsot.core
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -267,7 +281,9 @@ paths:
       - RSOT / Schema Profiles
       operationId: listRsotSchemaProfiles
       summary: List composable schema profiles
-      x-infranexum-permission: rsot.schema.read
+      x-infranexum-permission:
+        mode: permission
+        code: rsot.schema.read
       x-infranexum-capability: rsot.core
       parameters:
       - name: code
@@ -301,7 +317,9 @@ paths:
       - RSOT / Schema Profiles
       operationId: createRsotSchemaProfile
       summary: Create a composable profile draft
-      x-infranexum-permission: rsot.schema.create
+      x-infranexum-permission:
+        mode: permission
+        code: rsot.schema.create
       x-infranexum-capability: rsot.core
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -335,7 +353,9 @@ paths:
       - RSOT / Schema Profiles
       operationId: getRsotSchemaProfile
       summary: Read one composable schema profile
-      x-infranexum-permission: rsot.schema.read
+      x-infranexum-permission:
+        mode: permission
+        code: rsot.schema.read
       x-infranexum-capability: rsot.core
       responses:
         '200':
@@ -357,7 +377,9 @@ paths:
       - RSOT / Schema Profiles
       operationId: publishRsotSchemaProfile
       summary: Publish a composable schema profile
-      x-infranexum-permission: rsot.schema.publish
+      x-infranexum-permission:
+        mode: permission
+        code: rsot.schema.publish
       x-infranexum-capability: rsot.core
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -388,7 +410,9 @@ paths:
       - RSOT / Schema Profiles
       operationId: deprecateRsotSchemaProfile
       summary: Deprecate a composable schema profile
-      x-infranexum-permission: rsot.schema.deprecate
+      x-infranexum-permission:
+        mode: permission
+        code: rsot.schema.deprecate
       x-infranexum-capability: rsot.core
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -479,8 +503,8 @@ components:
       name: Idempotency-Key
       in: header
       required: true
-      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request
-        semantics returns HTTP 409.
+      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request semantics
+        returns HTTP 409.
       schema:
         type: string
         minLength: 8

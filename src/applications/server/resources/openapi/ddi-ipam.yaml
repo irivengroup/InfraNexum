@@ -1,9 +1,9 @@
 openapi: 3.1.0
 info:
   title: InfraNexum DDI IPAM API
-  version: 2.0.0-alpha.0.97
-  description: PGM-08-E01 governed IPAM for VRFs, VLANs, networks, pools, reservations and addresses. DNS and DHCP are outside
-    this contract.
+  version: 2.0.0-alpha.0.98
+  description: PGM-08-E01 governed IPAM for VRFs, VLANs, networks, pools, reservations and addresses. DNS and DHCP are outside this
+    contract.
 tags:
 - name: DDI / IPAM / Routing Spaces
 - name: DDI / IPAM / Networks
@@ -57,6 +57,9 @@ paths:
         '403':
           $ref: '#/components/responses/Problem'
       x-infranexum-pagination: cursor
+      x-infranexum-permission:
+        mode: permission
+        code: ddi.ipam.read
     post:
       tags:
       - DDI / IPAM / Routing Spaces
@@ -89,6 +92,9 @@ paths:
           $ref: '#/components/responses/Problem'
         '409':
           $ref: '#/components/responses/Problem'
+      x-infranexum-permission:
+        mode: permission
+        code: ddi.ipam.vrf.create
   /api/v1/ddi/ipam/vrfs/{id}/status:
     post:
       tags:
@@ -118,6 +124,9 @@ paths:
           $ref: '#/components/responses/Problem'
         '409':
           $ref: '#/components/responses/Problem'
+      x-infranexum-permission:
+        mode: permission
+        code: ddi.ipam.vrf.update
   /api/v1/ddi/ipam/vlans:
     get:
       tags:
@@ -160,6 +169,9 @@ paths:
         '403':
           $ref: '#/components/responses/Problem'
       x-infranexum-pagination: cursor
+      x-infranexum-permission:
+        mode: permission
+        code: ddi.ipam.read
     post:
       tags:
       - DDI / IPAM / Routing Spaces
@@ -192,6 +204,9 @@ paths:
           $ref: '#/components/responses/Problem'
         '409':
           $ref: '#/components/responses/Problem'
+      x-infranexum-permission:
+        mode: permission
+        code: ddi.ipam.vlan.create
   /api/v1/ddi/ipam/vlans/{id}/status:
     post:
       tags:
@@ -218,6 +233,9 @@ paths:
           $ref: '#/components/responses/Problem'
         '409':
           $ref: '#/components/responses/Problem'
+      x-infranexum-permission:
+        mode: permission
+        code: ddi.ipam.vlan.update
   /api/v1/ddi/ipam/networks:
     get:
       tags:
@@ -264,6 +282,9 @@ paths:
         '403':
           $ref: '#/components/responses/Problem'
       x-infranexum-pagination: cursor
+      x-infranexum-permission:
+        mode: permission
+        code: ddi.ipam.read
     post:
       tags:
       - DDI / IPAM / Networks
@@ -296,6 +317,9 @@ paths:
           $ref: '#/components/responses/Problem'
         '409':
           $ref: '#/components/responses/Problem'
+      x-infranexum-permission:
+        mode: permission
+        code: ddi.ipam.network.create
   /api/v1/ddi/ipam/networks/{id}:
     patch:
       tags:
@@ -329,6 +353,9 @@ paths:
           $ref: '#/components/responses/Problem'
         '409':
           $ref: '#/components/responses/Problem'
+      x-infranexum-permission:
+        mode: permission
+        code: ddi.ipam.network.update
   /api/v1/ddi/ipam/networks/{id}/status:
     post:
       tags:
@@ -355,6 +382,9 @@ paths:
           $ref: '#/components/responses/Problem'
         '409':
           $ref: '#/components/responses/Problem'
+      x-infranexum-permission:
+        mode: permission
+        code: ddi.ipam.network.update
   /api/v1/ddi/ipam/networks/{id}/pools:
     get:
       tags:
@@ -397,6 +427,9 @@ paths:
         '403':
           $ref: '#/components/responses/Problem'
       x-infranexum-pagination: cursor
+      x-infranexum-permission:
+        mode: permission
+        code: ddi.ipam.read
   /api/v1/ddi/ipam/pools:
     post:
       tags:
@@ -425,6 +458,9 @@ paths:
           $ref: '#/components/responses/Problem'
         '409':
           $ref: '#/components/responses/Problem'
+      x-infranexum-permission:
+        mode: permission
+        code: ddi.ipam.pool.create
   /api/v1/ddi/ipam/addresses:
     get:
       tags:
@@ -475,6 +511,9 @@ paths:
         '403':
           $ref: '#/components/responses/Problem'
       x-infranexum-pagination: cursor
+      x-infranexum-permission:
+        mode: permission
+        code: ddi.ipam.address.read
     post:
       tags:
       - DDI / IPAM / Addresses
@@ -507,6 +546,9 @@ paths:
           $ref: '#/components/responses/Problem'
         '409':
           $ref: '#/components/responses/Problem'
+      x-infranexum-permission:
+        mode: permission
+        code: ddi.ipam.address.allocate
   /api/v1/ddi/ipam/addresses/{id}/release:
     post:
       tags:
@@ -537,6 +579,9 @@ paths:
           $ref: '#/components/responses/Problem'
         '409':
           $ref: '#/components/responses/Problem'
+      x-infranexum-permission:
+        mode: permission
+        code: ddi.ipam.address.release
 components:
   securitySchemes:
     sessionCookie:
@@ -575,8 +620,8 @@ components:
       name: Idempotency-Key
       in: header
       required: true
-      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request
-        semantics returns HTTP 409.
+      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request semantics
+        returns HTTP 409.
       schema:
         type: string
         minLength: 8

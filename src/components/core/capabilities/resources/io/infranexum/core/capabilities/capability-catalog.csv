@@ -27,3 +27,6 @@ iam.mfa,pro;enterprise,server,single-node;split-web;high-availability;distribute
 iam.oauth2,pro;enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,,true
 iam.oidc,pro;enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,,true
 iam.saml,pro;enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,,true
+iam.access,lite;pro;enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,,false
+platform.entitlements,lite;pro;enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,,false
+platform.bootstrap,lite;pro;enterprise,server,single-node;split-web;high-availability;distributed-sites;regional;multi-region,,false

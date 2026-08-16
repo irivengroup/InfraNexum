@@ -75,7 +75,9 @@ class ItamPartnerCatalogueArchitectureTest(unittest.TestCase):
         self.assertEqual(5, len({operation["operationId"] for operation in operations}))
         for operation in operations:
             self.assertEqual("itam.partners", operation["x-infranexum-capability"])
-            self.assertTrue(operation["x-infranexum-permission"].startswith("itam.partner."))
+            authorization = operation["x-infranexum-permission"]
+            self.assertEqual("permission", authorization["mode"])
+            self.assertTrue(authorization["code"].startswith("itam.partner."))
         self.assertEqual(
             {"itam.partner.created.v1", "itam.partner.authorized.v1", "itam.partner.suspended.v1"},
             set(spec["x-infranexum-published-events"]),

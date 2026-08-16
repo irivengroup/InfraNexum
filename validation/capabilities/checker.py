@@ -66,7 +66,7 @@ class CapabilityChecker:
         expected = {
             "schema": "infranexum.capability-contract-pack/v1",
             "catalog_version": "2.0.0-draft.20",
-            "capability_count": 28,
+            "capability_count": 31,
             "quota_count": 119,
             "quota_thresholds_percent": [80, 90, 100],
             "functional_surface_rule": "allocation-tiers-do-not-change-capabilities",
@@ -176,8 +176,8 @@ class CapabilityChecker:
         policy = self._read_json(policy_path, "CHECK-CAP-CATALOG-002")
         if rows is None or policy is None:
             return
-        if len(rows) != 28:
-            self._add("CHECK-CAP-CATALOG-003", csv_path, f"expected 28 capabilities, found {len(rows)}")
+        if len(rows) != 31:
+            self._add("CHECK-CAP-CATALOG-003", csv_path, f"expected 31 capabilities, found {len(rows)}")
         by_code = {row.get("capability_code", ""): row for row in rows}
         if len(by_code) != len(rows):
             self._add("CHECK-CAP-CATALOG-004", csv_path, "duplicate capability codes")
@@ -188,7 +188,16 @@ class CapabilityChecker:
         for code in restrictions.get("pro_or_enterprise", []):
             if by_code.get(code, {}).get("allowed_profiles") != "pro;enterprise":
                 self._add("CHECK-CAP-CATALOG-006", csv_path, f"Pro/Enterprise mismatch: {code}")
-        for code in ("iam.local-auth", "database.postgresql", "discovery.agentless", "rsot.core", "itam.partners"):
+        for code in (
+            "iam.local-auth",
+            "iam.access",
+            "platform.bootstrap",
+            "platform.entitlements",
+            "database.postgresql",
+            "discovery.agentless",
+            "rsot.core",
+            "itam.partners",
+        ):
             if by_code.get(code, {}).get("allowed_profiles") != "lite;pro;enterprise":
                 self._add("CHECK-CAP-CATALOG-007", csv_path, f"baseline capability mismatch: {code}")
         for code, row in by_code.items():

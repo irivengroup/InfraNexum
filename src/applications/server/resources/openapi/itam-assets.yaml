@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum ITAM Asset Lifecycle API
-  version: 2.0.0-alpha.0.97
+  version: 2.0.0-alpha.0.98
   description: PGM-07-E02 acquisition, custody, maintenance, retirement and disposition lifecycle for canonical ITAM assets.
 servers:
 - url: /
@@ -36,7 +36,9 @@ paths:
       operationId: listItamAssets
       summary: List ITAM assets
       description: Organization-scoped callers provide organization_id; an unscoped collection read requires platform scope.
-      x-infranexum-permission: itam.asset.read
+      x-infranexum-permission:
+        mode: permission
+        code: itam.asset.read
       x-infranexum-capability: itam.assets
       parameters:
       - name: organization_id
@@ -84,7 +86,9 @@ paths:
       - ITAM / Assets
       operationId: acquireItamAsset
       summary: Acquire an ITAM asset
-      x-infranexum-permission: itam.asset.create
+      x-infranexum-permission:
+        mode: permission
+        code: itam.asset.create
       x-infranexum-capability: itam.assets
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -117,7 +121,9 @@ paths:
       - ITAM / Assets
       operationId: getItamAsset
       summary: Get an ITAM asset
-      x-infranexum-permission: itam.asset.read
+      x-infranexum-permission:
+        mode: permission
+        code: itam.asset.read
       x-infranexum-capability: itam.assets
       responses:
         '200':
@@ -137,7 +143,9 @@ paths:
       - ITAM / Assets
       operationId: listItamAssetCustody
       summary: List append-only asset custody history
-      x-infranexum-permission: itam.asset.read
+      x-infranexum-permission:
+        mode: permission
+        code: itam.asset.read
       x-infranexum-capability: itam.assets
       parameters:
       - name: after_sequence
@@ -175,7 +183,9 @@ paths:
       - ITAM / Assets
       operationId: receiveItamAsset
       summary: Record physical or contractual receipt
-      x-infranexum-permission: itam.asset.update
+      x-infranexum-permission:
+        mode: permission
+        code: itam.asset.update
       x-infranexum-capability: itam.assets
       parameters:
       - $ref: '#/components/parameters/CorrelationId'
@@ -210,9 +220,11 @@ paths:
       - ITAM / Assets
       operationId: stockItamAsset
       summary: Move an asset into governed stock
-      description: Requires PGM-07-E03 verified warranty for hardware or verified license contract for software; support coverage
-        may extend hardware supportability only within an active authorized scope.
-      x-infranexum-permission: itam.asset.update
+      description: Requires PGM-07-E03 verified warranty for hardware or verified license contract for software; support coverage may extend
+        hardware supportability only within an active authorized scope.
+      x-infranexum-permission:
+        mode: permission
+        code: itam.asset.update
       x-infranexum-capability: itam.assets
       parameters:
       - $ref: '#/components/parameters/CorrelationId'
@@ -247,9 +259,11 @@ paths:
       - ITAM / Assets
       operationId: assignItamAsset
       summary: Assign an asset to an accountable internal custodian
-      description: Requires PGM-07-E03 verified warranty for hardware or verified license contract for software; support coverage
-        may extend hardware supportability only within an active authorized scope.
-      x-infranexum-permission: itam.asset.update
+      description: Requires PGM-07-E03 verified warranty for hardware or verified license contract for software; support coverage may extend
+        hardware supportability only within an active authorized scope.
+      x-infranexum-permission:
+        mode: permission
+        code: itam.asset.update
       x-infranexum-capability: itam.assets
       parameters:
       - $ref: '#/components/parameters/CorrelationId'
@@ -284,9 +298,11 @@ paths:
       - ITAM / Assets
       operationId: deployItamAsset
       summary: Deploy an assigned asset
-      description: Requires PGM-07-E03 verified warranty for hardware or verified license contract for software; support coverage
-        may extend hardware supportability only within an active authorized scope.
-      x-infranexum-permission: itam.asset.update
+      description: Requires PGM-07-E03 verified warranty for hardware or verified license contract for software; support coverage may extend
+        hardware supportability only within an active authorized scope.
+      x-infranexum-permission:
+        mode: permission
+        code: itam.asset.update
       x-infranexum-capability: itam.assets
       parameters:
       - $ref: '#/components/parameters/CorrelationId'
@@ -321,7 +337,9 @@ paths:
       - ITAM / Assets
       operationId: transferItamAsset
       summary: Transfer custody without changing lifecycle state
-      x-infranexum-permission: itam.asset.update
+      x-infranexum-permission:
+        mode: permission
+        code: itam.asset.update
       x-infranexum-capability: itam.assets
       parameters:
       - $ref: '#/components/parameters/CorrelationId'
@@ -356,7 +374,9 @@ paths:
       - ITAM / Assets
       operationId: startItamAssetMaintenance
       summary: Place an asset under maintenance custody
-      x-infranexum-permission: itam.asset.update
+      x-infranexum-permission:
+        mode: permission
+        code: itam.asset.update
       x-infranexum-capability: itam.assets
       parameters:
       - $ref: '#/components/parameters/CorrelationId'
@@ -391,7 +411,9 @@ paths:
       - ITAM / Assets
       operationId: returnItamAssetFromMaintenance
       summary: Return an asset from maintenance
-      x-infranexum-permission: itam.asset.update
+      x-infranexum-permission:
+        mode: permission
+        code: itam.asset.update
       x-infranexum-capability: itam.assets
       parameters:
       - $ref: '#/components/parameters/CorrelationId'
@@ -426,7 +448,9 @@ paths:
       - ITAM / Assets
       operationId: retireItamAsset
       summary: Retire an asset while preserving custody history
-      x-infranexum-permission: itam.asset.update
+      x-infranexum-permission:
+        mode: permission
+        code: itam.asset.update
       x-infranexum-capability: itam.assets
       parameters:
       - $ref: '#/components/parameters/CorrelationId'
@@ -461,7 +485,9 @@ paths:
       - ITAM / Assets
       operationId: disposeItamAsset
       summary: Close an asset with disposition evidence
-      x-infranexum-permission: itam.asset.update
+      x-infranexum-permission:
+        mode: permission
+        code: itam.asset.update
       x-infranexum-capability: itam.assets
       parameters:
       - $ref: '#/components/parameters/CorrelationId'
@@ -496,9 +522,11 @@ paths:
       - ITAM / Assets
       operationId: setItamAssetProducer
       summary: Set or correct the governed manufacturer or software publisher
-      description: Existing assets migrated without a producer remain readable but cannot pass the PGM-07-E03 operational
-        readiness gate until this reference is set.
-      x-infranexum-permission: itam.asset.update
+      description: Existing assets migrated without a producer remain readable but cannot pass the PGM-07-E03 operational readiness gate
+        until this reference is set.
+      x-infranexum-permission:
+        mode: permission
+        code: itam.asset.update
       x-infranexum-capability: itam.assets
       parameters:
       - $ref: '#/components/parameters/CorrelationId'
@@ -552,8 +580,8 @@ components:
       name: Idempotency-Key
       in: header
       required: true
-      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request
-        semantics returns HTTP 409.
+      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request semantics
+        returns HTTP 409.
       schema:
         type: string
         minLength: 8
@@ -891,7 +919,7 @@ components:
           $ref: '#/components/headers/CorrelationId'
     Forbidden:
       description: Authorization
-      capability or compliance gate denied the operation: null
+      capability or compliance gate denied the operation:
       content:
         application/problem+json:
           schema:
@@ -910,8 +938,8 @@ components:
           $ref: '#/components/headers/CorrelationId'
     Conflict:
       description: State
-      quota: null
-      optimistic-version or idempotency conflict: null
+      quota:
+      optimistic-version or idempotency conflict:
       content:
         application/problem+json:
           schema:

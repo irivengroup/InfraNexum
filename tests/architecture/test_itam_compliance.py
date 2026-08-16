@@ -78,7 +78,9 @@ class ItamComplianceArchitectureTest(unittest.TestCase):
         self.assertEqual(27, len({operation["operationId"] for operation in operations}))
         for operation in operations:
             self.assertEqual("itam.compliance", operation["x-infranexum-capability"])
-            self.assertTrue(operation["x-infranexum-permission"].startswith("itam."))
+            authorization = operation["x-infranexum-permission"]
+            self.assertEqual("permission", authorization["mode"])
+            self.assertTrue(authorization["code"].startswith("itam."))
         self.assertNotIn("licenseKey", raw)
         self.assertNotIn("license_key", raw)
         self.assertNotIn("#/components/pathItems/", raw)

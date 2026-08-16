@@ -1,9 +1,9 @@
 openapi: 3.1.0
 info:
   title: InfraNexum ITAM Warranty, Support and License API
-  version: 2.0.0-alpha.0.97
-  description: PGM-07-E03 contractual governance. Warranty, support-provider authorization, third-party support coverage,
-    software-license metadata, immutable revision evidence and deterministic deadline alerts.
+  version: 2.0.0-alpha.0.98
+  description: PGM-07-E03 contractual governance. Warranty, support-provider authorization, third-party support coverage, software-license
+    metadata, immutable revision evidence and deterministic deadline alerts.
 servers:
 - url: /
 security:
@@ -58,7 +58,9 @@ paths:
       - ITAM / Compliance
       operationId: listItamAssetWarrantys
       summary: List asset warranties
-      x-infranexum-permission: itam.warranty.read
+      x-infranexum-permission:
+        mode: permission
+        code: itam.warranty.read
       x-infranexum-capability: itam.compliance
       responses:
         '200':
@@ -91,7 +93,9 @@ paths:
       - ITAM / Compliance
       operationId: createItamWarranty
       summary: Create warrantie draft
-      x-infranexum-permission: itam.warranty.manage
+      x-infranexum-permission:
+        mode: permission
+        code: itam.warranty.manage
       x-infranexum-capability: itam.compliance
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -140,7 +144,9 @@ paths:
       - ITAM / Compliance
       operationId: reviseItamWarranty
       summary: Revise warrantie with a new version
-      x-infranexum-permission: itam.warranty.manage
+      x-infranexum-permission:
+        mode: permission
+        code: itam.warranty.manage
       x-infranexum-capability: itam.compliance
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -180,7 +186,9 @@ paths:
       - ITAM / Compliance
       operationId: getItamWarranty
       summary: Read one governed warranty
-      x-infranexum-permission: itam.warranty.read
+      x-infranexum-permission:
+        mode: permission
+        code: itam.warranty.read
       x-infranexum-capability: itam.compliance
       responses:
         '200':
@@ -216,7 +224,9 @@ paths:
       - ITAM / Compliance
       operationId: activateItamWarranty
       summary: Activate warrantie
-      x-infranexum-permission: itam.warranty.manage
+      x-infranexum-permission:
+        mode: permission
+        code: itam.warranty.manage
       x-infranexum-capability: itam.compliance
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -266,7 +276,9 @@ paths:
       - ITAM / Compliance
       operationId: expireItamWarranty
       summary: Expire warrantie
-      x-infranexum-permission: itam.warranty.manage
+      x-infranexum-permission:
+        mode: permission
+        code: itam.warranty.manage
       x-infranexum-capability: itam.compliance
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -323,7 +335,9 @@ paths:
       - ITAM / Compliance
       operationId: listItamAssetLicenses
       summary: List asset licenses
-      x-infranexum-permission: itam.license.read
+      x-infranexum-permission:
+        mode: permission
+        code: itam.license.read
       x-infranexum-capability: itam.compliance
       responses:
         '200':
@@ -356,7 +370,9 @@ paths:
       - ITAM / Compliance
       operationId: createItamLicense
       summary: Create license draft
-      x-infranexum-permission: itam.license.manage
+      x-infranexum-permission:
+        mode: permission
+        code: itam.license.manage
       x-infranexum-capability: itam.compliance
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -405,7 +421,9 @@ paths:
       - ITAM / Compliance
       operationId: reviseItamLicense
       summary: Revise license with a new version
-      x-infranexum-permission: itam.license.manage
+      x-infranexum-permission:
+        mode: permission
+        code: itam.license.manage
       x-infranexum-capability: itam.compliance
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -445,7 +463,9 @@ paths:
       - ITAM / Compliance
       operationId: getItamLicense
       summary: Read one governed software license
-      x-infranexum-permission: itam.license.read
+      x-infranexum-permission:
+        mode: permission
+        code: itam.license.read
       x-infranexum-capability: itam.compliance
       responses:
         '200':
@@ -481,7 +501,9 @@ paths:
       - ITAM / Compliance
       operationId: activateItamLicense
       summary: Activate license
-      x-infranexum-permission: itam.license.manage
+      x-infranexum-permission:
+        mode: permission
+        code: itam.license.manage
       x-infranexum-capability: itam.compliance
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -531,7 +553,9 @@ paths:
       - ITAM / Compliance
       operationId: expireItamLicense
       summary: Expire license
-      x-infranexum-permission: itam.license.manage
+      x-infranexum-permission:
+        mode: permission
+        code: itam.license.manage
       x-infranexum-capability: itam.compliance
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -588,7 +612,9 @@ paths:
       - ITAM / Compliance
       operationId: listItamAssetSupportCoverages
       summary: List asset support-coverages
-      x-infranexum-permission: itam.support_coverage.read
+      x-infranexum-permission:
+        mode: permission
+        code: itam.support_coverage.read
       x-infranexum-capability: itam.compliance
       responses:
         '200':
@@ -621,7 +647,9 @@ paths:
       - ITAM / Compliance
       operationId: createItamSupportCoverage
       summary: Create support-coverage draft
-      x-infranexum-permission: itam.support_coverage.manage
+      x-infranexum-permission:
+        mode: permission
+        code: itam.support_coverage.manage
       x-infranexum-capability: itam.compliance
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -670,7 +698,9 @@ paths:
       - ITAM / Compliance
       operationId: reviseItamSupportCoverage
       summary: Revise support-coverage with a new version
-      x-infranexum-permission: itam.support_coverage.manage
+      x-infranexum-permission:
+        mode: permission
+        code: itam.support_coverage.manage
       x-infranexum-capability: itam.compliance
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -710,7 +740,9 @@ paths:
       - ITAM / Compliance
       operationId: getItamSupportCoverage
       summary: Read one governed support coverage
-      x-infranexum-permission: itam.support_coverage.read
+      x-infranexum-permission:
+        mode: permission
+        code: itam.support_coverage.read
       x-infranexum-capability: itam.compliance
       responses:
         '200':
@@ -746,7 +778,9 @@ paths:
       - ITAM / Compliance
       operationId: activateItamSupportCoverage
       summary: Activate support-coverage
-      x-infranexum-permission: itam.support_coverage.manage
+      x-infranexum-permission:
+        mode: permission
+        code: itam.support_coverage.manage
       x-infranexum-capability: itam.compliance
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -796,7 +830,9 @@ paths:
       - ITAM / Compliance
       operationId: expireItamSupportCoverage
       summary: Expire support-coverage
-      x-infranexum-permission: itam.support_coverage.manage
+      x-infranexum-permission:
+        mode: permission
+        code: itam.support_coverage.manage
       x-infranexum-capability: itam.compliance
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -839,7 +875,9 @@ paths:
       - ITAM / Compliance
       operationId: createItamSupportAuthorization
       summary: Create third-party support authorization
-      x-infranexum-permission: itam.support_catalog.manage
+      x-infranexum-permission:
+        mode: permission
+        code: itam.support_catalog.manage
       x-infranexum-capability: itam.compliance
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -925,7 +963,9 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
       x-infranexum-capability: itam.compliance
-      x-infranexum-permission: itam.support_catalog.manage
+      x-infranexum-permission:
+        mode: permission
+        code: itam.support_catalog.manage
       x-infranexum-pagination: offset
   /api/v1/itam/support-authorizations/{authorizationId}:
     parameters:
@@ -942,7 +982,9 @@ paths:
       - ITAM / Compliance
       operationId: getItamSupportAuthorization
       summary: Get third-party support authorization
-      x-infranexum-permission: itam.support_catalog.manage
+      x-infranexum-permission:
+        mode: permission
+        code: itam.support_catalog.manage
       x-infranexum-capability: itam.compliance
       responses:
         '200':
@@ -978,7 +1020,9 @@ paths:
       - ITAM / Compliance
       operationId: activateItamSupportAuthorization
       summary: Activate third-party support authorization
-      x-infranexum-permission: itam.support_catalog.manage
+      x-infranexum-permission:
+        mode: permission
+        code: itam.support_catalog.manage
       x-infranexum-capability: itam.compliance
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -1028,7 +1072,9 @@ paths:
       - ITAM / Compliance
       operationId: suspendItamSupportAuthorization
       summary: Suspend third-party support authorization
-      x-infranexum-permission: itam.support_catalog.manage
+      x-infranexum-permission:
+        mode: permission
+        code: itam.support_catalog.manage
       x-infranexum-capability: itam.compliance
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -1071,7 +1117,9 @@ paths:
       - ITAM / Compliance
       operationId: listItamWarrantyTypes
       summary: List governed warranty types
-      x-infranexum-permission: itam.warranty.read
+      x-infranexum-permission:
+        mode: permission
+        code: itam.warranty.read
       x-infranexum-capability: itam.compliance
       parameters:
       - name: organization_id
@@ -1129,7 +1177,9 @@ paths:
       - ITAM / Compliance
       operationId: createItamWarrantyType
       summary: Create governed warranty type
-      x-infranexum-permission: itam.support_catalog.manage
+      x-infranexum-permission:
+        mode: permission
+        code: itam.support_catalog.manage
       x-infranexum-capability: itam.compliance
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
@@ -1166,7 +1216,9 @@ paths:
       - ITAM / Compliance
       operationId: listItamComplianceAlerts
       summary: List deterministic contractual deadline alerts
-      x-infranexum-permission: itam.audit.read
+      x-infranexum-permission:
+        mode: permission
+        code: itam.audit.read
       x-infranexum-capability: itam.compliance
       parameters:
       - name: as_of
@@ -1244,7 +1296,9 @@ paths:
       - ITAM / Compliance
       operationId: listItamComplianceHistory
       summary: List immutable contractual revision history
-      x-infranexum-permission: itam.audit.read
+      x-infranexum-permission:
+        mode: permission
+        code: itam.audit.read
       x-infranexum-capability: itam.compliance
       parameters:
       - name: after_version
@@ -1305,8 +1359,8 @@ components:
       name: Idempotency-Key
       in: header
       required: true
-      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request
-        semantics returns HTTP 409.
+      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request semantics
+        returns HTTP 409.
       schema:
         type: string
         minLength: 8
@@ -1408,8 +1462,8 @@ components:
     LicenseRequest:
       type: object
       additionalProperties: false
-      description: Contract metadata only. Raw license/product/serial keys are deliberately not accepted until Secret Service/PKI/KMS
-        is available.
+      description: Contract metadata only. Raw license/product/serial keys are deliberately not accepted until Secret Service/PKI/KMS is
+        available.
       required:
       - publisherPartnerId
       - contractNumber

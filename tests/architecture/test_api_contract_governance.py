@@ -38,20 +38,20 @@ class ApiContractGovernanceArchitectureTests(unittest.TestCase):
         self.assertEqual(version, catalogue["version"])
         self.assertEqual("infranexum.openapi-catalogue/v1", catalogue["schema"])
         self.assertEqual("infranexum.api-contract-debt/v1", baseline["schema"])
-        self.assertEqual(13, len(catalogue["fragments"]))
+        self.assertEqual(14, len(catalogue["fragments"]))
 
     def test_generated_product_contract_is_not_a_canonical_source(self) -> None:
         self.assertFalse((ROOT / "src/applications/server/resources/openapi/openapi-product.yaml").exists())
         gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
         self.assertIn("artifacts/", gitignore)
 
-    def test_governance_document_marks_epic_as_in_progress(self) -> None:
+    def test_governance_document_marks_epic_delivered_with_zero_debt(self) -> None:
         document = (ROOT / "docs/api-platform-contract-governance.md").read_text(encoding="utf-8")
-        self.assertIn("PGM-05-E01 remains **IN PROGRESS**", document)
-        self.assertIn("idempotency=39", document.replace(" **39**", "=39"))
-        self.assertIn("pagination=0", document.replace(" **0**", "=0"))
-        self.assertIn("capability=56", document.replace(" **56**", "=56"))
-        self.assertIn("permission=85", document.replace(" **85**", "=85"))
+        self.assertIn("PGM-05-E01 is **DELIVERED**", document)
+        self.assertIn("idempotency=0", document)
+        self.assertIn("pagination=0", document)
+        self.assertIn("capability=0", document)
+        self.assertIn("permission=0", document)
 
 
 if __name__ == "__main__":

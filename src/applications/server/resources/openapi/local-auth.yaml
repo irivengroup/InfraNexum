@@ -1,10 +1,10 @@
 openapi: 3.1.0
 info:
   title: InfraNexum Local Authentication API
-  version: 2.0.0-alpha.0.97
-  description: Local human authentication foundation. Credentials are verified server-side with Argon2id; browser sessions
-    are opaque, durable and revocable. The bootstrap administrator must replace its generated password before accessing protected
-    v1 APIs. A validated session establishes the actor consumed by the downstream PGM-03-E03 RBAC PEP.
+  version: 2.0.0-alpha.0.98
+  description: Local human authentication foundation. Credentials are verified server-side with Argon2id; browser sessions are opaque,
+    durable and revocable. The bootstrap administrator must replace its generated password before accessing protected v1 APIs. A validated
+    session establishes the actor consumed by the downstream PGM-03-E03 RBAC PEP.
 tags:
 - name: IAM / Local authentication
 x-tagGroups:
@@ -42,6 +42,9 @@ paths:
         '401':
           $ref: '#/components/responses/AuthenticationFailed'
       x-infranexum-idempotency: security-exempt
+      x-infranexum-capability: iam.local-auth
+      x-infranexum-permission:
+        mode: anonymous
     get:
       tags:
       - IAM / Local authentication
@@ -58,6 +61,9 @@ paths:
                 $ref: '#/components/schemas/Session'
         '401':
           $ref: '#/components/responses/InvalidSession'
+      x-infranexum-capability: iam.local-auth
+      x-infranexum-permission:
+        mode: authenticated-self
     delete:
       tags:
       - IAM / Local authentication
@@ -75,6 +81,9 @@ paths:
         '403':
           $ref: '#/components/responses/CsrfRejected'
       x-infranexum-idempotency: security-exempt
+      x-infranexum-capability: iam.local-auth
+      x-infranexum-permission:
+        mode: authenticated-self
   /api/v1/iam/local-auth/password:
     post:
       tags:
@@ -105,6 +114,9 @@ paths:
         '403':
           $ref: '#/components/responses/CsrfRejected'
       x-infranexum-idempotency: security-exempt
+      x-infranexum-capability: iam.local-auth
+      x-infranexum-permission:
+        mode: authenticated-self
   /api/v1/iam/local-auth/password-policy/validate:
     post:
       tags:
@@ -147,6 +159,9 @@ paths:
         '400':
           $ref: '#/components/responses/BadRequest'
       x-infranexum-idempotency: repeatable
+      x-infranexum-capability: iam.local-auth
+      x-infranexum-permission:
+        mode: anonymous
 components:
   securitySchemes:
     LocalSessionCookie:

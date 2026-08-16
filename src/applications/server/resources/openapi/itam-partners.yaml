@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum ITAM Partner Catalogue API
-  version: 2.0.0-alpha.0.97
+  version: 2.0.0-alpha.0.98
   description: Governed Partner aggregate and role-filtered manufacturer/publisher/support catalogues for PGM-07-E01.
 servers:
 - url: /
@@ -27,9 +27,11 @@ paths:
       - ITAM / Partners
       operationId: listItamPartners
       summary: List governed partners
-      description: Without organization_id, the caller must hold the read permission at platform scope. Organization-scoped
-        callers provide organization_id.
-      x-infranexum-permission: itam.partner.read
+      description: Without organization_id, the caller must hold the read permission at platform scope. Organization-scoped callers provide
+        organization_id.
+      x-infranexum-permission:
+        mode: permission
+        code: itam.partner.read
       x-infranexum-capability: itam.partners
       x-infranexum-minimum-installation-profile: lite
       parameters:
@@ -89,7 +91,9 @@ paths:
       - ITAM / Partners
       operationId: createItamPartner
       summary: Create a Partner draft
-      x-infranexum-permission: itam.partner.create
+      x-infranexum-permission:
+        mode: permission
+        code: itam.partner.create
       x-infranexum-capability: itam.partners
       x-infranexum-minimum-installation-profile: lite
       parameters:
@@ -123,7 +127,9 @@ paths:
       - ITAM / Partners
       operationId: submitItamPartnerApproval
       summary: Submit a Partner draft for approval
-      x-infranexum-permission: itam.partner.approve
+      x-infranexum-permission:
+        mode: permission
+        code: itam.partner.approve
       x-infranexum-capability: itam.partners
       x-infranexum-minimum-installation-profile: lite
       parameters:
@@ -160,7 +166,9 @@ paths:
       - ITAM / Partners
       operationId: authorizeItamPartner
       summary: Authorize a Partner for new selections
-      x-infranexum-permission: itam.partner.approve
+      x-infranexum-permission:
+        mode: permission
+        code: itam.partner.approve
       x-infranexum-capability: itam.partners
       x-infranexum-minimum-installation-profile: lite
       parameters:
@@ -183,7 +191,9 @@ paths:
       - ITAM / Partners
       operationId: suspendItamPartner
       summary: Suspend a Partner from new selections
-      x-infranexum-permission: itam.partner.suspend
+      x-infranexum-permission:
+        mode: permission
+        code: itam.partner.suspend
       x-infranexum-capability: itam.partners
       x-infranexum-minimum-installation-profile: lite
       parameters:
@@ -223,8 +233,8 @@ components:
       name: Idempotency-Key
       in: header
       required: true
-      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request
-        semantics returns HTTP 409.
+      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request semantics
+        returns HTTP 409.
       schema:
         type: string
         minLength: 8

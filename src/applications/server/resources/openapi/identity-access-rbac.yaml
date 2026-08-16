@@ -1,10 +1,9 @@
 openapi: 3.1.0
 info:
   title: InfraNexum Identity Access RBAC API
-  version: 2.0.0-alpha.0.97
-  description: PGM-03-E03 RBAC foundation for users, memberships, groups, roles, permissions, temporal scoped assignments
-    and explainable permission evaluation. Local authentication establishes the actor; the Server RBAC PEP denies unregistered
-    protected routes by default.
+  version: 2.0.0-alpha.0.98
+  description: PGM-03-E03 RBAC foundation for users, memberships, groups, roles, permissions, temporal scoped assignments and explainable
+    permission evaluation. Local authentication establishes the actor; the Server RBAC PEP denies unregistered protected routes by default.
 tags:
 - name: IAM / Access / Users
 - name: IAM / Access / Groups
@@ -59,6 +58,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.user.search
     post:
       tags:
       - IAM / Access / Users
@@ -97,6 +100,10 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       x-infranexum-idempotency: required
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.user.create
   /api/v1/iam/users/{userId}:
     parameters:
     - *id001
@@ -129,6 +136,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.user.read
     patch:
       tags:
       - IAM / Access / Users
@@ -166,6 +177,10 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       x-infranexum-idempotency: required
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.user.update
     delete:
       tags:
       - IAM / Access / Users
@@ -203,6 +218,10 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       x-infranexum-idempotency: required
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.user.delete
   /api/v1/iam/users/{userId}/activate:
     parameters:
     - *id001
@@ -244,6 +263,10 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       x-infranexum-idempotency: required
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.user.activate
   /api/v1/iam/users/{userId}/suspend:
     parameters:
     - *id001
@@ -285,6 +308,10 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       x-infranexum-idempotency: required
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.user.suspend
   /api/v1/iam/users/{userId}/memberships:
     parameters:
     - *id001
@@ -346,6 +373,10 @@ paths:
           minimum: 0
           default: 0
           maximum: 1000000
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.user.read
     post:
       tags:
       - IAM / Access / Users
@@ -383,6 +414,10 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       x-infranexum-idempotency: required
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.user.manage_membership
   /api/v1/iam/users/{userId}/roles:
     parameters:
     - *id001
@@ -424,6 +459,10 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       x-infranexum-idempotency: required
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.user.assign_role
   /api/v1/iam/groups/{groupId}/effective-members:
     parameters:
     - *id001
@@ -456,6 +495,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.group.read
   /api/v1/organizations/{orgId}/groups:
     parameters:
     - *id001
@@ -493,6 +536,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.group.search
     post:
       tags:
       - IAM / Access / Groups
@@ -530,6 +577,10 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       x-infranexum-idempotency: required
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.group.create
   /api/v1/organizations/{orgId}/groups/{groupId}:
     parameters:
     - *id001
@@ -562,6 +613,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.group.read
     patch:
       tags:
       - IAM / Access / Groups
@@ -599,6 +654,10 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       x-infranexum-idempotency: required
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.group.update
     delete:
       tags:
       - IAM / Access / Groups
@@ -636,6 +695,10 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       x-infranexum-idempotency: required
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.group.delete
   /api/v1/organizations/{orgId}/groups/{groupId}/members:
     parameters:
     - *id001
@@ -674,6 +737,12 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       x-infranexum-idempotency: required
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: conditional
+        codes:
+        - iam.group.add_member
+        - iam.group.add_group
   /api/v1/organizations/{orgId}/groups/{groupId}/members/{memberId}:
     parameters:
     - *id001
@@ -722,6 +791,12 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       x-infranexum-idempotency: required
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: conditional
+        codes:
+        - iam.group.remove_member
+        - iam.group.remove_group
   /api/v1/organizations/{orgId}/groups/{groupId}/roles:
     parameters:
     - *id001
@@ -764,6 +839,10 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       x-infranexum-idempotency: required
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.group.assign_role
   /api/v1/organizations/{orgId}/roles:
     parameters:
     - *id001
@@ -800,6 +879,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.role.search
     post:
       tags:
       - IAM / Access / Roles
@@ -837,6 +920,10 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       x-infranexum-idempotency: required
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.role.create
   /api/v1/organizations/{orgId}/roles/{roleId}:
     parameters:
     - *id001
@@ -870,6 +957,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.role.read
     patch:
       tags:
       - IAM / Access / Roles
@@ -907,6 +998,10 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       x-infranexum-idempotency: required
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.role.update
     delete:
       tags:
       - IAM / Access / Roles
@@ -950,6 +1045,10 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       x-infranexum-idempotency: required
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.role.delete
   /api/v1/organizations/{orgId}/roles/{roleId}/assignments:
     parameters:
     - *id001
@@ -1012,6 +1111,10 @@ paths:
           minimum: 0
           default: 0
           maximum: 1000000
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.role.read
     post:
       tags:
       - IAM / Access / Roles
@@ -1049,6 +1152,10 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       x-infranexum-idempotency: required
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.role.assign
   /api/v1/organizations/{orgId}/roles/{roleId}/assignments/{assignmentId}:
     parameters:
     - *id001
@@ -1088,6 +1195,10 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       x-infranexum-idempotency: required
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.role.unassign
   /api/v1/organizations/{orgId}/permissions:
     parameters:
     - *id001
@@ -1131,6 +1242,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.permission.search
     post:
       tags:
       - IAM / Access / Permissions
@@ -1168,6 +1283,10 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       x-infranexum-idempotency: required
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.permission.create
   /api/v1/organizations/{orgId}/permissions/effective:
     parameters:
     - *id001
@@ -1209,6 +1328,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.permission.evaluate
   /api/v1/organizations/{orgId}/permissions/validate:
     parameters:
     - *id001
@@ -1249,6 +1372,10 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       x-infranexum-idempotency: repeatable
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.permission.evaluate
   /api/v1/organizations/{orgId}/permissions/{permissionId}:
     parameters:
     - *id001
@@ -1281,6 +1408,10 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.permission.read
     patch:
       tags:
       - IAM / Access / Permissions
@@ -1318,6 +1449,10 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       x-infranexum-idempotency: required
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.permission.update
     delete:
       tags:
       - IAM / Access / Permissions
@@ -1355,6 +1490,10 @@ paths:
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
       x-infranexum-idempotency: required
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.permission.delete
 components:
   securitySchemes:
     LocalSessionCookie:
@@ -1366,8 +1505,7 @@ components:
       name: X-Correlation-ID
       in: header
       required: false
-      description: Optional canonical lowercase RFC 9562 UUIDv7 correlation identifier; Server generates one when omitted
-        or invalid.
+      description: Optional canonical lowercase RFC 9562 UUIDv7 correlation identifier; Server generates one when omitted or invalid.
       schema: *id009
     CsrfToken:
       name: X-CSRF-Token
@@ -1434,8 +1572,8 @@ components:
       name: Idempotency-Key
       in: header
       required: true
-      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request
-        semantics returns HTTP 409.
+      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request semantics
+        returns HTTP 409.
       schema:
         type: string
         minLength: 8
@@ -1486,8 +1624,7 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
     Conflict:
-      description: The requested mutation conflicts with an IAM invariant such as active assignments, uniqueness or group
-        topology.
+      description: The requested mutation conflicts with an IAM invariant such as active assignments, uniqueness or group topology.
       headers:
         X-Correlation-ID:
           $ref: '#/components/headers/CorrelationId'
@@ -1598,8 +1735,8 @@ components:
           - type: string
             pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?$
           - type: 'null'
-          description: ISO-8601 date-time. Values without an offset are resolved in the Server timezone; explicit offsets
-            remain authoritative.
+          description: ISO-8601 date-time. Values without an offset are resolved in the Server timezone; explicit offsets remain
+            authoritative.
           x-infranexum-timezone-default: server
         effectiveTo: *id011
         reason: *id010

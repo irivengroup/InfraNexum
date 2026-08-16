@@ -85,7 +85,9 @@ class ItamAssetLifecycleArchitectureTest(unittest.TestCase):
         self.assertEqual(14, len({operation["operationId"] for operation in operations}))
         for operation in operations:
             self.assertEqual("itam.assets", operation["x-infranexum-capability"])
-            self.assertTrue(operation["x-infranexum-permission"].startswith("itam.asset."))
+            authorization = operation["x-infranexum-permission"]
+            self.assertEqual("permission", authorization["mode"])
+            self.assertTrue(authorization["code"].startswith("itam.asset."))
         self.assertNotIn("responses-map-placeholder", raw)
         self.assertNotIn("#/components/pathItems/", raw)
         requirement = (self.SERVER / "main/io/infranexum/server/identityaccess/AuthorizationRequirement.java").read_text(encoding="utf-8")

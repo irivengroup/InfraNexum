@@ -1,10 +1,9 @@
 openapi: 3.1.0
 info:
   title: InfraNexum Identity Access Policy API
-  version: 2.0.0-alpha.0.97
-  description: PGM-03-E04 PAP/PDP surface for deterministic versioned ABAC policies, static separation of duty, deny-overrides
-    evaluation and non-sensitive explanations. RBAC remains the mandatory baseline and every PDP result other than permit
-    is refused by the PEP.
+  version: 2.0.0-alpha.0.98
+  description: PGM-03-E04 PAP/PDP surface for deterministic versioned ABAC policies, static separation of duty, deny-overrides evaluation
+    and non-sensitive explanations. RBAC remains the mandatory baseline and every PDP result other than permit is refused by the PEP.
 tags:
 - name: IAM / Authorization / Policies
 - name: IAM / Authorization / Decisions
@@ -53,6 +52,9 @@ paths:
         '422':
           $ref: '#/components/responses/Problem'
       x-infranexum-idempotency: required
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: platform-admin
     get:
       tags:
       - IAM / Authorization / Policies
@@ -96,6 +98,9 @@ paths:
           $ref: '#/components/responses/Problem'
         '403':
           $ref: '#/components/responses/Problem'
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: platform-admin
   /api/v1/iam/policies/{policyId}/validate:
     parameters:
     - $ref: '#/components/parameters/CorrelationId'
@@ -132,6 +137,9 @@ paths:
         '409':
           $ref: '#/components/responses/Problem'
       x-infranexum-idempotency: required
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: platform-admin
   /api/v1/iam/policies/{policyId}/approve:
     parameters:
     - $ref: '#/components/parameters/CorrelationId'
@@ -168,6 +176,9 @@ paths:
         '409':
           $ref: '#/components/responses/Problem'
       x-infranexum-idempotency: required
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: platform-admin
   /api/v1/iam/policies/{policyId}/activate:
     parameters:
     - $ref: '#/components/parameters/CorrelationId'
@@ -204,6 +215,9 @@ paths:
         '409':
           $ref: '#/components/responses/Problem'
       x-infranexum-idempotency: required
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: platform-admin
   /api/v1/iam/authorization/decisions:
     parameters:
     - $ref: '#/components/parameters/CorrelationId'
@@ -234,6 +248,9 @@ paths:
         '403':
           $ref: '#/components/responses/Problem'
       x-infranexum-idempotency: repeatable
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: platform-admin
   /api/v1/iam/authorization/explain:
     parameters:
     - $ref: '#/components/parameters/CorrelationId'
@@ -264,6 +281,9 @@ paths:
         '403':
           $ref: '#/components/responses/Problem'
       x-infranexum-idempotency: repeatable
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: platform-admin
 components:
   securitySchemes:
     LocalSessionCookie:
@@ -297,8 +317,8 @@ components:
       name: Idempotency-Key
       in: header
       required: true
-      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request
-        semantics returns HTTP 409.
+      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request semantics
+        returns HTTP 409.
       schema:
         type: string
         minLength: 8
@@ -449,8 +469,8 @@ components:
           - type: string
             pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?$
           - type: 'null'
-          description: ISO-8601 date-time. Values without an offset are resolved in the Server timezone; explicit offsets
-            remain authoritative.
+          description: ISO-8601 date-time. Values without an offset are resolved in the Server timezone; explicit offsets remain
+            authoritative.
           x-infranexum-timezone-default: server
         rules:
           type: array

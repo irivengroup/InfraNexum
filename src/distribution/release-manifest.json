@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.97",
-  "profile": "alpha097-pgm05e01-phase4-canonical-idempotency-pro-ha-local-development",
+  "version": "2.0.0-alpha.0.98",
+  "profile": "alpha098-pgm05e01-delivered-api-authorization-governance-pro-ha-local-development",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -109,8 +109,8 @@
       "status": "pgm-08-e01-ddi-parent-ipam-subdomain-vrf-vlan-network-pool-address-atomic-pool-cursor-allocation-indexed-cidr-overlap-explicit-reservation-audit-weak-rsot-dcim-references-rbac-abac-api-cli-same-release-web-postgresql-oracle-migrations0030-0031"
     },
     {
-      "id": "api-platform-contract-v4",
-      "status": "pgm-05-e01-phase4-canonical-idempotency-runtime-openapi-web-durable-postgresql-oracle-ledger-32-required-4-repeatable-3-security-exempt-debt-ratchet-0-0-56-85-epic-in-progress"
+      "id": "api-platform-contract-v5",
+      "status": "pgm-05-e01-delivered-14-openapi-fragments-174-operations-zero-debt-0-0-0-0-registry-backed-capabilities-structured-authorization-installation-effective-contract-runtime-capability-gate"
     }
   ],
   "validation_reports": [],
@@ -556,7 +556,32 @@
     "git_blob_checksums_alpha097": 1256,
     "source_integrity_alpha097": "EXECUTED_45_OF_45_100_PERCENT_STAGED_SNAPSHOT_1257_TRACKED_PATHS_1256_GIT_BLOB_CHECKSUMS_1255_CANONICAL_INVENTORY_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
     "archive_compatibility_unit_alpha097": "EXECUTED_12_OF_12_100_PERCENT",
-    "archive_compatibility_alpha097": "EXECUTED_CANDIDATE_GIT_ARCHIVE_ZERO_VIOLATIONS_AND_GIT_ARCHIVE_PARITY"
+    "archive_compatibility_alpha097": "EXECUTED_CANDIDATE_GIT_ARCHIVE_ZERO_VIOLATIONS_AND_GIT_ARCHIVE_PARITY",
+    "api_contracts_alpha098": "EXECUTED_45_OF_45_99_PERCENT_14_FRAGMENTS_174_OPERATIONS_ZERO_VIOLATIONS_DEBT_0_0_0_0",
+    "api_effective_contract_alpha098": "EXECUTED_12_CAPABILITIES_113_PATHS_159_OPERATIONS_PLATFORM_BOOTSTRAP_PRESERVED_UNINSTALLED_DDI_ROUTES_OMITTED",
+    "api_authorization_runtime_alpha098": "EXECUTED_108_OF_108_DIRECTLY_AFFECTED_ARCHITECTURE_TESTS_JAVA_ROUTE_CAPABILITY_SMOKE_174_OF_174_CONTRACT_AND_POLICY_SMOKES_PASS_ARCHITECTURE_AS_CODE_PASS",
+    "architecture_global_alpha098": "NON_EXECUTED_TIMEOUT_DURING_TEST_REPOSITORY_PASSES_AFTER_56_TESTS_STARTED_NO_ASSERTION_FAILURE_OBSERVED_DIRECTLY_AFFECTED_108_OF_108_PASS",
+    "web_local_runtime_alpha098": "EXECUTED_181_OF_181_LINE99_73_BRANCH98_53_FUNCTION100_SMOKE_PASS_LOCAL_NODE22_16_0",
+    "source_integrity_prepack_alpha098": "EXECUTED_45_OF_45_100_PERCENT_ZERO_VIOLATIONS_CANONICAL_INVENTORY_1261_PATHS",
+    "architecture_check_alpha098": "EXECUTED_PASS_ZERO_VIOLATIONS",
+    "toolchain_alpha098": "EXECUTED_25_OF_25_99_PERCENT_ZERO_VIOLATIONS_LOCAL_JAVA21_0_11_NODE22_16_0_TARGET_EXACT_PENDING",
+    "migration_alpha098": "EXECUTED_114_OF_114_99_PERCENT_ZERO_VIOLATIONS_NO_NEW_MIGRATION_PHASE5",
+    "eventing_alpha098": "EXECUTED_10_OF_10_100_PERCENT_ZERO_VIOLATIONS",
+    "persistence_alpha098": "EXECUTED_12_OF_12_98_PERCENT_ZERO_VIOLATIONS",
+    "capabilities_alpha098": "EXECUTED_10_OF_10_99_PERCENT_31_CAPABILITIES_119_QUOTAS_JAVA_SMOKE_PASS_BASELINE_IAM_ACCESS_PLATFORM_BOOTSTRAP_PLATFORM_ENTITLEMENTS_REQUIRED",
+    "entitlements_alpha098": "EXECUTED_10_OF_10_100_PERCENT_ZERO_VIOLATIONS",
+    "audit_alpha098": "EXECUTED_8_OF_8_100_PERCENT_ZERO_VIOLATIONS",
+    "compose_contract_alpha098": "EXECUTED_64_OF_64",
+    "maven_target_jdk25_alpha098": "NON_EXECUTED_LOCAL_JAVA21_0_11_TARGET_TEMURIN25_0_4_PLUS_7_REQUIRED",
+    "web_target_node24_alpha098": "NON_EXECUTED_LOCAL_NODE22_16_0_PNPM_UNAVAILABLE_TARGET_NODE24_18_1_PNPM11_17_0_REQUIRED",
+    "docker_runtime_alpha098": "NON_EXECUTED_LOCAL_DOCKER_AND_PWSH_UNAVAILABLE_OPERATOR_DOCKER_DESKTOP_PRO_UP_SMOKE_HA_SMOKE_REQUIRED",
+    "browser_render_alpha098": "NON_EXECUTED_OPERATOR_WINDOWS_BROWSER_REVIEW_REQUIRED",
+    "pgm05e01_alpha098": "DELIVERED_ROADMAP_EXIT_GATE_OPENAPI_SOURCE_UNIQUE_COMPONENT_CONTEXT_TAGS_CONTRACT_TESTS_DEBT_0_0_0_0_PGM10E05_UNBLOCKED",
+    "packaging_tracked_files_alpha098": 1264,
+    "git_blob_checksums_alpha098": 1263,
+    "source_inventory_paths_alpha098": 1261,
+    "archive_compatibility_unit_alpha098": "EXECUTED_12_OF_12_100_PERCENT",
+    "archive_compatibility_alpha098": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS_GIT_ARCHIVE_PARITY"
   },
   "source_layout": "All production solution spaces are contained below src/; Java, Go and Web tests are repository-level under tests/; canonical relative paths are limited to 120 characters and path components to 80 characters.",
   "source_integrity": {
@@ -568,15 +593,15 @@
     "pre_commit_hook": ".githooks/pre-commit"
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.97",
-    "archive_entries": 1221,
+    "prefix": "infranexum-2.0.0-alpha.0.98",
+    "archive_entries": 1264,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
-    "source_recorded_files": 1220,
+    "source_recorded_files": 1263,
     "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
-    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.97-validation-evidence.zip"
+    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.98-validation-evidence.zip"
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.97-validation-evidence.zip",
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.98-validation-evidence.zip",
   "runtime_validation": {
     "web_local_runtime_alpha058": "EXECUTED_38_OF_38_LINE_99_67_BRANCH_98_33_FUNCTION_100_PROCESS_SMOKE_PASS_LOCAL_NODE22_BOOTSTRAP5_3_6_PROFESSIONAL_ADMIN_DASHBOARD_THEME_TOGGLE_TRUTHFUL_KPI_SAME_ORIGIN_ORGANIZATION_UI",
     "architecture_functional_alpha058": "EXECUTED_57_OF_57",
@@ -910,7 +935,7 @@
     "archive_compatibility_unit_alpha091": "EXECUTED_12_OF_12_100_PERCENT",
     "archive_compatibility_alpha091": "EXECUTED_CANDIDATE_GIT_ARCHIVE_ZERO_VIOLATIONS"
   },
-  "runtime_validation_note": "alpha.0.97 PGM-05-E01 phase 4 closes idempotency debt 39->0. Thirty-two IAM/RSOT mutations use the canonical durable API ledger; four evaluation operations are repeatable and three Local Auth operations are security-exempt from generic replay persistence. The ledger prevents automatic duplicate execution by retaining indeterminate reservations fail-closed; it does not claim a single physical transaction with IAM/RSOT business mutations. Exact JDK25/Node24+pnpm and Docker Desktop PRO remain external promotion gates.",
+  "runtime_validation_note": "alpha.0.98 completes PGM-05-E01 with 14 canonical OpenAPI 3.1 fragments / 174 operations and a fully closed API ratchet idempotency=0, pagination=0, capability=0, permission=0. Every operation has a Core-registry capability and structured authorization metadata; ApiCapabilityFilter fail-closes unavailable business surfaces while platform.bootstrap preserves non-circular bootstrap diagnostics. Product-complete and installation-effective contracts are generated from the same canonical fragments. PGM-10-E05 is unblocked. Exact JDK25/Node24+pnpm, Docker Desktop PRO and operator browser validation remain external promotion gates.",
   "pgm08e01_ddi_ipam_alpha083": "EXECUTED_DOMAIN_JDBC_API_CLI_WEB_MIGRATION_ARCHITECTURE_AND_OFFLINE_SMOKE_TARGET_JDK25_MAVEN_AND_LIVE_DATABASES_PENDING",
   "architecture_functional_alpha083": "EXECUTED_151_OF_151_SPLIT_DETERMINISTIC_GROUPS",
   "architecture_check_alpha083": "EXECUTED_PASS_ZERO_VIOLATIONS",

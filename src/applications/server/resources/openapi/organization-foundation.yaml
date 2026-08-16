@@ -1,9 +1,9 @@
 openapi: 3.1.0
 info:
   title: InfraNexum Organization Foundation API
-  version: 2.0.0-alpha.0.97
-  description: Authoritative Organization/Subdivision/temporal-scope foundation. Local authentication establishes the actor
-    and the Server PGM-03-E03 RBAC PEP enforces explicit authorization before this adapter executes.
+  version: 2.0.0-alpha.0.98
+  description: Authoritative Organization/Subdivision/temporal-scope foundation. Local authentication establishes the actor and the Server
+    PGM-03-E03 RBAC PEP enforces explicit authorization before this adapter executes.
 tags:
 - name: IAM / Organization / Organizations
 - name: IAM / Organization / Subdivisions
@@ -65,6 +65,9 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: platform-admin
     post:
       tags:
       - IAM / Organization / Organizations
@@ -101,6 +104,10 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: organization.create
   /api/v1/iam/organizations/{organizationId}:
     parameters:
     - $ref: '#/components/parameters/CorrelationId'
@@ -132,6 +139,9 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: organization-visibility
   /api/v1/iam/organizations/{organizationId}/suspend:
     parameters:
     - $ref: '#/components/parameters/CorrelationId'
@@ -174,6 +184,10 @@ paths:
           $ref: '#/components/responses/Forbidden'
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: organization.suspend
   /api/v1/iam/organizations/{organizationId}/resume:
     parameters:
     - $ref: '#/components/parameters/CorrelationId'
@@ -216,6 +230,10 @@ paths:
           $ref: '#/components/responses/Forbidden'
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: organization.suspend
   /api/v1/iam/organizations/{organizationId}/subdivisions:
     parameters:
     - $ref: '#/components/parameters/CorrelationId'
@@ -250,6 +268,10 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: organization.subdivision.search
     post:
       tags:
       - IAM / Organization / Subdivisions
@@ -288,6 +310,10 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: organization.subdivision.create
   /api/v1/iam/organizations/{organizationId}/scopes:
     parameters:
     - $ref: '#/components/parameters/CorrelationId'
@@ -328,6 +354,9 @@ paths:
           $ref: '#/components/responses/Forbidden'
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: platform-admin
   /api/v1/iam/organizations/{organizationId}/scopes/effective:
     parameters:
     - $ref: '#/components/parameters/CorrelationId'
@@ -366,6 +395,9 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: organization-visibility
 components:
   parameters:
     CorrelationId:
@@ -380,8 +412,8 @@ components:
       name: Idempotency-Key
       in: header
       required: true
-      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request
-        semantics returns HTTP 409.
+      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request semantics
+        returns HTTP 409.
       schema:
         type: string
         minLength: 8

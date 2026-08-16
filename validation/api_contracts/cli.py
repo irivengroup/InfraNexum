@@ -12,6 +12,8 @@ def parser() -> argparse.ArgumentParser:
     value.add_argument("--root", type=Path, default=Path("."))
     value.add_argument("--json-report", type=Path)
     value.add_argument("--product-spec", type=Path)
+    value.add_argument("--effective-spec", type=Path)
+    value.add_argument("--effective-capability", action="append", default=[])
     return value
 
 
@@ -28,6 +30,18 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     if args.product_spec:
         checker.write_product_spec(args.product_spec)
+    if args.effective_spec:
+        if not args.effective_capability:
+            print("CHECK-API-035 effective specification requires at least one --effective-capability")
+            return 1
+        try:
+            checker.write_effective_spec(args.effective_spec, args.effective_capability)
+        except ValueError as error:
+            print(f"CHECK-API-035 {error}")
+            return 1
+    elif args.effective_capability:
+        print("CHECK-API-035 --effective-capability requires --effective-spec")
+        return 1
     counts = report["debt_counts"]
     print(
         "api-contracts: PASS "

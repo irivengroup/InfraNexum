@@ -84,7 +84,9 @@ class RsotSchemaRegistryArchitectureTest(unittest.TestCase):
         self.assertEqual(12, len({operation["operationId"] for operation in operations}))
         for operation in operations:
             self.assertEqual("rsot.core", operation["x-infranexum-capability"])
-            self.assertTrue(operation["x-infranexum-permission"].startswith("rsot."))
+            authorization = operation["x-infranexum-permission"]
+            self.assertEqual("permission", authorization["mode"])
+            self.assertTrue(authorization["code"].startswith("rsot."))
         self.assertIn("rsot.schema.published.v1", spec["x-infranexum-published-events"])
 
     def test_cli_web_and_runtime_configuration_share_the_same_capability_boundary(self) -> None:

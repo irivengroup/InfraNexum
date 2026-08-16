@@ -56,7 +56,7 @@ class ApiProblemRuntimeContractTest(unittest.TestCase):
 
     def test_all_openapi_fragments_expose_one_canonical_problem_and_correlation_header(self) -> None:
         fragments = sorted(p for p in OPENAPI.glob("*.yaml") if p.name != "catalogue.yaml")
-        self.assertEqual(13, len(fragments))
+        self.assertEqual(14, len(fragments))
         for path in fragments:
             document = yaml.safe_load(path.read_text(encoding="utf-8"))
             components = document["components"]

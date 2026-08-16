@@ -1,13 +1,13 @@
 name: infranexum-dev
 
 x-postgres-tools: &postgres-tools
-  image: infranexum/postgres-tools:${INFRANEXUM_VERSION:-2.0.0-alpha.0.97}
+  image: infranexum/postgres-tools:${INFRANEXUM_VERSION:-2.0.0-alpha.0.98}
   build:
     context: ..
     dockerfile: docker/postgres-tools.Dockerfile
 
 x-patroni-node: &patroni-node
-  image: infranexum/patroni-postgres:${INFRANEXUM_VERSION:-2.0.0-alpha.0.97}
+  image: infranexum/patroni-postgres:${INFRANEXUM_VERSION:-2.0.0-alpha.0.98}
   build:
     context: ..
     dockerfile: docker/patroni-postgres.Dockerfile
@@ -36,7 +36,7 @@ x-patroni-node: &patroni-node
   stop_grace_period: 45s
 
 x-server-environment: &server-environment
-  INFRANEXUM_VERSION: ${INFRANEXUM_VERSION:-2.0.0-alpha.0.97}
+  INFRANEXUM_VERSION: ${INFRANEXUM_VERSION:-2.0.0-alpha.0.98}
   INFRANEXUM_SERVER_ADDRESS: 0.0.0.0
   INFRANEXUM_SERVER_PORT: "8080"
   INFRANEXUM_SERVER_MODE: REGIONAL
@@ -87,7 +87,7 @@ x-server-environment: &server-environment
   INFRANEXUM_WORKERS_JITTER_RATIO: ${INFRANEXUM_WORKERS_JITTER_RATIO:-0.2}
 
 x-server-node: &server-node
-  image: infranexum/server:${INFRANEXUM_VERSION:-2.0.0-alpha.0.97}
+  image: infranexum/server:${INFRANEXUM_VERSION:-2.0.0-alpha.0.98}
   build:
     context: ..
     dockerfile: docker/server.Dockerfile
@@ -128,7 +128,7 @@ x-web-environment: &web-environment
   INFRANEXUM_ARCHITECTURE_BASELINE: 2.0.0-draft.21
 
 x-web-node: &web-node
-  image: infranexum/web:${INFRANEXUM_VERSION:-2.0.0-alpha.0.97}
+  image: infranexum/web:${INFRANEXUM_VERSION:-2.0.0-alpha.0.98}
   build:
     context: ..
     dockerfile: docker/web.Dockerfile
@@ -260,7 +260,7 @@ services:
       PGPORT: "5432"
       PGDATABASE: infranexum
       PGUSER: infranexum
-      INFRANEXUM_VERSION: ${INFRANEXUM_VERSION:-2.0.0-alpha.0.97}
+      INFRANEXUM_VERSION: ${INFRANEXUM_VERSION:-2.0.0-alpha.0.98}
       INFRANEXUM_DATABASE_PASSWORD_FILE: /run/infranexum-secrets/db-password
       INFRANEXUM_MIGRATION_ROOT: /opt/infranexum/migrations
     depends_on:

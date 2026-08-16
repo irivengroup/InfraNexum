@@ -1,43 +1,46 @@
 schema: infranexum.openapi-catalogue/v1
 product: InfraNexum — Infrastructure Control & Governance Platform
-version: 2.0.0-alpha.0.97
+version: 2.0.0-alpha.0.98
 fragments:
-  - file: local-auth.yaml
-    component: IAM
-    context: Local authentication
-  - file: organization-foundation.yaml
-    component: IAM
-    context: Organization
-  - file: identity-access-rbac.yaml
-    component: IAM
-    context: Access
-  - file: identity-access-policy.yaml
-    component: IAM
-    context: Authorization
-  - file: rsot-canonical-objects.yaml
-    component: RSOT
-    context: Canonical Objects
-  - file: rsot-schema-registry.yaml
-    component: RSOT
-    context: Schema Registry
-  - file: itam-partners.yaml
-    component: ITAM
-    context: Partners
-  - file: itam-assets.yaml
-    component: ITAM
-    context: Assets
-  - file: itam-compliance.yaml
-    component: ITAM
-    context: Compliance
-  - file: dcim-facilities.yaml
-    component: DCIM
-    context: Facilities
-  - file: dcim-physical.yaml
-    component: DCIM
-    context: Physical Infrastructure
-  - file: ddi-ipam.yaml
-    component: DDI
-    context: IPAM
-  - file: platform-entitlements.yaml
-    component: Platform
-    context: Entitlements
+- file: local-auth.yaml
+  component: IAM
+  context: Local authentication
+- file: organization-foundation.yaml
+  component: IAM
+  context: Organization
+- file: identity-access-rbac.yaml
+  component: IAM
+  context: Access
+- file: identity-access-policy.yaml
+  component: IAM
+  context: Authorization
+- file: rsot-canonical-objects.yaml
+  component: RSOT
+  context: Canonical Objects
+- file: rsot-schema-registry.yaml
+  component: RSOT
+  context: Schema Registry
+- file: itam-partners.yaml
+  component: ITAM
+  context: Partners
+- file: itam-assets.yaml
+  component: ITAM
+  context: Assets
+- file: itam-compliance.yaml
+  component: ITAM
+  context: Compliance
+- file: dcim-facilities.yaml
+  component: DCIM
+  context: Facilities
+- file: dcim-physical.yaml
+  component: DCIM
+  context: Physical Infrastructure
+- file: ddi-ipam.yaml
+  component: DDI
+  context: IPAM
+- file: platform-runtime.yaml
+  component: Platform
+  context: Runtime
+- file: platform-entitlements.yaml
+  component: Platform
+  context: Entitlements

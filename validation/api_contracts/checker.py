@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import csv
 import json
 import re
 from dataclasses import dataclass
@@ -20,6 +21,7 @@ _CANONICAL_PROBLEM_FIELDS = {
     "occurred_at", "timestamp", "correlation_id", "trace_id",
 }
 _CANONICAL_PROBLEM_REQUIRED = _CANONICAL_PROBLEM_FIELDS
+_AUTHORIZATION_MODES = {"permission", "conditional", "platform-admin", "organization-visibility", "authenticated-self", "anonymous"}
 
 
 class _UniqueKeyLoader(yaml.SafeLoader):
@@ -101,15 +103,21 @@ class ApiContractChecker:
         self.catalogue_path = self.openapi_root / "catalogue.yaml"
         self.baseline_path = self.root / "validation/api_contracts/baseline.json"
         self.version_path = self.root / "VERSION"
+        self.capability_catalog_path = self.root / "src/components/core/capabilities/resources/io/infranexum/core/capabilities/capability-catalog.csv"
+        self.permission_codes_path = self.root / "src/components/domains/identity-access/main/io/infranexum/identity/access/domain/PermissionCodes.java"
         self.violations: list[ApiContractViolation] = []
         self.documents: dict[str, dict[str, Any]] = {}
         self.operations: list[_Operation] = []
         self.current_debt = ApiContractDebt.empty()
+        self.capability_codes: frozenset[str] = frozenset()
+        self.permission_codes: frozenset[str] = frozenset()
 
     def run(self) -> tuple[ApiContractViolation, ...]:
         self.violations.clear()
         self.documents.clear()
         self.operations.clear()
+        self.capability_codes = self._load_capability_codes()
+        self.permission_codes = self._load_permission_codes()
         version = self._read_version()
         catalogue = self._load_yaml(self.catalogue_path, "CHECK-API-001")
         if not isinstance(catalogue, dict):
@@ -187,9 +195,66 @@ class ApiContractChecker:
         product["x-tagGroups"] = [{"name": name, "tags": tags} for name, tags in sorted(groups.items())]
         return product
 
+    def build_effective_spec(self, capabilities: Iterable[str]) -> dict[str, Any]:
+        """Filter the certified product contract to an installation's effective capabilities."""
+        selected = frozenset(value.strip() for value in capabilities if isinstance(value, str) and value.strip())
+        if not selected:
+            raise ValueError("effective API contract requires at least one capability")
+        if self.run():
+            raise ValueError("cannot assemble effective OpenAPI while API contract violations exist")
+        unknown = sorted(selected - self.capability_codes)
+        if unknown:
+            raise ValueError(f"unknown effective capabilities: {unknown}")
+        if "platform.bootstrap" in self.capability_codes:
+            selected = frozenset((*selected, "platform.bootstrap"))
+
+        product = self.build_product_spec()
+        effective_paths: dict[str, Any] = {}
+        used_tags: set[str] = set()
+        for path, path_item in product.get("paths", {}).items():
+            if not isinstance(path_item, dict):
+                continue
+            retained: dict[str, Any] = {}
+            if "parameters" in path_item:
+                retained["parameters"] = copy.deepcopy(path_item["parameters"])
+            for method, operation in path_item.items():
+                if method not in _HTTP_METHODS or not isinstance(operation, dict):
+                    continue
+                if operation.get("x-infranexum-capability") not in selected:
+                    continue
+                retained[method] = copy.deepcopy(operation)
+                used_tags.update(tag for tag in operation.get("tags", []) if isinstance(tag, str))
+            if any(method in retained for method in _HTTP_METHODS):
+                effective_paths[path] = retained
+
+        product["paths"] = effective_paths
+        product["tags"] = [tag for tag in product.get("tags", []) if isinstance(tag, dict) and tag.get("name") in used_tags]
+        filtered_groups: list[dict[str, Any]] = []
+        for group in product.get("x-tagGroups", []):
+            if not isinstance(group, dict):
+                continue
+            tags = [tag for tag in group.get("tags", []) if tag in used_tags]
+            if tags:
+                filtered_groups.append({"name": group.get("name"), "tags": tags})
+        product["x-tagGroups"] = filtered_groups
+        product["x-infranexum-contract"] = "installation-effective"
+        product["x-infranexum-effective-capabilities"] = sorted(selected)
+        product["info"]["description"] = (
+            "Generated effective installation contract; unavailable capability routes are omitted."
+        )
+        return product
+
     def write_product_spec(self, destination: Path) -> None:
         destination.parent.mkdir(parents=True, exist_ok=True)
         payload = self.build_product_spec()
+        destination.write_text(
+            yaml.safe_dump(payload, sort_keys=False, allow_unicode=True, width=120),
+            encoding="utf-8",
+        )
+
+    def write_effective_spec(self, destination: Path, capabilities: Iterable[str]) -> None:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        payload = self.build_effective_spec(capabilities)
         destination.write_text(
             yaml.safe_dump(payload, sort_keys=False, allow_unicode=True, width=120),
             encoding="utf-8",
@@ -374,8 +439,69 @@ class ApiContractChecker:
             self._validate_local_refs(item)
             self._validate_pagination_contract(item)
             self._validate_idempotency_contract(item)
+            self._validate_authorization_metadata(item)
 
+    def _validate_authorization_metadata(self, item: _Operation) -> None:
+        capability = item.operation.get("x-infranexum-capability")
+        if not isinstance(capability, str) or not capability.strip():
+            self._add("CHECK-API-033", item.source, f"{item.operation_id} must declare a capability code")
+        elif capability not in self.capability_codes:
+            self._add("CHECK-API-033", item.source, f"{item.operation_id} references unknown capability {capability}")
 
+        authorization = item.operation.get("x-infranexum-permission")
+        if not isinstance(authorization, dict):
+            self._add("CHECK-API-034", item.source, f"{item.operation_id} permission metadata must be a structured object")
+            return
+        mode = authorization.get("mode")
+        if mode not in _AUTHORIZATION_MODES:
+            self._add("CHECK-API-034", item.source, f"{item.operation_id} has unsupported authorization mode {mode!r}")
+            return
+        extra = set(authorization) - ({"mode", "code"} if mode == "permission" else {"mode", "codes"} if mode == "conditional" else {"mode"})
+        if extra:
+            self._add("CHECK-API-034", item.source, f"{item.operation_id} authorization metadata has unsupported fields {sorted(extra)}")
+        if mode == "permission":
+            code = authorization.get("code")
+            if not isinstance(code, str) or code not in self.permission_codes:
+                self._add("CHECK-API-034", item.source, f"{item.operation_id} references unknown permission {code!r}")
+        elif mode == "conditional":
+            codes = authorization.get("codes")
+            if not isinstance(codes, list) or len(codes) < 2 or any(not isinstance(code, str) for code in codes) or len(set(codes)) != len(codes):
+                self._add("CHECK-API-034", item.source, f"{item.operation_id} conditional authorization requires at least two unique permission codes")
+            else:
+                unknown = sorted(set(codes) - self.permission_codes)
+                if unknown:
+                    self._add("CHECK-API-034", item.source, f"{item.operation_id} references unknown conditional permissions {unknown}")
+        elif set(authorization) != {"mode"}:
+            self._add("CHECK-API-034", item.source, f"{item.operation_id} {mode} authorization must not declare permission codes")
+
+        security = item.operation.get("security", item.document.get("security"))
+        if mode == "anonymous" and security != []:
+            self._add("CHECK-API-034", item.source, f"{item.operation_id} anonymous authorization requires security: []")
+        if mode != "anonymous" and security == []:
+            self._add("CHECK-API-034", item.source, f"{item.operation_id} {mode} authorization cannot disable authentication")
+
+    def _load_capability_codes(self) -> frozenset[str]:
+        try:
+            with self.capability_catalog_path.open(encoding="utf-8", newline="") as handle:
+                rows = list(csv.DictReader(handle))
+        except (OSError, csv.Error) as error:
+            self._add("CHECK-API-033", self.capability_catalog_path, f"cannot load capability catalogue: {error}")
+            return frozenset()
+        values = [row.get("capability_code", "").strip() for row in rows]
+        if any(not value for value in values) or len(values) != len(set(values)):
+            self._add("CHECK-API-033", self.capability_catalog_path, "capability catalogue must contain unique non-empty capability_code values")
+        return frozenset(value for value in values if value)
+
+    def _load_permission_codes(self) -> frozenset[str]:
+        try:
+            source = self.permission_codes_path.read_text(encoding="utf-8")
+        except OSError as error:
+            self._add("CHECK-API-034", self.permission_codes_path, f"cannot load permission registry: {error}")
+            return frozenset()
+        values = re.findall(r'=\s*"([a-z][a-z0-9_.]+)"', source)
+        if not values or len(values) != len(set(values)):
+            self._add("CHECK-API-034", self.permission_codes_path, "PermissionCodes must contain unique string literals")
+        return frozenset(values)
 
     def _validate_idempotency_contract(self, item: _Operation) -> None:
         mode = item.operation.get("x-infranexum-idempotency")

@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 
-.PHONY: api-contract-test api-contract-check compose-contract-test compose-config compose-build compose-up compose-down compose-smoke compose-backup compose-restore compose-rollback compose-reset compose-logs postgresql-test-schema archive-compatibility-test archive-compatibility-check source-integrity-test source-integrity-check source-integrity-precommit source-integrity-hook-install source-integrity-update source-checksum-update architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke java-observability-smoke java-rsot-smoke java-schema-registry-smoke java-itam-partner-smoke java-itam-asset-smoke java-itam-compliance-smoke java-dcim-facility-smoke java-dcim-physical-smoke java-ddi-ipam-smoke java-policy-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-module-verify java-test verify-foundation verify clean-generated
+.PHONY: api-contract-test api-contract-check compose-contract-test compose-config compose-build compose-up compose-down compose-smoke compose-backup compose-restore compose-rollback compose-reset compose-logs postgresql-test-schema archive-compatibility-test archive-compatibility-check source-integrity-test source-integrity-check source-integrity-precommit source-integrity-hook-install source-integrity-update source-checksum-update architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-api-capability-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke java-observability-smoke java-rsot-smoke java-schema-registry-smoke java-itam-partner-smoke java-itam-asset-smoke java-itam-compliance-smoke java-dcim-facility-smoke java-dcim-physical-smoke java-ddi-ipam-smoke java-policy-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-module-verify java-test verify-foundation verify clean-generated
 
 PYTHON ?= python3
 GO ?= go
@@ -357,6 +357,17 @@ java-capabilities-smoke:
 		$(COMPONENT_ROOT)/core/capabilities/resources/io/infranexum/core/capabilities/capability-catalog.csv \
 		$(COMPONENT_ROOT)/core/capabilities/resources/io/infranexum/core/capabilities/quota-catalog.csv
 
+java-api-capability-smoke:
+	@build_dir="$$(mktemp -d)"; \
+	trap 'rm -rf "$$build_dir"' EXIT; \
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(REPOSITORY_ROOT) $(PYTHON) \
+		$(TEST_ROOT)/java-api-capability-smoke/generate_cases.py \
+		$(APPLICATION_ROOT)/server/resources/openapi "$$build_dir/cases.tsv"; \
+	$(JAVAC) -Xlint:all -Werror -d "$$build_dir" \
+		$(APPLICATION_ROOT)/server/main/io/infranexum/server/platform/ApiCapabilityRequirement.java \
+		$(TEST_ROOT)/java-api-capability-smoke/io/infranexum/server/platform/ApiCapabilityRequirementSmoke.java; \
+	$(JAVA) -ea -cp "$$build_dir" io.infranexum.server.platform.ApiCapabilityRequirementSmoke "$$build_dir/cases.tsv"
+
 java-entitlements-smoke:
 	@build_dir="$$(mktemp -d)"; \
 	trap 'rm -rf "$$build_dir"' EXIT; \
@@ -511,7 +522,7 @@ java-module-verify:
 java-test:
 	./mvnw --batch-mode --no-transfer-progress --fail-at-end verify
 
-verify-foundation: api-contract-test api-contract-check compose-contract-test source-integrity-test source-integrity-check archive-compatibility-test archive-compatibility-check architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke java-observability-smoke java-rsot-smoke java-schema-registry-smoke java-itam-partner-smoke java-itam-asset-smoke java-itam-compliance-smoke java-dcim-facility-smoke java-dcim-physical-smoke java-ddi-ipam-smoke java-policy-smoke agent-vet agent-test agent-build web-verify
+verify-foundation: api-contract-test api-contract-check compose-contract-test source-integrity-test source-integrity-check archive-compatibility-test archive-compatibility-check architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-api-capability-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke java-observability-smoke java-rsot-smoke java-schema-registry-smoke java-itam-partner-smoke java-itam-asset-smoke java-itam-compliance-smoke java-dcim-facility-smoke java-dcim-physical-smoke java-ddi-ipam-smoke java-policy-smoke agent-vet agent-test agent-build web-verify
 
 verify: verify-foundation java-test
 

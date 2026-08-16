@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum DCIM Physical API
-  version: 2.0.0-alpha.0.97
+  version: 2.0.0-alpha.0.98
   description: PGM-07-E05 rack occupancy, equipment footprints, physical ports and point-to-point cabling.
 tags:
 - name: DCIM / Physical / Models
@@ -59,6 +59,9 @@ paths:
         '403':
           $ref: '#/components/responses/Problem'
       x-infranexum-pagination: offset
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.model.read
     post:
       tags:
       - DCIM / Physical / Models
@@ -93,6 +96,9 @@ paths:
           $ref: '#/components/responses/Problem'
         '422':
           $ref: '#/components/responses/Problem'
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.model.create
   /api/v1/dcim/equipment-models/{id}/status:
     post:
       tags:
@@ -119,6 +125,9 @@ paths:
           $ref: '#/components/responses/Problem'
         '409':
           $ref: '#/components/responses/Problem'
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.model.update
   /api/v1/dcim/racks:
     get:
       tags:
@@ -165,6 +174,9 @@ paths:
         '403':
           $ref: '#/components/responses/Problem'
       x-infranexum-pagination: cursor
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.rack.read
     post:
       tags:
       - DCIM / Physical / Racks
@@ -194,6 +206,9 @@ paths:
           $ref: '#/components/responses/Problem'
         '422':
           $ref: '#/components/responses/Problem'
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.rack.create
   /api/v1/dcim/racks/{id}/status:
     post:
       tags:
@@ -220,6 +235,11 @@ paths:
           $ref: '#/components/responses/Problem'
         '409':
           $ref: '#/components/responses/Problem'
+      x-infranexum-permission:
+        mode: conditional
+        codes:
+        - dcim.rack.update
+        - dcim.rack.decommission
   /api/v1/dcim/equipment:
     get:
       tags:
@@ -266,6 +286,9 @@ paths:
         '403':
           $ref: '#/components/responses/Problem'
       x-infranexum-pagination: cursor
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.equipment.read
     post:
       tags:
       - DCIM / Physical / Equipment
@@ -295,6 +318,9 @@ paths:
           $ref: '#/components/responses/Problem'
         '422':
           $ref: '#/components/responses/Problem'
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.equipment.create
   /api/v1/dcim/equipment/{id}/move:
     post:
       tags:
@@ -325,6 +351,9 @@ paths:
           $ref: '#/components/responses/Problem'
         '409':
           $ref: '#/components/responses/Problem'
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.equipment.move
   /api/v1/dcim/equipment/{id}/status:
     post:
       tags:
@@ -351,6 +380,11 @@ paths:
           $ref: '#/components/responses/Problem'
         '409':
           $ref: '#/components/responses/Problem'
+      x-infranexum-permission:
+        mode: conditional
+        codes:
+        - dcim.equipment.update
+        - dcim.equipment.decommission
   /api/v1/dcim/equipment/{id}/ports:
     get:
       tags:
@@ -403,6 +437,9 @@ paths:
         '404':
           $ref: '#/components/responses/Problem'
       x-infranexum-pagination: offset
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.port.read
   /api/v1/dcim/cables:
     get:
       tags:
@@ -445,6 +482,9 @@ paths:
         '403':
           $ref: '#/components/responses/Problem'
       x-infranexum-pagination: cursor
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.cable.read
     post:
       tags:
       - DCIM / Physical / Cabling
@@ -474,6 +514,9 @@ paths:
           $ref: '#/components/responses/Problem'
         '422':
           $ref: '#/components/responses/Problem'
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.cable.create
   /api/v1/dcim/cables/{id}/disconnect:
     post:
       tags:
@@ -500,6 +543,9 @@ paths:
           $ref: '#/components/responses/Problem'
         '409':
           $ref: '#/components/responses/Problem'
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.cable.disconnect
 components:
   securitySchemes:
     sessionCookie:
@@ -538,8 +584,8 @@ components:
       name: Idempotency-Key
       in: header
       required: true
-      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request
-        semantics returns HTTP 409.
+      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request semantics
+        returns HTTP 409.
       schema:
         type: string
         minLength: 8
