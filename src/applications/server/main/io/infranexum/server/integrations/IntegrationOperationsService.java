@@ -15,6 +15,7 @@ import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 /** Audited operator service for connector DLQ and suspension controls. */
 final class IntegrationOperationsService {
@@ -31,7 +32,7 @@ final class IntegrationOperationsService {
             AuditJournal audit,
             ConnectorRuntimeObserver observer,
             UuidV7Generator ids,
-            Clock clock) {
+            @Qualifier("platformClock") Clock clock) {
         this.inbox = Objects.requireNonNull(inbox, "inbox");
         this.audit = Objects.requireNonNull(audit, "audit");
         this.observer = Objects.requireNonNull(observer, "observer");

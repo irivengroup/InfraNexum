@@ -1115,6 +1115,7 @@
     "tests/java/core-contracts/io/infranexum/core/contracts/CoreContractsTest.java",
     "tests/java/core-contracts/io/infranexum/core/contracts/DomainFailureTest.java",
     "tests/java/core-contracts/io/infranexum/core/contracts/DomainIdentifierTest.java",
+    "tests/java/core-contracts/io/infranexum/core/contracts/IdempotencyLedgerEntryTest.java",
     "tests/java/core-contracts/io/infranexum/core/contracts/PaginationContractsTest.java",
     "tests/java/core-contracts/io/infranexum/core/contracts/UuidV7GeneratorTest.java",
     "tests/java/core-entitlements/io/infranexum/core/entitlements/ActivationImportCoordinatorTest.java",

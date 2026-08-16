@@ -133,13 +133,19 @@ class BootstrapNativeFrontendTest(unittest.TestCase):
         self.assertRegex(self.theme_css, r'@media \(min-width:\s*768px\)[\s\S]*\.inx-filter-bar\s*\{\s*flex-wrap:\s*nowrap')
 
     def test_table_and_tab_navigation_headers_keep_restrained_continuous_product_accents(self) -> None:
-        self.assertIn("--inx-table-head-surface", self.theme_css)
-        self.assertRegex(self.theme_css, r'\.table > thead > tr\s*\{[\s\S]*background:\s*var\(--inx-table-head-surface\)\s*!important')
+        self.assertRegex(
+            self.theme_css,
+            r'--inx-table-head-surface:\s*linear-gradient\(90deg,\s*var\(--inx-midnight\)[^;]*var\(--inx-blue\)[^;]*var\(--inx-blue-500\)',
+        )
+        self.assertRegex(self.theme_css, r'\.table > thead\s*\{[\s\S]*background:\s*var\(--inx-table-head-surface\)\s*!important')
+        self.assertRegex(self.theme_css, r'\.table > thead > tr\s*\{\s*background:\s*transparent\s*!important')
         self.assertRegex(self.theme_css, r'\.table > thead > tr > th\s*\{[\s\S]*color:\s*var\(--inx-table-head-ink\)\s*!important[\s\S]*background:\s*transparent\s*!important')
+        self.assertRegex(self.theme_css, r'--inx-tab-spectrum:\s*rgba\(0,61,143,\.09\)')
+        self.assertNotRegex(self.theme_css, r'--inx-tab-spectrum:\s*linear-gradient')
         self.assertRegex(self.theme_css, r'\.inx-workspace \.nav-underline\[role="tablist"\][\s\S]*background:\s*var\(--inx-tab-spectrum\)')
         self.assertRegex(self.theme_css, r'#identity-access-workspace \.nav-underline\[role="tablist"\][\s\S]*background:\s*var\(--inx-tab-spectrum\)\s*!important')
-        self.assertRegex(self.theme_css, r'\.inx-workspace \.nav-underline\[role="tablist"\] \.nav-link\.active[\s\S]*color:\s*#fff\s*!important')
-        self.assertGreaterEqual(self._contrast_ratio("#173a63", "#f3f8fd"), 4.5)
+        self.assertRegex(self.theme_css, r'\.inx-workspace \.nav-underline\[role="tablist"\] \.nav-link\.active[\s\S]*color:\s*#fff\s*!important[\s\S]*background:\s*var\(--inx-blue\)\s*!important')
+        self.assertGreaterEqual(self._contrast_ratio("#ffffff", "#003d8f"), 4.5)
 
 
 if __name__ == "__main__":

@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -32,7 +33,7 @@ public final class ApiProblemSupport {
     private final SensitiveDataRedactor redactor;
     private final ObjectMapper mapper;
 
-    public ApiProblemSupport(Clock clock, SensitiveDataRedactor redactor, ObjectMapper mapper) {
+    public ApiProblemSupport(@Qualifier("platformClock") Clock clock, SensitiveDataRedactor redactor, ObjectMapper mapper) {
         this.clock = Objects.requireNonNull(clock, "clock");
         this.redactor = Objects.requireNonNull(redactor, "redactor");
         this.mapper = Objects.requireNonNull(mapper, "mapper");

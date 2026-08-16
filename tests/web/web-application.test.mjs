@@ -23,7 +23,7 @@ async function createFixture(overrides = {}) {
     INFRANEXUM_WEB_API_BASE_URL: 'http://127.0.0.1:9090/api',
     INFRANEXUM_WEB_SHUTDOWN_TIMEOUT_MS: '1000',
     ...overrides,
-  }, { version: '2.0.0-alpha.0.101', baseDirectory: root });
+  }, { version: '2.0.0-alpha.0.102', baseDirectory: root });
   const sink = new Sink();
   const application = new WebApplication({
     configuration,
@@ -68,7 +68,7 @@ test('application exposes health, build, public configuration and static assets 
     schema: 'infranexum.web-runtime-config/v1',
     product: 'InfraNexum',
     component: 'web',
-    version: '2.0.0-alpha.0.101',
+    version: '2.0.0-alpha.0.102',
     architectureBaseline: '2.0.0-draft.21',
     environment: 'test',
     apiBaseUrl: 'http://127.0.0.1:9090/api',
@@ -90,7 +90,7 @@ test('application exposes health, build, public configuration and static assets 
   assert.deepEqual(await build.json(), {
     product: 'InfraNexum',
     component: 'WEB',
-    version: '2.0.0-alpha.0.101',
+    version: '2.0.0-alpha.0.102',
     architectureBaseline: '2.0.0-draft.21',
     environment: 'test',
   });
@@ -150,7 +150,7 @@ test('application reports failed startup when assets are unavailable', async () 
     INFRANEXUM_WEB_LISTEN_ADDRESS: '127.0.0.1:0',
     INFRANEXUM_WEB_STATIC_ROOT: '/path/that/does/not/exist',
     INFRANEXUM_WEB_ENVIRONMENT: 'test',
-  }, { version: '2.0.0-alpha.0.101' });
+  }, { version: '2.0.0-alpha.0.102' });
   const sink = new Sink();
   const application = new WebApplication({
     configuration,
@@ -168,7 +168,7 @@ test('application translates unexpected asset errors to a stable 500 contract', 
   const configuration = WebRuntimeConfiguration.fromEnvironment({
     INFRANEXUM_WEB_LISTEN_ADDRESS: '127.0.0.1:0',
     INFRANEXUM_WEB_ENVIRONMENT: 'test',
-  }, { version: '2.0.0-alpha.0.101' });
+  }, { version: '2.0.0-alpha.0.102' });
   const sink = new Sink();
   const application = new WebApplication({
     configuration,

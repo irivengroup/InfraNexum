@@ -112,14 +112,14 @@ class SchemaRegistryServiceTest {
         SchemaRegistryException draftMember = assertThrows(SchemaRegistryException.class,
                 () -> service.createProfile(new CreateProfileCommand("rsot.network", "team.rsot", "1.0.0", List.of(schema.id())), context));
         assertEquals("SCHEMA_PROFILE_MEMBER_NOT_PUBLISHED", draftMember.code());
-        schema = service.publish(schema.id(), 1, null, context);
+        RegisteredSchema publishedSchema = service.publish(schema.id(), 1, null, context);
 
         SchemaProfile profile = service.createProfile(
-                new CreateProfileCommand("rsot.network", "team.rsot", "1.0.0", List.of(schema.id())), context);
+                new CreateProfileCommand("rsot.network", "team.rsot", "1.0.0", List.of(publishedSchema.id())), context);
         assertEquals(RegistryStatus.DRAFT, profile.status());
         assertEquals(1, profile.members().size());
         assertThrows(SchemaRegistryException.class,
-                () -> service.createProfile(new CreateProfileCommand("rsot.network", "team.rsot", "1.0.0", List.of(schema.id())), context));
+                () -> service.createProfile(new CreateProfileCommand("rsot.network", "team.rsot", "1.0.0", List.of(publishedSchema.id())), context));
         assertThrows(SchemaRegistryException.class, () -> service.publishProfile(profile.id(), 2, context));
 
         SchemaProfile published = service.publishProfile(profile.id(), 1, context);

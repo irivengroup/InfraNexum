@@ -17,6 +17,7 @@ import java.util.Base64;
 import java.util.HexFormat;
 import java.util.Map;
 import java.util.Objects;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -40,7 +41,7 @@ public final class ApiIdempotencyFilter extends OncePerRequestFilter implements 
     private final ApiProblemSupport problems;
     private final Clock clock;
 
-    public ApiIdempotencyFilter(ApiIdempotencyPolicy policy, IdempotencyLedger ledger, ApiProblemSupport problems, Clock clock) {
+    public ApiIdempotencyFilter(ApiIdempotencyPolicy policy, IdempotencyLedger ledger, ApiProblemSupport problems, @Qualifier("platformClock") Clock clock) {
         this.policy = Objects.requireNonNull(policy, "policy");
         this.ledger = Objects.requireNonNull(ledger, "ledger");
         this.problems = Objects.requireNonNull(problems, "problems");

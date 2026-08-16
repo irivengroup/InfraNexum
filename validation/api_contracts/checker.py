@@ -126,6 +126,7 @@ class ApiContractChecker:
             return self._result()
         self._validate_catalogue(catalogue, version)
         self._validate_documents(version)
+        self._validate_document_references()
         self._validate_operations()
         self.current_debt = self._calculate_debt()
         self._validate_debt_ratchet(self.current_debt)
@@ -606,6 +607,24 @@ class ApiContractChecker:
             return response
         responses = ((document.get("components") or {}).get("responses") or {})
         return responses.get(ref.rsplit("/", 1)[1], response) if isinstance(responses, dict) else response
+
+    def _validate_document_references(self) -> None:
+        """Require self-contained component references across every canonical fragment."""
+        for filename, document in self.documents.items():
+            source = self.openapi_root / filename
+            components = document.get("components") if isinstance(document.get("components"), dict) else {}
+            for ref in self._collect_refs(document):
+                if not ref.startswith("#/"):
+                    self._add("CHECK-API-036", source, f"external OpenAPI reference is forbidden: {ref}")
+                    continue
+                match = _COMPONENT_REF.fullmatch(ref)
+                if not match:
+                    self._add("CHECK-API-036", source, f"malformed internal OpenAPI reference: {ref}")
+                    continue
+                category, name = match.groups()
+                values = components.get(category) if isinstance(components, dict) else None
+                if not isinstance(values, dict) or name not in values:
+                    self._add("CHECK-API-025", source, f"unresolved reference {ref}")
 
     def _validate_local_refs(self, item: _Operation) -> None:
         components = item.document.get("components") if isinstance(item.document.get("components"), dict) else {}

@@ -5,6 +5,7 @@ import {
   AuthenticationError,
   PasswordPolicyError,
   changeLocalPassword,
+  copyrightLabel,
   csrfToken,
   initializeLocalAuthentication,
   loginLocal,
@@ -41,7 +42,7 @@ function authenticatedDocument(cookie = 'INX_XSRF=csrf-value') {
     ['auth-login-view', new Element()], ['auth-password-view', new Element()], ['auth-login-submit', new Element()], ['auth-password-submit', new Element()],
     ['auth-username', new Element()], ['auth-password', new Element()], ['auth-message', new Element()],
     ['auth-service-state', new Element()], ['auth-service-state-text', new Element()],
-    ['session-identity', new Element()], ['session-avatar', new Element()], ['session-logout', new Element()],
+    ['session-identity', new Element()], ['session-avatar', new Element()], ['session-logout', new Element()], ['auth-copyright', new Element()],
   ]);
   return { body, cookie, getElementById: (id) => elements.get(id) ?? null, elements };
 }
@@ -55,6 +56,14 @@ test('CSRF cookie extraction is exact, URL-decoded and fail-closed', () => {
   assert.equal(csrfToken('INX_XSRF='), '');
   assert.equal(csrfToken(''), null);
   assert.equal(csrfToken('INX_XSRF2=wrong'), null);
+});
+
+test('login copyright collapses the range in 2026 and expands it for later years', () => {
+  assert.equal(copyrightLabel(2026), 'copyright 2026 Iriven Group. All Right Reserved');
+  assert.equal(copyrightLabel(2027), 'copyright 2026 - 2027 Iriven Group. All Right Reserved');
+  assert.equal(copyrightLabel(2035), 'copyright 2026 - 2035 Iriven Group. All Right Reserved');
+  assert.throws(() => copyrightLabel(2025), RangeError);
+  assert.throws(() => copyrightLabel(2026.5), RangeError);
 });
 
 test('session reader treats only 401 as unauthenticated and validates every required field', async () => {
@@ -149,8 +158,8 @@ test('login gate exposes backend unavailability and remains retryable', async ()
   };
   const initialization = initializeLocalAuthentication(documentObject, configuration, fetchFunction);
   await new Promise((resolve) => setTimeout(resolve, 0));
-  assert.equal(documentObject.elements.get('auth-message').attributes.get('data-i18n'), 'auth.login.unavailable');
-  assert.equal(documentObject.elements.get('auth-service-state').hidden, false);
+  assert.equal(documentObject.elements.get('auth-message').attributes.get('data-i18n'), 'auth.login.prompt');
+  assert.equal(documentObject.elements.get('auth-service-state').hidden, true);
 
   const submit = documentObject.elements.get('auth-login-submit');
   const click = submit.listeners.get('click');
@@ -203,6 +212,10 @@ test('login shell uses the secure-area card and hides healthy authentication ser
   assert.match(login, /<h1 id="auth-title"[^>]*data-i18n="auth\.brandTitle">Sign in to InfraNexum<\/h1>/);
   assert.match(html, /class="[^"]*inx-auth-brand[^"]*"[\s\S]*InfraNexum[\s\S]*Infrastructure Control &amp; Governance Platform/);
   assert.match(html, /class="[^"]*inx-auth-story[^"]*"/);
+  assert.match(html, /data-i18n="hero\.titlePrimary">Operate infrastructure<\/span>/);
+  assert.match(html, /data-i18n="hero\.titleSecondary">with clarity\.<\/span>/);
+  assert.match(html, /id="auth-copyright">copyright 2026 Iriven Group\. All Right Reserved<\/span>/);
+  assert.doesNotMatch(html, /Local security boundary|Opaque server-side session/);
   assert.match(login, /id="auth-service-state"[^>]*hidden/);
   assert.match(login, /id="auth-login-submit"[^>]*data-auth-wired="false"[^>]*disabled/);
   assert.match(html, /id="auth-password-submit"[^>]*data-auth-wired="false"[^>]*disabled/);

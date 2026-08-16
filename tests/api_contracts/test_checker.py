@@ -91,7 +91,7 @@ class ApiContractCheckerTest(unittest.TestCase):
         path = self.spec("catalogue.yaml")
         path.write_text("[]\n", encoding="utf-8")
         self.assertIn("CHECK-API-001", self.violations())
-        path.write_text("schema: infranexum.openapi-catalogue/v1\nversion: 2.0.0-alpha.0.101\nfragments: []\n", encoding="utf-8")
+        path.write_text("schema: infranexum.openapi-catalogue/v1\nversion: 2.0.0-alpha.0.102\nfragments: []\n", encoding="utf-8")
         self.assertIn("CHECK-API-005", self.violations())
 
     def test_duplicate_yaml_keys_are_rejected_but_merge_overrides_are_supported(self) -> None:
@@ -101,6 +101,20 @@ class ApiContractCheckerTest(unittest.TestCase):
         self.assertIn("CHECK-API-008", self.violations())
         shutil.copy2(SOURCE / "src/applications/server/resources/openapi/platform-entitlements.yaml", path)
         self.assertNotIn("CHECK-API-008", self.violations())
+
+    def test_malformed_internal_reference_is_rejected_before_redoc_rendering(self) -> None:
+        payload = self.load("platform-entitlements.yaml")
+        payload["paths"]["/api/v1/platform/evaluation/status"]["get"]["responses"]["200"]["content"]["application/json"]["schema"] = {
+            "$ref": "#/src/components/schemas/EvaluationStatus"
+        }
+        self.save("platform-entitlements.yaml", payload)
+        self.assertIn("CHECK-API-036", self.violations())
+
+    def test_external_reference_is_rejected_to_keep_documentation_offline_deterministic(self) -> None:
+        payload = self.load("platform-entitlements.yaml")
+        payload["components"]["schemas"]["ExternalContract"] = {"$ref": "https://example.invalid/schema.yaml"}
+        self.save("platform-entitlements.yaml", payload)
+        self.assertIn("CHECK-API-036", self.violations())
 
     def test_document_openapi_version_info_tags_and_paths_are_enforced(self) -> None:
         payload = self.load("platform-entitlements.yaml")
@@ -524,7 +538,7 @@ class ApiContractCheckerTest(unittest.TestCase):
             def run(self):
                 base = {
                     "openapi": "3.1.0",
-                    "info": {"version": "2.0.0-alpha.0.101"},
+                    "info": {"version": "2.0.0-alpha.0.102"},
                     "tags": [{"name": "X / Shared"}],
                     "x-tagGroups": [{"name": "X", "tags": ["X / Shared", "X / Shared"]}],
                     "components": {"schemas": {"Thing": {"type": "object"}}},
@@ -547,7 +561,7 @@ class ApiContractCheckerTest(unittest.TestCase):
         class DuplicateRouteChecker(BaseChecker):
             def run(self):
                 op = {"operationId": "x", "tags": ["X / Y"], "summary": "X", "responses": {"200": {"description": "OK"}}}
-                doc = {"openapi": "3.1.0", "info": {"version": "2.0.0-alpha.0.101"}, "tags": [{"name": "X / Y"}], "x-tagGroups": [{"name": "X", "tags": ["X / Y"]}], "paths": {"/api/v1/x": {"get": op}}, "components": {}}
+                doc = {"openapi": "3.1.0", "info": {"version": "2.0.0-alpha.0.102"}, "tags": [{"name": "X / Y"}], "x-tagGroups": [{"name": "X", "tags": ["X / Y"]}], "paths": {"/api/v1/x": {"get": op}}, "components": {}}
                 self.documents = {"one.yaml": doc, "two.yaml": doc}
                 return ()
         with self.assertRaises(ValueError):

@@ -8,6 +8,7 @@ import {
   REDOC_VERSION,
   SWAGGER_UI_VERSION,
   redocConfiguration,
+  renderRedoc,
   swaggerConfiguration,
 } from '../../src/applications/web/public/assets/api-documentation.mjs';
 
@@ -56,4 +57,41 @@ test('documentation CSP permits only the pinned renderer CDN origin while the Op
   assert.match(source, /script-src 'self' https:\/\/cdn\.jsdelivr\.net/);
   assert.match(source, /style-src 'self' https:\/\/cdn\.jsdelivr\.net/);
   assert.doesNotMatch(source, /script-src[^;]*https:\/\/(?!cdn\.jsdelivr\.net)/);
+});
+
+
+test('ReDoc renderer initializes the certified local specification and reaches the ready state', async () => {
+  const attributes = new Map();
+  const status = {
+    className: '', hidden: false, textContent: '',
+    setAttribute: (name, value) => attributes.set(name, value),
+  };
+  const raw = { hidden: true };
+  let replaced = 0;
+  const host = { replaceChildren: () => { replaced += 1; } };
+  const documentObject = {
+    documentElement: { getAttribute: (name) => name === 'lang' ? 'en' : 'light' },
+    getElementById: (id) => ({ 'redoc-ui': host, 'redoc-docs-status': status, 'redoc-raw-spec': raw }[id] ?? null),
+  };
+  let initializedUrl = null;
+  const windowObject = {
+    Redoc: {
+      init: (url, configuration, target, done) => {
+        initializedUrl = url;
+        assert.equal(target, host);
+        assert.equal(configuration.theme.colors.primary.main, '#003d8f');
+        done();
+      },
+    },
+  };
+  const assetLoader = async (_document, _window, url, kind) => {
+    assert.match(url, /redoc@2\.5\.3/);
+    assert.equal(kind, 'script');
+  };
+
+  assert.equal(await renderRedoc(documentObject, windowObject, assetLoader), true);
+  assert.equal(initializedUrl, OPENAPI_SPEC_URL);
+  assert.equal(replaced, 1);
+  assert.equal(attributes.get('data-state'), 'ready');
+  assert.equal(status.hidden, true);
 });

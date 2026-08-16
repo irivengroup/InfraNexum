@@ -158,16 +158,34 @@ test('enterprise filter toolbars stay horizontally dense on desktop and collapse
   assert.match(theme, /\.inx-filter-bar \.form-label[\s\S]*font-size:\s*\.72rem/);
 });
 
-test('table and tab headers use a restrained continuous InfraNexum hierarchy with IAM parity', async () => {
+test('table headers use one full-width midnight-to-blue gradient while tab headers stay solid', async () => {
   const theme = await read('assets/infranexum-theme.css');
-  assert.match(theme, /--inx-table-head-surface:\s*linear-gradient\([^;]*rgba\(0,61,143,\.105\)[^;]*rgba\(17,199,230,\.075\)/);
-  assert.match(theme, /--inx-tab-spectrum:\s*linear-gradient\([^;]*rgba\(0,61,143[^;]*rgba\(17,199,230[^;]*rgba\(8,127,91[^;]*rgba\(255,170,0/);
-  assert.match(theme, /\.table > thead > tr\s*\{\s*background:\s*var\(--inx-table-head-surface\)\s*!important/);
-  assert.match(theme, /\.table > thead > tr > th\s*\{[\s\S]*color:\s*var\(--inx-table-head-ink\)\s*!important[\s\S]*background:\s*transparent\s*!important[\s\S]*border-bottom:\s*1px solid var\(--inx-table-head-rule\)/);
+  assert.match(theme, /--inx-table-head-surface:\s*linear-gradient\(90deg,\s*var\(--inx-midnight\)[^;]*var\(--inx-blue\)[^;]*var\(--inx-blue-500\)/);
+  assert.match(theme, /--inx-tab-spectrum:\s*rgba\(0,61,143,\.09\)/);
+  assert.doesNotMatch(theme, /--inx-tab-spectrum:\s*linear-gradient/);
+  assert.match(theme, /\.table > thead\s*\{[\s\S]*background:\s*var\(--inx-table-head-surface\)\s*!important/);
+  assert.match(theme, /\.table > thead > tr\s*\{\s*background:\s*transparent\s*!important/);
+  assert.match(theme, /\.table > thead > tr > th\s*\{[\s\S]*color:\s*var\(--inx-table-head-ink\)\s*!important[\s\S]*background:\s*transparent\s*!important[\s\S]*border-bottom:\s*2px solid var\(--inx-table-head-rule\)/);
+  assert.match(theme, /\.inx-data-table > thead > tr > th\[aria-sort="ascending"\]::after[^}]*var\(--inx-turquoise\)/);
   assert.doesNotMatch(theme, /\.table > thead > tr > th:first-child[^}]*background/);
   assert.doesNotMatch(theme, /\.table > thead > tr > th:last-child[^}]*background/);
   assert.match(theme, /\.inx-workspace \.nav-underline\[role="tablist"\][\s\S]*background:\s*var\(--inx-tab-spectrum\)/);
   assert.match(theme, /#identity-access-workspace \.nav-underline\[role="tablist"\][\s\S]*background:\s*var\(--inx-tab-spectrum\)\s*!important/);
   assert.match(theme, /#identity-access-workspace > \.row > aside \[role="tablist"\][\s\S]*background:\s*var\(--inx-tab-spectrum\)/);
-  assert.match(theme, /\.inx-workspace \.nav-underline\[role="tablist"\] \.nav-link\.active[\s\S]*color:\s*#fff\s*!important[\s\S]*var\(--inx-midnight\)[\s\S]*var\(--inx-blue\)/);
+  assert.match(theme, /\.inx-workspace \.nav-underline\[role="tablist"\] \.nav-link\.active[\s\S]*color:\s*#fff\s*!important[\s\S]*background:\s*var\(--inx-blue\)\s*!important/);
+});
+
+test('login and IAM hierarchy preserve large-screen clarity without shrinking the product promise', async () => {
+  const [index, theme] = await Promise.all([read('index.html'), read('assets/infranexum-theme.css')]);
+  assert.match(index, /col-lg-7[^"]*inx-auth-visual/);
+  assert.match(index, /col-lg-5[^"]*inx-auth-form-zone/);
+  assert.match(index, /inx-auth-story-line[^>]*data-i18n="hero\.titlePrimary">Operate infrastructure/);
+  assert.match(theme, /@media \(min-width:\s*992px\)[\s\S]*\.inx-auth-story-line\s*\{[^}]*white-space:\s*nowrap/);
+  assert.match(theme, /\.inx-auth-story-title\s*\{[\s\S]*font-size:\s*clamp\(2\.7rem,\s*5vw,\s*4\.75rem\)/);
+  for (const group of ['identity', 'access-control', 'policy']) {
+    assert.match(index, new RegExp(`data-iam-nav-group="${group}"`));
+    assert.match(theme, new RegExp(`data-iam-nav-group="${group}"\] > p`));
+  }
+  assert.match(theme, /\.inx-workspace:not\(\.inx-api-docs\) > \.d-flex:first-child,[\s\S]*background:\s*var\(--inx-surface-blue\)\s*!important/);
+  assert.match(theme, /\.inx-docs-header[\s\S]*linear-gradient\(116deg,\s*var\(--inx-midnight\),\s*var\(--inx-blue\)\)/);
 });

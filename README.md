@@ -1,3 +1,15 @@
+# InfraNexum 2.0.0-alpha.0.102 — CI closure and Web/UX consistency corrective
+
+`alpha.0.102` is a corrective over `alpha.0.101`; it does **not** advance the roadmap or add a provider connector. It closes the hosted-JDK defects exposed after the PGM-10-E05 runtime implementation and aligns the Web shell with the validated product ergonomics.
+
+Java/CI corrections keep the existing contracts intact: the schema-registry JUnit fixture no longer captures reassigned locals in lambdas, the Jackson 3 HTTP boundary catches its unchecked `JacksonException` rather than an impossible checked `IOException`, every injected Server `Clock` is explicitly `platformClock`-qualified, connector metric tags are distinguished from tracing span attributes, and `IdempotencyLedger.Entry` now has exhaustive branch-oriented coverage without reducing the JaCoCo 98 % gate.
+
+Web/UX corrections make tab-header surfaces solid while preserving the established blue tone; table headers use one midnight-to-blue gradient painted by the complete `thead`, with white/turquoise high-contrast text and sort indicators. Identity & Access gives `Identity`, `Access control` and `Authorization policy` distinct contextual badges while managed entities remain neutral. Workspace headers, filters and data containers now share the same scanability rules as Overview. The login split widens the product-promise panel so `Operate infrastructure` remains on one line at normal desktop widths without shrinking the accepted typography, replaces the internal security-boundary copy with the dynamic Iriven Group copyright, and treats the initial session probe as advisory so a transient GET failure cannot contradict a working login POST.
+
+ReDoc is repaired at the contract source: the invalid `#/src/components/schemas/EvaluationStatus` reference is corrected to `#/components/schemas/EvaluationStatus`, the generated Web OpenAPI projection is regenerated, and API governance now rejects malformed internal or unmanaged external `$ref` values before documentation can be published. PGM-05-E01 remains delivered with **15 fragments / 179 operations and debt 0/0/0/0**; PGM-10-E05 remains pending formal target-gate closure until `alpha.0.102` is verified under the exact hosted JDK/PostgreSQL matrix.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.101 — PGM-10-E05 phase 2: durable connector runtime
 
 `alpha.0.101` implements the second PGM-10-E05 tranche on top of the versioned Connector SDK delivered in `alpha.0.100`. The Server now has a generic connector runtime for **authenticated durable webhook admission, connector inbox processing, operational DLQ, controlled replay/resume and per-connector observability**. This remains provider-neutral: no Jira, ServiceNow or other vendor connector is invented.

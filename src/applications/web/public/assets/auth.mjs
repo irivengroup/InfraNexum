@@ -13,6 +13,23 @@ export function csrfToken(cookieString = globalThis.document?.cookie ?? '') {
   return null;
 }
 
+
+export function copyrightLabel(currentYear = new Date().getFullYear()) {
+  const year = Number(currentYear);
+  if (!Number.isInteger(year) || year < 2026 || year > 9999) {
+    throw new RangeError('copyright year must be an integer from 2026 through 9999');
+  }
+  const period = year === 2026 ? '2026' : `2026 - ${year}`;
+  return `copyright ${period} Iriven Group. All Right Reserved`;
+}
+
+export function renderCopyright(documentObject, currentYear) {
+  const element = documentObject?.getElementById?.('auth-copyright');
+  if (!element) return false;
+  element.textContent = copyrightLabel(currentYear);
+  return true;
+}
+
 export async function readLocalSession(configuration, fetchFunction = fetch) {
   const response = await requestWithTimeout(fetchFunction, `${configuration.apiBaseUrl}${SESSION_PATH}`, {
     method: 'GET', headers: { Accept: 'application/json' }, credentials: 'same-origin', cache: 'no-store',
@@ -82,6 +99,7 @@ export async function initializeLocalAuthentication(
   configuration,
   fetchFunction = fetch,
 ) {
+  renderCopyright(documentObject);
   const appShell = documentObject.getElementById('app-shell');
   if (!configuration.localAuthEnabled) {
     if (appShell) appShell.hidden = false;
@@ -207,8 +225,11 @@ export async function initializeLocalAuthentication(
     else finish(existing);
   }).catch(() => {
     if (completed || interactionEpoch !== probeEpoch) return;
-    setAuthServiceState(documentObject, 'unavailable');
-    setAuthMessage(documentObject, 'auth.login.unavailable', true);
+    // Session discovery is advisory: a transient GET failure must not contradict a
+    // still-usable login POST path. Only an actual login/password mutation failure
+    // marks the authentication service unavailable.
+    setAuthServiceState(documentObject, 'ready');
+    setAuthMessage(documentObject, 'auth.login.prompt', false);
   });
 
   const session = await completion.promise;

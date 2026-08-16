@@ -16,7 +16,7 @@
 
     <section id="auth-gate" class="position-fixed top-0 start-0 vw-100 vh-100 bg-body z-3 overflow-auto inx-auth-gate" aria-labelledby="auth-title" hidden>
       <div class="container-fluid p-0"><div class="row g-0 min-vh-100">
-        <aside class="col-lg-6 text-bg-dark p-4 p-xl-5 d-flex flex-column inx-auth-visual">
+        <aside class="col-lg-7 text-bg-dark p-4 p-xl-5 d-flex flex-column inx-auth-visual">
           <div class="d-flex align-items-center gap-3 inx-auth-brand">
             <span class="badge text-bg-info text-dark fs-5 p-3 inx-brand-mark" aria-hidden="true">IN</span>
             <div class="d-flex flex-column">
@@ -26,15 +26,14 @@
           </div>
           <div class="my-auto py-5 inx-auth-story">
             <p class="small text-uppercase fw-bold mb-2 inx-auth-eyebrow" data-i18n="auth.eyebrow">Secure local access</p>
-            <h2 class="mb-3 inx-auth-story-title" data-i18n="hero.title">Operate infrastructure with clarity.</h2>
+            <h2 class="mb-3 inx-auth-story-title"><span class="inx-auth-story-line" data-i18n="hero.titlePrimary">Operate infrastructure</span><span class="inx-auth-story-line" data-i18n="hero.titleSecondary">with clarity.</span></h2>
             <p class="lead mb-4" data-i18n="hero.lead">A unified operational view for governance, topology, inventory and lifecycle decisions.</p>
           </div>
-          <div class="inx-auth-assurance d-flex align-items-start gap-3">
-            <span class="inx-auth-assurance-mark" aria-hidden="true">◆</span>
-            <div class="d-flex flex-column gap-1"><strong data-i18n="auth.securityBoundary">Local security boundary</strong><span data-i18n="auth.securitySummary">Opaque server-side session · HttpOnly cookie · CSRF protected mutations</span></div>
-          </div>
+          <footer class="inx-auth-copyright" aria-label="Copyright">
+            <span id="auth-copyright">copyright 2026 Iriven Group. All Right Reserved</span>
+          </footer>
         </aside>
-        <div class="col-lg-6 p-4 p-xl-5 d-flex align-items-center justify-content-center inx-auth-form-zone">
+        <div class="col-lg-5 p-4 p-xl-5 d-flex align-items-center justify-content-center inx-auth-form-zone">
           <div class="col-12 col-xl-10 col-xxl-8 mx-auto"><div class="card shadow-lg border-0 w-100 inx-auth-card"><div class="card-body p-4 p-xl-5">
             <div id="auth-login-view">
               <div class="d-flex align-items-center gap-2 mb-3 inx-auth-card-kicker">

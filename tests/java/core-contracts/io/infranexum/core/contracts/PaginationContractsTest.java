@@ -26,6 +26,7 @@ final class PaginationContractsTest {
         mutable.clear();
         assertEquals(List.of("a"), page.items());
         assertEquals(25, page.nextOffset());
+        assertEquals(null, new OffsetPage<>(List.of(), null).nextOffset());
         assertThrows(IllegalArgumentException.class, () -> new OffsetPage<>(List.of(), -1));
     }
 

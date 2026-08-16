@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum — Product API
-  version: 2.0.0-alpha.0.101
+  version: 2.0.0-alpha.0.102
   description: Generated complete product contract; installation availability remains capability-gated.
 servers:
 - url: /
@@ -6926,7 +6926,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/src/components/schemas/EvaluationStatus'
+                $ref: '#/components/schemas/platform-entitlements__EvaluationStatus'
         '400':
           description: The supplied X-Correlation-ID is not a canonical UUIDv7 identifier.
           headers:

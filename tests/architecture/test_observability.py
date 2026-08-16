@@ -123,18 +123,31 @@ class ObservabilityArchitectureTest(unittest.TestCase):
 
     def test_manual_span_attributes_are_allowlisted_and_never_use_payload_or_headers(self) -> None:
         java_sources = list((ROOT / "src").rglob("*.java"))
-        tag_calls = []
+        tracing_tag_calls = []
         for source in java_sources:
             text = source.read_text(encoding="utf-8")
-            if ".tag(" in text:
-                tag_calls.append((source.relative_to(ROOT).as_posix(), text))
-        self.assertEqual(1, len(tag_calls))
-        path, bridge = tag_calls[0]
+            if ".tag(" not in text:
+                continue
+            if "io.micrometer.tracing." in text or "spanBuilder()" in text:
+                tracing_tag_calls.append((source.relative_to(ROOT).as_posix(), text))
+        self.assertEqual(1, len(tracing_tag_calls))
+        path, bridge = tracing_tag_calls[0]
         self.assertTrue(path.endswith("WorkerCorrelationBridge.java"))
         self.assertIn('TASK_TYPE_TAG = "infranexum.worker.task.type"', bridge)
         self.assertIn('CORRELATION_TAG = "infranexum.correlation.id"', bridge)
         for forbidden in ("password", "secret", "token", "Authorization", "Cookie", "parameters()"):
             self.assertNotIn(forbidden, bridge)
+
+    def test_connector_metrics_use_only_bounded_non_secret_dimensions(self) -> None:
+        source = (SERVER / "integrations/MicrometerConnectorRuntimeObserver.java").read_text(encoding="utf-8")
+        for allowed in ('"connector"', '"outcome"', '"reason"'):
+            self.assertIn(allowed, source)
+        self.assertIn('value.matches("[A-Za-z][A-Za-z0-9]{0,63}")', source)
+        # Dimension names are string literals in Micrometer calls. Checking quoted keys avoids
+        # false positives from security comments while still preventing accidental high-cardinality
+        # or sensitive labels from being registered.
+        for forbidden in ("payload", "password", "secret", "token", "Authorization", "Cookie", "headers"):
+            self.assertNotIn(f'"{forbidden}"', source)
 
 
 if __name__ == "__main__":
