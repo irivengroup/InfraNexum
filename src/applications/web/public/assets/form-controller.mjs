@@ -53,6 +53,7 @@ export function wireAsyncForm(form, {
       await execute(form, submitter);
       form.classList?.remove?.('was-validated');
       onSuccess(form, submitter);
+      dispatchSuccess(form, 'infranexum:form-success', { submitter });
       return true;
     } catch (error) {
       onError(error, form, submitter);
@@ -132,6 +133,7 @@ export function wireAsyncAction(button, {
     try {
       await execute(button);
       onSuccess(button);
+      dispatchSuccess(button, 'infranexum:action-success', {});
       return true;
     } catch (error) {
       onError(error, button);
@@ -148,4 +150,15 @@ export function wireAsyncAction(button, {
   button.addEventListener('click', listener);
   button.setAttribute?.('data-inx-action-wired', 'true');
   return Object.freeze({ run, isBusy: () => busy, destroy: () => button.removeEventListener?.('click', listener) });
+}
+
+function dispatchSuccess(target, type, detail) {
+  if (!target?.dispatchEvent) return;
+  const documentObject = target.ownerDocument;
+  const EventConstructor = documentObject?.defaultView?.CustomEvent ?? globalThis.CustomEvent;
+  if (typeof EventConstructor === 'function') {
+    target.dispatchEvent(new EventConstructor(type, { bubbles: true, detail }));
+  } else {
+    target.dispatchEvent({ type, bubbles: true, detail });
+  }
 }

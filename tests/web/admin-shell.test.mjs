@@ -200,15 +200,15 @@ test('RSOT, ITAM and DCIM routes are fail-closed and become navigable only when 
 test('command catalogue exposes only actionable capabilities', () => {
   const documentObject = shellDocument({ organizations: false });
   const windowObject = windowFixture();
-  assert.deepEqual(buildCommands(documentObject, windowObject).map((item) => item.id), ['overview', 'runtime', 'theme', 'preferences', 'notifications']);
+  assert.deepEqual(buildCommands(documentObject, windowObject).map((item) => item.id), ['overview', 'runtime', 'theme', 'preferences', 'notifications', 'swagger', 'redoc']);
   setOrganizationAvailability(documentObject, true, windowObject);
-  assert.deepEqual(buildCommands(documentObject, windowObject).map((item) => item.id), ['overview', 'organizations', 'runtime', 'theme', 'preferences', 'notifications']);
+  assert.deepEqual(buildCommands(documentObject, windowObject).map((item) => item.id), ['overview', 'organizations', 'runtime', 'theme', 'preferences', 'notifications', 'swagger', 'redoc']);
   setIdentityAccessAvailability(documentObject, true, windowObject);
-  assert.deepEqual(buildCommands(documentObject, windowObject).map((item) => item.id), ['overview', 'access', 'organizations', 'runtime', 'theme', 'preferences', 'notifications']);
+  assert.deepEqual(buildCommands(documentObject, windowObject).map((item) => item.id), ['overview', 'access', 'organizations', 'runtime', 'theme', 'preferences', 'notifications', 'swagger', 'redoc']);
   setRsotAvailability(documentObject, true, windowObject);
   setItamAvailability(documentObject, true, windowObject);
   setDcimAvailability(documentObject, true, windowObject);
-  assert.deepEqual(buildCommands(documentObject, windowObject).map((item) => item.id), ['overview', 'access', 'organizations', 'rsot', 'dcim', 'itam', 'runtime', 'theme', 'preferences', 'notifications']);
+  assert.deepEqual(buildCommands(documentObject, windowObject).map((item) => item.id), ['overview', 'access', 'organizations', 'rsot', 'dcim', 'itam', 'runtime', 'theme', 'preferences', 'notifications', 'swagger', 'redoc']);
 });
 
 test('command search is localized, case-insensitive and accent-insensitive', () => {

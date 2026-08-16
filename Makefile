@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 
-.PHONY: api-contract-test api-contract-check compose-contract-test compose-config compose-build compose-up compose-down compose-smoke compose-backup compose-restore compose-rollback compose-reset compose-logs postgresql-test-schema archive-compatibility-test archive-compatibility-check source-integrity-test source-integrity-check source-integrity-precommit source-integrity-hook-install source-integrity-update source-checksum-update architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-api-capability-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke java-observability-smoke java-rsot-smoke java-schema-registry-smoke java-itam-partner-smoke java-itam-asset-smoke java-itam-compliance-smoke java-dcim-facility-smoke java-dcim-physical-smoke java-ddi-ipam-smoke java-policy-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-module-verify java-test verify-foundation verify clean-generated
+.PHONY: sdk-test sdk-check api-contract-test api-contract-check compose-contract-test compose-config compose-build compose-up compose-down compose-smoke compose-backup compose-restore compose-rollback compose-reset compose-logs postgresql-test-schema archive-compatibility-test archive-compatibility-check source-integrity-test source-integrity-check source-integrity-precommit source-integrity-hook-install source-integrity-update source-checksum-update architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-api-capability-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke java-observability-smoke java-rsot-smoke java-schema-registry-smoke java-itam-partner-smoke java-itam-asset-smoke java-itam-compliance-smoke java-dcim-facility-smoke java-dcim-physical-smoke java-ddi-ipam-smoke java-policy-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-module-verify java-test verify-foundation verify clean-generated
 
 PYTHON ?= python3
 GO ?= go
@@ -20,6 +20,9 @@ REPORT_ROOT := artifacts/validation
 REPORT_ROOT_ABS := $(abspath $(REPORT_ROOT))
 AGENT_ROOT := $(APPLICATION_ROOT)/agent
 WEB_ROOT := $(APPLICATION_ROOT)/web
+SDK_PYTHON_ROOT := $(PRODUCT_ROOT)/sdk/python
+SDK_PYTHON_PACKAGE := $(SDK_PYTHON_ROOT)/infranexum_connector_sdk
+SDK_SOURCE_DATE_EPOCH ?= 315532800
 DOCKER_ROOT := docker
 DOCKER_COMPOSE_SH := ./$(DOCKER_ROOT)/dev-compose.sh
 
@@ -65,6 +68,30 @@ define PY_COVERAGE
 	cat $(3)
 endef
 
+
+
+sdk-test: source-integrity-check
+	@mkdir -p $(REPORT_ROOT); \
+	coverage_file="$$(mktemp)"; \
+	trap 'rm -f "$$coverage_file"' EXIT; \
+	COVERAGE_FILE="$$coverage_file" PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SDK_PYTHON_ROOT) $(PYTHON) -m coverage run --branch --source=$(SDK_PYTHON_PACKAGE) -m unittest discover -s $(TEST_ROOT)/sdk_python -p 'test_*.py'; \
+	COVERAGE_FILE="$$coverage_file" PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SDK_PYTHON_ROOT) $(PYTHON) -m coverage report --fail-under=98 > $(REPORT_ROOT)/connector-sdk-coverage.txt; \
+	cat $(REPORT_ROOT)/connector-sdk-coverage.txt
+
+sdk-check:
+	@build_dir="$$(mktemp -d)"; \
+	trap 'rm -rf "$$build_dir"' EXIT; \
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(SDK_PYTHON_ROOT) $(PYTHON) -c 'import json, pathlib, tomllib; from infranexum_connector_sdk.version import SDK_VERSION; pyproject=tomllib.loads(pathlib.Path("$(SDK_PYTHON_ROOT)/pyproject.toml").read_text(encoding="utf-8")); schema=json.loads(pathlib.Path("$(SDK_PYTHON_PACKAGE)/schemas/connector-manifest.schema.json").read_text(encoding="utf-8")); assert pyproject["project"]["version"] == SDK_VERSION; assert schema["$$id"] == "urn:infranexum:schema:connector-manifest:v1"; assert schema["additionalProperties"] is False'; \
+	cp -R $(SDK_PYTHON_ROOT) "$$build_dir/source-a"; \
+	cp -R $(SDK_PYTHON_ROOT) "$$build_dir/source-b"; \
+	mkdir -p "$$build_dir/wheels-a" "$$build_dir/wheels-b"; \
+	SOURCE_DATE_EPOCH=$(SDK_SOURCE_DATE_EPOCH) $(PYTHON) -m pip wheel --disable-pip-version-check --no-deps --no-build-isolation "$$build_dir/source-a" --wheel-dir "$$build_dir/wheels-a" >/dev/null; \
+	SOURCE_DATE_EPOCH=$(SDK_SOURCE_DATE_EPOCH) $(PYTHON) -m pip wheel --disable-pip-version-check --no-deps --no-build-isolation "$$build_dir/source-b" --wheel-dir "$$build_dir/wheels-b" >/dev/null; \
+	wheel_a="$$(find "$$build_dir/wheels-a" -maxdepth 1 -type f -name 'infranexum_connector_sdk-1.0.0-*.whl' -print -quit)"; \
+	wheel_b="$$(find "$$build_dir/wheels-b" -maxdepth 1 -type f -name 'infranexum_connector_sdk-1.0.0-*.whl' -print -quit)"; \
+	test -n "$$wheel_a" -a -n "$$wheel_b"; \
+	cmp "$$wheel_a" "$$wheel_b"; \
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH="$$wheel_a" $(PYTHON) -c 'from infranexum_connector_sdk import SDK_VERSION, manifest_schema; schema = manifest_schema(); assert SDK_VERSION == "1.0.0"; assert schema["$$id"] == "urn:infranexum:schema:connector-manifest:v1"'
 
 
 api-contract-test: source-integrity-check
@@ -522,7 +549,7 @@ java-module-verify:
 java-test:
 	./mvnw --batch-mode --no-transfer-progress --fail-at-end verify
 
-verify-foundation: api-contract-test api-contract-check compose-contract-test source-integrity-test source-integrity-check archive-compatibility-test archive-compatibility-check architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-api-capability-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke java-observability-smoke java-rsot-smoke java-schema-registry-smoke java-itam-partner-smoke java-itam-asset-smoke java-itam-compliance-smoke java-dcim-facility-smoke java-dcim-physical-smoke java-ddi-ipam-smoke java-policy-smoke agent-vet agent-test agent-build web-verify
+verify-foundation: sdk-test sdk-check api-contract-test api-contract-check compose-contract-test source-integrity-test source-integrity-check archive-compatibility-test archive-compatibility-check architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-api-capability-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke java-observability-smoke java-rsot-smoke java-schema-registry-smoke java-itam-partner-smoke java-itam-asset-smoke java-itam-compliance-smoke java-dcim-facility-smoke java-dcim-physical-smoke java-ddi-ipam-smoke java-policy-smoke agent-vet agent-test agent-build web-verify
 
 verify: verify-foundation java-test
 

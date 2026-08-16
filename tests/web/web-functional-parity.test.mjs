@@ -68,10 +68,11 @@ test('functional workspaces expose lists, create workflows and governed lifecycl
   for (const id of [
     'itam-partner-table-body', 'itam-partner-create', 'itam-partner-lifecycle',
     'itam-asset-table-body', 'itam-asset-create', 'itam-asset-lifecycle', 'itam-custody-table-body',
-    'itam-warranty-form', 'itam-license-form', 'itam-coverage-form', 'itam-authorization-create', 'itam-warranty-type-create', 'itam-alert-table-body', 'itam-history-filter',
+    'itam-warranty-form', 'itam-license-form', 'itam-coverage-form', 'itam-authorization-create', 'itam-warranty-type-create', 'itam-alert-table-body', 'itam-history-table-body', 'itam-history-filter',
   ]) assert.match(itam, new RegExp(`id="${id}"`));
   for (const resource of ['sites', 'buildings', 'floors', 'rooms', 'zones']) {
-    for (const suffix of ['rows', 'detail', 'form', 'status-form']) assert.match(dcim, new RegExp(`id=\"dcim-${resource}-${suffix}\"`));
+    for (const suffix of ['rows', 'form', 'status-form']) assert.match(dcim, new RegExp(`id=\"dcim-${resource}-${suffix}\"`));
+    assert.match(dcim, new RegExp(`data-inx-crud-panel=\"dcim-${resource}\"`));
   }
 });
 

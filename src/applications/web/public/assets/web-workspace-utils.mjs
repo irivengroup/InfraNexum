@@ -118,22 +118,77 @@ function notifySelectVisual(documentObject, select) {
   }
 }
 
-export function replaceRows(documentObject, tbody, rows, cellValues, onSelect) {
+export function replaceRows(documentObject, tbody, rows, cellValues, onSelect, {
+  action = null,
+  actions = null,
+  actionLabelKey = 'common.edit',
+  actionClass = 'btn-outline-primary',
+} = {}) {
   if (!tbody) return;
+  const withAction = Boolean(action || actions) && typeof onSelect === 'function';
+  if (withAction) ensureActionHeader(documentObject, tbody, actionLabelKey);
   if (!rows.length) {
     const tr = documentObject.createElement('tr'); const td = documentObject.createElement('td');
-    td.colSpan = Math.max(1, cellValues.length); td.className = 'text-body-secondary text-center py-4'; td.textContent = translate(localeFromDocument(documentObject), 'common.emptyList');
+    td.colSpan = Math.max(1, cellValues.length + (withAction ? 1 : 0)); td.className = 'text-body-secondary text-center py-4'; td.textContent = translate(localeFromDocument(documentObject), 'common.emptyList');
     tr.appendChild(td); tbody.replaceChildren(tr); return;
   }
   const nodes = rows.map((row) => {
     const tr = documentObject.createElement('tr'); tr.tabIndex = 0; tr.setAttribute('data-row-id', clean(row.id));
     for (const cellValue of cellValues) { const td = documentObject.createElement('td'); td.textContent = clean(cellValue(row)) || '—'; tr.appendChild(td); }
-    const choose = () => onSelect?.(row, tr);
+    const choose = () => {
+      for (const candidate of tbody.children ?? []) {
+        candidate.classList?.remove?.('table-active');
+        candidate.setAttribute?.('aria-selected', 'false');
+      }
+      tr.classList?.add?.('table-active');
+      tr.setAttribute?.('aria-selected', 'true');
+      onSelect?.(row, tr);
+      dispatchRowSelection(documentObject, tbody, row, tr);
+    };
     tr.addEventListener?.('click', choose);
     tr.addEventListener?.('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault?.(); choose(); } });
+    if (withAction) {
+      const td = documentObject.createElement('td');
+      td.className = 'text-nowrap';
+      const container = documentObject.createElement('span');
+      container.className = 'inx-crud-actions';
+      const definitions = typeof actions === 'function' ? actions(row) : [{ key: action, labelKey: actionLabelKey, className: actionClass }];
+      for (const definition of definitions ?? []) {
+        if (!definition) continue;
+        const button = documentObject.createElement('button');
+        button.type = 'button';
+        button.className = `btn btn-sm ${definition.className ?? 'btn-outline-secondary'}`;
+        button.textContent = translate(localeFromDocument(documentObject), definition.labelKey ?? 'common.open');
+        button.setAttribute('data-inx-row-action', String(definition.key ?? 'open'));
+        button.addEventListener?.('click', (event) => {
+          event.stopPropagation?.(); event.preventDefault?.(); choose(); definition.onClick?.(row, tr, button);
+        });
+        container.appendChild(button);
+      }
+      td.appendChild(container); tr.appendChild(td);
+    }
     return tr;
   });
   tbody.replaceChildren(...nodes);
+}
+
+function ensureActionHeader(documentObject, tbody, actionLabelKey) {
+  const table = tbody.closest?.('table');
+  const row = table?.querySelector?.('thead tr');
+  if (!row || row.querySelector?.('[data-inx-actions-column="true"]')) return;
+  const th = documentObject.createElement('th');
+  th.scope = 'col';
+  th.textContent = translate(localeFromDocument(documentObject), 'common.actions');
+  th.setAttribute('data-i18n', 'common.actions');
+  th.setAttribute('data-inx-actions-column', 'true');
+  th.setAttribute('data-inx-sortable', 'false');
+  row.appendChild(th);
+}
+
+function dispatchRowSelection(documentObject, tbody, row, tr) {
+  const EventConstructor = documentObject?.defaultView?.CustomEvent ?? globalThis.CustomEvent;
+  if (typeof EventConstructor === 'function') tbody.dispatchEvent?.(new EventConstructor('infranexum:row-selected', { bubbles: true, detail: { row, tableRow: tr } }));
+  else tbody.dispatchEvent?.({ type: 'infranexum:row-selected', bubbles: true, detail: { row, tableRow: tr } });
 }
 
 export function bindTabSet(documentObject, selector, panelSelector, dataAttribute) {

@@ -4,6 +4,7 @@ import { DcimFacilityClient } from './dcim-facilities.mjs';
 import { initializeDcimPhysicalWorkspace } from './dcim-physical-workspace.mjs';
 import { initializeStableSelects } from './stable-select.mjs';
 import { initializeCountrySelects } from './country-catalog.mjs';
+import { initializeEnterpriseDataTables, openCrudEditor, wireCrudPanel } from './enterprise-crud.mjs';
 import {
   bindTabSet,
   field,
@@ -24,7 +25,7 @@ const KIND_BY_RESOURCE = Object.freeze({ sites:'site', buildings:'building', flo
  * Mounts the complete PGM-07-E04 facilities UI.
  * Governed entity references are selected from the authoritative hierarchy; UUID entry is never exposed.
  */
-export async function initializeDcimWorkspace(documentObject = document, configuration, fetchFunction = fetch) {
+export async function initializeDcimWorkspace(documentObject = document, configuration, fetchFunction = fetch, confirmFunction = globalThis.confirm) {
   const workspace=documentObject?.getElementById?.('dcim-workspace');
   if(!workspace) return Object.freeze({ enabled:false });
   const enabled=configuration?.dcimFacilitiesEnabled===true;
@@ -40,7 +41,7 @@ export async function initializeDcimWorkspace(documentObject = document, configu
 
   bindTabSet(documentObject,'[data-dcim-tab]','[data-dcim-panel]','data-dcim-tab');
   bindContext(documentObject,configuration,fetchFunction,client,state);
-  for(const resource of RESOURCES) bindResource(documentObject,client,state,resource);
+  for(const resource of RESOURCES) bindResource(documentObject,client,state,resource,confirmFunction);
   documentObject.getElementById('dcim-refresh')?.addEventListener('click',()=>void refreshHierarchy(documentObject,client,state));
   documentObject.addEventListener?.('infranexum:locale-change',()=>{initializeCountrySelects(documentObject,localeFromDocument(documentObject));initializeStableSelects(documentObject).sync();renderAll(documentObject,state);});
   const physicalPromise=initializeDcimPhysicalWorkspace(documentObject,configuration,fetchFunction);
@@ -93,24 +94,26 @@ export function dcimWorkspaceTemplate(){
 
 function tab(resource,key,active=false){return `<button class="nav-link${active?' active':''}" type="button" role="tab" aria-selected="${active}" tabindex="${active?'0':'-1'}" data-dcim-tab="${resource}" data-i18n="${key}">${resource}</button>`;}
 function panel(resource,fields){return `
-  <section class="tab-pane" role="tabpanel" data-dcim-panel="${resource}"${resource==='sites'?'':' hidden aria-hidden="true"'}>
-    <div class="d-grid gap-3">
-      <div>
-        <div class="inx-filter-bar mb-4">
-          <div class="inx-filter-field inx-filter-field-wide"><label class="form-label" for="dcim-${resource}-status-filter" data-i18n="common.status">Status</label><select id="dcim-${resource}-status-filter" class="form-select"><option value="" data-i18n="common.all">All</option>${statusOptions()}</select></div>
-          ${resource==='sites'?'<div class="inx-filter-field"><label class="form-label" for="dcim-sites-country-filter" data-i18n="dcim.countryFilter">Country</label><select id="dcim-sites-country-filter" class="form-select" data-inx-country-select></select></div>':''}
-          <div class="inx-filter-actions"><button id="dcim-${resource}-list-refresh" class="btn btn-outline-primary" type="button" data-i18n="common.refresh">Refresh</button></div>
-        </div>
-        <div class="border rounded-3 overflow-hidden mb-4 bg-body shadow-sm"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th data-i18n="dcim.code">Code</th><th data-i18n="dcim.name">Name</th><th data-i18n="common.status">Status</th><th data-i18n="common.version">Version</th><th data-i18n="dcim.parent">Parent</th></tr></thead><tbody id="dcim-${resource}-rows"></tbody></table></div></div>
-        <pre id="dcim-${resource}-detail" class="p-3 rounded-3 border bg-body-tertiary mb-4 overflow-auto small" tabindex="0">—</pre>
+  <section class="tab-pane inx-crud-panel" role="tabpanel" data-inx-crud-panel="dcim-${resource}" data-dcim-panel="${resource}"${resource==='sites'?'':' hidden aria-hidden="true"'}>
+    <div class="inx-crud-list-view" data-inx-crud-list>
+      <div class="inx-filter-bar mb-4">
+        <div class="inx-filter-field inx-filter-field-wide"><label class="form-label" for="dcim-${resource}-status-filter" data-i18n="common.status">Status</label><select id="dcim-${resource}-status-filter" class="form-select"><option value="" data-i18n="common.all">All</option>${statusOptions()}</select></div>
+        ${resource==='sites'?'<div class="inx-filter-field"><label class="form-label" for="dcim-sites-country-filter" data-i18n="dcim.countryFilter">Country</label><select id="dcim-sites-country-filter" class="form-select" data-inx-country-select></select></div>':''}
+        <div class="inx-filter-actions"><button id="dcim-${resource}-list-refresh" class="btn btn-outline-primary" type="button" data-i18n="common.refresh">Refresh</button><button class="btn btn-primary" type="button" data-inx-crud-new="record" data-inx-crud-editor-mode="create"><span aria-hidden="true">＋</span> <span data-i18n="common.new">New</span></button></div>
       </div>
-      <div class="d-grid gap-3">
+      <div class="border rounded-3 overflow-hidden mb-4 bg-body shadow-sm"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th data-i18n="dcim.code">Code</th><th data-i18n="dcim.name">Name</th><th data-i18n="common.status">Status</th><th data-i18n="common.version">Version</th><th data-i18n="dcim.parent">Parent</th></tr></thead><tbody id="dcim-${resource}-rows"></tbody></table></div></div>
+    </div>
+    <section class="inx-crud-editor-view" data-inx-crud-editor hidden aria-hidden="true">
+      <div class="inx-crud-editor-header"><div><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="dcim.title">Facilities</p><h3 class="h5 mb-0" data-inx-crud-editor-title data-i18n="dcim.manage">Create / edit</h3></div><button class="btn btn-outline-secondary btn-sm" type="button" data-inx-crud-back data-i18n="common.backToList">Back to list</button></div>
+      <div data-inx-crud-form="record" data-inx-crud-title-key="dcim.manage">
         <form id="dcim-${resource}-form" class="border rounded-3 p-3 p-xl-4 bg-body-tertiary row g-3" autocomplete="off">
           <h3 data-i18n="dcim.manage">Create / edit</h3>
           ${fields}
           <div class="col-12"><label class="form-label" for="dcim-${resource}-reason" data-i18n="common.reason">Audit reason</label><textarea id="dcim-${resource}-reason" name="reason" class="form-control" minlength="2" maxlength="1024" required></textarea></div>
-          <div class="col-12 d-flex flex-wrap gap-2"><button class="btn btn-primary" data-dcim-create="${resource}" type="submit" data-i18n="common.create">Create</button><button id="dcim-${resource}-update" class="btn btn-outline-primary" type="button" disabled data-i18n="common.save">Save</button><button id="dcim-${resource}-clear" class="btn btn-outline-secondary" type="button" data-i18n="common.clear">Clear selection</button></div>
+          <div class="col-12 d-flex flex-wrap gap-2"><button class="btn btn-primary" data-inx-only-mode="create" data-dcim-create="${resource}" type="submit" data-i18n="common.create">Create</button><button id="dcim-${resource}-update" data-inx-only-mode="edit" class="btn btn-outline-primary" type="button" disabled data-i18n="common.save">Save</button></div>
         </form>
+      </div>
+      <div data-inx-crud-form="lifecycle" data-inx-crud-title-key="dcim.lifecycle" hidden>
         <form id="dcim-${resource}-status-form" class="border rounded-3 p-3 p-xl-4 bg-body-tertiary row g-3">
           <h3 data-i18n="dcim.lifecycle">Lifecycle</h3>
           <div class="col-12"><label class="form-label" for="dcim-${resource}-target" data-i18n="dcim.targetStatus">Target status</label><select id="dcim-${resource}-target" name="targetStatus" class="form-select" disabled></select></div>
@@ -118,7 +121,7 @@ function panel(resource,fields){return `
           <div class="col-12"><button class="btn btn-outline-danger" type="submit" disabled data-dcim-status-action="${resource}" data-i18n="dcim.applyStatus">Apply status</button></div>
         </form>
       </div>
-    </div>
+    </section>
   </section>`;}
 function commonFields(){return `<div class="col-md-5"><label class="form-label" data-i18n="dcim.code">Code</label><input name="code" class="form-control" pattern="[A-Za-z0-9][A-Za-z0-9_-]{2,63}" minlength="3" maxlength="64" required /></div><div class="col-md-7"><label class="form-label" data-i18n="dcim.name">Display name</label><input name="displayName" class="form-control" minlength="3" maxlength="128" required /></div>`;}
 function siteFields(){return `${commonFields()}<div class="col-12"><label class="form-label" data-i18n="dcim.addressLine1">Address line 1</label><input name="addressLine1" class="form-control" maxlength="128" required /></div><div class="col-12"><label class="form-label" data-i18n="dcim.addressLine2">Address line 2</label><input name="addressLine2" class="form-control" maxlength="128" /></div><div class="col-md-4"><label class="form-label" data-i18n="dcim.postalCode">Postal code</label><input name="postalCode" class="form-control" maxlength="16" required /></div><div class="col-md-8"><label class="form-label" data-i18n="dcim.city">City</label><input name="city" class="form-control" maxlength="64" required /></div><div class="col-md-4"><label class="form-label" data-i18n="dcim.country">Country code</label><select name="countryCode" class="form-select" data-inx-country-select required></select></div><div class="col-md-8"><label class="form-label" data-i18n="dcim.timezone">Timezone</label><input name="timezone" class="form-control" maxlength="64" placeholder="Europe/Paris" required /></div><div class="col-md-6"><label class="form-label" data-i18n="dcim.latitude">Latitude</label><input name="latitude" type="number" step="0.0000001" min="-90" max="90" class="form-control" /></div><div class="col-md-6"><label class="form-label" data-i18n="dcim.longitude">Longitude</label><input name="longitude" type="number" step="0.0000001" min="-180" max="180" class="form-control" /></div><div class="col-12"><label class="form-label" data-i18n="dcim.descriptionField">Description</label><textarea name="description" class="form-control" maxlength="2000"></textarea></div>`;}
@@ -159,7 +162,7 @@ async function refreshResource(d,c,s,resource){
 }
 function parentForResource(d,r){if(r==='buildings')return d.getElementById('dcim-site-context')?.value||'';if(r==='floors')return d.getElementById('dcim-building-context')?.value||'';if(r==='rooms')return d.getElementById('dcim-floor-context')?.value||'';if(r==='zones')return d.getElementById('dcim-zone-parent')?.value||'';return '';}
 
-function bindResource(d,c,s,resource){
+function bindResource(d,c,s,resource,confirmFunction){
   d.getElementById(`dcim-${resource}-list-refresh`)?.addEventListener('click',()=>void refreshResource(d,c,s,resource));
   d.getElementById(`dcim-${resource}-status-filter`)?.addEventListener('change',()=>void refreshResource(d,c,s,resource));
   if(resource==='sites') d.getElementById('dcim-sites-country-filter')?.addEventListener('change',()=>void refreshResource(d,c,s,resource));
@@ -169,7 +172,7 @@ function bindResource(d,c,s,resource){
   if(update) wireAsyncAction(update,{execute:async()=>mutateUpdate(d,c,s,resource,form)});
   d.getElementById(`dcim-${resource}-clear`)?.addEventListener('click',()=>clearSelection(d,s,resource));
   const statusForm=d.getElementById(`dcim-${resource}-status-form`);
-  if(statusForm) wireAsyncForm(statusForm,{execute:async()=>mutateStatus(d,c,s,resource,statusForm)});
+  if(statusForm) wireAsyncForm(statusForm,{execute:async()=>mutateStatus(d,c,s,resource,statusForm,confirmFunction)});
 }
 async function mutateCreate(d,c,s,r,form){
   const org=d.getElementById('dcim-organization')?.value;const sub=d.getElementById('dcim-subdivision')?.value;if(!org||!sub){setWorkspaceStatus(d,'dcim-status','workspace.selectOrganization','error');return;}
@@ -177,13 +180,13 @@ async function mutateCreate(d,c,s,r,form){
   catch(error){handleError(d,error);}
 }
 async function mutateUpdate(d,c,s,r,form){const selected=s.selected.get(r);if(!selected){setWorkspaceStatus(d,'dcim-status','workspace.selectRecord','error');return;}try{setWorkspaceStatus(d,'dcim-status','workspace.saving');const body=bodyFromForm(d,r,form,selected.organizationId,selected.subdivisionId,false);const result=await c.update(r,selected.id,selected.version,body,idempotencyKey(`dcim-${KIND_BY_RESOURCE[r]}-update`));selectRecord(d,s,r,result.payload);await refreshHierarchy(d,c,s);await refreshResource(d,c,s,r);setWorkspaceStatus(d,'dcim-status','workspace.saved','success');}catch(error){handleError(d,error);}}
-async function mutateStatus(d,c,s,r,form){const selected=s.selected.get(r);if(!selected){setWorkspaceStatus(d,'dcim-status','workspace.selectRecord','error');return;}try{setWorkspaceStatus(d,'dcim-status','workspace.saving');const result=await c.changeStatus(r,selected.id,selected.version,field(form,'targetStatus'),field(form,'reason'),idempotencyKey(`dcim-${KIND_BY_RESOURCE[r]}-status`));selectRecord(d,s,r,result.payload);await refreshHierarchy(d,c,s);await refreshResource(d,c,s,r);setWorkspaceStatus(d,'dcim-status','workspace.saved','success');}catch(error){handleError(d,error);}}
+async function mutateStatus(d,c,s,r,form,confirmFunction=globalThis.confirm){const selected=s.selected.get(r);if(!selected){setWorkspaceStatus(d,'dcim-status','workspace.selectRecord','error');return;}const targetStatus=field(form,'targetStatus');if(targetStatus==='deleted'&&typeof confirmFunction==='function'&&!confirmFunction(translate(localeFromDocument(d),'common.confirmDelete')))return;try{setWorkspaceStatus(d,'dcim-status','workspace.saving');const result=await c.changeStatus(r,selected.id,selected.version,targetStatus,field(form,'reason'),idempotencyKey(`dcim-${KIND_BY_RESOURCE[r]}-status`));selectRecord(d,s,r,result.payload);await refreshHierarchy(d,c,s);await refreshResource(d,c,s,r);setWorkspaceStatus(d,'dcim-status','workspace.saved','success');}catch(error){handleError(d,error);}}
 
 function bodyFromForm(d,r,form,org,sub,create){const body={organizationId:org,subdivisionId:sub,code:field(form,'code'),displayName:field(form,'displayName'),addressLine1:nullable(field(form,'addressLine1')),addressLine2:nullable(field(form,'addressLine2')),postalCode:nullable(field(form,'postalCode')),city:nullable(field(form,'city')),countryCode:nullable(field(form,'countryCode')),timezone:nullable(field(form,'timezone')),latitude:numberOrNull(field(form,'latitude')),longitude:numberOrNull(field(form,'longitude')),floorCount:intOrNull(field(form,'floorCount')),levelNumber:intOrNull(field(form,'levelNumber')),areaM2:numberOrNull(field(form,'areaM2')),levelHeightM:numberOrNull(field(form,'levelHeightM')),capacityKw:numberOrNull(field(form,'capacityKw')),accessRestriction:nullable(field(form,'accessRestriction')),zoneType:nullable(field(form,'zoneType')),description:nullable(field(form,'description')),reason:field(form,'reason')};if(create)body.parentId=r==='zones'?field(form,'parentId'):nullable(parentForResource(d,r));else{delete body.organizationId;delete body.subdivisionId;delete body.code;delete body.parentId;}return body;}
 function numberOrNull(v){return v===''||v===null||v===undefined?null:Number(v);}function intOrNull(v){return v===''||v===null||v===undefined?null:Number.parseInt(v,10);}
 
 function renderAll(d,s){for(const r of RESOURCES)renderResource(d,s,r);syncZoneParent(d,s);}
-function renderResource(d,s,r){replaceRows(d,d.getElementById(`dcim-${r}-rows`),s[r]??[],[(x)=>x.code,(x)=>x.displayName,(x)=>translateStatus(d,x.status),(x)=>String(x.version??''),(x)=>parentLabel(s,x.parentId)],(row)=>selectRecord(d,s,r,row));}
+function renderResource(d,s,r){const panel=d.querySelector?.(`[data-dcim-panel="${r}"]`);replaceRows(d,d.getElementById(`dcim-${r}-rows`),s[r]??[],[(x)=>x.code,(x)=>x.displayName,(x)=>translateStatus(d,x.status),(x)=>String(x.version??''),(x)=>parentLabel(s,x.parentId)],(row)=>selectRecord(d,s,r,row),{actions:()=>[{key:'edit',labelKey:'common.edit',className:'btn-outline-primary',onClick:()=>openCrudEditor(panel,'record',{mode:'edit'})},{key:'lifecycle',labelKey:'dcim.lifecycle',className:'btn-outline-secondary',onClick:()=>openCrudEditor(panel,'lifecycle',{mode:'edit'})}]});initializeEnterpriseDataTables(d);}
 function selectRecord(d,s,r,row){s.selected.set(r,row);const detail=d.getElementById(`dcim-${r}-detail`);if(detail)detail.textContent=JSON.stringify(row,null,2);const form=d.getElementById(`dcim-${r}-form`);if(form)for(const name of ['code','displayName','addressLine1','addressLine2','postalCode','city','countryCode','timezone','latitude','longitude','floorCount','levelNumber','areaM2','levelHeightM','capacityKw','accessRestriction','zoneType','description']){const el=form.elements?.namedItem?.(name);if(el){el.value=row[name]??'';if(String(el.tagName??'').toUpperCase()==='SELECT'){const EventConstructor=d?.defaultView?.Event??globalThis.Event;if(typeof EventConstructor==='function')el.dispatchEvent?.(new EventConstructor('change',{bubbles:true}));}}}d.getElementById(`dcim-${r}-update`)?.removeAttribute('disabled');syncStatusActions(d,r,row);}
 function clearSelection(d,s,r){s.selected.delete(r);const form=d.getElementById(`dcim-${r}-form`);form?.reset?.();const detail=d.getElementById(`dcim-${r}-detail`);if(detail)detail.textContent='—';d.getElementById(`dcim-${r}-update`)?.setAttribute('disabled','');const target=d.getElementById(`dcim-${r}-target`);target?.replaceChildren();target?.setAttribute('disabled','');d.querySelector?.(`[data-dcim-status-action="${r}"]`)?.setAttribute('disabled','');}
 function syncStatusActions(d,r,row){const target=d.getElementById(`dcim-${r}-target`);if(!target)return;const options=allowedTransitions(KIND_BY_RESOURCE[r],row.status).map((status)=>{const option=d.createElement('option');option.value=status;option.textContent=translateStatus(d,status);return option;});target.replaceChildren(...options);target.disabled=options.length===0;const action=d.querySelector?.(`[data-dcim-status-action="${r}"]`);if(action){action.disabled=options.length===0;action.setAttribute?.('aria-disabled',action.disabled?'true':'false');}}

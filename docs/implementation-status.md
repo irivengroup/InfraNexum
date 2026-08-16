@@ -1,3 +1,29 @@
+# InfraNexum 2.0.0-alpha.0.100 — PGM-10-E05 phase 1: Connector SDK v1
+
+**Nature : évolution fonctionnelle, PGM-10-E05 EN COURS.** Cette première tranche crée la frontière stable d'auteur/certification avant tout runtime de paquet connecteur : SDK Python 3.13 `1.0.0` sans dépendance runtime, contrat objet `Connector`, modèles immuables, manifeste `infranexum.connector-manifest/v1`, certification offline déterministe et primitives webhook HMAC-SHA256. Elle n'ajoute aucun connecteur fournisseur fictif, aucune route Server, migration, persistance de secret ou écriture directe en base.
+
+**Gouvernance/sécurité :** le manifeste certifie versions fournisseur explicites, capabilities/permissions, noms de secrets sans valeur, egress HTTPS exact, matrice d'autorité, conflits/suppressions, idempotence/checkpoint/replay contrôlé, classifications de données, contrats versionnés, limites et support. Les wildcards, IP/localhost d'egress, compatibilités fournisseur `*`, champs inconnus, manifeste >1 Mio et `minimumVersion` SDK future échouent fermés. Les données certifiées sont profondément immuables et fingerprintées SHA-256.
+
+**Webhook :** signature canonique HMAC-SHA256 avec secret >=32 octets, payload <=1 Mio, timestamp timezone-aware, comparaison constante et fenêtre de dérive bornée. `InMemoryReplayGuard` est uniquement un adaptateur local/test ; la protection de rejeu de production doit être durable et sera branchée sur l'inbox Core en phase 2.
+
+**CI/package :** `make sdk-test sdk-check` est intégré à `verify-foundation` et à un job GitHub Actions dédié. Il impose couverture branche >=98 %, cohérence version/schema, double build wheel byte-identique (`SOURCE_DATE_EPOCH`) et import depuis le wheel construit.
+
+**Roadmap :** PGM-10-E05 reste **EN COURS**. La phase suivante doit livrer admission webhook authentifiée, inbox durable connecteur, exposition DLQ, rejeu contrôlé/audité, retry/suspension bornés et métriques health/latence/backlog/erreurs. PGM-10-E06 et les epics DNS/DHCP dépendants restent bloqués jusqu'à fermeture de ce gate runtime.
+
+---
+
+# InfraNexum 2.0.0-alpha.0.99 — enterprise CRUD navigation and API documentation
+
+**Nature : corrective Web/UX, aucun nouvel epic métier.** Les onglets d’entités adoptent un contrat list-first : DataTable triable, filtres compacts, bouton `+ Nouveau` uniquement lorsque la création est réellement supportée, colonne Actions contextuelle, éditeur create/edit/lifecycle exclusif et retour automatique à la liste après mutation réussie. Les suppressions initiées par l’utilisateur demandent confirmation, y compris une transition DCIM vers `deleted`. Les ressources dérivées/read-only n’exposent aucune mutation fictive.
+
+**Présentation :** Identity & Access reprend le même fond d’entête de tabs que les autres workspaces. Les tables utilisent un fond d’entête continu et atténué plutôt que des couleurs différentes par colonne. Le topbar ne répète plus l’environnement. Le login retrouve les proportions du slogan `Operate infrastructure with clarity.` de la présentation précédemment acceptée. Les dumps JSON bruts sous les listes RSOT/DCIM/DDI sont retirés.
+
+**Documentation :** une rubrique `DOCUMENTATION` sous `PLATFORM` expose Swagger et ReDoc dans le shell authentifié. Les deux vues utilisent `assets/generated/infranexum-openapi.yaml`, projection déterministe des 14 fragments / 174 opérations du catalogue Server. Swagger UI `5.32.13` et ReDoc CE `2.5.3` sont épinglés et chargés paresseusement depuis l’origine CSP explicitement autorisée `cdn.jsdelivr.net`; le YAML local reste disponible en cas d’indisponibilité du renderer. La projection est contrôlée octet pour octet par un test d’architecture.
+
+**Validation alpha.0.99 :** **EXÉCUTÉ** — Web **189/189**, couverture **99,73 % lignes / 98,53 % branches / 100 % fonctions**, smoke `passed`; architecture directement concernée **91/91**; API Contracts **45/45 à 99 %**, **14 fragments / 174 opérations**, dette **0/0/0/0**; Source Integrity **45/45 à 100 %**, checker **0 violation**; Architecture-as-Code `PASS`; Toolchains **25/25**, Migrations **114/114**, Eventing **10/10**, Persistence **12/12**, Capabilities **10/10**, Entitlements **10/10**, Audit **8/8**, Compose **64/64**; `java-contract-smoke` et `java-policy-smoke` `PASS`; Archive Compatibility **12/12 à 100 %** et checker `git archive` **0 violation**; snapshot de gel **1272 fichiers suivis / 1271 checksums Git / 1269 chemins canoniques**. **NON EXÉCUTÉ globalement** — suite Architecture instrumentée : timeout du runner après **49 tests démarrés / 48 terminés OK**, pendant `test_legacy_brand_and_artifact_are_blocked`, sans assertion observée en échec avant l’arrêt; les **91/91** tests directement concernés et le checker passent séparément. Les gates cible exacts restent externes au runner disponible : Temurin **25.0.4+7** (runner Java **21.0.11**), Node **24.18.1 / pnpm 11.17.0** (runner Node **22.16.0**, pnpm absent), Docker Desktop PRO et PowerShell absents; revue visuelle Windows/Chromium et chargement réseau réel des renderers Swagger/ReDoc **NON EXÉCUTÉS**.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.98 — PGM-05-E01 delivered
 
 **Nature : évolution fonctionnelle de gouvernance API/runtime, PGM-05-E01 LIVRÉ.** La phase 5 ferme les deux dernières dettes contractuelles capability/permission et étend l’inventaire OpenAPI à toutes les routes publiques Server connues. La surface canonique compte désormais **14 fragments / 174 opérations**, avec un ratchet **0/0/0/0** pour idempotence, pagination, capability et autorisation.

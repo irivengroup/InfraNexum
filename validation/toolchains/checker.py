@@ -295,6 +295,7 @@ class ToolchainChecker:
         job_bodies = {match.group("name"): match.group("body") for match in job_pattern.finditer(workflow)}
         source_body = job_bodies.get("source-integrity", "")
         dependent_jobs = (
+            "connector-sdk",
             "archive-compatibility",
             "architecture",
             "agent",

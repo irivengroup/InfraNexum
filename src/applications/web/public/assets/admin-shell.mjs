@@ -8,6 +8,8 @@ const ROUTES = Object.freeze({
   itam: Object.freeze({ viewId: 'itam-workspace', labelKey: 'nav.itam', titleKey: 'topbar.itam' }),
   dcim: Object.freeze({ viewId: 'dcim-workspace', labelKey: 'nav.dcim', titleKey: 'topbar.dcim' }),
   ddi: Object.freeze({ viewId: 'ddi-workspace', labelKey: 'nav.ddi', titleKey: 'topbar.ddi' }),
+  swagger: Object.freeze({ viewId: 'swagger-workspace', labelKey: 'nav.swagger', titleKey: 'topbar.swagger' }),
+  redoc: Object.freeze({ viewId: 'redoc-workspace', labelKey: 'nav.redoc', titleKey: 'topbar.redoc' }),
 });
 
 export function normalizeRoute(value) {
@@ -148,7 +150,21 @@ export function applyRoute(
       windowObject.history.pushState(null, '', expectedHash);
     }
   }
+  dispatchRouteChange(documentObject, route);
   return route;
+}
+
+function dispatchRouteChange(documentObject, route) {
+  try {
+    const EventConstructor = documentObject?.defaultView?.CustomEvent ?? globalThis.CustomEvent;
+    if (typeof EventConstructor === 'function') {
+      documentObject?.dispatchEvent?.(new EventConstructor('infranexum:route-change', { detail: { route } }));
+    } else {
+      documentObject?.dispatchEvent?.({ type: 'infranexum:route-change', detail: { route } });
+    }
+  } catch {
+    // Route application is authoritative; documentation lazy-loading is best-effort.
+  }
 }
 
 export function initializeAdminShell(documentObject = document, windowObject = globalThis.window) {
@@ -222,6 +238,12 @@ export function buildCommands(documentObject, windowObject = globalThis.window) 
     }),
     command('notifications', 'command.category.system', 'command.notifications.title', 'command.notifications.description', () => {
       documentObject?.getElementById?.('notification-trigger')?.click?.();
+    }),
+    command('swagger', 'command.category.documentation', 'command.swagger.title', 'command.swagger.description', () => {
+      applyRoute(documentObject, 'swagger', windowObject);
+    }),
+    command('redoc', 'command.category.documentation', 'command.redoc.title', 'command.redoc.description', () => {
+      applyRoute(documentObject, 'redoc', windowObject);
     }),
   ];
   if (capabilityRouteAvailable(documentObject, 'itam')) {

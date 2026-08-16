@@ -38,7 +38,7 @@ class WebFunctionalParityArchitectureTest(unittest.TestCase):
         self.assertEqual(2, len(operations))
         self.assertEqual(2, len({operation["operationId"] for operation in operations}))
         for operation in operations:
-            self.assertEqual("rsot.read", operation["x-infranexum-permission"])
+            self.assertEqual({"mode": "permission", "code": "rsot.read"}, operation["x-infranexum-permission"])
             self.assertEqual("rsot.core", operation["x-infranexum-capability"])
         self.assertEqual([{"LocalSessionCookie": []}], spec["security"])
 

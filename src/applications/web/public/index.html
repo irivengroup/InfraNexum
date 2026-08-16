@@ -126,6 +126,15 @@
             <span data-i18n="nav.governance">Governance</span>
             <span class="badge rounded-pill text-bg-light ms-auto" data-i18n="nav.soon">Soon</span>
           </span>
+          <p class="small text-uppercase fw-bold text-white-50 px-2 mt-4 mb-1 inx-nav-heading" data-i18n="nav.documentation">Documentation</p>
+          <a id="nav-swagger" class="nav-link inx-nav-link" href="#/swagger" data-route="swagger">
+            <span class="d-inline-flex justify-content-center" aria-hidden="true">{ }</span>
+            <span data-i18n="nav.swagger">Swagger</span>
+          </a>
+          <a id="nav-redoc" class="nav-link inx-nav-link" href="#/redoc" data-route="redoc">
+            <span class="d-inline-flex justify-content-center" aria-hidden="true">≡</span>
+            <span data-i18n="nav.redoc">ReDoc</span>
+          </a>
         </nav>
 
         <div class="mt-auto pt-3">
@@ -173,7 +182,6 @@
                 <button class="dropdown-item inx-language-option" type="button" role="option" data-locale="it" aria-label="Italiano IT" aria-selected="false"><span>Italiano</span><strong>IT</strong></button>
               </div>
             </div>
-            <span id="topbar-environment" class="badge rounded-pill text-bg-light border d-none d-xl-inline-flex">Environment —</span>
             <button id="notification-trigger" class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center position-relative" type="button" data-i18n-aria-label="notification.open" aria-haspopup="dialog" aria-controls="notification-center" aria-expanded="false">
               <svg class="inx-topbar-icon" aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg>
               <span id="notification-count" class="badge rounded-pill text-bg-danger position-absolute top-0 start-100 translate-middle" hidden>0</span>
@@ -605,6 +613,11 @@
           <section aria-hidden="true" aria-labelledby="iam-tab-policies" class="tab-pane" data-iam-panel="policies" hidden="" id="iam-policy-workspace" role="tabpanel">
           <header class="d-flex justify-content-between align-items-start gap-2 mb-3"><div class="d-flex flex-column"><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="iam.facetEyebrow">Identity &amp; Access</p><h3 class="h5 mb-1" data-i18n="policy.title">Advanced authorization policies</h3><p class="small text-body-secondary" data-i18n="policy.description">Create, approve, activate and evaluate deterministic ABAC policies.</p></div></header>
           <div class="alert alert-info"><div aria-live="polite" class="alert alert-secondary mb-3" data-i18n="policy.ready" id="iam-policy-status" role="status">Advanced authorization ready</div></div>
+          <div class="inx-filter-bar inx-filter-bar-plain mb-3" role="group" data-i18n-aria-label="iam.listControls" aria-label="List controls">
+          <div class="inx-filter-field inx-filter-field-wide"><input id="iam-policy-filter" class="form-control form-control-sm" type="search" autocomplete="off" data-i18n-placeholder="iam.filterPlaceholder" data-i18n-aria-label="iam.filterPlaceholder" placeholder="Filter current list" /></div>
+          <div class="inx-filter-actions"><button class="btn btn-sm btn-outline-secondary" id="iam-policy-refresh" type="button" data-i18n="iam.refresh">Refresh</button><button class="btn btn-sm btn-primary" data-iam-open-workflow="policies:create" type="button"><span aria-hidden="true">＋</span> <span data-i18n="common.new">New</span></button></div>
+          </div>
+          <div class="table-responsive border rounded-3 mb-4"><table class="table table-hover align-middle mb-0"><caption class="visually-hidden" data-i18n="policy.title">Advanced authorization policies</caption><thead><tr><th data-i18n="iam.id">ID</th><th data-i18n="policy.code">Policy code</th><th data-i18n="common.version">Version</th><th data-i18n="common.status">Status</th><th data-i18n="policy.scope">Scope</th><th data-i18n="common.actions" data-inx-actions-column="true">Actions</th></tr></thead><tbody id="iam-policy-rows"></tbody></table></div>
           <section aria-label="Object actions" class="card card-body border" data-i18n-aria-label="iam.objectActions">
           <div class="d-flex justify-content-between align-items-start gap-2 mb-3"><h4 class="h6 mb-1" data-i18n="iam.objectActions">Details &amp; actions</h4><p class="small text-body-secondary" data-i18n="iam.objectActionsHint">Select an object from the list, then choose the operation to perform.</p></div>
           <div aria-label="Object action views" class="nav nav-underline gap-3 mb-4 border-bottom" data-i18n-aria-label="iam.workflowViews" role="tablist">
@@ -668,6 +681,28 @@
           <section id="dcim-workspace" class="card shadow-sm card-body mb-4 border-0 inx-workspace inx-workspace-dcim" data-view="dcim" data-capability-enabled="false" aria-labelledby="dcim-workspace-title" hidden></section>
 
           <section id="ddi-workspace" class="card shadow-sm card-body mb-4 border-0 inx-workspace inx-workspace-ddi" data-view="ddi" data-capability-enabled="false" aria-labelledby="ddi-workspace-title" hidden></section>
+
+          <section id="swagger-workspace" class="card shadow-sm border-0 mb-4 inx-workspace inx-api-docs" data-view="swagger" aria-labelledby="swagger-workspace-title" hidden>
+            <div class="card-header inx-docs-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+              <div><p class="small text-uppercase fw-bold mb-1" data-i18n="docs.eyebrow">API documentation</p><h2 id="swagger-workspace-title" class="h4 mb-1" data-i18n="docs.swagger.title">Swagger API explorer</h2><p class="mb-0" data-i18n="docs.swagger.description">Explore the certified InfraNexum OpenAPI contract. Mutating methods remain disabled in the embedded explorer.</p></div>
+              <a id="swagger-raw-spec" class="btn btn-outline-light btn-sm" href="/assets/generated/infranexum-openapi.yaml" target="_blank" rel="noopener" data-i18n="docs.rawSpec">Raw OpenAPI</a>
+            </div>
+            <div class="card-body p-0">
+              <p id="swagger-docs-status" class="alert alert-info m-3 py-2 inx-docs-status" role="status" aria-live="polite" data-state="loading" data-i18n="docs.loading">Loading API renderer…</p>
+              <div id="swagger-ui" class="inx-swagger-host" aria-live="polite"></div>
+            </div>
+          </section>
+
+          <section id="redoc-workspace" class="card shadow-sm border-0 mb-4 inx-workspace inx-api-docs" data-view="redoc" aria-labelledby="redoc-workspace-title" hidden>
+            <div class="card-header inx-docs-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+              <div><p class="small text-uppercase fw-bold mb-1" data-i18n="docs.eyebrow">API documentation</p><h2 id="redoc-workspace-title" class="h4 mb-1" data-i18n="docs.redoc.title">ReDoc API reference</h2><p class="mb-0" data-i18n="docs.redoc.description">Read the certified InfraNexum OpenAPI contract in a structured reference optimized for discovery.</p></div>
+              <a id="redoc-raw-spec" class="btn btn-outline-light btn-sm" href="/assets/generated/infranexum-openapi.yaml" target="_blank" rel="noopener" data-i18n="docs.rawSpec">Raw OpenAPI</a>
+            </div>
+            <div class="card-body p-0">
+              <p id="redoc-docs-status" class="alert alert-info m-3 py-2 inx-docs-status" role="status" aria-live="polite" data-state="loading" data-i18n="docs.loading">Loading API renderer…</p>
+              <div id="redoc-ui" class="inx-redoc-host" aria-live="polite"></div>
+            </div>
+          </section>
 
           <footer class="d-flex flex-wrap justify-content-between gap-2 border-top pt-3 mt-4 small text-body-secondary inx-footer"><span data-i18n="footer.product">InfraNexum — Infrastructure Control &amp; Governance Platform</span><span id="footer-version">Version —</span></footer>
         </main>

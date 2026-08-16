@@ -29,6 +29,23 @@ jobs:
       - name: Verify canonical source inventory and Git tracking
         run: SOURCE_INTEGRITY_REQUIRE_GIT=1 SOURCE_INTEGRITY_REQUIRE_STAGED=1 SOURCE_INTEGRITY_REQUIRE_CHECKSUMS=1 make source-integrity-test source-integrity-check
 
+  connector-sdk:
+    needs: source-integrity
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: '3.13'
+      - name: Install pinned connector SDK validation tooling
+        run: python -m pip install --disable-pip-version-check --requirement requirements/ci.txt
+      - name: Test, certify and package connector SDK
+        run: make sdk-test sdk-check
+
+
   archive-compatibility:
     needs: source-integrity
     runs-on: ubuntu-24.04

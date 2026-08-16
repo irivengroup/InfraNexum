@@ -1,4 +1,5 @@
 import { initializeAdminShell, setDcimAvailability, setDdiAvailability, setIdentityAccessAvailability, setItamAvailability, setOrganizationAvailability, setRsotAvailability } from './admin-shell.mjs';
+import { initializeApiDocumentation } from './api-documentation.mjs';
 import { initializeLocalAuthentication } from './auth.mjs';
 import { initializeIdentityAccess } from './identity-access.mjs';
 import { initializePolicyAuthorization } from './policy-authorization.mjs';
@@ -106,7 +107,6 @@ export function renderRuntimeConfiguration(documentObject, configuration) {
   setLocalizedText(documentObject, 'runtime-message', 'runtime.loaded');
   setLocalizedText(documentObject, 'sidebar-version', 'common.version', { value: configuration.version });
   setLocalizedText(documentObject, 'footer-version', 'common.version', { value: configuration.version });
-  setLocalizedText(documentObject, 'topbar-environment', 'common.environment', { value: configuration.environment });
   setLocalizedText(documentObject, 'dashboard-runtime', 'runtime.operational');
   setText(documentObject, 'dashboard-environment', configuration.environment);
   setLocalizedText(documentObject, 'dashboard-version', 'common.version', { value: configuration.version });
@@ -385,6 +385,7 @@ if (typeof document !== 'undefined') {
   try { initializeStableSelects(document); } catch { /* native selects remain as safe fallback */ }
   try { initializeTemporalPickers(document); } catch { /* native temporal inputs remain as safe fallback */ }
   try { notificationCenter = initializeNotificationCenter(document); } catch { /* non-critical */ }
+  try { initializeApiDocumentation(document, globalThis.window); } catch { /* raw local OpenAPI remains available */ }
   try { initializeAdminShell(document, globalThis.window); } catch { /* non-critical */ }
 
   void bootstrap({ notificationCenter, preferenceController }).then(async (configuration) => {

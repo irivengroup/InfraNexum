@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "infranexum-connector-sdk"
+version = "1.0.0"
+description = "Versioned InfraNexum connector SDK and offline manifest certification tooling"
+requires-python = ">=3.13,<3.14"
+license = "Apache-2.0"
+authors = [{name = "InfraNexum"}]
+dependencies = []
+
+[project.scripts]
+infranexum-connector-certify = "infranexum_connector_sdk.certify:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["infranexum_connector_sdk*"]
+
+[tool.setuptools.package-data]
+infranexum_connector_sdk = ["schemas/*.json"]

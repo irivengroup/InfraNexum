@@ -168,7 +168,7 @@ test('IAM section navigation exposes one active workspace and supports keyboard 
 });
 
 
-test('IAM FreeIPA-style workflow navigation keeps one contextual operation visible per resource', () => {
+test('IAM workflow metadata keeps one contextual editor pane visible without exposing a second keyboard tab strip', () => {
   class ClassList {
     constructor() { this.values = new Set(); }
     toggle(name, enabled) { if (enabled) this.values.add(name); else this.values.delete(name); }
@@ -203,9 +203,10 @@ test('IAM FreeIPA-style workflow navigation keeps one contextual operation visib
   assert.equal(settingsPanel.hidden, false);
   assert.equal(createPanel.hidden, true);
 
-  assert.equal(settings.keydown('ArrowRight'), true);
-  assert.equal(memberships.classList.contains('active'), true);
-  assert.equal(memberships.focused, true);
+  assert.equal(settings.keydown('ArrowRight'), false, 'legacy workflow buttons are metadata, not a second tab navigation surface');
+  assert.equal(settings.classList.contains('active'), true);
+  assert.equal(memberships.classList.contains('active'), false);
+  assert.equal(memberships.focused, false);
   assert.equal(controller.activate('unknown:settings'), false);
 });
 

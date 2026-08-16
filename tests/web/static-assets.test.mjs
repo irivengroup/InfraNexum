@@ -75,3 +75,16 @@ test('asset store returns null for directories and oversized assets', async () =
   assert.equal(await store.read('/assets/folder'), null);
   assert.equal(await store.read('/assets/large.js'), null);
 });
+
+test('asset store serves generated OpenAPI YAML with a non-sniffable YAML media type', async () => {
+  const root = await fixture();
+  await mkdir(path.join(root, 'assets', 'generated'));
+  await writeFile(path.join(root, 'assets', 'generated', 'openapi.yaml'), 'openapi: 3.1.0\ninfo:\n  title: InfraNexum\n');
+  const store = new StaticAssetStore(root);
+  await store.initialize();
+
+  const document = await store.read('/assets/generated/openapi.yaml');
+  assert.equal(document.contentType, 'application/yaml; charset=utf-8');
+  assert.equal(document.cacheControl, 'no-cache');
+  assert.match(document.body.toString(), /^openapi: 3\.1\.0/m);
+});

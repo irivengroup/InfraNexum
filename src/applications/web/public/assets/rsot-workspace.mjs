@@ -4,6 +4,7 @@ import { RsotCanonicalObjectClient } from './rsot-canonical-objects.mjs';
 import { RsotSchemaRegistryClient } from './rsot-schema-registry.mjs';
 import { initializeStableSelects } from './stable-select.mjs';
 import { initializeTemporalPickers } from './temporal-picker.mjs';
+import { initializeEnterpriseDataTables, openCrudEditor, wireCrudPanel } from './enterprise-crud.mjs';
 import {
   bindTabSet,
   field,
@@ -44,6 +45,8 @@ export async function initializeRsotWorkspace(documentObject = document, configu
   wireObjectFilters(documentObject, objects, state);
   wireSchemaActions(documentObject, registry, state);
   wireProfileActions(documentObject, registry, state);
+  for (const panel of documentObject.querySelectorAll?.('[data-rsot-panel][data-inx-crud-panel]') ?? []) wireCrudPanel(documentObject, panel);
+  initializeEnterpriseDataTables(documentObject);
 
   documentObject.getElementById('rsot-refresh')?.addEventListener('click', () => void refreshAll(documentObject, objects, registry, state));
   documentObject.addEventListener?.('infranexum:locale-change', () => {
@@ -77,22 +80,23 @@ export function rsotWorkspaceTemplate() {
         <div class="inx-filter-actions"><button class="btn btn-primary" type="submit" data-i18n="common.filter">Filter</button></div>
       </form>
       ${table('rsot-object-table-body', [['rsot.id','ID'],['rsot.objectType','Object type'],['common.organization','Organization'],['common.status','Status'],['common.version','Version'],['common.updated','Updated']])}
-      <pre id="rsot-object-detail" class="p-3 rounded-3 border bg-body-tertiary mb-4 overflow-auto small" tabindex="0" aria-label="RSOT object detail">—</pre>
+
     </section>
 
-    <section class="tab-pane" role="tabpanel" data-rsot-panel="schemas" hidden aria-hidden="true">
-      <div class="d-grid gap-3">
-        <div>
+    <section class="tab-pane inx-crud-panel" role="tabpanel" data-inx-crud-panel="rsot-schemas" data-rsot-panel="schemas" hidden aria-hidden="true">
+      <div class="inx-crud-list-view" data-inx-crud-list>
           <form id="rsot-schema-filter" class="inx-filter-bar mb-4" autocomplete="off">
             <div class="inx-filter-field inx-filter-field-wide"><label class="form-label" for="rsot-schema-key-filter" data-i18n="rsot.schemaKey">Schema key</label><input id="rsot-schema-key-filter" name="schemaKey" class="form-control" maxlength="160" /></div>
             <div class="inx-filter-field"><label class="form-label" for="rsot-schema-kind-filter" data-i18n="rsot.kind">Kind</label><select id="rsot-schema-kind-filter" name="kind" class="form-select"><option value="" data-i18n="common.all">All</option><option value="CORE">CORE</option><option value="RSOT_EXTENSION">RSOT_EXTENSION</option></select></div>
             <div class="inx-filter-field"><label class="form-label" for="rsot-schema-status-filter" data-i18n="common.status">Status</label><select id="rsot-schema-status-filter" name="status" class="form-select"><option value="" data-i18n="common.all">All</option><option value="DRAFT">DRAFT</option><option value="PUBLISHED">PUBLISHED</option><option value="DEPRECATED">DEPRECATED</option></select></div>
-            <div class="inx-filter-actions"><button class="btn btn-outline-primary" type="submit" data-i18n="common.filter">Filter</button></div>
+            <div class="inx-filter-actions"><button class="btn btn-outline-primary" type="submit" data-i18n="common.filter">Filter</button><button class="btn btn-primary" type="button" data-inx-crud-new="create" data-inx-crud-editor-mode="create"><span aria-hidden="true">＋</span> <span data-i18n="common.new">New</span></button></div>
           </form>
           ${table('rsot-schema-table-body', [['rsot.schemaKey','Schema key'],['rsot.kind','Kind'],['common.version','Version'],['common.status','Status'],['rsot.revision','Revision']])}
-          <pre id="rsot-schema-detail" class="p-3 rounded-3 border bg-body-tertiary mb-4 overflow-auto small" tabindex="0">—</pre>
-        </div>
-        <div class="d-grid gap-3">
+
+      </div>
+      <section class="inx-crud-editor-view" data-inx-crud-editor hidden aria-hidden="true">
+        <div class="inx-crud-editor-header"><div><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="rsot.schemas">Schema registry</p><h3 class="h5 mb-0" data-inx-crud-editor-title>Schema</h3></div><button class="btn btn-outline-secondary btn-sm" type="button" data-inx-crud-back data-i18n="common.backToList">Back to list</button></div>
+        <div data-inx-crud-form="create" data-inx-crud-title-key="rsot.schemaCreate">
           <form id="rsot-schema-form" class="border rounded-3 p-3 p-xl-4 bg-body-tertiary row g-3">
             <h3 data-i18n="rsot.schemaCreate">Create schema</h3>
             <div class="col-12"><label class="form-label" for="rsot-schema-key" data-i18n="rsot.schemaKey">Schema key</label><input id="rsot-schema-key" name="schemaKey" class="form-control" maxlength="160" required /></div>
@@ -103,6 +107,8 @@ export function rsotWorkspaceTemplate() {
             <div class="col-12"><label class="form-label" for="rsot-schema-definition" data-i18n="rsot.definition">JSON Schema definition</label><textarea id="rsot-schema-definition" name="definition" class="form-control font-monospace" rows="12" required spellcheck="false">{"type":"object","properties":{}}</textarea></div>
             <div class="col-12"><button class="btn btn-primary" type="submit" data-i18n="common.create">Create</button></div>
           </form>
+        </div>
+        <div data-inx-crud-form="edit" data-inx-crud-title-key="rsot.schemaLifecycle" hidden>
           <form id="rsot-schema-lifecycle" class="border rounded-3 p-3 p-xl-4 bg-body-tertiary row g-3">
             <h3 data-i18n="rsot.schemaLifecycle">Selected schema</h3>
             <input name="schemaId" type="hidden" /><input name="revision" type="hidden" />
@@ -114,13 +120,14 @@ export function rsotWorkspaceTemplate() {
             <pre id="rsot-compatibility-result" class="p-3 rounded-3 border bg-body-tertiary mb-4 overflow-auto small" tabindex="0">—</pre>
           </form>
         </div>
-      </div>
+      </section>
     </section>
 
-    <section class="tab-pane" role="tabpanel" data-rsot-panel="profiles" hidden aria-hidden="true">
-      <div class="d-grid gap-3">
-        <div>${table('rsot-profile-table-body', [['rsot.profileCode','Profile code'],['rsot.owner','Owner'],['common.version','Version'],['common.status','Status'],['rsot.revision','Revision']])}<pre id="rsot-profile-detail" class="p-3 rounded-3 border bg-body-tertiary mb-4 overflow-auto small" tabindex="0">—</pre></div>
-        <div class="d-grid gap-3">
+    <section class="tab-pane inx-crud-panel" role="tabpanel" data-inx-crud-panel="rsot-profiles" data-rsot-panel="profiles" hidden aria-hidden="true">
+      <div class="inx-crud-list-view" data-inx-crud-list><div class="inx-crud-toolbar"><button class="btn btn-primary btn-sm" type="button" data-inx-crud-new="create" data-inx-crud-editor-mode="create"><span aria-hidden="true">＋</span> <span data-i18n="common.new">New</span></button></div>${table('rsot-profile-table-body', [['rsot.profileCode','Profile code'],['rsot.owner','Owner'],['common.version','Version'],['common.status','Status'],['rsot.revision','Revision']])}</div>
+      <section class="inx-crud-editor-view" data-inx-crud-editor hidden aria-hidden="true">
+        <div class="inx-crud-editor-header"><div><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="rsot.profiles">Schema profiles</p><h3 class="h5 mb-0" data-inx-crud-editor-title>Profile</h3></div><button class="btn btn-outline-secondary btn-sm" type="button" data-inx-crud-back data-i18n="common.backToList">Back to list</button></div>
+        <div data-inx-crud-form="create" data-inx-crud-title-key="rsot.profileCreate">
           <form id="rsot-profile-form" class="border rounded-3 p-3 p-xl-4 bg-body-tertiary row g-3">
             <h3 data-i18n="rsot.profileCreate">Create profile</h3>
             <div class="col-md-6"><label class="form-label" for="rsot-profile-code" data-i18n="rsot.profileCode">Profile code</label><input id="rsot-profile-code" name="code" class="form-control" maxlength="160" required /></div>
@@ -129,6 +136,8 @@ export function rsotWorkspaceTemplate() {
             <div class="col-12"><label class="form-label" for="rsot-profile-schemas" data-i18n="rsot.profileSchemas">Schemas</label><select id="rsot-profile-schemas" name="schemaIds" class="form-select" multiple size="8" required></select></div>
             <div class="col-12"><button class="btn btn-primary" type="submit" data-i18n="common.create">Create</button></div>
           </form>
+        </div>
+        <div data-inx-crud-form="edit" data-inx-crud-title-key="rsot.profileLifecycle" hidden>
           <form id="rsot-profile-lifecycle" class="border rounded-3 p-3 p-xl-4 bg-body-tertiary row g-3">
             <h3 data-i18n="rsot.profileLifecycle">Selected profile</h3><input name="profileId" type="hidden" /><input name="revision" type="hidden" />
             <div class="col-md-6"><label class="form-label" for="rsot-profile-sunset" data-i18n="rsot.sunsetAt">Sunset at</label><input id="rsot-profile-sunset" name="sunsetAt" class="form-control" type="datetime-local" data-inx-temporal="datetime" /></div>
@@ -136,7 +145,7 @@ export function rsotWorkspaceTemplate() {
             <div class="col-12 d-flex gap-2"><button class="btn btn-outline-success" type="submit" value="publish" data-i18n="common.publish">Publish</button><button class="btn btn-outline-warning" type="submit" value="deprecate" data-i18n="common.deprecate">Deprecate</button></div>
           </form>
         </div>
-      </div>
+      </section>
     </section>`;
 }
 
@@ -243,7 +252,8 @@ async function loadObjects(documentObject, client, state) {
 function renderObjects(documentObject, state) {
   replaceRows(documentObject, documentObject.getElementById('rsot-object-table-body'), state.objects,
     [(x) => x.id, (x) => x.objectType, (x) => x.organizationId, (x) => x.status, (x) => x.version, (x) => x.updatedAt],
-    (item) => { documentObject.getElementById('rsot-object-detail').textContent = JSON.stringify(item, null, 2); });
+    (item) => { const detail=documentObject.getElementById('rsot-object-detail'); if(detail) detail.textContent = JSON.stringify(item, null, 2); },
+    { action: 'view', actionLabelKey: 'common.open', actionClass: 'btn-outline-secondary' });
 }
 
 async function loadSchemas(documentObject, client, state) {
@@ -254,14 +264,17 @@ async function loadSchemas(documentObject, client, state) {
 }
 
 function renderSchemas(documentObject, state) {
+  const panel = documentObject.querySelector?.('[data-rsot-panel="schemas"]');
   replaceRows(documentObject, documentObject.getElementById('rsot-schema-table-body'), state.schemas,
     [(x) => x.schemaKey, (x) => x.kind, (x) => x.version, (x) => x.status, (x) => x.revision],
-    (item) => selectSchema(documentObject, state, item));
+    (item) => selectSchema(documentObject, state, item),
+    { actions: () => [{ key: 'edit', labelKey: 'common.edit', className: 'btn-outline-primary', onClick: () => openCrudEditor(panel, 'edit', { mode: 'edit' }) }] });
+  initializeEnterpriseDataTables(documentObject);
 }
 
 function selectSchema(documentObject, state, item) {
   state.selectedSchema = item;
-  documentObject.getElementById('rsot-schema-detail').textContent = JSON.stringify(item, null, 2);
+  const detail=documentObject.getElementById('rsot-schema-detail'); if(detail) detail.textContent = JSON.stringify(item, null, 2);
   const form = documentObject.getElementById('rsot-schema-lifecycle');
   form.elements.namedItem('schemaId').value = item.id; form.elements.namedItem('revision').value = item.revision;
   form.elements.namedItem('definition').value = JSON.stringify(item.definition ?? {}, null, 2);
@@ -275,9 +288,10 @@ function renderProfiles(documentObject, state) {
   replaceRows(documentObject, documentObject.getElementById('rsot-profile-table-body'), state.profiles,
     [(x) => x.code, (x) => x.owner, (x) => x.version, (x) => x.status, (x) => x.revision],
     (item) => {
-      state.selectedProfile = item; documentObject.getElementById('rsot-profile-detail').textContent = JSON.stringify(item, null, 2);
+      state.selectedProfile = item; const detail=documentObject.getElementById('rsot-profile-detail'); if(detail) detail.textContent = JSON.stringify(item, null, 2);
       const form = documentObject.getElementById('rsot-profile-lifecycle'); form.elements.namedItem('profileId').value = item.id; form.elements.namedItem('revision').value = item.revision;
-    });
+    }, { actions: () => [{ key: 'edit', labelKey: 'common.edit', className: 'btn-outline-primary', onClick: () => openCrudEditor(documentObject.querySelector?.('[data-rsot-panel="profiles"]'), 'edit', { mode: 'edit' }) }] });
+  initializeEnterpriseDataTables(documentObject);
 }
 
 function table(tbodyId, headings) {

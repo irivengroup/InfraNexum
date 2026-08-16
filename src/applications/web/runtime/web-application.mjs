@@ -1,7 +1,7 @@
 import http from 'node:http';
 
 const SECURITY_HEADERS = Object.freeze({
-  'Content-Security-Policy': "default-src 'self'; base-uri 'none'; connect-src 'self' https:; font-src 'self'; form-action 'self'; frame-ancestors 'none'; img-src 'self' data:; object-src 'none'; script-src 'self'; style-src 'self'",
+  'Content-Security-Policy': "default-src 'self'; base-uri 'none'; connect-src 'self' https:; font-src 'self'; form-action 'self'; frame-ancestors 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://cdn.jsdelivr.net",
   'Cross-Origin-Opener-Policy': 'same-origin',
   'Cross-Origin-Resource-Policy': 'same-origin',
   'Permissions-Policy': 'camera=(), geolocation=(), microphone=(), payment=(), usb=()',

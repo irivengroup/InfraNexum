@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.98",
-  "profile": "alpha098-pgm05e01-delivered-api-authorization-governance-pro-ha-local-development",
+  "version": "2.0.0-alpha.0.100",
+  "profile": "alpha100-pgm10e05-connector-sdk-phase1-pro-enterprise",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -23,6 +23,10 @@
     {
       "id": "infranexum-web",
       "status": "alpha094-enterprise-dense-filter-and-data-navigation-ux-preserved-plus-alpha097-iam-rsot-canonical-idempotency-key-transport-no-ui-contract-removal"
+    },
+    {
+      "id": "connector-sdk-v1",
+      "status": "pgm-10-e05-phase1-python3-13-sdk1-0-0-manifest-v1-offline-certification-hmac-webhook-primitives-runtime-inbox-dlq-replay-metrics-remain-phase2"
     },
     {
       "id": "source-integrity-v1",
@@ -115,7 +119,7 @@
   ],
   "validation_reports": [],
   "validation_summary": {
-    "source_inventory_paths": 1255,
+    "source_inventory_paths": 1282,
     "source_integrity_tests": 45,
     "source_integrity_coverage_percent": 100,
     "source_integrity_violations": 0,
@@ -581,7 +585,11 @@
     "git_blob_checksums_alpha098": 1263,
     "source_inventory_paths_alpha098": 1261,
     "archive_compatibility_unit_alpha098": "EXECUTED_12_OF_12_100_PERCENT",
-    "archive_compatibility_alpha098": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS_GIT_ARCHIVE_PARITY"
+    "archive_compatibility_alpha098": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS_GIT_ARCHIVE_PARITY",
+    "connector_sdk_tests": 19,
+    "connector_sdk_coverage_percent": 99,
+    "connector_sdk_manifest_contract": "v1",
+    "connector_sdk_version": "1.0.0"
   },
   "source_layout": "All production solution spaces are contained below src/; Java, Go and Web tests are repository-level under tests/; canonical relative paths are limited to 120 characters and path components to 80 characters.",
   "source_integrity": {
@@ -593,15 +601,15 @@
     "pre_commit_hook": ".githooks/pre-commit"
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.98",
-    "archive_entries": 1264,
+    "prefix": "infranexum-2.0.0-alpha.0.100",
+    "archive_entries": 1285,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
-    "source_recorded_files": 1263,
+    "source_recorded_files": 1284,
     "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
-    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.98-validation-evidence.zip"
+    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.100-validation-evidence.zip"
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.98-validation-evidence.zip",
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.100-validation-evidence.zip",
   "runtime_validation": {
     "web_local_runtime_alpha058": "EXECUTED_38_OF_38_LINE_99_67_BRANCH_98_33_FUNCTION_100_PROCESS_SMOKE_PASS_LOCAL_NODE22_BOOTSTRAP5_3_6_PROFESSIONAL_ADMIN_DASHBOARD_THEME_TOGGLE_TRUTHFUL_KPI_SAME_ORIGIN_ORGANIZATION_UI",
     "architecture_functional_alpha058": "EXECUTED_57_OF_57",
@@ -933,9 +941,19 @@
     "web_target_node24_alpha091": "NON_EXECUTED_LOCAL_NODE22_TARGET_NODE24_18_1_REQUIRED",
     "docker_runtime_alpha091": "NON_EXECUTED_LOCAL_DOCKER_AND_PWSH_UNAVAILABLE_OPERATOR_DOCKER_DESKTOP_PRO_UP_SMOKE_HA_SMOKE_REQUIRED",
     "archive_compatibility_unit_alpha091": "EXECUTED_12_OF_12_100_PERCENT",
-    "archive_compatibility_alpha091": "EXECUTED_CANDIDATE_GIT_ARCHIVE_ZERO_VIOLATIONS"
+    "archive_compatibility_alpha091": "EXECUTED_CANDIDATE_GIT_ARCHIVE_ZERO_VIOLATIONS",
+    "web_enterprise_crud_api_documentation_alpha099": "EXECUTED_WEB_189_OF_189_LINE99_73_BRANCH98_53_FUNCTION100_SMOKE_PASS_TARGETED_ARCHITECTURE_91_OF_91_API_45_OF_45_14_FRAGMENTS_174_OPERATIONS_DEBT_0_0_0_0_SOURCE_45_OF_45_ARCHITECTURE_PASS_CORE_GATES_PASS_COMPOSE_64_OF_64_JAVA_CONTRACT_POLICY_PASS_FULL_ARCH_TIMEOUT_49_STARTED_48_OK_EXTERNAL_BROWSER_CDN_JDK25_NODE24_PNPM_DOCKER_PWSH_PENDING",
+    "source_integrity_alpha099": "EXECUTED_45_OF_45_100_PERCENT_STAGED_SNAPSHOT_1272_TRACKED_PATHS_1271_GIT_BLOB_CHECKSUMS_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
+    "architecture_check_alpha099": "EXECUTED_PASS_ZERO_VIOLATIONS",
+    "architecture_targeted_alpha099": "EXECUTED_91_OF_91_ENTERPRISE_CRUD_DOCUMENTATION_IAM_RSOT_ITAM_DCIM_DDI",
+    "architecture_global_alpha099": "NON_EXECUTED_GLOBAL_RUNNER_TIMEOUT_120S_AFTER_49_STARTED_48_OK_NO_ASSERTION_FAILURE_OBSERVED",
+    "api_contracts_alpha099": "EXECUTED_45_OF_45_99_PERCENT_14_FRAGMENTS_174_OPERATIONS_DEBT_0_0_0_0",
+    "archive_compatibility_unit_alpha099": "EXECUTED_12_OF_12_100_PERCENT",
+    "web_local_runtime_alpha099": "EXECUTED_LOCAL_NODE22_16_0_189_OF_189_LINE99_73_BRANCH98_53_FUNCTION100_PROCESS_SMOKE_PASS_TARGET_NODE24_18_1_PENDING",
+    "browser_render_alpha099": "NON_EXECUTED_OPERATOR_WINDOWS_BROWSER_REVIEW_REQUIRED_EXTERNAL_SWAGGER_REDOC_RENDERER_NETWORK_LOADING_NOT_EXECUTED",
+    "archive_compatibility_alpha099": "EXECUTED_12_OF_12_100_PERCENT_FINAL_GIT_ARCHIVE_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT"
   },
-  "runtime_validation_note": "alpha.0.98 completes PGM-05-E01 with 14 canonical OpenAPI 3.1 fragments / 174 operations and a fully closed API ratchet idempotency=0, pagination=0, capability=0, permission=0. Every operation has a Core-registry capability and structured authorization metadata; ApiCapabilityFilter fail-closes unavailable business surfaces while platform.bootstrap preserves non-circular bootstrap diagnostics. Product-complete and installation-effective contracts are generated from the same canonical fragments. PGM-10-E05 is unblocked. Exact JDK25/Node24+pnpm, Docker Desktop PRO and operator browser validation remain external promotion gates.",
+  "runtime_validation_note": "alpha.0.100 starts PGM-10-E05 phase 1. Executed locally: Connector SDK 19/19 at 99% branch-aware coverage, reproducible double-wheel build/import and packaged schema resource loaded from the built wheel; API Contracts 45/45 at 99%, 14 fragments / 174 operations, debt 0/0/0/0; Source Integrity 45/45 at 100% and zero checker violations; Architecture-as-Code PASS; Toolchains 25/25 at 99%; Migrations 114/114 at 99%; Eventing 10/10 at 100%; Persistence 12/12 at 98%; Capabilities 10/10 at 99%; Entitlements 10/10 at 100%; Audit 8/8 at 100%; Compose 64/64; Web 189/189 at 99.73% lines / 98.53% branches / 100% functions plus smoke; Java offline contract/eventing/JDBC/capability/entitlement/ITAM/DCIM/DDI/policy smokes exit zero. Full instrumented Architecture timed out after 14 tests with no observed assertion failure. Exact JDK25 Maven verification, Go1.26.5 Agent gate, Node24/pnpm exact gate, Docker/pwsh and browser runtime remain external/unavailable locally.",
   "pgm08e01_ddi_ipam_alpha083": "EXECUTED_DOMAIN_JDBC_API_CLI_WEB_MIGRATION_ARCHITECTURE_AND_OFFLINE_SMOKE_TARGET_JDK25_MAVEN_AND_LIVE_DATABASES_PENDING",
   "architecture_functional_alpha083": "EXECUTED_151_OF_151_SPLIT_DETERMINISTIC_GROUPS",
   "architecture_check_alpha083": "EXECUTED_PASS_ZERO_VIOLATIONS",
@@ -1083,5 +1101,34 @@
   "compose_contract_alpha095": "EXECUTED_64_OF_64",
   "maven_target_jdk25_alpha095": "NON_EXECUTED_LOCAL_JAVA21_0_11_TARGET_JDK25_0_4_PLUS_7_REQUIRED",
   "web_target_node24_alpha095": "NON_EXECUTED_LOCAL_NODE22_16_0_PNPM_UNAVAILABLE_TARGET_NODE24_18_1_PNPM11_17_0_REQUIRED",
-  "docker_runtime_alpha095": "NON_EXECUTED_OPERATOR_DOCKER_DESKTOP_PRO_UP_SMOKE_HA_SMOKE_REQUIRED"
+  "docker_runtime_alpha095": "NON_EXECUTED_OPERATOR_DOCKER_DESKTOP_PRO_UP_SMOKE_HA_SMOKE_REQUIRED",
+  "pgm10e05_alpha100": "IN_PROGRESS_PHASE1_CONNECTOR_SDK_V1_MANIFEST_CERTIFICATION_WEBHOOK_CRYPTO_DELIVERED_RUNTIME_WEBHOOK_INBOX_DLQ_REPLAY_METRICS_PHASE2_REMAINING",
+  "connector_sdk_alpha100": "EXECUTED_19_OF_19_99_PERCENT_BRANCH_AWARE_REPRODUCIBLE_DOUBLE_WHEEL_BUILD_IMPORT_PACKAGED_JSON_SCHEMA_RESOURCE_AND_OFFLINE_CERTIFICATION",
+  "api_contracts_alpha100": "EXECUTED_45_OF_45_99_PERCENT_14_FRAGMENTS_174_OPERATIONS_ZERO_VIOLATIONS_DEBT_0_0_0_0",
+  "architecture_check_alpha100": "EXECUTED_PASS_ZERO_VIOLATIONS",
+  "architecture_global_alpha100": "NON_EXECUTED_COMPLETELY_RUNNER_TIMEOUT_AFTER_14_TESTS_NO_ASSERTION_FAILURE_OBSERVED",
+  "toolchain_alpha100": "EXECUTED_25_OF_25_99_PERCENT_ZERO_VIOLATIONS_LOCAL_JAVA21_NODE22_TARGET_EXACT_PENDING",
+  "migration_alpha100": "EXECUTED_114_OF_114_99_PERCENT_ZERO_VIOLATIONS_NO_MIGRATION_CHANGE",
+  "eventing_alpha100": "EXECUTED_10_OF_10_100_PERCENT_ZERO_VIOLATIONS",
+  "persistence_alpha100": "EXECUTED_12_OF_12_98_PERCENT_ZERO_VIOLATIONS",
+  "capabilities_alpha100": "EXECUTED_10_OF_10_99_PERCENT_ZERO_VIOLATIONS_31_CAPABILITIES_119_QUOTAS",
+  "entitlements_alpha100": "EXECUTED_10_OF_10_100_PERCENT_ZERO_VIOLATIONS",
+  "audit_alpha100": "EXECUTED_8_OF_8_100_PERCENT_ZERO_VIOLATIONS",
+  "compose_contract_alpha100": "EXECUTED_64_OF_64",
+  "web_local_runtime_alpha100": "EXECUTED_LOCAL_NODE22_16_0_189_OF_189_LINE99_73_BRANCH98_53_FUNCTION100_PROCESS_SMOKE_PASS_TARGET_NODE24_18_1_PNPM11_17_0_PENDING",
+  "java_offline_smokes_alpha100": "EXECUTED_RELEVANT_FOUNDATION_CONTRACT_EVENTING_JDBC_CAPABILITY_ENTITLEMENT_ITAM_DCIM_DDI_POLICY_TARGETS_EXIT_ZERO_LOCAL_JAVA21",
+  "agent_target_go1265_alpha100": "NON_EXECUTED_LOCAL_GO1_23_2_TARGET_GO1_26_5_AUTO_TOOLCHAIN_DOWNLOAD_BLOCKED_BY_OFFLINE_RUNNER",
+  "maven_target_jdk25_alpha100": "NON_EXECUTED_LOCAL_JAVA21_0_11_TARGET_TEMURIN_JDK25_0_4_7_REQUIRED",
+  "docker_runtime_alpha100": "NON_EXECUTED_LOCAL_DOCKER_RUNTIME_NOT_EXERCISED_IN_THIS_DELIVERY_ENVIRONMENT",
+  "roadmap_next_alpha100": "PGM10E05_PHASE2_DURABLE_WEBHOOK_INBOX_DLQ_REPLAY_METRICS_THEN_DEPENDENT_EPICS",
+  "source_integrity_alpha100": "EXECUTED_45_OF_45_100_PERCENT_STAGED_SNAPSHOT_1285_TRACKED_PATHS_1284_GIT_BLOB_CHECKSUMS_1282_CANONICAL_INVENTORY_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
+  "source_integrity_prepack_alpha100": "EXECUTED_45_OF_45_100_PERCENT_ZERO_VIOLATIONS_CANONICAL_INVENTORY_1282_PATHS",
+  "packaging_tracked_files_alpha100": 1285,
+  "git_blob_checksums_alpha100": 1284,
+  "source_inventory_paths_alpha100": 1282,
+  "archive_compatibility_unit_alpha100": "EXECUTED_12_OF_12_100_PERCENT",
+  "archive_compatibility_alpha100": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS_GIT_ARCHIVE_PARITY",
+  "web_target_node24_alpha100": "NON_EXECUTED_LOCAL_NODE22_16_0_TARGET_NODE24_18_1_PNPM11_17_0_REQUIRED",
+  "powershell_runtime_alpha100": "NON_EXECUTED_LOCAL_POWERSHELL_DOCKER_DESKTOP_RUNTIME_NOT_EXERCISED_IN_THIS_DELIVERY_ENVIRONMENT",
+  "architecture_full_instrumented_alpha100": "NON_EXECUTED_TO_COMPLETION_TIMEOUT_AFTER_14_TESTS_NO_OBSERVED_ASSERTION_FAILURE_ARCHITECTURE_AS_CODE_CHECK_EXECUTED_ZERO_VIOLATIONS"
 }

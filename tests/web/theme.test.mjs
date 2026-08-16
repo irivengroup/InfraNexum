@@ -158,13 +158,16 @@ test('enterprise filter toolbars stay horizontally dense on desktop and collapse
   assert.match(theme, /\.inx-filter-bar \.form-label[\s\S]*font-size:\s*\.72rem/);
 });
 
-test('table and tab headers use a restrained InfraNexum color hierarchy with readable active states', async () => {
+test('table and tab headers use a restrained continuous InfraNexum hierarchy with IAM parity', async () => {
   const theme = await read('assets/infranexum-theme.css');
-  assert.match(theme, /--inx-table-head:\s*linear-gradient\([^;]*var\(--inx-midnight\)[^;]*var\(--inx-blue\)/);
+  assert.match(theme, /--inx-table-head-surface:\s*linear-gradient\([^;]*rgba\(0,61,143,\.105\)[^;]*rgba\(17,199,230,\.075\)/);
   assert.match(theme, /--inx-tab-spectrum:\s*linear-gradient\([^;]*rgba\(0,61,143[^;]*rgba\(17,199,230[^;]*rgba\(8,127,91[^;]*rgba\(255,170,0/);
-  assert.match(theme, /\.table > thead > tr > th\s*\{[\s\S]*color:\s*#f8fbff\s*!important[\s\S]*background:\s*var\(--inx-table-head\)\s*!important[\s\S]*border-bottom:\s*\.18rem solid var\(--inx-turquoise\)/);
-  assert.match(theme, /\.table > thead > tr > th:first-child[\s\S]*var\(--inx-green\)/);
-  assert.match(theme, /\.table > thead > tr > th:last-child[\s\S]*rgba\(255,170,0/);
+  assert.match(theme, /\.table > thead > tr\s*\{\s*background:\s*var\(--inx-table-head-surface\)\s*!important/);
+  assert.match(theme, /\.table > thead > tr > th\s*\{[\s\S]*color:\s*var\(--inx-table-head-ink\)\s*!important[\s\S]*background:\s*transparent\s*!important[\s\S]*border-bottom:\s*1px solid var\(--inx-table-head-rule\)/);
+  assert.doesNotMatch(theme, /\.table > thead > tr > th:first-child[^}]*background/);
+  assert.doesNotMatch(theme, /\.table > thead > tr > th:last-child[^}]*background/);
   assert.match(theme, /\.inx-workspace \.nav-underline\[role="tablist"\][\s\S]*background:\s*var\(--inx-tab-spectrum\)/);
+  assert.match(theme, /#identity-access-workspace \.nav-underline\[role="tablist"\][\s\S]*background:\s*var\(--inx-tab-spectrum\)\s*!important/);
+  assert.match(theme, /#identity-access-workspace > \.row > aside \[role="tablist"\][\s\S]*background:\s*var\(--inx-tab-spectrum\)/);
   assert.match(theme, /\.inx-workspace \.nav-underline\[role="tablist"\] \.nav-link\.active[\s\S]*color:\s*#fff\s*!important[\s\S]*var\(--inx-midnight\)[\s\S]*var\(--inx-blue\)/);
 });

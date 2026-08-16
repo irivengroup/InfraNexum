@@ -1,0 +1,254 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:infranexum:schema:connector-manifest:v1",
+  "title": "InfraNexum Connector Manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "name",
+    "version",
+    "sdk",
+    "certification",
+    "provider",
+    "modes",
+    "capabilities",
+    "permissions",
+    "secrets",
+    "egress",
+    "authority",
+    "delivery",
+    "webhook",
+    "data",
+    "contracts",
+    "limits",
+    "support"
+  ],
+  "properties": {
+    "schema": {"const": "infranexum.connector-manifest/v1"},
+    "id": {"type": "string", "maxLength": 128, "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"},
+    "name": {"type": "string", "minLength": 1, "maxLength": 160},
+    "version": {"$ref": "#/$defs/semver"},
+    "sdk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contractVersion", "minimumVersion"],
+      "properties": {
+        "contractVersion": {"const": "1.0.0"},
+        "minimumVersion": {"$ref": "#/$defs/semver"}
+      }
+    },
+    "certification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["level", "requiresIsolation", "evidence"],
+      "properties": {
+        "level": {"enum": ["community", "validated", "certified", "trusted"]},
+        "requiresIsolation": {"type": "boolean"},
+        "evidence": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+        }
+      }
+    },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["product", "supportedVersions"],
+      "properties": {
+        "product": {"type": "string", "minLength": 1, "maxLength": 160},
+        "supportedVersions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 128, "not": {"const": "*"}}
+        }
+      }
+    },
+    "modes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 6,
+      "uniqueItems": true,
+      "items": {"enum": ["pull", "push", "webhook", "batch", "streaming", "federated-read"]}
+    },
+    "capabilities": {"$ref": "#/$defs/tokenList"},
+    "permissions": {"$ref": "#/$defs/tokenList"},
+    "secrets": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "purpose", "required"],
+        "properties": {
+          "name": {"$ref": "#/$defs/token"},
+          "purpose": {"type": "string", "minLength": 1, "maxLength": 240},
+          "required": {"type": "boolean"}
+        }
+      }
+    },
+    "egress": {
+      "type": "array",
+      "maxItems": 128,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["scheme", "host", "port"],
+        "properties": {
+          "scheme": {"const": "https"},
+          "host": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 253,
+            "pattern": "^(?=.{1,253}$)(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\\.)*[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$",
+            "not": {"enum": ["localhost"]}
+          },
+          "port": {"type": "integer", "minimum": 1, "maximum": 65535}
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["direction", "conflictStrategy", "deletionPolicy", "fields"],
+      "properties": {
+        "direction": {"enum": ["inbound", "outbound", "bidirectional"]},
+        "conflictStrategy": {"enum": ["reject", "manual", "prefer-authority"]},
+        "deletionPolicy": {"enum": ["ignore", "tombstone", "manual"]},
+        "fields": {
+          "type": "array",
+          "maxItems": 512,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["field", "authority"],
+            "properties": {
+              "field": {"$ref": "#/$defs/token"},
+              "authority": {"enum": ["external", "infranexum", "manual"]}
+            }
+          }
+        }
+      }
+    },
+    "delivery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["idempotencyRequired", "checkpointing", "replay", "maximumAttempts", "initialBackoffSeconds", "maximumBackoffSeconds"],
+      "properties": {
+        "idempotencyRequired": {"const": true},
+        "checkpointing": {"type": "boolean"},
+        "replay": {"const": "controlled"},
+        "maximumAttempts": {"type": "integer", "minimum": 1, "maximum": 20},
+        "initialBackoffSeconds": {"type": "integer", "minimum": 1, "maximum": 3600},
+        "maximumBackoffSeconds": {"type": "integer", "minimum": 1, "maximum": 86400}
+      }
+    },
+    "webhook": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["incoming", "outgoing", "signature", "maximumClockSkewSeconds"],
+      "properties": {
+        "incoming": {"type": "boolean"},
+        "outgoing": {"type": "boolean"},
+        "signature": {"const": "hmac-sha256"},
+        "maximumClockSkewSeconds": {"type": "integer", "minimum": 1, "maximum": 3600}
+      }
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fields"],
+      "properties": {
+        "fields": {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "purpose", "classification"],
+            "properties": {
+              "name": {"$ref": "#/$defs/token"},
+              "purpose": {"type": "string", "minLength": 1, "maxLength": 240},
+              "classification": {"enum": ["public", "internal", "confidential", "restricted"]}
+            }
+          }
+        }
+      }
+    },
+    "contracts": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "version"],
+        "properties": {
+          "name": {"$ref": "#/$defs/token"},
+          "version": {"$ref": "#/$defs/semver"}
+        }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["timeoutSeconds", "maximumConcurrency", "maximumPayloadBytes"],
+      "properties": {
+        "timeoutSeconds": {"type": "integer", "minimum": 1, "maximum": 3600},
+        "maximumConcurrency": {"type": "integer", "minimum": 1, "maximum": 1024},
+        "maximumPayloadBytes": {"type": "integer", "minimum": 1, "maximum": 1048576}
+      }
+    },
+    "support": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner", "endOfSupport"],
+      "properties": {
+        "owner": {"type": "string", "minLength": 1, "maxLength": 160},
+        "endOfSupport": {"type": "string", "format": "date", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"}
+      }
+    }
+  },
+  "$defs": {
+    "semver": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+    },
+    "token": {
+      "type": "string",
+      "maxLength": 160,
+      "pattern": "^[a-z][a-z0-9]*(?:[._:-][a-z0-9][a-z0-9-]*)*$"
+    },
+    "tokenList": {
+      "type": "array",
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/token"}
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"certification": {"properties": {"level": {"enum": ["community", "validated"]}}}}},
+      "then": {"properties": {"certification": {"properties": {"requiresIsolation": {"const": true}}}}}
+    },
+    {
+      "if": {"properties": {"authority": {"properties": {"direction": {"const": "bidirectional"}}}}},
+      "then": {"properties": {"authority": {"properties": {"fields": {"minItems": 1}}}}}
+    },
+    {
+      "if": {"properties": {"modes": {"contains": {"const": "webhook"}}}},
+      "then": {
+        "anyOf": [
+          {"properties": {"webhook": {"properties": {"incoming": {"const": true}}}}},
+          {"properties": {"webhook": {"properties": {"outgoing": {"const": true}}}}}
+        ]
+      }
+    }
+  ]
+}

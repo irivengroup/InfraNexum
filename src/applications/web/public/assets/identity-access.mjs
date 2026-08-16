@@ -3,6 +3,7 @@ import { setIdentityAccessAvailability } from './admin-shell.mjs';
 import { localeFromDocument, setLocalizedElementText, translate } from './i18n.mjs';
 import { wireAsyncForm } from './form-controller.mjs';
 import { createIamEntityDirectory } from './entity-selects.mjs';
+import { initializeEnterpriseDataTables, openCrudEditor, wireCrudPanel } from './enterprise-crud.mjs';
 
 const REQUEST_TIMEOUT_MS = 15_000;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -106,7 +107,7 @@ export async function initializeIdentityAccess(documentObject, configuration, fe
   const organizations = await bindOrganizationSelector(documentObject, organizationSelect, api, status);
   entityDirectory.setOrganizations(organizations);
   await entityDirectory.setOrganization(organizationSelect.value);
-  bindForms(documentObject, organizationSelect, api, status, entityDirectory);
+  bindForms(documentObject, organizationSelect, api, status, entityDirectory, confirmFunction);
   bindDelegatedActions(documentObject, organizationSelect, api, status, confirmFunction, workflowNavigation, entityDirectory);
   bindWorkspaceChrome(documentObject, organizationSelect, api, status, workflowNavigation);
 
@@ -115,6 +116,7 @@ export async function initializeIdentityAccess(documentObject, configuration, fe
     void entityDirectory.setOrganization(organizationSelect.value).then(refresh);
   });
   await refresh();
+  initializeEnterpriseDataTables(documentObject);
   return Object.freeze({ enabled: true, refresh });
 }
 
@@ -151,7 +153,7 @@ async function bindOrganizationSelector(documentObject, select, api, status) {
   }
 }
 
-function bindForms(documentObject, organizationSelect, api, status, entityDirectory) {
+function bindForms(documentObject, organizationSelect, api, status, entityDirectory, confirmFunction = globalThis.confirm) {
   bindForm(documentObject, 'iam-user-create-form', async (form) => {
     const org = requiredOrganization(organizationSelect);
     const values = new FormData(form);
@@ -228,6 +230,7 @@ function bindForms(documentObject, organizationSelect, api, status, entityDirect
   }, documentObject, organizationSelect, api, status, 'groups', true, entityDirectory);
 
   bindForm(documentObject, 'iam-group-member-remove-form', async (form) => {
+    if (typeof confirmFunction === 'function' && !confirmFunction(translate(localeFromDocument(documentObject), 'common.confirmDelete'))) return;
     const org = requiredOrganization(organizationSelect);
     const values = new FormData(form);
     const groupId = requiredUuid(field(values, 'groupId'), 'groupId');
@@ -283,6 +286,7 @@ function bindForms(documentObject, organizationSelect, api, status, entityDirect
   }, documentObject, organizationSelect, api, status, 'roles', true, entityDirectory);
 
   bindForm(documentObject, 'iam-role-revoke-form', async (form) => {
+    if (typeof confirmFunction === 'function' && !confirmFunction(translate(localeFromDocument(documentObject), 'common.confirmDelete'))) return;
     const org = requiredOrganization(organizationSelect);
     const values = new FormData(form);
     const roleId = requiredUuid(field(values, 'roleId'), 'roleId');
@@ -348,7 +352,7 @@ function bindDelegatedActions(documentObject, organizationSelect, api, status, c
     const action = button.getAttribute('data-iam-action');
     const id = requiredUuid(button.getAttribute('data-iam-id'), 'action.id');
     if (action?.startsWith('select-')) {
-      populateSelection(documentObject, action, button.getAttribute('data-iam-record'), workflowNavigation);
+      populateSelection(documentObject, action, button.getAttribute('data-iam-record'), workflowNavigation, button.getAttribute('data-iam-workflow-target'));
       setStatus(documentObject, status, 'iam.selected', false);
       setFeedback(documentObject, 'iam.selected', false);
       return;
@@ -522,6 +526,7 @@ function renderRows(documentObject, targetId, items, cells) {
           button.setAttribute('data-iam-action', action.action);
           button.setAttribute('data-iam-id', requiredUuid(item.id, 'item.id'));
           if (action.record) button.setAttribute('data-iam-record', JSON.stringify(action.record));
+          if (action.workflow) button.setAttribute('data-iam-workflow-target', action.workflow);
           cell.appendChild(button);
         }
       } else if (value && typeof value === 'object' && 'text' in value) {
@@ -541,37 +546,54 @@ function idCell(id) {
   const normalized = requiredUuid(id, 'item.id');
   return { text: `${normalized.slice(0, 8)}…${normalized.slice(-4)}`, title: normalized, className: 'font-monospace small' };
 }
-function selectAction(kind, item) {
-  return { action: `select-${kind}`, labelKey: 'iam.select', primary: true, record: item };
+function selectAction(kind, item, workflow = null, labelKey = 'common.edit') {
+  return { action: `select-${kind}`, labelKey, primary: true, record: item, workflow };
 }
 function userCells(item) {
   requiredUuid(item.id, 'user.id');
   const active = item.status === 'ACTIVE' || item.status === 'active';
   return [idCell(item.id), item.login, item.email, item.displayName, item.status,
-    { actions: [selectAction('user', item),
+    { actions: [
+      selectAction('user', item, 'users:settings'),
+      selectAction('user', item, 'users:memberships', 'iam.memberships'),
+      selectAction('user', item, 'users:roles', 'iam.workflow.roleAssignments'),
       { action: active ? 'suspend-user' : 'activate-user', labelKey: active ? 'iam.suspend' : 'iam.activate' },
-      { action: 'delete-user', labelKey: 'iam.delete', danger: true }] }];
+      { action: 'delete-user', labelKey: 'iam.delete', danger: true },
+    ] }];
 }
 function groupCells(item) {
   requiredUuid(item.id, 'group.id');
-  const actions = [selectAction('group', item), { action: 'effective-group', labelKey: 'iam.effectiveMembers' }];
+  const actions = [
+    selectAction('group', item, 'groups:settings'),
+    selectAction('group', item, 'groups:members', 'iam.groupMemberAdd'),
+    selectAction('group', item, 'groups:remove-member', 'iam.groupMemberRemove'),
+    selectAction('group', item, 'groups:roles', 'iam.workflow.roleAssignments'),
+    selectAction('group', item, 'groups:effective', 'iam.effectiveMembers'),
+  ];
   if (!item.systemGroup) actions.push({ action: 'delete-group', labelKey: 'iam.delete', danger: true });
   return [idCell(item.id), item.code, item.displayName, { actions }];
 }
 function roleCells(item) {
   requiredUuid(item.id, 'role.id');
-  const actions = [selectAction('role', item)];
+  const actions = [
+    selectAction('role', item, 'roles:settings'),
+    selectAction('role', item, 'roles:assignments', 'iam.workflow.assignments'),
+    selectAction('role', item, 'roles:revoke', 'iam.revoke'),
+  ];
   if (!item.systemRole) actions.push({ action: 'delete-role', labelKey: 'iam.delete', danger: true });
   return [idCell(item.id), item.code, item.displayName, item.scopeKind, item.systemRole ? 'system' : 'custom', { actions }];
 }
 function permissionCells(item) {
   requiredUuid(item.id, 'permission.id');
-  const actions = [selectAction('permission', item)];
+  const actions = [
+    selectAction('permission', item, 'permissions:settings'),
+    selectAction('permission', item, 'permissions:effective', 'iam.evaluate'),
+  ];
   if (!item.systemDefined) actions.push({ action: 'delete-permission', labelKey: 'iam.delete', danger: true });
   return [idCell(item.id), item.code, item.resourceType, item.action, item.sensitivity, item.scopeKind, item.systemDefined ? 'system' : 'custom', { actions }];
 }
 
-function populateSelection(documentObject, action, rawRecord, workflowNavigation) {
+function populateSelection(documentObject, action, rawRecord, workflowNavigation, workflowTarget = null) {
   let item;
   try { item = JSON.parse(rawRecord || '{}'); } catch { throw new Error('Selected IAM record is invalid'); }
   const id = requiredUuid(item.id, 'selected.id');
@@ -590,22 +612,22 @@ function populateSelection(documentObject, action, rawRecord, workflowNavigation
     set('iam-user-update-form', 'userId', id); set('iam-user-update-form', 'email', item.email ?? ''); set('iam-user-update-form', 'displayName', item.displayName ?? '');
     set('iam-membership-form', 'userId', id); set('iam-user-role-form', 'userId', id); set('iam-permission-evaluate-form', 'actorId', id);
     const policySubject = documentObject.getElementById('iam-policy-subject'); if (policySubject) { policySubject.value = id; dispatchChange(documentObject, policySubject); }
-    workflowNavigation?.activate?.('users:settings');
+    workflowNavigation?.activate?.(workflowTarget ?? 'users:settings');
   } else if (action === 'select-group') {
     for (const formId of ['iam-group-update-form', 'iam-group-member-form', 'iam-group-member-remove-form', 'iam-group-role-form']) set(formId, 'groupId', id);
     set('iam-group-update-form', 'displayName', item.displayName ?? '');
     set('iam-role-assignment-form', 'actorId', id); set('iam-role-assignment-form', 'actorType', 'GROUP');
-    workflowNavigation?.activate?.('groups:settings');
+    workflowNavigation?.activate?.(workflowTarget ?? 'groups:settings');
   } else if (action === 'select-role') {
     for (const formId of ['iam-user-role-form', 'iam-group-role-form', 'iam-role-update-form', 'iam-role-assignment-form', 'iam-role-revoke-form']) set(formId, 'roleId', id);
     set('iam-role-update-form', 'code', item.code ?? ''); set('iam-role-update-form', 'displayName', item.displayName ?? '');
-    workflowNavigation?.activate?.('roles:settings');
+    workflowNavigation?.activate?.(workflowTarget ?? 'roles:settings');
   } else if (action === 'select-permission') {
     set('iam-permission-update-form', 'permissionId', id); set('iam-permission-update-form', 'resourceType', item.resourceType ?? '');
     set('iam-permission-update-form', 'action', item.action ?? ''); set('iam-permission-update-form', 'sensitivity', item.sensitivity ?? 'normal');
     set('iam-permission-update-form', 'scopeKind', item.scopeKind ?? 'ORGANIZATION');
     const active = documentObject.getElementById('iam-permission-active'); if (active) active.checked = item.active !== false;
-    workflowNavigation?.activate?.('permissions:settings');
+    workflowNavigation?.activate?.(workflowTarget ?? 'permissions:settings');
   } else throw new Error(`Unsupported IAM selection ${action}`);
 }
 
@@ -620,8 +642,11 @@ export function initializeIamWorkflowNavigation(documentObject) {
   const panels = [...(documentObject?.querySelectorAll?.('[data-iam-workflow-panel]') ?? [])];
   if (buttons.length === 0 || panels.length === 0) return Object.freeze({ activate: () => false });
 
-  const activate = (name, focus = false) => {
-    const target = buttons.find((button) => button.getAttribute('data-iam-workflow') === name && !button.hidden);
+  const sections = [...new Set(panels.map((panel) => String(panel.getAttribute('data-iam-workflow-panel') ?? '').split(':', 1)[0]).filter(Boolean))];
+  prepareIamCrudPanels(documentObject, sections, buttons, panels);
+
+  const activate = (name, focus = false, openEditor = true) => {
+    const target = buttons.find((button) => button.getAttribute('data-iam-workflow') === name);
     if (!target) return false;
     const [section] = String(name).split(':', 1);
     for (const button of buttons) {
@@ -638,32 +663,66 @@ export function initializeIamWorkflowNavigation(documentObject) {
       panel.hidden = !active;
       panel.setAttribute?.('aria-hidden', active ? 'false' : 'true');
     }
-    if (focus) target.focus?.();
+    const resourcePanel = documentObject?.querySelector?.(`[data-iam-panel="${section}"]`);
+    if (openEditor && resourcePanel) openCrudEditor(resourcePanel, name, { mode: name.endsWith(':create') ? 'create' : 'edit', focus });
+    else if (focus) panels.find((panel) => panel.getAttribute('data-iam-workflow-panel') === name)?.querySelector?.('input, select, textarea, button')?.focus?.();
     return true;
   };
 
-  for (const button of buttons) {
-    button.addEventListener?.('click', () => activate(button.getAttribute('data-iam-workflow')));
-    button.addEventListener?.('keydown', (event) => {
-      const currentName = String(button.getAttribute('data-iam-workflow') ?? '');
-      const [section] = currentName.split(':', 1);
-      const visible = buttons.filter((candidate) => !candidate.hidden && String(candidate.getAttribute('data-iam-workflow') ?? '').startsWith(`${section}:`));
-      const index = visible.indexOf(button);
-      let next = null;
-      if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = visible[(index + 1) % visible.length];
-      else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = visible[(index - 1 + visible.length) % visible.length];
-      else if (event.key === 'Home') next = visible[0];
-      else if (event.key === 'End') next = visible[visible.length - 1];
-      if (next) { event.preventDefault?.(); activate(next.getAttribute('data-iam-workflow'), true); }
-    });
-  }
-  const sections = [...new Set(buttons.map((button) => String(button.getAttribute('data-iam-workflow') ?? '').split(':', 1)[0]).filter(Boolean))];
+  // Hidden workflow tab buttons remain as semantic metadata/backwards-compatible
+  // hooks, but are not a second navigation surface. Operations are opened from
+  // the DataTable Actions column or the + New button.
   for (const section of sections) {
-    const current = buttons.find((button) => !button.hidden && String(button.getAttribute('data-iam-workflow') ?? '').startsWith(`${section}:`) && button.getAttribute('aria-selected') === 'true')
-      ?? buttons.find((button) => !button.hidden && String(button.getAttribute('data-iam-workflow') ?? '').startsWith(`${section}:`));
-    if (current) activate(current.getAttribute('data-iam-workflow'));
+    const current = buttons.find((button) => String(button.getAttribute('data-iam-workflow') ?? '').startsWith(`${section}:`) && button.getAttribute('aria-selected') === 'true')
+      ?? buttons.find((button) => String(button.getAttribute('data-iam-workflow') ?? '').startsWith(`${section}:`));
+    if (current) activate(current.getAttribute('data-iam-workflow'), false, false);
   }
   return Object.freeze({ activate });
+}
+
+function prepareIamCrudPanels(documentObject, sections, buttons, workflowPanels) {
+  for (const section of sections) {
+    const resourcePanel = documentObject?.querySelector?.(`[data-iam-panel="${section}"]`);
+    const sectionPanels = workflowPanels.filter((panel) => String(panel.getAttribute('data-iam-workflow-panel') ?? '').startsWith(`${section}:`));
+    const firstWorkflow = sectionPanels[0];
+    const tabContent = firstWorkflow?.parentElement;
+    const editor = tabContent?.parentElement;
+    if (!resourcePanel || !editor || editor === resourcePanel || editor.getAttribute?.('data-inx-crud-editor') !== null) continue;
+
+    resourcePanel.classList?.add?.('inx-crud-panel');
+    resourcePanel.setAttribute?.('data-inx-crud-panel', `iam-${section}`);
+
+    const list = documentObject.createElement('div');
+    list.className = 'inx-crud-list-view';
+    list.setAttribute('data-inx-crud-list', '');
+    while (resourcePanel.firstElementChild && resourcePanel.firstElementChild !== editor) list.appendChild(resourcePanel.firstElementChild);
+    resourcePanel.insertBefore(list, editor);
+
+    editor.classList?.remove?.('card', 'card-body', 'border');
+    editor.classList?.add?.('inx-crud-editor-view');
+    editor.setAttribute?.('data-inx-crud-editor', '');
+    editor.hidden = true;
+    editor.setAttribute?.('aria-hidden', 'true');
+
+    const legacyHeading = editor.querySelector?.('[data-i18n="iam.objectActions"]')?.parentElement;
+    if (legacyHeading) legacyHeading.hidden = true;
+    const workflowTabs = editor.querySelector?.('[data-i18n-aria-label="iam.workflowViews"]');
+    if (workflowTabs) { workflowTabs.hidden = true; workflowTabs.setAttribute?.('aria-hidden', 'true'); }
+
+    const header = documentObject.createElement('div');
+    header.className = 'inx-crud-editor-header';
+    header.innerHTML = `<div><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="iam.facetEyebrow">Identity & Access</p><h4 class="h5 mb-0" data-inx-crud-editor-title>—</h4></div><button class="btn btn-outline-secondary btn-sm" type="button" data-inx-crud-back data-i18n="common.backToList">Back to list</button>`;
+    editor.insertBefore(header, editor.firstChild);
+
+    for (const panel of sectionPanels) {
+      const name = panel.getAttribute('data-iam-workflow-panel');
+      const button = buttons.find((candidate) => candidate.getAttribute('data-iam-workflow') === name);
+      panel.setAttribute('data-inx-crud-form', name);
+      const titleKey = button?.getAttribute?.('data-i18n');
+      if (titleKey) panel.setAttribute('data-inx-crud-title-key', titleKey);
+    }
+    wireCrudPanel(documentObject, resourcePanel);
+  }
 }
 
 function bindWorkspaceChrome(documentObject, organizationSelect, api, status, workflowNavigation) {

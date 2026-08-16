@@ -1079,7 +1079,14 @@ input[data-inx-temporal].inx-temporal-native::-webkit-calendar-picker-indicator 
 [data-density="compact"] .inx-main .btn { min-height: 2.45rem; }
 
 /* Main IAM facet menu: full-width, uniform selection surface and readable active text. */
-#identity-access-workspace > .row > aside [role="tablist"] { width: 100%; }
+#identity-access-workspace > .row > aside [role="tablist"] {
+  width: 100%;
+  padding: .45rem;
+  border: 1px solid rgba(0,61,143,.12);
+  border-radius: .82rem;
+  background: var(--inx-tab-spectrum);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.4), var(--inx-shadow-xs);
+}
 #identity-access-workspace > .row > aside [role="tablist"] > [data-iam-nav-group] { width: 100%; }
 #identity-access-workspace > .row > aside [role="tablist"] .nav-link {
   display: flex;
@@ -1098,18 +1105,14 @@ input[data-inx-temporal].inx-temporal-native::-webkit-calendar-picker-indicator 
 #identity-access-workspace > .row > aside [role="tablist"] .nav-link.active,
 #identity-access-workspace > .row > aside [role="tablist"] .nav-link[aria-selected="true"] {
   color: #ffffff !important;
-  background: var(--inx-blue) !important;
-  border-color: var(--inx-blue);
+  background: linear-gradient(115deg, var(--inx-midnight), var(--inx-blue)) !important;
+  border-color: rgba(17,199,230,.55);
   box-shadow: inset .2rem 0 0 var(--inx-turquoise), 0 .25rem .7rem rgba(0,61,143,.14);
 }
 [data-bs-theme="dark"] #identity-access-workspace > .row > aside [role="tablist"] .nav-link { color: var(--inx-ink); }
 [data-bs-theme="dark"] #identity-access-workspace > .row > aside [role="tablist"] .nav-link:hover { color: #ffffff; background: #173657; }
 [data-bs-theme="dark"] #identity-access-workspace > .row > aside [role="tablist"] .nav-link.active,
 [data-bs-theme="dark"] #identity-access-workspace > .row > aside [role="tablist"] .nav-link[aria-selected="true"] { color: #ffffff !important; }
-#identity-access-workspace .nav-underline .nav-link.active,
-#identity-access-workspace .nav-underline .nav-link[aria-selected="true"] { color: var(--inx-blue); background: transparent !important; }
-[data-bs-theme="dark"] #identity-access-workspace .nav-underline .nav-link.active,
-[data-bs-theme="dark"] #identity-access-workspace .nav-underline .nav-link[aria-selected="true"] { color: var(--inx-turquoise); }
 
 @media (max-width: 991.98px) {
   .inx-auth-visual { min-height: auto; }
@@ -1179,13 +1182,11 @@ input[data-inx-temporal].inx-temporal-native::-webkit-calendar-picker-indicator 
   --inx-filter-bg: #f7faff;
   --inx-filter-border: #c8d6e8;
   --inx-tab-spectrum: linear-gradient(90deg, rgba(0,61,143,.09), rgba(17,199,230,.11) 48%, rgba(8,127,91,.055) 76%, rgba(255,170,0,.07));
-  --inx-table-head: linear-gradient(112deg, var(--inx-midnight) 0%, var(--inx-blue) 72%, #07539d 100%);
 }
 [data-bs-theme="dark"] {
   --inx-filter-bg: #111f33;
   --inx-filter-border: #39516f;
   --inx-tab-spectrum: linear-gradient(90deg, rgba(18,101,197,.20), rgba(17,199,230,.13) 48%, rgba(8,127,91,.10) 76%, rgba(255,170,0,.08));
-  --inx-table-head: linear-gradient(112deg, #061a36 0%, #073e7a 72%, #0a568f 100%);
 }
 
 /* Search/filter toolbars stay on one line when space permits and collapse cleanly on small screens. */
@@ -1292,14 +1293,164 @@ input[data-inx-temporal].inx-temporal-native::-webkit-calendar-picker-indicator 
 [data-bs-theme="dark"] .inx-workspace .nav-underline[role="tablist"] .nav-link:hover,
 [data-bs-theme="dark"] .inx-workspace .nav-underline[role="tablist"] .nav-link:focus-visible { color: #fff; background: rgba(17,199,230,.09); }
 
-/* Table headings receive strong visual hierarchy while accent colors remain restrained. */
-.table > thead > tr > th {
-  color: #f8fbff !important;
-  background: var(--inx-table-head) !important;
-  border-bottom: .18rem solid var(--inx-turquoise) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+
+/* alpha.0.99 — enterprise CRUD navigation and refined data hierarchy. */
+/* Restore the original product-promise proportion requested for the login showcase. */
+.inx-auth-story { max-width: 40rem; }
+.inx-auth-story-title {
+  max-width: 38rem;
+  color: #ffffff !important;
+  font-size: clamp(2.7rem, 5vw, 4.75rem);
+  font-weight: 820;
+  line-height: 1.02;
+  letter-spacing: -.045em;
+  text-wrap: balance;
+  text-shadow: 0 .18rem 1rem rgba(0,20,48,.2);
 }
-.table > thead > tr > th:first-child { border-left: .18rem solid var(--inx-green); }
-.table > thead > tr > th:last-child { border-right: .18rem solid rgba(255,170,0,.82); }
+/* Identity & Access horizontal action tabs must use the same header treatment as all workspaces. */
+#identity-access-workspace .nav-underline[role="tablist"] {
+  background: var(--inx-tab-spectrum) !important;
+  border: 1px solid rgba(0,61,143,.12) !important;
+  border-radius: .82rem;
+}
+#identity-access-workspace .nav-underline[role="tablist"] .nav-link.active,
+#identity-access-workspace .nav-underline[role="tablist"] .nav-link[aria-selected="true"] {
+  color: #fff !important;
+  background: linear-gradient(115deg, var(--inx-midnight), var(--inx-blue)) !important;
+  border-color: rgba(17,199,230,.55);
+  box-shadow: inset 0 -.15rem 0 var(--inx-turquoise);
+}
+
+/* Table headers use one continuous, restrained surface. Individual columns no longer
+ * receive different left/right colors because that fragmented the table visually. */
+:root {
+  --inx-table-head-surface: linear-gradient(90deg, rgba(0,61,143,.105), rgba(17,199,230,.075));
+  --inx-table-head-ink: #173a63;
+  --inx-table-head-rule: rgba(0,61,143,.20);
+}
+[data-bs-theme="dark"] {
+  --inx-table-head-surface: linear-gradient(90deg, rgba(20,78,142,.34), rgba(17,199,230,.13));
+  --inx-table-head-ink: #e9f5ff;
+  --inx-table-head-rule: rgba(83,199,226,.30);
+}
+.table > thead > tr { background: var(--inx-table-head-surface) !important; }
+.table > thead > tr > th {
+  color: var(--inx-table-head-ink) !important;
+  background: transparent !important;
+  border-top: 0 !important;
+  border-right: 0 !important;
+  border-left: 0 !important;
+  border-bottom: 1px solid var(--inx-table-head-rule) !important;
+  box-shadow: inset 0 -2px 0 rgba(17,199,230,.22);
+  font-weight: 760;
+}
+.table > thead > tr > th:first-child,
+.table > thead > tr > th:last-child { border-left: 0 !important; border-right: 0 !important; }
 .table-responsive > .table > thead th { top: 0; z-index: 2; }
 .table caption { color: var(--inx-muted); }
+
+/* Sortable enterprise data tables. Headers remain compact and expose direction
+ * without adding a second toolbar or visually heavy controls. */
+.inx-data-table > thead > tr > th[data-inx-sortable="true"] {
+  position: relative;
+  padding-right: 1.7rem;
+  cursor: pointer;
+  user-select: none;
+}
+.inx-data-table > thead > tr > th[data-inx-sortable="true"]::after {
+  position: absolute;
+  right: .55rem;
+  top: 50%;
+  translate: 0 -50%;
+  content: "↕";
+  color: color-mix(in srgb, var(--inx-table-head-ink) 55%, transparent);
+  font-size: .72rem;
+  font-weight: 800;
+}
+.inx-data-table > thead > tr > th[aria-sort="ascending"]::after { content: "↑"; color: var(--inx-blue); }
+.inx-data-table > thead > tr > th[aria-sort="descending"]::after { content: "↓"; color: var(--inx-blue); }
+[data-bs-theme="dark"] .inx-data-table > thead > tr > th[aria-sort="ascending"]::after,
+[data-bs-theme="dark"] .inx-data-table > thead > tr > th[aria-sort="descending"]::after { color: var(--inx-turquoise); }
+.inx-data-table > thead > tr > th[data-inx-sortable="true"]:focus-visible {
+  outline: 2px solid var(--inx-turquoise);
+  outline-offset: -2px;
+}
+
+/* List-first CRUD navigation: each tab shows a data table and contextual actions.
+ * Forms are a dedicated editor page, never a second column or a stack below the list. */
+.inx-crud-panel[data-inx-crud-mode="form"] > [data-inx-crud-list] { display: none !important; }
+.inx-crud-panel[data-inx-crud-mode="list"] > [data-inx-crud-editor] { display: none !important; }
+.inx-crud-list-view, .inx-crud-editor-view { min-width: 0; }
+.inx-crud-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .55rem;
+  margin-bottom: .85rem;
+}
+.inx-crud-editor-view {
+  padding: clamp(.85rem, 1.6vw, 1.35rem);
+  border: 1px solid var(--inx-border);
+  border-radius: .9rem;
+  background: var(--inx-surface);
+  box-shadow: var(--inx-shadow-xs);
+}
+.inx-crud-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: .8rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--inx-border);
+}
+.inx-crud-editor-view [data-inx-crud-form] { max-width: 72rem; margin-inline: auto; }
+.inx-crud-editor-view form { margin-bottom: 0 !important; }
+.inx-crud-actions { display: inline-flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
+.inx-crud-actions .btn { margin: 0 !important; }
+@media (max-width: 767.98px) {
+  .inx-crud-toolbar { justify-content: stretch; }
+  .inx-crud-toolbar .btn { flex: 1 1 auto; }
+  .inx-crud-editor-header { align-items: flex-start; }
+}
+
+.inx-crud-panel[data-inx-crud-editor-mode="create"] [data-inx-only-mode="edit"] { display: none !important; }
+.inx-crud-panel[data-inx-crud-editor-mode="edit"] [data-inx-only-mode="create"] { display: none !important; }
+
+
+/* alpha.0.99 — integrated API documentation inside the InfraNexum shell. */
+.inx-docs-header {
+  color: #fff;
+  border: 0;
+  background:
+    radial-gradient(circle at 86% -30%, rgba(17,199,230,.28), transparent 13rem),
+    linear-gradient(116deg, var(--inx-midnight), var(--inx-blue));
+}
+.inx-docs-header h2, .inx-docs-header p { color: inherit !important; }
+.inx-docs-header p:last-child { color: #d8e8f8 !important; max-width: 58rem; }
+.inx-docs-status { margin-bottom: 0; }
+.inx-swagger-host, .inx-redoc-host { min-height: 36rem; background: var(--inx-surface); }
+.inx-api-docs .swagger-ui { color: var(--inx-ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.inx-api-docs .swagger-ui .topbar { display: none; }
+.inx-api-docs .swagger-ui .info { margin: 1.5rem 0; }
+.inx-api-docs .swagger-ui .info .title, .inx-api-docs .swagger-ui .opblock-tag { color: var(--inx-ink); font-family: inherit; }
+.inx-api-docs .swagger-ui .scheme-container { margin: 0 0 1rem; padding: 1rem 1.25rem; background: var(--inx-surface-soft); box-shadow: none; border: 1px solid var(--inx-border); }
+.inx-api-docs .swagger-ui .opblock-tag { border-bottom-color: var(--inx-border); }
+.inx-api-docs .swagger-ui .opblock.opblock-get { border-color: var(--inx-blue); background: rgba(0,61,143,.045); }
+.inx-api-docs .swagger-ui .opblock.opblock-get .opblock-summary-method { background: var(--inx-blue); }
+.inx-api-docs .swagger-ui .btn { border-radius: .55rem; box-shadow: none; }
+.inx-api-docs .swagger-ui .btn.authorize { color: var(--inx-blue); border-color: var(--inx-blue); }
+.inx-api-docs .swagger-ui .btn.authorize svg { fill: var(--inx-blue); }
+.inx-api-docs .swagger-ui select { border-color: var(--inx-border); border-radius: .5rem; color: var(--inx-ink); background: var(--inx-surface); }
+[data-bs-theme="dark"] .inx-api-docs .swagger-ui,
+[data-bs-theme="dark"] .inx-api-docs .swagger-ui .info .title,
+[data-bs-theme="dark"] .inx-api-docs .swagger-ui .opblock-tag,
+[data-bs-theme="dark"] .inx-api-docs .swagger-ui .parameter__name,
+[data-bs-theme="dark"] .inx-api-docs .swagger-ui .response-col_status,
+[data-bs-theme="dark"] .inx-api-docs .swagger-ui table thead tr td,
+[data-bs-theme="dark"] .inx-api-docs .swagger-ui table thead tr th { color: #eef7ff; }
+[data-bs-theme="dark"] .inx-api-docs .swagger-ui .scheme-container { background: #0d2744; }
+.inx-redoc-host > div { min-height: 36rem; }
+@media (max-width: 575.98px) {
+  .inx-auth-story-title { font-size: 2rem; }
+}

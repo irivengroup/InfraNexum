@@ -14,6 +14,8 @@ const CONTENT_TYPES = new Map([
   ['.svg', 'image/svg+xml'],
   ['.webp', 'image/webp'],
   ['.woff2', 'font/woff2'],
+  ['.yaml', 'application/yaml; charset=utf-8'],
+  ['.yml', 'application/yaml; charset=utf-8'],
 ]);
 
 /** Secure, bounded reader for immutable Web assets. */

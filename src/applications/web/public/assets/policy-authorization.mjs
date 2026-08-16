@@ -1,6 +1,7 @@
 import { identityAccessRequest } from './identity-access.mjs';
 import { localeFromDocument, setLocalizedElementText, translate } from './i18n.mjs';
 import { wireAsyncForm } from './form-controller.mjs';
+import { initializeEnterpriseDataTables } from './enterprise-crud.mjs';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const CODE_PATTERN = /^(?!system\.)(?:[a-z][a-z0-9-]*)(?:\.[a-z][a-z0-9-]*){1,7}$/;
@@ -125,8 +126,91 @@ export async function initializePolicyAuthorization(documentObject, configuratio
   bindCreateForm(documentObject, status, result, api);
   bindLifecycleForm(documentObject, status, result, api);
   bindDecisionForm(documentObject, status, result, api);
+  const refresh = () => refreshPolicyTable(documentObject, api, status);
+  documentObject.getElementById?.('iam-policy-refresh')?.addEventListener?.('click', () => void refresh());
+  documentObject.getElementById?.('iam-policy-filter')?.addEventListener?.('input', (event) => filterPolicyRows(documentObject, event.target?.value));
+  documentObject.addEventListener?.('infranexum:policy-changed', () => void refresh());
+  await refresh();
+  initializeEnterpriseDataTables(documentObject);
   setStatus(documentObject, status, 'policy.ready', false);
-  return Object.freeze({ enabled: true });
+  return Object.freeze({ enabled: true, refresh });
+}
+
+async function refreshPolicyTable(documentObject, api, status) {
+  const target = documentObject.getElementById?.('iam-policy-rows');
+  if (!target) return [];
+  try {
+    const payload = await api('/v1/iam/policies?limit=200');
+    const policies = Array.isArray(payload) ? payload : [];
+    if (policies.length === 0) {
+      const row = documentObject.createElement('tr');
+      const cell = documentObject.createElement('td');
+      cell.colSpan = 6;
+      cell.className = 'text-body-secondary py-4 text-center';
+      cell.textContent = translate(localeFromDocument(documentObject), 'iam.empty');
+      row.appendChild(cell);
+      target.replaceChildren(row);
+      return policies;
+    }
+    target.replaceChildren(...policies.map((policy) => policyRow(documentObject, policy)));
+    initializeEnterpriseDataTables(documentObject);
+    filterPolicyRows(documentObject, documentObject.getElementById?.('iam-policy-filter')?.value);
+    return policies;
+  } catch (error) {
+    setPolicyError(documentObject, status, error);
+    return [];
+  }
+}
+
+function policyRow(documentObject, policy) {
+  const row = documentObject.createElement('tr');
+  const id = String(policy?.id ?? '');
+  const values = [shortId(id), policy?.code ?? '—', policy?.version ?? '—', policy?.state ?? policy?.status ?? '—', policy?.scopeKind ?? '—'];
+  for (const value of values) {
+    const cell = documentObject.createElement('td');
+    cell.textContent = String(value);
+    row.appendChild(cell);
+  }
+  const actions = documentObject.createElement('td');
+  actions.className = 'text-nowrap';
+  const lifecycle = actionButton(documentObject, 'policy.lifecycleTitle', 'btn-outline-primary', () => {
+    const select = documentObject.getElementById?.('iam-policy-lifecycle-id');
+    if (select && id) { select.value = id; dispatchChange(documentObject, select); }
+    documentObject.querySelector?.('[data-iam-workflow="policies:lifecycle"]')?.click?.();
+  });
+  const simulate = actionButton(documentObject, 'policy.decisionTitle', 'btn-outline-secondary', () => {
+    documentObject.querySelector?.('[data-iam-workflow="policies:simulation"]')?.click?.();
+  });
+  actions.appendChild(lifecycle);
+  actions.appendChild(simulate);
+  row.appendChild(actions);
+  return row;
+}
+
+function actionButton(documentObject, key, className, execute) {
+  const button = documentObject.createElement('button');
+  button.type = 'button';
+  button.className = `btn btn-sm ${className} me-1 mb-1`;
+  button.textContent = translate(localeFromDocument(documentObject), key);
+  button.addEventListener?.('click', execute);
+  return button;
+}
+
+function filterPolicyRows(documentObject, rawQuery) {
+  const query = String(rawQuery ?? '').normalize('NFD').replace(/\p{Diacritic}/gu, '').trim().toLowerCase();
+  let visible = 0;
+  for (const row of documentObject.getElementById?.('iam-policy-rows')?.children ?? []) {
+    if (row.children?.[0]?.colSpan > 1) continue;
+    const text = String(row.textContent ?? '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+    const matches = !query || text.includes(query);
+    row.hidden = !matches;
+    if (matches) visible += 1;
+  }
+  return visible;
+}
+
+function shortId(id) {
+  return id.length > 16 ? `${id.slice(0, 8)}…${id.slice(-4)}` : id || '—';
 }
 
 function bindCreateForm(documentObject, status, result, api) {

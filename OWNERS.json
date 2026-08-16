@@ -66,6 +66,16 @@
         "governance scopes",
         "identity and access"
       ]
+    },
+    {
+      "id": "team.automation-ecosystem",
+      "name": "Automation & Ecosystem",
+      "responsibilities": [
+        "connector SDK",
+        "integrations",
+        "webhooks",
+        "connector certification"
+      ]
     }
   ]
 }

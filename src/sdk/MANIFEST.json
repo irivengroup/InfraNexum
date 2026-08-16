@@ -2,18 +2,25 @@
   "schema": "infranexum.component-manifest/v1",
   "id": "sdk",
   "kind": "space",
-  "owner": "team.data-rsot",
-  "lifecycle": "planned",
+  "owner": "team.automation-ecosystem",
+  "lifecycle": "active",
   "languages": [
     "python"
   ],
   "dependencies": [
-    "components.core.contracts"
+    "components.core.contracts",
+    "components.core.events"
   ],
   "source_baseline": [
     "IAR-01 §4-5",
-    "ADR-0003",
-    "ADR-0004",
-    "PGM-01-E01"
+    "CDC 13.13 Integrations",
+    "INT-ADV-001",
+    "INT-ADV-003",
+    "INT-ADV-004",
+    "INT-ADV-005",
+    "INT-ADV-007",
+    "INT-ADV-011",
+    "INT-ADV-012",
+    "PGM-10-E05"
   ]
 }

@@ -1,3 +1,21 @@
+# InfraNexum 2.0.0-alpha.0.100 — PGM-10-E05 phase 1: versioned connector SDK
+
+`alpha.0.100` starts **PGM-10-E05** with the connector-authoring boundary required by draft.21: a dependency-free Python 3.13 SDK v1, a strict `infranexum.connector-manifest/v1` contract, deterministic offline certification and HMAC-SHA256 webhook signing/verification primitives. Manifests make provider compatibility, capabilities/permissions, secret declarations, exact HTTPS egress, synchronization authority, data classification, idempotency/checkpoint/replay policy, resource limits and support lifecycle explicit; wildcard compatibility/egress and embedded secret values fail closed.
+
+The SDK is independently versioned as `1.0.0`, rejects a manifest that requires a newer SDK, canonicalizes/fingerprints manifests and exposes them as deeply immutable data. The certification CLI never imports connector code. CI now has a dedicated `connector-sdk` job that enforces branch coverage ≥98 %, contract metadata consistency and byte-reproducible pure-Python wheel construction/import. The webhook helper uses bounded payloads, timezone-aware timestamps, constant-time HMAC comparison and replay guards; the in-memory guard is explicitly non-production.
+
+This is **phase 1, not completion of PGM-10-E05**. No provider connector, Server route, migration or credential persistence is invented. Durable incoming webhook admission, connector inbox/DLQ operations, authorization-controlled audited replay and per-connector runtime observability remain the next phase of the same epic, reusing the Core transactional eventing delivered by PGM-02-E03. PGM-10-E06 and DNS/DHCP remain downstream until the runtime gate is closed. See `docs/integrations-connector-sdk.md`.
+
+---
+
+# InfraNexum 2.0.0-alpha.0.99 — enterprise CRUD navigation and embedded API documentation
+
+`alpha.0.99` is a Web/UX corrective over the delivered `alpha.0.98` PGM-05-E01 baseline. Entity tabs are now **list-first**: a sortable DataTable is the default surface, `+ New` is shown only where the API supports creation, contextual row actions open one dedicated editor surface, successful mutations return to the same list, and user-initiated deletions require confirmation. Identity & Access receives the same tab-header treatment as the other workspaces, table headers use one restrained continuous surface, the duplicate environment indicator is removed from the topbar, and the previously accepted login product-promise proportions are restored.
+
+A new **DOCUMENTATION** section under PLATFORM exposes **Swagger** and **ReDoc** inside the authenticated InfraNexum shell. Both views consume a deterministic Web projection of the certified 14-fragment / 174-operation OpenAPI product contract; an architecture test regenerates that projection and requires byte-for-byte equality. Swagger UI and ReDoc are version-pinned and styled through the InfraNexum design system as far as their supported theming APIs permit. This corrective does not alter PGM-05-E01 status, API debt (still `0/0/0/0`), migrations or authorization contracts. See `docs/web-enterprise-crud-and-api-documentation.md`.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.98 — PGM-05-E01 delivered: zero-debt API contract governance
 
 `alpha.0.98` completes **PGM-05-E01**. The canonical Server API catalogue now governs **14 OpenAPI 3.1 fragments and 174 operations**, including the previously undocumented Platform Runtime routes for build diagnostics, capability discovery and quotas. The contract ratchet is fully closed at **idempotency=0, pagination=0, capability=0, permission=0**.
