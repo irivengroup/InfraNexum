@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum ITAM Warranty, Support and License API
-  version: 2.0.0-alpha.0.94
+  version: 2.0.0-alpha.0.97
   description: PGM-07-E03 contractual governance. Warranty, support-provider authorization, third-party support coverage,
     software-license metadata, immutable revision evidence and deterministic deadline alerts.
 servers:
@@ -882,6 +882,22 @@ paths:
         required: true
         schema:
           $ref: '#/components/schemas/UuidV7'
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          maximum: 1000000
       responses:
         '200':
           description: Support-provider authorizations visible in the organization scope.
@@ -891,6 +907,17 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SupportAuthorization'
+          headers:
+            X-Page-Limit:
+              description: Effective bounded page size.
+              schema:
+                type: integer
+                minimum: 1
+            X-Next-Offset:
+              description: Offset for the next page; absent when the current page is terminal.
+              schema:
+                type: integer
+                minimum: 0
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -899,6 +926,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
       x-infranexum-capability: itam.compliance
       x-infranexum-permission: itam.support_catalog.manage
+      x-infranexum-pagination: offset
   /api/v1/itam/support-authorizations/{authorizationId}:
     parameters:
     - $ref: '#/components/parameters/CorrelationId'
@@ -1053,6 +1081,22 @@ paths:
           type: string
           format: uuid
           pattern: ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          maximum: 1000000
       responses:
         '200':
           description: Successful response
@@ -1062,12 +1106,24 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/WarrantyType'
+          headers:
+            X-Page-Limit:
+              description: Effective bounded page size.
+              schema:
+                type: integer
+                minimum: 1
+            X-Next-Offset:
+              description: Offset for the next page; absent when the current page is terminal.
+              schema:
+                type: integer
+                minimum: 0
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+      x-infranexum-pagination: offset
     post:
       tags:
       - ITAM / Compliance
@@ -1125,6 +1181,22 @@ paths:
           minimum: 1
           maximum: 3650
           default: 180
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          maximum: 1000000
       responses:
         '200':
           description: Successful response
@@ -1134,6 +1206,17 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Alert'
+          headers:
+            X-Page-Limit:
+              description: Effective bounded page size.
+              schema:
+                type: integer
+                minimum: 1
+            X-Next-Offset:
+              description: Offset for the next page; absent when the current page is terminal.
+              schema:
+                type: integer
+                minimum: 0
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1142,6 +1225,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+      x-infranexum-pagination: offset
   /api/v1/itam/{recordType}/{recordId}/history:
     parameters:
     - $ref: '#/components/parameters/CorrelationId'
@@ -1221,11 +1305,13 @@ components:
       name: Idempotency-Key
       in: header
       required: true
+      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request
+        semantics returns HTTP 409.
       schema:
         type: string
         minLength: 8
         maxLength: 200
-        pattern: ^[A-Za-z0-9][A-Za-z0-9._:-]{7,199}$
+        pattern: ^[A-Za-z0-9._:-]+$
     IfMatch:
       name: If-Match
       in: header
@@ -1981,21 +2067,68 @@ components:
       - type
       - title
       - status
+      - detail
+      - instance
+      - code
+      - message
+      - details
+      - metadata
+      - occurred_at
+      - timestamp
+      - correlation_id
+      - trace_id
       properties:
         type:
           type: string
+          description: Stable InfraNexum problem type URI.
         title:
           type: string
+          description: Short human-readable problem summary.
         status:
           type: integer
+          minimum: 400
+          maximum: 599
         detail:
           type: string
+          description: Safe redacted problem detail.
+        instance:
+          type: string
+          description: Request URI associated with this occurrence.
         code:
           type: string
-        correlationId:
+          description: Stable machine-readable InfraNexum error code.
+        message:
+          type: string
+          deprecated: true
+          description: Legacy compatibility alias of detail.
+        details:
+          type: object
+          additionalProperties: true
+          description: Structured validation or conflict details.
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Reserved non-sensitive problem metadata.
+        occurred_at:
+          type: string
+          format: date-time
+          description: UTC timestamp of this problem occurrence.
+        timestamp:
+          type: string
+          format: date-time
+          deprecated: true
+          description: Legacy compatibility alias of occurred_at.
+        correlation_id:
           type: string
           format: uuid
-          pattern: ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+          description: Canonical request UUIDv7 correlation identifier.
+        trace_id:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+          description: Compatibility trace identifier equal to correlation_id.
+      additionalProperties: false
   responses:
     BadRequest:
       description: Invalid request
@@ -2004,6 +2137,9 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
       x-status: '400'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
     Unauthorized:
       description: Authentication required
       content:
@@ -2011,6 +2147,9 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
       x-status: '401'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
     Forbidden:
       description: Authorization denied
       content:
@@ -2018,6 +2157,9 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
       x-status: '403'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
     NotFound:
       description: Record not found
       content:
@@ -2025,6 +2167,9 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
       x-status: '404'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
     Conflict:
       description: Optimistic/idempotency/state conflict
       content:
@@ -2032,6 +2177,9 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
       x-status: '409'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
     UnprocessableEntity:
       description: Contractual invariant rejected
       content:
@@ -2039,3 +2187,13 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
       x-status: '422'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+  headers:
+    CorrelationId:
+      description: Canonical UUIDv7 correlation identifier assigned to the request.
+      schema:
+        type: string
+        format: uuid
+        pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$

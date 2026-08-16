@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum Identity Access Policy API
-  version: 2.0.0-alpha.0.94
+  version: 2.0.0-alpha.0.97
   description: PGM-03-E04 PAP/PDP surface for deterministic versioned ABAC policies, static separation of duty, deny-overrides
     evaluation and non-sensitive explanations. RBAC remains the mandatory baseline and every PDP result other than permit
     is refused by the PEP.
@@ -28,6 +28,7 @@ paths:
       summary: Create a new immutable access-policy version
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -51,6 +52,7 @@ paths:
           $ref: '#/components/responses/Problem'
         '422':
           $ref: '#/components/responses/Problem'
+      x-infranexum-idempotency: required
     get:
       tags:
       - IAM / Authorization / Policies
@@ -105,6 +107,7 @@ paths:
       summary: Validate a draft policy version
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -128,6 +131,7 @@ paths:
           $ref: '#/components/responses/Problem'
         '409':
           $ref: '#/components/responses/Problem'
+      x-infranexum-idempotency: required
   /api/v1/iam/policies/{policyId}/approve:
     parameters:
     - $ref: '#/components/parameters/CorrelationId'
@@ -139,6 +143,7 @@ paths:
       summary: Approve a validated policy version with four-eyes separation
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -162,6 +167,7 @@ paths:
           $ref: '#/components/responses/Problem'
         '409':
           $ref: '#/components/responses/Problem'
+      x-infranexum-idempotency: required
   /api/v1/iam/policies/{policyId}/activate:
     parameters:
     - $ref: '#/components/parameters/CorrelationId'
@@ -173,6 +179,7 @@ paths:
       summary: Atomically activate or roll back to an approved policy version
       parameters:
       - $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -196,6 +203,7 @@ paths:
           $ref: '#/components/responses/Problem'
         '409':
           $ref: '#/components/responses/Problem'
+      x-infranexum-idempotency: required
   /api/v1/iam/authorization/decisions:
     parameters:
     - $ref: '#/components/parameters/CorrelationId'
@@ -225,6 +233,7 @@ paths:
           $ref: '#/components/responses/Problem'
         '403':
           $ref: '#/components/responses/Problem'
+      x-infranexum-idempotency: repeatable
   /api/v1/iam/authorization/explain:
     parameters:
     - $ref: '#/components/parameters/CorrelationId'
@@ -254,6 +263,7 @@ paths:
           $ref: '#/components/responses/Problem'
         '403':
           $ref: '#/components/responses/Problem'
+      x-infranexum-idempotency: repeatable
 components:
   securitySchemes:
     LocalSessionCookie:
@@ -283,6 +293,17 @@ components:
       schema:
         type: string
         format: uuid
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request
+        semantics returns HTTP 409.
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 200
+        pattern: ^[A-Za-z0-9._:-]+$
   schemas:
     ScopeKind:
       type: string
@@ -636,24 +657,88 @@ components:
             type: array
             items:
               type: string
+    Problem:
+      type: object
+      required:
+      - type
+      - title
+      - status
+      - detail
+      - instance
+      - code
+      - message
+      - details
+      - metadata
+      - occurred_at
+      - timestamp
+      - correlation_id
+      - trace_id
+      properties:
+        type:
+          type: string
+          description: Stable InfraNexum problem type URI.
+        title:
+          type: string
+          description: Short human-readable problem summary.
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+          description: Safe redacted problem detail.
+        instance:
+          type: string
+          description: Request URI associated with this occurrence.
+        code:
+          type: string
+          description: Stable machine-readable InfraNexum error code.
+        message:
+          type: string
+          deprecated: true
+          description: Legacy compatibility alias of detail.
+        details:
+          type: object
+          additionalProperties: true
+          description: Structured validation or conflict details.
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Reserved non-sensitive problem metadata.
+        occurred_at:
+          type: string
+          format: date-time
+          description: UTC timestamp of this problem occurrence.
+        timestamp:
+          type: string
+          format: date-time
+          deprecated: true
+          description: Legacy compatibility alias of occurred_at.
+        correlation_id:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+          description: Canonical request UUIDv7 correlation identifier.
+        trace_id:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+          description: Compatibility trace identifier equal to correlation_id.
+      additionalProperties: false
   responses:
     Problem:
       description: RFC 9457 compatible problem response.
       content:
         application/problem+json:
           schema:
-            type: object
-            required:
-            - status
-            - title
-            - code
-            - detail
-            properties:
-              status:
-                type: integer
-              title:
-                type: string
-              code:
-                type: string
-              detail:
-                type: string
+            $ref: '#/components/schemas/Problem'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+  headers:
+    CorrelationId:
+      description: Canonical UUIDv7 correlation identifier assigned to the request.
+      schema:
+        type: string
+        format: uuid
+        pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$

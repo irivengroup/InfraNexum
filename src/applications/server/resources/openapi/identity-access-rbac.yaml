@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum Identity Access RBAC API
-  version: 2.0.0-alpha.0.94
+  version: 2.0.0-alpha.0.97
   description: PGM-03-E03 RBAC foundation for users, memberships, groups, roles, permissions, temporal scoped assignments
     and explainable permission evaluation. Local authentication establishes the actor; the Server RBAC PEP denies unregistered
     protected routes by default.
@@ -67,6 +67,7 @@ paths:
       parameters:
       - &id002
         $ref: '#/components/parameters/CsrfToken'
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -95,6 +96,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-idempotency: required
   /api/v1/iam/users/{userId}:
     parameters:
     - *id001
@@ -134,6 +136,7 @@ paths:
       summary: Update mutable IAM user attributes
       parameters:
       - *id002
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -162,6 +165,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-idempotency: required
     delete:
       tags:
       - IAM / Access / Users
@@ -175,6 +179,7 @@ paths:
         schema:
           type: string
           maxLength: 1024
+      - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: Request completed.
@@ -197,6 +202,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-idempotency: required
   /api/v1/iam/users/{userId}/activate:
     parameters:
     - *id001
@@ -208,6 +214,7 @@ paths:
       summary: Activate an IAM user
       parameters:
       - *id002
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: false
         content:
@@ -236,6 +243,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-idempotency: required
   /api/v1/iam/users/{userId}/suspend:
     parameters:
     - *id001
@@ -247,6 +255,7 @@ paths:
       summary: Suspend an IAM user
       parameters:
       - *id002
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: false
         content:
@@ -275,6 +284,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-idempotency: required
   /api/v1/iam/users/{userId}/memberships:
     parameters:
     - *id001
@@ -290,6 +300,16 @@ paths:
           headers:
             X-Correlation-ID:
               $ref: '#/components/headers/CorrelationId'
+            X-Page-Limit:
+              description: Effective bounded page size.
+              schema:
+                type: integer
+                minimum: 1
+            X-Next-Offset:
+              description: Offset for the next page; absent when the current page is terminal.
+              schema:
+                type: integer
+                minimum: 0
           content:
             application/json:
               schema:
@@ -308,6 +328,24 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-pagination: offset
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          maximum: 1000000
     post:
       tags:
       - IAM / Access / Users
@@ -315,6 +353,7 @@ paths:
       summary: Create a temporal IAM membership
       parameters:
       - *id002
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -343,6 +382,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-idempotency: required
   /api/v1/iam/users/{userId}/roles:
     parameters:
     - *id001
@@ -354,6 +394,7 @@ paths:
       summary: Assign a role directly to a user at an explicit scope
       parameters:
       - *id002
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -382,6 +423,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-idempotency: required
   /api/v1/iam/groups/{groupId}/effective-members:
     parameters:
     - *id001
@@ -458,6 +500,7 @@ paths:
       summary: Create an IAM group in one organization
       parameters:
       - *id002
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -486,6 +529,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-idempotency: required
   /api/v1/organizations/{orgId}/groups/{groupId}:
     parameters:
     - *id001
@@ -525,6 +569,7 @@ paths:
       summary: Update an IAM group display name
       parameters:
       - *id002
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -553,6 +598,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-idempotency: required
     delete:
       tags:
       - IAM / Access / Groups
@@ -566,6 +612,7 @@ paths:
         schema:
           type: string
           maxLength: 1024
+      - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: Request completed.
@@ -588,6 +635,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-idempotency: required
   /api/v1/organizations/{orgId}/groups/{groupId}/members:
     parameters:
     - *id001
@@ -600,6 +648,7 @@ paths:
       summary: Add a user or nested group member
       parameters:
       - *id002
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -624,6 +673,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-idempotency: required
   /api/v1/organizations/{orgId}/groups/{groupId}/members/{memberId}:
     parameters:
     - *id001
@@ -652,6 +702,7 @@ paths:
         schema:
           type: string
           maxLength: 1024
+      - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: Mutation completed; no response body.
@@ -670,6 +721,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-idempotency: required
   /api/v1/organizations/{orgId}/groups/{groupId}/roles:
     parameters:
     - *id001
@@ -682,6 +734,7 @@ paths:
       summary: Assign a role to a group
       parameters:
       - *id002
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -710,6 +763,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-idempotency: required
   /api/v1/organizations/{orgId}/roles:
     parameters:
     - *id001
@@ -753,6 +807,7 @@ paths:
       summary: Create an organization-owned role
       parameters:
       - *id002
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -781,6 +836,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-idempotency: required
   /api/v1/organizations/{orgId}/roles/{roleId}:
     parameters:
     - *id001
@@ -821,6 +877,7 @@ paths:
       summary: Update a mutable organization role
       parameters:
       - *id002
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -849,6 +906,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-idempotency: required
     delete:
       tags:
       - IAM / Access / Roles
@@ -868,6 +926,7 @@ paths:
         schema:
           type: string
           maxLength: 1024
+      - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: Request completed.
@@ -890,6 +949,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-idempotency: required
   /api/v1/organizations/{orgId}/roles/{roleId}/assignments:
     parameters:
     - *id001
@@ -906,6 +966,16 @@ paths:
           headers:
             X-Correlation-ID:
               $ref: '#/components/headers/CorrelationId'
+            X-Page-Limit:
+              description: Effective bounded page size.
+              schema:
+                type: integer
+                minimum: 1
+            X-Next-Offset:
+              description: Offset for the next page; absent when the current page is terminal.
+              schema:
+                type: integer
+                minimum: 0
           content:
             application/json:
               schema:
@@ -924,6 +994,24 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-pagination: offset
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          maximum: 1000000
     post:
       tags:
       - IAM / Access / Roles
@@ -931,6 +1019,7 @@ paths:
       summary: Create a temporal scoped role assignment
       parameters:
       - *id002
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -959,6 +1048,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-idempotency: required
   /api/v1/organizations/{orgId}/roles/{roleId}/assignments/{assignmentId}:
     parameters:
     - *id001
@@ -978,6 +1068,7 @@ paths:
         schema:
           type: string
           maxLength: 1024
+      - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '204':
           description: Mutation completed; no response body.
@@ -996,6 +1087,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-idempotency: required
   /api/v1/organizations/{orgId}/permissions:
     parameters:
     - *id001
@@ -1046,6 +1138,7 @@ paths:
       summary: Create an organization-owned atomic permission
       parameters:
       - *id002
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -1074,6 +1167,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-idempotency: required
   /api/v1/organizations/{orgId}/permissions/effective:
     parameters:
     - *id001
@@ -1154,6 +1248,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-idempotency: repeatable
   /api/v1/organizations/{orgId}/permissions/{permissionId}:
     parameters:
     - *id001
@@ -1193,6 +1288,7 @@ paths:
       summary: Update a mutable organization permission
       parameters:
       - *id002
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -1221,6 +1317,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-idempotency: required
     delete:
       tags:
       - IAM / Access / Permissions
@@ -1234,6 +1331,7 @@ paths:
         schema:
           type: string
           maxLength: 1024
+      - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: Request completed.
@@ -1256,6 +1354,7 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/UnprocessableEntity'
+      x-infranexum-idempotency: required
 components:
   securitySchemes:
     LocalSessionCookie:
@@ -1331,10 +1430,24 @@ components:
       in: path
       required: true
       schema: *id009
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request
+        semantics returns HTTP 409.
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 200
+        pattern: ^[A-Za-z0-9._:-]+$
   headers:
     CorrelationId:
-      description: Canonical request correlation identifier.
-      schema: *id009
+      description: Canonical UUIDv7 correlation identifier assigned to the request.
+      schema:
+        type: string
+        format: uuid
+        pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
   responses:
     BadRequest:
       description: Malformed UUID, query, JSON or validation input.
@@ -1483,9 +1596,10 @@ components:
           - type: string
             format: date-time
           - type: string
-            pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?$'
+            pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?$
           - type: 'null'
-          description: ISO-8601 date-time. Values without an offset are resolved in the Server timezone; explicit offsets remain authoritative.
+          description: ISO-8601 date-time. Values without an offset are resolved in the Server timezone; explicit offsets
+            remain authoritative.
           x-infranexum-timezone-default: server
         effectiveTo: *id011
         reason: *id010
@@ -1979,32 +2093,69 @@ components:
           type: string
     Problem:
       type: object
-      additionalProperties: true
       required:
-      - status
+      - type
       - title
+      - status
+      - detail
+      - instance
       - code
+      - message
+      - details
+      - metadata
+      - occurred_at
+      - timestamp
+      - correlation_id
+      - trace_id
       properties:
+        type:
+          type: string
+          description: Stable InfraNexum problem type URI.
+        title:
+          type: string
+          description: Short human-readable problem summary.
         status:
           type: integer
           minimum: 400
           maximum: 599
-        title:
-          type: string
         detail:
-          type:
-          - string
-          - 'null'
+          type: string
+          description: Safe redacted problem detail.
+        instance:
+          type: string
+          description: Request URI associated with this occurrence.
         code:
           type: string
-        correlation_id:
-          type:
-          - string
-          - 'null'
-        trace_id:
-          type:
-          - string
-          - 'null'
+          description: Stable machine-readable InfraNexum error code.
+        message:
+          type: string
+          deprecated: true
+          description: Legacy compatibility alias of detail.
+        details:
+          type: object
+          additionalProperties: true
+          description: Structured validation or conflict details.
         metadata:
           type: object
           additionalProperties: true
+          description: Reserved non-sensitive problem metadata.
+        occurred_at:
+          type: string
+          format: date-time
+          description: UTC timestamp of this problem occurrence.
+        timestamp:
+          type: string
+          format: date-time
+          deprecated: true
+          description: Legacy compatibility alias of occurred_at.
+        correlation_id:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+          description: Canonical request UUIDv7 correlation identifier.
+        trace_id:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+          description: Compatibility trace identifier equal to correlation_id.
+      additionalProperties: false

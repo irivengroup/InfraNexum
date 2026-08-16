@@ -36,6 +36,7 @@ public final class IdentityAccessAdminService {
     public List<IdentityUser> listUsers(int offset,int limit){ page(offset,limit); return repository.listUsers(offset,limit); }
     public IdentityUser getUser(DomainIdentifier id){ return repository.findUser(Objects.requireNonNull(id,"id")).orElseThrow(()->notFound("IAM_USER_NOT_FOUND","user not found")); }
     public List<UserMembership> memberships(DomainIdentifier userId){ getUser(userId); return repository.memberships(userId); }
+    public OffsetPage<UserMembership> memberships(DomainIdentifier userId,int offset,int limit){getUser(userId);PaginationConstraints.requireOffset(offset);page(offset,limit);List<UserMembership> rows=repository.memberships(userId,offset,limit+1);boolean more=rows.size()>limit;List<UserMembership> items=List.copyOf(rows.subList(0,Math.min(limit,rows.size())));return new OffsetPage<>(items,more?Math.addExact(offset,limit):null);}
     public List<IdentityGroup> listGroups(DomainIdentifier orgId,int offset,int limit){ Objects.requireNonNull(orgId,"orgId"); page(offset,limit); return repository.listGroups(orgId,offset,limit); }
     public IdentityGroup getGroup(DomainIdentifier orgId,DomainIdentifier groupId){ return repository.findGroup(orgId,groupId).orElseThrow(()->notFound("IAM_GROUP_NOT_FOUND","group not found")); }
     public IdentityGroup getGroup(DomainIdentifier groupId){ return repository.findGroup(Objects.requireNonNull(groupId,"groupId")).orElseThrow(()->notFound("IAM_GROUP_NOT_FOUND","group not found")); }
@@ -44,6 +45,7 @@ public final class IdentityAccessAdminService {
     public List<Permission> listPermissions(DomainIdentifier orgId,int offset,int limit){ page(offset,limit); return repository.listPermissions(orgId,offset,limit); }
     public Permission getPermission(DomainIdentifier id){ return repository.findPermission(id).orElseThrow(()->notFound("IAM_PERMISSION_NOT_FOUND","permission not found")); }
     public List<RoleAssignment> assignments(DomainIdentifier roleId){ getRole(roleId); return repository.assignments(roleId); }
+    public OffsetPage<RoleAssignment> assignments(DomainIdentifier roleId,int offset,int limit){getRole(roleId);PaginationConstraints.requireOffset(offset);page(offset,limit);List<RoleAssignment> rows=repository.assignments(roleId,offset,limit+1);boolean more=rows.size()>limit;List<RoleAssignment> items=List.copyOf(rows.subList(0,Math.min(limit,rows.size())));return new OffsetPage<>(items,more?Math.addExact(offset,limit):null);}
     public RoleAssignment getAssignment(DomainIdentifier assignmentId){ return repository.findAssignment(Objects.requireNonNull(assignmentId,"assignmentId")).orElseThrow(()->notFound("IAM_ASSIGNMENT_NOT_FOUND","role assignment not found")); }
     public Set<String> rolePermissionCodes(DomainIdentifier roleId){ getRole(roleId); return repository.rolePermissionCodes(roleId); }
     public Set<DomainIdentifier> effectiveGroupMembers(DomainIdentifier groupId){ Objects.requireNonNull(groupId,"groupId"); return repository.effectiveGroupMembers(groupId); }

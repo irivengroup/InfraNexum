@@ -38,6 +38,14 @@ public final class ContractSmoke {
             rejected = true;
         }
         require(rejected, "non-v7 identifier accepted");
+        require(PaginationConstraints.requireOffset(0) == 0, "zero offset rejected");
+        require(PaginationConstraints.requireOffset(PaginationConstraints.MAX_OFFSET) == PaginationConstraints.MAX_OFFSET, "maximum offset rejected");
+        boolean negativeOffsetRejected = false;
+        try { PaginationConstraints.requireOffset(-1); } catch (IllegalArgumentException expected) { negativeOffsetRejected = true; }
+        require(negativeOffsetRejected, "negative offset accepted");
+        boolean excessiveOffsetRejected = false;
+        try { PaginationConstraints.requireOffset(PaginationConstraints.MAX_OFFSET + 1); } catch (IllegalArgumentException expected) { excessiveOffsetRejected = true; }
+        require(excessiveOffsetRejected, "excessive offset accepted");
         System.out.println("java-contract-smoke: PASS");
     }
 

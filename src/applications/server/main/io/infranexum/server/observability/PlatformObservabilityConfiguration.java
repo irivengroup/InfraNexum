@@ -1,6 +1,7 @@
 package io.infranexum.server.observability;
 
 import io.infranexum.core.contracts.UuidV7Generator;
+import io.infranexum.server.http.ApiProblemSupport;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.tracing.Tracer;
 import java.security.SecureRandom;
@@ -8,6 +9,7 @@ import java.time.Clock;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import tools.jackson.databind.ObjectMapper;
 
 /** HTTP observability composition shared by every Server endpoint, including Actuator probes. */
 @Configuration(proxyBeanMethods = false)
@@ -15,6 +17,12 @@ public class PlatformObservabilityConfiguration {
     @Bean
     SensitiveDataRedactor sensitiveDataRedactor() {
         return new SensitiveDataRedactor();
+    }
+
+    @Bean
+    ApiProblemSupport apiProblemSupport(
+            @Qualifier("platformClock") Clock clock, SensitiveDataRedactor redactor, ObjectMapper mapper) {
+        return new ApiProblemSupport(clock, redactor, mapper);
     }
 
     @Bean("correlationIdentifiers")
@@ -25,9 +33,9 @@ public class PlatformObservabilityConfiguration {
     @Bean
     CorrelationIdFilter correlationIdFilter(
             @Qualifier("correlationIdentifiers") UuidV7Generator identifiers,
-            @Qualifier("platformClock") Clock clock,
-            MeterRegistry registry) {
-        return new CorrelationIdFilter(identifiers, clock, registry);
+            MeterRegistry registry,
+            ApiProblemSupport problems) {
+        return new CorrelationIdFilter(identifiers, registry, problems);
     }
 
     @Bean

@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.94",
-  "profile": "alpha094-corrective-web-dense-filters-table-tab-headers-pro-ha-local-development",
+  "version": "2.0.0-alpha.0.97",
+  "profile": "alpha097-pgm05e01-phase4-canonical-idempotency-pro-ha-local-development",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -22,7 +22,7 @@
     },
     {
       "id": "infranexum-web",
-      "status": "alpha094-web-ux-corrective-responsive-inline-filter-bars-high-contrast-midnight-blue-table-heads-restrained-turquoise-green-orange-accents-spectral-tab-bars-active-readable-no-business-contract-change-target-node24-docker-browser-review-pending"
+      "status": "alpha094-enterprise-dense-filter-and-data-navigation-ux-preserved-plus-alpha097-iam-rsot-canonical-idempotency-key-transport-no-ui-contract-removal"
     },
     {
       "id": "source-integrity-v1",
@@ -37,8 +37,8 @@
       "status": "postgresql-oracle-jdbc-workers-local-identity-session-persistence-security-epoch-transient-connectivity-classification-durable-nullable-uuidv7-correlation-entitlements-revocations-json-binding-and-contextual-domain-errors-hosted-jdk25-jacoco-proof-pending"
     },
     {
-      "id": "migration-catalogue-0001-0031",
-      "status": "paired-catalogue-postgresql-oracle-through-0031-including-0030-ddi-ipam-foundation-and-0031-organization-scoped-ddi-ipam-permissions"
+      "id": "migration-catalogue-0001-0032",
+      "status": "paired-catalogue-postgresql-oracle-through-0032-including-0032-core-api-idempotency-ledger"
     },
     {
       "id": "ci-foundation",
@@ -107,11 +107,15 @@
     {
       "id": "ddi-ipam-v1",
       "status": "pgm-08-e01-ddi-parent-ipam-subdomain-vrf-vlan-network-pool-address-atomic-pool-cursor-allocation-indexed-cidr-overlap-explicit-reservation-audit-weak-rsot-dcim-references-rbac-abac-api-cli-same-release-web-postgresql-oracle-migrations0030-0031"
+    },
+    {
+      "id": "api-platform-contract-v4",
+      "status": "pgm-05-e01-phase4-canonical-idempotency-runtime-openapi-web-durable-postgresql-oracle-ledger-32-required-4-repeatable-3-security-exempt-debt-ratchet-0-0-56-85-epic-in-progress"
     }
   ],
   "validation_reports": [],
   "validation_summary": {
-    "source_inventory_paths": 1219,
+    "source_inventory_paths": 1255,
     "source_integrity_tests": 45,
     "source_integrity_coverage_percent": 100,
     "source_integrity_violations": 0,
@@ -145,7 +149,7 @@
     "jdbc_workers_junit_tests_defined": 11,
     "jdbc_workers_postgresql_live_tests_defined": 5,
     "agent_local_coverage_percent": 98.4,
-    "web_tests": 176,
+    "web_tests": 181,
     "web_line_coverage_percent": 99.73,
     "web_branch_coverage_percent": 98.53,
     "web_function_coverage_percent": 100,
@@ -166,8 +170,8 @@
     "archive_compatibility_max_member_path": 148,
     "entitlements_module_tests_defined": 49,
     "audit_module_tests_defined": 21,
-    "architecture_coverage_status": "NON_EXECUTED_ALPHA091_INSTRUMENTED_MONOLITHIC_RUNNER_TIMEOUT_TARGETED_WEB_ARCHITECTURE_24_OF_24_PASS_ARCHITECTURE_CHECK_PASS",
-    "architecture_functional_tests": "PARTIAL_TARGETED_24_PASS_FULL_INSTRUMENTED_SUITE_RUNNER_TIMEOUT",
+    "architecture_coverage_status": "NON_EXECUTED_ALPHA097_INSTRUMENTED_MONOLITHIC_RUNNER_TIMEOUT_AFTER_36_TESTS_TARGETED_IDEMPOTENCY_ARCHITECTURE_56_OF_56_PASS_ARCHITECTURE_CHECK_PASS",
+    "architecture_functional_tests": "PARTIAL_TARGETED_IDEMPOTENCY_56_PASS_FULL_INSTRUMENTED_SUITE_RUNNER_TIMEOUT",
     "jdbc_module_tests_defined": 73,
     "jdbc_postgresql_live_tests_defined": 18,
     "server_module_tests_defined": 121,
@@ -502,7 +506,57 @@
     "compose_contract_alpha086": "EXECUTED_64_OF_64",
     "source_integrity_alpha086": "EXECUTED_45_OF_45_100_PERCENT_STAGED_SNAPSHOT_1219_TRACKED_PATHS_1218_GIT_BLOB_CHECKSUMS_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
     "archive_compatibility_unit_alpha086": "EXECUTED_12_OF_12_100_PERCENT",
-    "archive_compatibility_alpha086": "EXECUTED_CANDIDATE_GIT_ARCHIVE_ZERO_VIOLATIONS_AND_GIT_ARCHIVE_PARITY"
+    "archive_compatibility_alpha086": "EXECUTED_CANDIDATE_GIT_ARCHIVE_ZERO_VIOLATIONS_AND_GIT_ARCHIVE_PARITY",
+    "bounded_pagination_alpha096": "EXECUTED_15_OF_15_HISTORICAL_OPERATIONS_NORMALIZED_CURSOR8_OFFSET7_ARRAY_BODY_COMPATIBLE_MAX_OFFSET_1000000",
+    "api_contracts_alpha096": "EXECUTED_32_OF_32_99_PERCENT_13_FRAGMENTS_170_OPERATIONS_DEBT_39_0_56_85",
+    "architecture_targeted_alpha096": "EXECUTED_72_OF_72_CONTRACT_AND_TARGETED_TESTS_40_DIRECTLY_AFFECTED_ARCHITECTURE_AS_CODE_PASS_GLOBAL_INSTRUMENTED_TIMEOUT_AFTER_33_TESTS",
+    "java_pagination_smokes_alpha096": "EXECUTED_CORE_DCIM_PHYSICAL_DDI_IPAM_ITAM_COMPLIANCE_IAM_POLICY_PASS_LOCAL_JAVA21_0_11",
+    "web_local_runtime_alpha096": "EXECUTED_181_OF_181_LINE99_73_BRANCH98_53_FUNCTION100_SMOKE_PASS_LOCAL_NODE22_16_0",
+    "source_integrity_prepack_alpha096": "EXECUTED_45_OF_45_100_PERCENT_ZERO_VIOLATIONS_CANONICAL_INVENTORY_1241_PATHS",
+    "architecture_check_alpha096": "EXECUTED_PASS_ZERO_VIOLATIONS",
+    "toolchain_alpha096": "EXECUTED_25_OF_25_99_PERCENT_ZERO_VIOLATIONS_TARGET_EXACT_RUNTIME_PENDING",
+    "migration_alpha096": "EXECUTED_114_OF_114_99_PERCENT_ZERO_VIOLATIONS_NO_MIGRATION_CHANGE",
+    "eventing_alpha096": "EXECUTED_10_OF_10_100_PERCENT_ZERO_VIOLATIONS",
+    "persistence_alpha096": "EXECUTED_12_OF_12_98_PERCENT_ZERO_VIOLATIONS",
+    "capabilities_alpha096": "EXECUTED_10_OF_10_99_PERCENT_ZERO_VIOLATIONS",
+    "entitlements_alpha096": "EXECUTED_10_OF_10_100_PERCENT_ZERO_VIOLATIONS",
+    "audit_alpha096": "EXECUTED_8_OF_8_100_PERCENT_ZERO_VIOLATIONS",
+    "compose_contract_alpha096": "EXECUTED_64_OF_64",
+    "maven_target_jdk25_alpha096": "NON_EXECUTED_LOCAL_JAVA21_0_11_TARGET_TEMURIN25_0_4_PLUS_7_REQUIRED",
+    "web_target_node24_alpha096": "NON_EXECUTED_LOCAL_NODE22_16_0_PNPM_UNAVAILABLE_TARGET_NODE24_18_1_PNPM11_17_0_REQUIRED",
+    "docker_runtime_alpha096": "NON_EXECUTED_OPERATOR_DOCKER_DESKTOP_PRO_UP_SMOKE_HA_SMOKE_REQUIRED",
+    "browser_render_alpha096": "NON_EXECUTED_OPERATOR_WINDOWS_BROWSER_REVIEW_REQUIRED",
+    "source_inventory_paths_alpha096": 1241,
+    "packaging_tracked_files_alpha096": 1243,
+    "git_blob_checksums_alpha096": 1242,
+    "source_integrity_alpha096": "EXECUTED_45_OF_45_100_PERCENT_STAGED_SNAPSHOT_1243_TRACKED_PATHS_1242_GIT_BLOB_CHECKSUMS_1241_CANONICAL_INVENTORY_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
+    "archive_compatibility_unit_alpha096": "EXECUTED_12_OF_12_100_PERCENT",
+    "archive_compatibility_alpha096": "EXECUTED_CANDIDATE_GIT_ARCHIVE_ZERO_VIOLATIONS_AND_GIT_ARCHIVE_PARITY",
+    "canonical_idempotency_alpha097": "EXECUTED_IDEMPOTENCY_DEBT_39_TO_0_32_REQUIRED_IAM_RSOT_MUTATIONS_4_REPEATABLE_EVALUATIONS_3_SECURITY_EXEMPT_LOCAL_AUTH_DURABLE_RESERVATION_REPLAY_CONFLICT_AND_FAIL_CLOSED_INDETERMINATE",
+    "api_contracts_alpha097": "EXECUTED_32_OF_32_98_PERCENT_13_FRAGMENTS_170_OPERATIONS_DEBT_0_0_56_85",
+    "architecture_targeted_alpha097": "EXECUTED_56_OF_56_IDEMPOTENCY_IAM_RSOT_ARCHITECTURE_TESTS_ARCHITECTURE_AS_CODE_PASS_GLOBAL_INSTRUMENTED_TIMEOUT_AFTER_36_TESTS",
+    "jdbc_idempotency_compile_alpha097": "EXECUTED_LOCAL_JAVA21_0_11_XLINT_ALL_WERROR_CORE_EVENTS_AND_JDBC_IDEMPOTENCY_ADAPTER_SUBSET",
+    "web_local_runtime_alpha097": "EXECUTED_181_OF_181_LINE99_73_BRANCH98_53_FUNCTION100_SMOKE_PASS_LOCAL_NODE22_16_0",
+    "source_integrity_prepack_alpha097": "EXECUTED_45_OF_45_100_PERCENT_ZERO_VIOLATIONS_CANONICAL_INVENTORY_1255_PATHS",
+    "architecture_check_alpha097": "EXECUTED_PASS_ZERO_VIOLATIONS",
+    "toolchain_alpha097": "EXECUTED_25_OF_25_99_PERCENT_ZERO_VIOLATIONS_TARGET_EXACT_RUNTIME_PENDING",
+    "migration_alpha097": "EXECUTED_114_OF_114_99_PERCENT_ZERO_VIOLATIONS_MIGRATION_0032_CATALOGUED_POSTGRESQL_ORACLE_LIVE_DATABASE_APPLY_VERIFY_ROLLBACK_PENDING",
+    "eventing_alpha097": "EXECUTED_10_OF_10_100_PERCENT_ZERO_VIOLATIONS",
+    "persistence_alpha097": "EXECUTED_12_OF_12_98_PERCENT_ZERO_VIOLATIONS",
+    "capabilities_alpha097": "EXECUTED_10_OF_10_99_PERCENT_ZERO_VIOLATIONS",
+    "entitlements_alpha097": "EXECUTED_10_OF_10_100_PERCENT_ZERO_VIOLATIONS",
+    "audit_alpha097": "EXECUTED_8_OF_8_100_PERCENT_ZERO_VIOLATIONS",
+    "compose_contract_alpha097": "EXECUTED_64_OF_64",
+    "maven_target_jdk25_alpha097": "NON_EXECUTED_LOCAL_JAVA21_0_11_MAVEN_WRAPPER_FAIL_CLOSED_REQUIRES_JDK25_TARGET_TEMURIN25_0_4_PLUS_7",
+    "web_target_node24_alpha097": "NON_EXECUTED_LOCAL_NODE22_16_0_PNPM_UNAVAILABLE_TARGET_NODE24_18_1_PNPM11_17_0_REQUIRED",
+    "docker_runtime_alpha097": "NON_EXECUTED_OPERATOR_DOCKER_DESKTOP_PRO_UP_SMOKE_HA_SMOKE_REQUIRED",
+    "browser_render_alpha097": "NON_EXECUTED_OPERATOR_WINDOWS_BROWSER_REVIEW_REQUIRED",
+    "source_inventory_paths_alpha097": 1255,
+    "packaging_tracked_files_alpha097": 1257,
+    "git_blob_checksums_alpha097": 1256,
+    "source_integrity_alpha097": "EXECUTED_45_OF_45_100_PERCENT_STAGED_SNAPSHOT_1257_TRACKED_PATHS_1256_GIT_BLOB_CHECKSUMS_1255_CANONICAL_INVENTORY_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
+    "archive_compatibility_unit_alpha097": "EXECUTED_12_OF_12_100_PERCENT",
+    "archive_compatibility_alpha097": "EXECUTED_CANDIDATE_GIT_ARCHIVE_ZERO_VIOLATIONS_AND_GIT_ARCHIVE_PARITY"
   },
   "source_layout": "All production solution spaces are contained below src/; Java, Go and Web tests are repository-level under tests/; canonical relative paths are limited to 120 characters and path components to 80 characters.",
   "source_integrity": {
@@ -514,15 +568,15 @@
     "pre_commit_hook": ".githooks/pre-commit"
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.94",
+    "prefix": "infranexum-2.0.0-alpha.0.97",
     "archive_entries": 1221,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
     "source_recorded_files": 1220,
     "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
-    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.94-validation-evidence.zip"
+    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.97-validation-evidence.zip"
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.94-validation-evidence.zip",
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.97-validation-evidence.zip",
   "runtime_validation": {
     "web_local_runtime_alpha058": "EXECUTED_38_OF_38_LINE_99_67_BRANCH_98_33_FUNCTION_100_PROCESS_SMOKE_PASS_LOCAL_NODE22_BOOTSTRAP5_3_6_PROFESSIONAL_ADMIN_DASHBOARD_THEME_TOGGLE_TRUTHFUL_KPI_SAME_ORIGIN_ORGANIZATION_UI",
     "architecture_functional_alpha058": "EXECUTED_57_OF_57",
@@ -856,7 +910,7 @@
     "archive_compatibility_unit_alpha091": "EXECUTED_12_OF_12_100_PERCENT",
     "archive_compatibility_alpha091": "EXECUTED_CANDIDATE_GIT_ARCHIVE_ZERO_VIOLATIONS"
   },
-  "runtime_validation_note": "alpha.0.94 is a Web/UX corrective over the alpha.0.93 PGM-05-E01 phase-1 baseline. Search/filter/context controls use responsive inline inx-filter-bar toolbars; table headers use high-contrast Midnight/Blue with restrained Turquoise/Green/Orange accents; tablists use a subtle palette spectrum with a readable Midnight/Blue active state. Executed: Web 178/178 with 99.73% line, 98.53% branch and 100% function coverage plus smoke; directly affected architecture 8/8 and Architecture-as-Code PASS; Source Integrity 45/45 at 100% and 0 violations; API Contracts 28/28 at 99%, 13 fragments/170 operations, debt unchanged 39/15/56/85; Toolchains 25/25; Migrations 114/114; Eventing 10/10; Persistence 12/12; Capabilities 10/10; Entitlements 10/10; Audit 8/8; Compose 64/64. Full architecture test run timed out after 33 tests with no observed assertion failure. Exact JDK25, Node24.18.1/pnpm11.17.0, Windows browser review and Docker Desktop PRO remain external gates.",
+  "runtime_validation_note": "alpha.0.97 PGM-05-E01 phase 4 closes idempotency debt 39->0. Thirty-two IAM/RSOT mutations use the canonical durable API ledger; four evaluation operations are repeatable and three Local Auth operations are security-exempt from generic replay persistence. The ledger prevents automatic duplicate execution by retaining indeterminate reservations fail-closed; it does not claim a single physical transaction with IAM/RSOT business mutations. Exact JDK25/Node24+pnpm and Docker Desktop PRO remain external promotion gates.",
   "pgm08e01_ddi_ipam_alpha083": "EXECUTED_DOMAIN_JDBC_API_CLI_WEB_MIGRATION_ARCHITECTURE_AND_OFFLINE_SMOKE_TARGET_JDK25_MAVEN_AND_LIVE_DATABASES_PENDING",
   "architecture_functional_alpha083": "EXECUTED_151_OF_151_SPLIT_DETERMINISTIC_GROUPS",
   "architecture_check_alpha083": "EXECUTED_PASS_ZERO_VIOLATIONS",
@@ -985,5 +1039,24 @@
   "source_inventory_paths_alpha094": 1227,
   "source_integrity_alpha094": "EXECUTED_45_OF_45_100_PERCENT_STAGED_SNAPSHOT_1230_TRACKED_PATHS_1229_GIT_BLOB_CHECKSUMS_1227_CANONICAL_INVENTORY_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
   "archive_compatibility_unit_alpha094": "EXECUTED_12_OF_12_100_PERCENT",
-  "archive_compatibility_alpha094": "EXECUTED_CANDIDATE_GIT_ARCHIVE_ZERO_VIOLATIONS_AND_GIT_ARCHIVE_PARITY"
+  "archive_compatibility_alpha094": "EXECUTED_CANDIDATE_GIT_ARCHIVE_ZERO_VIOLATIONS_AND_GIT_ARCHIVE_PARITY",
+  "api_problem_runtime_alpha095": "EXECUTED_CANONICAL_APIPROBLEM_SHARED_FACTORY_SERIALIZER_MVC_TERMINAL_FILTERS_REDACTED_BOUNDED_CORRELATED_COMPATIBLE",
+  "api_contracts_alpha095": "EXECUTED_30_OF_30_99_PERCENT_13_FRAGMENTS_170_OPERATIONS_DEBT_39_15_56_85",
+  "architecture_targeted_alpha095": "EXECUTED_81_OF_81_ARCHITECTURE_AS_CODE_PASS_GLOBAL_INSTRUMENTED_TIMEOUT_AFTER_27_TESTS",
+  "web_local_runtime_alpha095": "EXECUTED_178_OF_178_LINE99_73_BRANCH98_53_FUNCTION100_SMOKE_PASS_LOCAL_NODE22_16_0",
+  "source_integrity_prepack_alpha095": "EXECUTED_45_OF_45_100_PERCENT_ZERO_VIOLATIONS_CANONICAL_INVENTORY_1233_PATHS",
+  "packaging_tracked_files_alpha095": 1235,
+  "git_blob_checksums_alpha095": 1234,
+  "source_integrity_alpha095": "EXECUTED_STAGED_SNAPSHOT_1235_TRACKED_1234_GIT_BLOB_CHECKSUMS_1233_INVENTORY_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
+  "toolchain_alpha095": "EXECUTED_25_OF_25_99_PERCENT_ZERO_VIOLATIONS_TARGET_EXACT_RUNTIME_PENDING",
+  "migration_alpha095": "EXECUTED_114_OF_114_99_PERCENT_ZERO_VIOLATIONS_NO_MIGRATION_CHANGE",
+  "eventing_alpha095": "EXECUTED_10_OF_10_100_PERCENT_ZERO_VIOLATIONS",
+  "persistence_alpha095": "EXECUTED_12_OF_12_98_PERCENT_ZERO_VIOLATIONS",
+  "capabilities_alpha095": "EXECUTED_10_OF_10_99_PERCENT_ZERO_VIOLATIONS",
+  "entitlements_alpha095": "EXECUTED_10_OF_10_100_PERCENT_ZERO_VIOLATIONS",
+  "audit_alpha095": "EXECUTED_8_OF_8_100_PERCENT_ZERO_VIOLATIONS",
+  "compose_contract_alpha095": "EXECUTED_64_OF_64",
+  "maven_target_jdk25_alpha095": "NON_EXECUTED_LOCAL_JAVA21_0_11_TARGET_JDK25_0_4_PLUS_7_REQUIRED",
+  "web_target_node24_alpha095": "NON_EXECUTED_LOCAL_NODE22_16_0_PNPM_UNAVAILABLE_TARGET_NODE24_18_1_PNPM11_17_0_REQUIRED",
+  "docker_runtime_alpha095": "NON_EXECUTED_OPERATOR_DOCKER_DESKTOP_PRO_UP_SMOKE_HA_SMOKE_REQUIRED"
 }

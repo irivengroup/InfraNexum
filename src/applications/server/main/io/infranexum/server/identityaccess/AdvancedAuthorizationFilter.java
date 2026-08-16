@@ -6,6 +6,7 @@ import io.infranexum.identity.access.domain.PolicyEvaluationRequest;
 import io.infranexum.identity.access.domain.PolicyEvaluationResult;
 import io.infranexum.identity.access.domain.PolicyObligation;
 import io.infranexum.identity.access.ports.IdentityAccessFeaturePolicy;
+import io.infranexum.server.http.ApiProblemSupport;
 import io.infranexum.server.identity.LocalAuthenticationFilter;
 import io.infranexum.server.observability.CorrelationContext;
 import io.infranexum.server.platform.PlatformCapabilityService;
@@ -14,12 +15,11 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import org.springframework.core.Ordered;
-import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /** Advanced PEP applying ABAC after RBAC; every non-PERMIT decision is fail-closed. */
@@ -35,14 +35,17 @@ public final class AdvancedAuthorizationFilter extends OncePerRequestFilter impl
     private final PolicyDecisionService decisions;
     private final IdentityAccessFeaturePolicy features;
     private final PlatformCapabilityService capabilities;
+    private final ApiProblemSupport problems;
 
     public AdvancedAuthorizationFilter(
             PolicyDecisionService decisions,
             IdentityAccessFeaturePolicy features,
-            PlatformCapabilityService capabilities) {
+            PlatformCapabilityService capabilities,
+            ApiProblemSupport problems) {
         this.decisions = Objects.requireNonNull(decisions, "decisions");
         this.features = Objects.requireNonNull(features, "features");
         this.capabilities = Objects.requireNonNull(capabilities, "capabilities");
+        this.problems = Objects.requireNonNull(problems, "problems");
     }
 
     @Override public int getOrder() { return ORDER; }
@@ -126,28 +129,11 @@ public final class AdvancedAuthorizationFilter extends OncePerRequestFilter impl
                 && normalized.chars().noneMatch(Character::isISOControl);
     }
 
-    private static void reject(HttpServletRequest request, HttpServletResponse response, int status, String code, String detail)
+    private void reject(HttpServletRequest request, HttpServletResponse response, int status, String code, String detail)
             throws IOException {
-        if (response.isCommitted()) throw new IOException("authorization rejection response was committed before the ABAC boundary");
-        response.resetBuffer();
-        response.setStatus(status);
-        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
-        response.setHeader("Cache-Control", "no-store");
-        String correlation = CorrelationContext.traceId(request);
-        if (correlation == null) correlation = "unavailable";
-        else response.setHeader(CorrelationContext.HEADER_NAME, correlation);
-        String body = "{\"status\":" + status + ",\"title\":\"Authorization denied\",\"code\":\"" + code
-                + "\",\"detail\":\"" + json(detail) + "\",\"correlation_id\":\"" + correlation
-                + "\",\"trace_id\":\"" + correlation + "\"}\n";
-        byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
-        response.setContentLength(bytes.length);
-        response.getOutputStream().write(bytes);
-        response.flushBuffer();
+        HttpStatus httpStatus = HttpStatus.valueOf(status);
+        problems.write(response, problems.problem(
+                httpStatus, code, "Authorization denied", detail, Map.of(), Map.of(), request));
     }
 
-    private static String json(String value) {
-        return value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")
-                .replace("\r", "\\r").replace("\t", "\\t");
-    }
 }

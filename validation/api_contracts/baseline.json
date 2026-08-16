@@ -1,65 +1,5 @@
 {
-  "schema": "infranexum.api-contract-debt/v1",
-  "description": "Historical API contract gaps frozen by PGM-05-E01. New debt is forbidden; remediation may only remove operationIds.",
   "debt": {
-    "idempotency": [
-      "activateIamAccessPolicy",
-      "activateIamUser",
-      "addIamGroupMember",
-      "approveIamAccessPolicy",
-      "assignIamGroupRole",
-      "assignIamUserRole",
-      "changeLocalPassword",
-      "createIamAccessPolicy",
-      "createIamGroup",
-      "createIamPermission",
-      "createIamRole",
-      "createIamRoleAssignment",
-      "createIamUser",
-      "createIamUserMembership",
-      "createLocalSession",
-      "createRsotSchema",
-      "createRsotSchemaProfile",
-      "decideIamAuthorization",
-      "deleteIamGroup",
-      "deleteIamPermission",
-      "deleteIamRole",
-      "deleteIamUser",
-      "deprecateRsotSchema",
-      "deprecateRsotSchemaProfile",
-      "explainIamAuthorization",
-      "publishRsotSchema",
-      "publishRsotSchemaProfile",
-      "removeIamGroupMember",
-      "revokeCurrentLocalSession",
-      "revokeIamRoleAssignment",
-      "suspendIamUser",
-      "updateIamGroup",
-      "updateIamPermission",
-      "updateIamRole",
-      "updateIamUser",
-      "updateRsotSchemaDraft",
-      "validateIamAccessPolicy",
-      "validateIamPermission",
-      "validateLocalPasswordPolicy"
-    ],
-    "pagination": [
-      "listDcimCables",
-      "listDcimEquipment",
-      "listDcimEquipmentModels",
-      "listDcimEquipmentPorts",
-      "listDcimRacks",
-      "listIamRoleAssignments",
-      "listIamUserMemberships",
-      "listIpamAddresses",
-      "listIpamNetworks",
-      "listIpamPools",
-      "listIpamVlans",
-      "listIpamVrfs",
-      "listItamComplianceAlerts",
-      "listItamSupportAuthorizations",
-      "listItamWarrantyTypes"
-    ],
     "capability": [
       "activateIamAccessPolicy",
       "activateIamUser",
@@ -118,6 +58,8 @@
       "validateIamPermission",
       "validateLocalPasswordPolicy"
     ],
+    "idempotency": [],
+    "pagination": [],
     "permission": [
       "activateIamAccessPolicy",
       "activateIamUser",
@@ -205,5 +147,7 @@
       "validateIamPermission",
       "validateLocalPasswordPolicy"
     ]
-  }
+  },
+  "description": "Historical API contract gaps frozen by PGM-05-E01. New debt is forbidden; remediation may only remove operationIds.",
+  "schema": "infranexum.api-contract-debt/v1"
 }

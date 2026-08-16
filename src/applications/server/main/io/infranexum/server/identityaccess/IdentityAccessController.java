@@ -13,6 +13,7 @@ import io.infranexum.identity.access.domain.AuthorizationScope;
 import io.infranexum.identity.access.domain.PermissionCodes;
 import io.infranexum.identity.access.domain.ScopeKind;
 import io.infranexum.server.configuration.ServerTemporalInputParser;
+import io.infranexum.server.http.ApiPagination;
 import io.infranexum.server.identity.LocalAuthenticationFilter;
 import io.infranexum.server.observability.CorrelationContext;
 import jakarta.servlet.http.HttpServletRequest;
@@ -54,7 +55,7 @@ public final class IdentityAccessController {
     @PostMapping("/api/v1/iam/users/{userId}/suspend")
     UserResponse suspendUser(@PathVariable String userId,@Valid @RequestBody(required=false) ReasonRequest body,HttpServletRequest request){return UserResponse.from(service.suspendUser(id(userId),context(request,body==null?null:body.reason())));}
     @GetMapping("/api/v1/iam/users/{userId}/memberships")
-    List<MembershipResponse> memberships(@PathVariable String userId){return service.memberships(id(userId)).stream().map(MembershipResponse::from).toList();}
+    ResponseEntity<List<MembershipResponse>> memberships(@PathVariable String userId,@RequestParam(defaultValue="0")int offset,@RequestParam(defaultValue="50")int limit){var page=service.memberships(id(userId),offset,limit);return ApiPagination.offset(page.items().stream().map(MembershipResponse::from).toList(),page.nextOffset(),limit);}
     @PostMapping("/api/v1/iam/users/{userId}/memberships")
     ResponseEntity<MembershipResponse> addMembership(@PathVariable String userId,@Valid @RequestBody MembershipRequest body,HttpServletRequest request){var result=service.addMembership(id(userId),id(body.organizationId()),nullableId(body.subdivisionId()),instant(body.effectiveFrom(),"effectiveFrom"),instant(body.effectiveTo(),"effectiveTo"),context(request,body.reason()));return ResponseEntity.status(HttpStatus.CREATED).body(MembershipResponse.from(result));}
     @PostMapping("/api/v1/iam/users/{userId}/roles")
@@ -94,7 +95,7 @@ public final class IdentityAccessController {
     @DeleteMapping("/api/v1/organizations/{orgId}/roles/{roleId}")
     RoleResponse deleteRole(@PathVariable String orgId,@PathVariable String roleId,@RequestParam(defaultValue="false")boolean force,@RequestParam(required=false)String reason,HttpServletRequest request){RoleResponse current=RoleResponse.from(service.getRole(id(roleId)));requireOwned(current.organizationId(),orgId);return RoleResponse.from(service.deleteRole(id(roleId),force,context(request,reason)));}
     @GetMapping("/api/v1/organizations/{orgId}/roles/{roleId}/assignments")
-    List<RoleAssignmentResponse> roleAssignments(@PathVariable String orgId,@PathVariable String roleId){RoleResponse current=RoleResponse.from(service.getRole(id(roleId)));requireOwned(current.organizationId(),orgId);return service.assignments(id(roleId)).stream().map(RoleAssignmentResponse::from).toList();}
+    ResponseEntity<List<RoleAssignmentResponse>> roleAssignments(@PathVariable String orgId,@PathVariable String roleId,@RequestParam(defaultValue="0")int offset,@RequestParam(defaultValue="50")int limit){RoleResponse current=RoleResponse.from(service.getRole(id(roleId)));requireOwned(current.organizationId(),orgId);var page=service.assignments(id(roleId),offset,limit);return ApiPagination.offset(page.items().stream().map(RoleAssignmentResponse::from).toList(),page.nextOffset(),limit);}
     @PostMapping("/api/v1/organizations/{orgId}/roles/{roleId}/assignments")
     ResponseEntity<RoleAssignmentResponse> assignRole(@PathVariable String orgId,@PathVariable String roleId,@Valid @RequestBody RoleAssignmentRequest body,HttpServletRequest request){var result=service.assignRole(id(roleId),body.actorType(),id(body.actorId()),scope(body.scopeKind(),orgId,body.subdivisionId()),instant(body.effectiveFrom(),"effectiveFrom"),instant(body.effectiveTo(),"effectiveTo"),context(request,body.reason()));return ResponseEntity.status(HttpStatus.CREATED).body(RoleAssignmentResponse.from(result));}
     @DeleteMapping("/api/v1/organizations/{orgId}/roles/{roleId}/assignments/{assignmentId}")

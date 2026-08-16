@@ -19,6 +19,7 @@ test('RSOT schema client is capability gated and sends CSRF plus If-Match on mut
   assert.equal(observed.url, `/api/v1/rsot/schemas/${ID}`);
   assert.equal(observed.options.headers['X-CSRF-Token'], 'csrf-token');
   assert.equal(observed.options.headers['If-Match'], '"rev-2"');
+  assert.match(observed.options.headers['Idempotency-Key'], /^[A-Za-z0-9._:-]{8,200}$/);
   assert.equal(result.etag, '"rev-3"');
 });
 

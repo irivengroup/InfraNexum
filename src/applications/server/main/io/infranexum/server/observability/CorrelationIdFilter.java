@@ -2,6 +2,7 @@ package io.infranexum.server.observability;
 
 import io.infranexum.core.contracts.DomainIdentifier;
 import io.infranexum.core.contracts.UuidV7Generator;
+import io.infranexum.server.http.ApiProblemSupport;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.servlet.FilterChain;
@@ -9,14 +10,11 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.time.Clock;
-import java.time.temporal.ChronoUnit;
+import java.util.Map;
 import java.util.Objects;
 import org.slf4j.MDC;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.Ordered;
-import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
@@ -30,15 +28,15 @@ public final class CorrelationIdFilter extends OncePerRequestFilter implements O
     private static final String INVALID_CODE = "INFRANEXUM_INVALID_CORRELATION_ID";
 
     private final UuidV7Generator identifiers;
-    private final Clock clock;
     private final Counter generated;
     private final Counter rejected;
+    private final ApiProblemSupport problems;
 
     public CorrelationIdFilter(
-            UuidV7Generator identifiers, @Qualifier("platformClock") Clock clock, MeterRegistry registry) {
+            UuidV7Generator identifiers, MeterRegistry registry, ApiProblemSupport problems) {
         this.identifiers = Objects.requireNonNull(identifiers, "identifiers");
-        this.clock = Objects.requireNonNull(clock, "clock");
         Objects.requireNonNull(registry, "registry");
+        this.problems = Objects.requireNonNull(problems, "problems");
         this.generated = Counter.builder("infranexum.http.correlation.generated")
                 .description("Accepted HTTP requests with no caller correlation identifier")
                 .register(registry);
@@ -112,22 +110,16 @@ public final class CorrelationIdFilter extends OncePerRequestFilter implements O
 
     private void reject(HttpServletResponse response, DomainIdentifier serverCorrelationId) throws IOException {
         rejected.increment();
-        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
-        response.setHeader("Cache-Control", "no-store");
-        response.setHeader(CorrelationContext.HEADER_NAME, serverCorrelationId.toString());
-        String occurredAt = clock.instant().truncatedTo(ChronoUnit.SECONDS).toString();
-        String problem = "{"
-                + "\"type\":\"urn:infranexum:problem:invalid-correlation-id\","
-                + "\"title\":\"Invalid correlation identifier\","
-                + "\"status\":400,"
-                + "\"detail\":\"X-Correlation-ID must be a canonical UUIDv7 identifier\","
-                + "\"instance\":\"urn:infranexum:request:" + serverCorrelationId + "\","
-                + "\"code\":\"" + INVALID_CODE + "\","
-                + "\"occurred_at\":\"" + occurredAt + "\","
-                + "\"trace_id\":\"" + serverCorrelationId + "\"}"
-                + System.lineSeparator();
-        response.getWriter().write(problem);
+        var problem = problems.problem(
+                HttpStatus.BAD_REQUEST,
+                INVALID_CODE,
+                "Invalid correlation identifier",
+                "X-Correlation-ID must be a canonical UUIDv7 identifier",
+                Map.of(),
+                Map.of(),
+                null,
+                serverCorrelationId.toString());
+        problems.write(response, problem);
     }
+
 }

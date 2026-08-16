@@ -49,7 +49,7 @@ class ApiContractGovernanceArchitectureTests(unittest.TestCase):
         document = (ROOT / "docs/api-platform-contract-governance.md").read_text(encoding="utf-8")
         self.assertIn("PGM-05-E01 remains **IN PROGRESS**", document)
         self.assertIn("idempotency=39", document.replace(" **39**", "=39"))
-        self.assertIn("pagination=15", document.replace(" **15**", "=15"))
+        self.assertIn("pagination=0", document.replace(" **0**", "=0"))
         self.assertIn("capability=56", document.replace(" **56**", "=56"))
         self.assertIn("permission=85", document.replace(" **85**", "=85"))
 

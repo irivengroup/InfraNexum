@@ -1,176 +1,1116 @@
 openapi: 3.1.0
 info:
   title: InfraNexum DCIM Physical API
-  version: 2.0.0-alpha.0.94
+  version: 2.0.0-alpha.0.97
   description: PGM-07-E05 rack occupancy, equipment footprints, physical ports and point-to-point cabling.
 tags:
-  - name: DCIM / Physical / Models
-  - name: DCIM / Physical / Racks
-  - name: DCIM / Physical / Equipment
-  - name: DCIM / Physical / Cabling
+- name: DCIM / Physical / Models
+- name: DCIM / Physical / Racks
+- name: DCIM / Physical / Equipment
+- name: DCIM / Physical / Cabling
 x-tagGroups:
-  - name: DCIM
-    tags: [DCIM / Physical / Models, DCIM / Physical / Racks, DCIM / Physical / Equipment, DCIM / Physical / Cabling]
+- name: DCIM
+  tags:
+  - DCIM / Physical / Models
+  - DCIM / Physical / Racks
+  - DCIM / Physical / Equipment
+  - DCIM / Physical / Cabling
 paths:
   /api/v1/dcim/equipment-models:
     get:
-      tags: [DCIM / Physical / Models]
+      tags:
+      - DCIM / Physical / Models
       operationId: listDcimEquipmentModels
       x-infranexum-capability: dcim.physical
       summary: List governed equipment models
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/OrganizationId'}, {$ref: '#/components/parameters/Limit'}]
-      responses: {'200': {description: Equipment models, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/EquipmentModel'}}}}}, '403': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/OrganizationId'
+      - $ref: '#/components/parameters/Limit'
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          maximum: 1000000
+      responses:
+        '200':
+          description: Equipment models
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EquipmentModel'
+          headers:
+            X-Page-Limit:
+              description: Effective bounded page size.
+              schema:
+                type: integer
+                minimum: 1
+            X-Next-Offset:
+              description: Offset for the next page; absent when the current page is terminal.
+              schema:
+                type: integer
+                minimum: 0
+        '403':
+          $ref: '#/components/responses/Problem'
+      x-infranexum-pagination: offset
     post:
-      tags: [DCIM / Physical / Models]
+      tags:
+      - DCIM / Physical / Models
       operationId: createDcimEquipmentModel
       x-infranexum-capability: dcim.physical
       summary: Create a multi-vendor equipment model and port templates
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
-      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CreateEquipmentModel'}}}}
-      responses: {'201': {description: Created model, headers: {ETag: {$ref: '#/components/headers/ETag'}}, content: {application/json: {schema: {$ref: '#/components/schemas/EquipmentModel'}}}}, '400': {$ref: '#/components/responses/Problem'}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}, '422': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEquipmentModel'
+      responses:
+        '201':
+          description: Created model
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EquipmentModel'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '409':
+          $ref: '#/components/responses/Problem'
+        '422':
+          $ref: '#/components/responses/Problem'
   /api/v1/dcim/equipment-models/{id}/status:
     post:
-      tags: [DCIM / Physical / Models]
+      tags:
+      - DCIM / Physical / Models
       operationId: changeDcimEquipmentModelStatus
       x-infranexum-capability: dcim.physical
       summary: Change equipment model lifecycle status
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/Id'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
-      requestBody: {$ref: '#/components/requestBodies/Status'}
-      responses: {'200': {description: Updated model, content: {application/json: {schema: {$ref: '#/components/schemas/EquipmentModel'}}}}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/Id'
+      - $ref: '#/components/parameters/IfMatch'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        $ref: '#/components/requestBodies/Status'
+      responses:
+        '200':
+          description: Updated model
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EquipmentModel'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '409':
+          $ref: '#/components/responses/Problem'
   /api/v1/dcim/racks:
     get:
-      tags: [DCIM / Physical / Racks]
+      tags:
+      - DCIM / Physical / Racks
       operationId: listDcimRacks
       x-infranexum-capability: dcim.physical
       summary: List racks, optionally within a room
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/OrganizationId'}, {name: room_id, in: query, schema: {$ref: '#/components/schemas/Uuid'}}, {$ref: '#/components/parameters/Limit'}]
-      responses: {'200': {description: Racks, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Rack'}}}}}, '403': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/OrganizationId'
+      - name: room_id
+        in: query
+        schema:
+          $ref: '#/components/schemas/Uuid'
+      - $ref: '#/components/parameters/Limit'
+      - name: cursor
+        in: query
+        required: false
+        description: Opaque continuation position encoded as the last returned InfraNexum UUIDv7 identifier.
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Racks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Rack'
+          headers:
+            X-Page-Limit:
+              description: Effective bounded page size.
+              schema:
+                type: integer
+                minimum: 1
+            X-Next-Cursor:
+              description: Cursor for the next page; absent when the current page is terminal.
+              schema:
+                type: string
+                format: uuid
+        '403':
+          $ref: '#/components/responses/Problem'
+      x-infranexum-pagination: cursor
     post:
-      tags: [DCIM / Physical / Racks]
+      tags:
+      - DCIM / Physical / Racks
       operationId: createDcimRack
       x-infranexum-capability: dcim.physical
       summary: Create a rack in an existing room
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
-      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CreateRack'}}}}
-      responses: {'201': {description: Created rack, content: {application/json: {schema: {$ref: '#/components/schemas/Rack'}}}}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}, '422': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRack'
+      responses:
+        '201':
+          description: Created rack
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rack'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '409':
+          $ref: '#/components/responses/Problem'
+        '422':
+          $ref: '#/components/responses/Problem'
   /api/v1/dcim/racks/{id}/status:
     post:
-      tags: [DCIM / Physical / Racks]
+      tags:
+      - DCIM / Physical / Racks
       operationId: changeDcimRackStatus
       x-infranexum-capability: dcim.physical
       summary: Change rack lifecycle status
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/Id'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
-      requestBody: {$ref: '#/components/requestBodies/Status'}
-      responses: {'200': {description: Updated rack, content: {application/json: {schema: {$ref: '#/components/schemas/Rack'}}}}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/Id'
+      - $ref: '#/components/parameters/IfMatch'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        $ref: '#/components/requestBodies/Status'
+      responses:
+        '200':
+          description: Updated rack
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rack'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '409':
+          $ref: '#/components/responses/Problem'
   /api/v1/dcim/equipment:
     get:
-      tags: [DCIM / Physical / Equipment]
+      tags:
+      - DCIM / Physical / Equipment
       operationId: listDcimEquipment
       x-infranexum-capability: dcim.physical
       summary: List installed equipment
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/OrganizationId'}, {name: rack_id, in: query, schema: {$ref: '#/components/schemas/Uuid'}}, {$ref: '#/components/parameters/Limit'}]
-      responses: {'200': {description: Equipment, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Equipment'}}}}}, '403': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/OrganizationId'
+      - name: rack_id
+        in: query
+        schema:
+          $ref: '#/components/schemas/Uuid'
+      - $ref: '#/components/parameters/Limit'
+      - name: cursor
+        in: query
+        required: false
+        description: Opaque continuation position encoded as the last returned InfraNexum UUIDv7 identifier.
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Equipment
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Equipment'
+          headers:
+            X-Page-Limit:
+              description: Effective bounded page size.
+              schema:
+                type: integer
+                minimum: 1
+            X-Next-Cursor:
+              description: Cursor for the next page; absent when the current page is terminal.
+              schema:
+                type: string
+                format: uuid
+        '403':
+          $ref: '#/components/responses/Problem'
+      x-infranexum-pagination: cursor
     post:
-      tags: [DCIM / Physical / Equipment]
+      tags:
+      - DCIM / Physical / Equipment
       operationId: installDcimEquipment
       x-infranexum-capability: dcim.physical
       summary: Install equipment into free rack units and instantiate physical ports
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
-      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/InstallEquipment'}}}}
-      responses: {'201': {description: Installed equipment, content: {application/json: {schema: {$ref: '#/components/schemas/Equipment'}}}}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}, '422': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InstallEquipment'
+      responses:
+        '201':
+          description: Installed equipment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Equipment'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '409':
+          $ref: '#/components/responses/Problem'
+        '422':
+          $ref: '#/components/responses/Problem'
   /api/v1/dcim/equipment/{id}/move:
     post:
-      tags: [DCIM / Physical / Equipment]
+      tags:
+      - DCIM / Physical / Equipment
       operationId: moveDcimEquipment
       x-infranexum-capability: dcim.physical
       summary: Move equipment to another free rack footprint
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/Id'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
-      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/MoveEquipment'}}}}
-      responses: {'200': {description: Moved equipment, content: {application/json: {schema: {$ref: '#/components/schemas/Equipment'}}}}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/Id'
+      - $ref: '#/components/parameters/IfMatch'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoveEquipment'
+      responses:
+        '200':
+          description: Moved equipment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Equipment'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '409':
+          $ref: '#/components/responses/Problem'
   /api/v1/dcim/equipment/{id}/status:
     post:
-      tags: [DCIM / Physical / Equipment]
+      tags:
+      - DCIM / Physical / Equipment
       operationId: changeDcimEquipmentStatus
       x-infranexum-capability: dcim.physical
       summary: Change equipment lifecycle status
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/Id'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
-      requestBody: {$ref: '#/components/requestBodies/Status'}
-      responses: {'200': {description: Updated equipment, content: {application/json: {schema: {$ref: '#/components/schemas/Equipment'}}}}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/Id'
+      - $ref: '#/components/parameters/IfMatch'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        $ref: '#/components/requestBodies/Status'
+      responses:
+        '200':
+          description: Updated equipment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Equipment'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '409':
+          $ref: '#/components/responses/Problem'
   /api/v1/dcim/equipment/{id}/ports:
     get:
-      tags: [DCIM / Physical / Equipment]
+      tags:
+      - DCIM / Physical / Equipment
       operationId: listDcimEquipmentPorts
       x-infranexum-capability: dcim.physical
       summary: List instantiated physical ports for equipment
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/Id'}]
-      responses: {'200': {description: Physical ports, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/PhysicalPort'}}}}}, '403': {$ref: '#/components/responses/Problem'}, '404': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/Id'
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          maximum: 1000000
+      responses:
+        '200':
+          description: Physical ports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PhysicalPort'
+          headers:
+            X-Page-Limit:
+              description: Effective bounded page size.
+              schema:
+                type: integer
+                minimum: 1
+            X-Next-Offset:
+              description: Offset for the next page; absent when the current page is terminal.
+              schema:
+                type: integer
+                minimum: 0
+        '403':
+          $ref: '#/components/responses/Problem'
+        '404':
+          $ref: '#/components/responses/Problem'
+      x-infranexum-pagination: offset
   /api/v1/dcim/cables:
     get:
-      tags: [DCIM / Physical / Cabling]
+      tags:
+      - DCIM / Physical / Cabling
       operationId: listDcimCables
       x-infranexum-capability: dcim.physical
       summary: List physical cable connections
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/OrganizationId'}, {$ref: '#/components/parameters/Limit'}]
-      responses: {'200': {description: Cables, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Cable'}}}}}, '403': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/OrganizationId'
+      - $ref: '#/components/parameters/Limit'
+      - name: cursor
+        in: query
+        required: false
+        description: Opaque continuation position encoded as the last returned InfraNexum UUIDv7 identifier.
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Cables
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Cable'
+          headers:
+            X-Page-Limit:
+              description: Effective bounded page size.
+              schema:
+                type: integer
+                minimum: 1
+            X-Next-Cursor:
+              description: Cursor for the next page; absent when the current page is terminal.
+              schema:
+                type: string
+                format: uuid
+        '403':
+          $ref: '#/components/responses/Problem'
+      x-infranexum-pagination: cursor
     post:
-      tags: [DCIM / Physical / Cabling]
+      tags:
+      - DCIM / Physical / Cabling
       operationId: connectDcimPorts
       x-infranexum-capability: dcim.physical
       summary: Connect two compatible free physical ports
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
-      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ConnectPorts'}}}}
-      responses: {'201': {description: Created cable, content: {application/json: {schema: {$ref: '#/components/schemas/Cable'}}}}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}, '422': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectPorts'
+      responses:
+        '201':
+          description: Created cable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cable'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '409':
+          $ref: '#/components/responses/Problem'
+        '422':
+          $ref: '#/components/responses/Problem'
   /api/v1/dcim/cables/{id}/disconnect:
     post:
-      tags: [DCIM / Physical / Cabling]
+      tags:
+      - DCIM / Physical / Cabling
       operationId: disconnectDcimCable
       x-infranexum-capability: dcim.physical
       summary: Disconnect an active physical cable
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/Id'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
-      requestBody: {$ref: '#/components/requestBodies/Status'}
-      responses: {'200': {description: Disconnected cable, content: {application/json: {schema: {$ref: '#/components/schemas/Cable'}}}}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/Id'
+      - $ref: '#/components/parameters/IfMatch'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        $ref: '#/components/requestBodies/Status'
+      responses:
+        '200':
+          description: Disconnected cable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cable'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '409':
+          $ref: '#/components/responses/Problem'
 components:
   securitySchemes:
-    sessionCookie: {type: apiKey, in: cookie, name: INFRANEXUM_SESSION}
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: INFRANEXUM_SESSION
   parameters:
-    OrganizationId: {name: organization_id, in: query, required: true, schema: {$ref: '#/components/schemas/Uuid'}}
-    Id: {name: id, in: path, required: true, schema: {$ref: '#/components/schemas/Uuid'}}
-    Limit: {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 200, default: 100}}
-    IfMatch: {name: If-Match, in: header, required: true, schema: {type: string, pattern: '^"ver-[1-9][0-9]*"$'}}
-    IdempotencyKey: {name: Idempotency-Key, in: header, required: true, schema: {type: string, minLength: 8, maxLength: 200}}
+    OrganizationId:
+      name: organization_id
+      in: query
+      required: true
+      schema:
+        $ref: '#/components/schemas/Uuid'
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/Uuid'
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 100
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      schema:
+        type: string
+        pattern: ^"ver-[1-9][0-9]*"$
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request
+        semantics returns HTTP 409.
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 200
+        pattern: ^[A-Za-z0-9._:-]+$
   headers:
-    ETag: {schema: {type: string}}
+    ETag:
+      schema:
+        type: string
+    CorrelationId:
+      description: Canonical UUIDv7 correlation identifier assigned to the request.
+      schema:
+        type: string
+        format: uuid
+        pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
   requestBodies:
-    Status: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/StatusRequest'}}}}
+    Status:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StatusRequest'
   responses:
-    Problem: {description: RFC 9457 problem, content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}}
+    Problem:
+      description: RFC 9457 problem
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
   schemas:
-    Uuid: {type: string, format: uuid}
-    Reason: {type: string, minLength: 2, maxLength: 1024}
-    PortTemplate: {type: object, additionalProperties: false, required: [namePrefix,count,kind,media,connector], properties: {namePrefix: {type: string, maxLength: 24}, count: {type: integer, minimum: 1, maximum: 512}, kind: {type: string, enum: [network,power,console,fiber,other]}, media: {type: string, maxLength: 32}, connector: {type: string, maxLength: 32}}}
-    CreateEquipmentModel: {type: object, additionalProperties: false, required: [organizationId,manufacturerPartnerId,code,displayName,formFactor,rackUnits,widthMm,depthMm,portTemplates,reason], properties: {organizationId: {$ref: '#/components/schemas/Uuid'}, manufacturerPartnerId: {$ref: '#/components/schemas/Uuid'}, code: {type: string, minLength: 3, maxLength: 64}, displayName: {type: string, minLength: 3, maxLength: 128}, formFactor: {type: string, maxLength: 32}, rackUnits: {type: integer, minimum: 1, maximum: 100}, widthMm: {type: integer, minimum: 1, maximum: 5000}, depthMm: {type: integer, minimum: 1, maximum: 5000}, weightKg: {type: [number,'null'], exclusiveMinimum: 0}, portTemplates: {type: array, minItems: 1, items: {$ref: '#/components/schemas/PortTemplate'}}, description: {type: [string,'null'], maxLength: 4000}, reason: {$ref: '#/components/schemas/Reason'}}}
-    CreateRack: {type: object, additionalProperties: false, required: [organizationId,subdivisionId,roomId,code,displayName,heightU,widthMm,depthMm,reason], properties: {organizationId: {$ref: '#/components/schemas/Uuid'}, subdivisionId: {$ref: '#/components/schemas/Uuid'}, roomId: {$ref: '#/components/schemas/Uuid'}, code: {type: string}, displayName: {type: string}, heightU: {type: integer, minimum: 1, maximum: 100}, widthMm: {type: integer, minimum: 1, maximum: 5000}, depthMm: {type: integer, minimum: 1, maximum: 5000}, reason: {$ref: '#/components/schemas/Reason'}}}
-    InstallEquipment: {type: object, additionalProperties: false, required: [organizationId,subdivisionId,rackId,modelId,rsotObjectId,startU,face,reason], properties: {organizationId: {$ref: '#/components/schemas/Uuid'}, subdivisionId: {$ref: '#/components/schemas/Uuid'}, rackId: {$ref: '#/components/schemas/Uuid'}, modelId: {$ref: '#/components/schemas/Uuid'}, rsotObjectId: {$ref: '#/components/schemas/Uuid'}, itamAssetId: {oneOf: [{$ref: '#/components/schemas/Uuid'}, {type: 'null'}]}, serialNumber: {type: [string,'null'], maxLength: 128}, assetTag: {type: [string,'null'], maxLength: 128}, startU: {type: integer, minimum: 1, maximum: 100}, face: {type: string, enum: [front,rear]}, reason: {$ref: '#/components/schemas/Reason'}}}
-    MoveEquipment: {type: object, additionalProperties: false, required: [rackId,startU,face,reason], properties: {rackId: {$ref: '#/components/schemas/Uuid'}, startU: {type: integer, minimum: 1, maximum: 100}, face: {type: string, enum: [front,rear]}, reason: {$ref: '#/components/schemas/Reason'}}}
-    StatusRequest: {type: object, additionalProperties: false, required: [targetStatus,reason], properties: {targetStatus: {type: string, enum: [draft,active,maintenance,decommissioned,archived]}, reason: {$ref: '#/components/schemas/Reason'}}}
-    ConnectPorts: {type: object, additionalProperties: false, required: [organizationId,subdivisionId,portAId,portBId,label,reason], properties: {organizationId: {$ref: '#/components/schemas/Uuid'}, subdivisionId: {$ref: '#/components/schemas/Uuid'}, portAId: {$ref: '#/components/schemas/Uuid'}, portBId: {$ref: '#/components/schemas/Uuid'}, label: {type: string, maxLength: 128}, reason: {$ref: '#/components/schemas/Reason'}}}
-    EquipmentModel: {type: object, required: [id,organizationId,manufacturerPartnerId,code,displayName,formFactor,rackUnits,widthMm,depthMm,portTemplates,status,version], properties: {id: {$ref: '#/components/schemas/Uuid'}, organizationId: {$ref: '#/components/schemas/Uuid'}, manufacturerPartnerId: {$ref: '#/components/schemas/Uuid'}, code: {type: string}, displayName: {type: string}, formFactor: {type: string}, rackUnits: {type: integer}, widthMm: {type: integer}, depthMm: {type: integer}, weightKg: {type: [number,'null']}, portTemplates: {type: array, items: {$ref: '#/components/schemas/PortTemplate'}}, status: {type: string}, description: {type: [string,'null']}, version: {type: integer}, createdAt: {type: string, format: date-time}, updatedAt: {type: string, format: date-time}, lastReason: {type: string}}}
-    Rack: {type: object, required: [id,organizationId,subdivisionId,roomId,code,displayName,heightU,widthMm,depthMm,status,version], properties: {id: {$ref: '#/components/schemas/Uuid'}, organizationId: {$ref: '#/components/schemas/Uuid'}, subdivisionId: {$ref: '#/components/schemas/Uuid'}, roomId: {$ref: '#/components/schemas/Uuid'}, code: {type: string}, displayName: {type: string}, heightU: {type: integer}, widthMm: {type: integer}, depthMm: {type: integer}, status: {type: string}, version: {type: integer}, createdAt: {type: string, format: date-time}, updatedAt: {type: string, format: date-time}, lastReason: {type: string}}}
-    Equipment: {type: object, required: [id,organizationId,subdivisionId,rackId,modelId,rsotObjectId,startU,face,status,version], properties: {id: {$ref: '#/components/schemas/Uuid'}, organizationId: {$ref: '#/components/schemas/Uuid'}, subdivisionId: {$ref: '#/components/schemas/Uuid'}, rackId: {$ref: '#/components/schemas/Uuid'}, modelId: {$ref: '#/components/schemas/Uuid'}, rsotObjectId: {$ref: '#/components/schemas/Uuid'}, itamAssetId: {oneOf: [{$ref: '#/components/schemas/Uuid'}, {type: 'null'}]}, serialNumber: {type: [string,'null']}, assetTag: {type: [string,'null']}, startU: {type: integer}, face: {type: string}, status: {type: string}, version: {type: integer}, createdAt: {type: string, format: date-time}, updatedAt: {type: string, format: date-time}, lastReason: {type: string}}}
-    PhysicalPort: {type: object, required: [id,organizationId,equipmentId,name,kind,media,connector,connected], properties: {id: {$ref: '#/components/schemas/Uuid'}, organizationId: {$ref: '#/components/schemas/Uuid'}, equipmentId: {$ref: '#/components/schemas/Uuid'}, name: {type: string}, kind: {type: string}, media: {type: string}, connector: {type: string}, connected: {type: boolean}}}
-    Cable: {type: object, required: [id,organizationId,subdivisionId,portAId,portBId,label,media,connector,status,version], properties: {id: {$ref: '#/components/schemas/Uuid'}, organizationId: {$ref: '#/components/schemas/Uuid'}, subdivisionId: {$ref: '#/components/schemas/Uuid'}, portAId: {$ref: '#/components/schemas/Uuid'}, portBId: {$ref: '#/components/schemas/Uuid'}, label: {type: string}, media: {type: string}, connector: {type: string}, status: {type: string}, version: {type: integer}, createdAt: {type: string, format: date-time}, updatedAt: {type: string, format: date-time}, lastReason: {type: string}}}
-    Problem: {type: object, properties: {type: {type: string}, title: {type: string}, status: {type: integer}, detail: {type: string}, code: {type: string}}}
+    Uuid:
+      type: string
+      format: uuid
+    Reason:
+      type: string
+      minLength: 2
+      maxLength: 1024
+    PortTemplate:
+      type: object
+      additionalProperties: false
+      required:
+      - namePrefix
+      - count
+      - kind
+      - media
+      - connector
+      properties:
+        namePrefix:
+          type: string
+          maxLength: 24
+        count:
+          type: integer
+          minimum: 1
+          maximum: 512
+        kind:
+          type: string
+          enum:
+          - network
+          - power
+          - console
+          - fiber
+          - other
+        media:
+          type: string
+          maxLength: 32
+        connector:
+          type: string
+          maxLength: 32
+    CreateEquipmentModel:
+      type: object
+      additionalProperties: false
+      required:
+      - organizationId
+      - manufacturerPartnerId
+      - code
+      - displayName
+      - formFactor
+      - rackUnits
+      - widthMm
+      - depthMm
+      - portTemplates
+      - reason
+      properties:
+        organizationId:
+          $ref: '#/components/schemas/Uuid'
+        manufacturerPartnerId:
+          $ref: '#/components/schemas/Uuid'
+        code:
+          type: string
+          minLength: 3
+          maxLength: 64
+        displayName:
+          type: string
+          minLength: 3
+          maxLength: 128
+        formFactor:
+          type: string
+          maxLength: 32
+        rackUnits:
+          type: integer
+          minimum: 1
+          maximum: 100
+        widthMm:
+          type: integer
+          minimum: 1
+          maximum: 5000
+        depthMm:
+          type: integer
+          minimum: 1
+          maximum: 5000
+        weightKg:
+          type:
+          - number
+          - 'null'
+          exclusiveMinimum: 0
+        portTemplates:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/PortTemplate'
+        description:
+          type:
+          - string
+          - 'null'
+          maxLength: 4000
+        reason:
+          $ref: '#/components/schemas/Reason'
+    CreateRack:
+      type: object
+      additionalProperties: false
+      required:
+      - organizationId
+      - subdivisionId
+      - roomId
+      - code
+      - displayName
+      - heightU
+      - widthMm
+      - depthMm
+      - reason
+      properties:
+        organizationId:
+          $ref: '#/components/schemas/Uuid'
+        subdivisionId:
+          $ref: '#/components/schemas/Uuid'
+        roomId:
+          $ref: '#/components/schemas/Uuid'
+        code:
+          type: string
+        displayName:
+          type: string
+        heightU:
+          type: integer
+          minimum: 1
+          maximum: 100
+        widthMm:
+          type: integer
+          minimum: 1
+          maximum: 5000
+        depthMm:
+          type: integer
+          minimum: 1
+          maximum: 5000
+        reason:
+          $ref: '#/components/schemas/Reason'
+    InstallEquipment:
+      type: object
+      additionalProperties: false
+      required:
+      - organizationId
+      - subdivisionId
+      - rackId
+      - modelId
+      - rsotObjectId
+      - startU
+      - face
+      - reason
+      properties:
+        organizationId:
+          $ref: '#/components/schemas/Uuid'
+        subdivisionId:
+          $ref: '#/components/schemas/Uuid'
+        rackId:
+          $ref: '#/components/schemas/Uuid'
+        modelId:
+          $ref: '#/components/schemas/Uuid'
+        rsotObjectId:
+          $ref: '#/components/schemas/Uuid'
+        itamAssetId:
+          oneOf:
+          - $ref: '#/components/schemas/Uuid'
+          - type: 'null'
+        serialNumber:
+          type:
+          - string
+          - 'null'
+          maxLength: 128
+        assetTag:
+          type:
+          - string
+          - 'null'
+          maxLength: 128
+        startU:
+          type: integer
+          minimum: 1
+          maximum: 100
+        face:
+          type: string
+          enum:
+          - front
+          - rear
+        reason:
+          $ref: '#/components/schemas/Reason'
+    MoveEquipment:
+      type: object
+      additionalProperties: false
+      required:
+      - rackId
+      - startU
+      - face
+      - reason
+      properties:
+        rackId:
+          $ref: '#/components/schemas/Uuid'
+        startU:
+          type: integer
+          minimum: 1
+          maximum: 100
+        face:
+          type: string
+          enum:
+          - front
+          - rear
+        reason:
+          $ref: '#/components/schemas/Reason'
+    StatusRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - targetStatus
+      - reason
+      properties:
+        targetStatus:
+          type: string
+          enum:
+          - draft
+          - active
+          - maintenance
+          - decommissioned
+          - archived
+        reason:
+          $ref: '#/components/schemas/Reason'
+    ConnectPorts:
+      type: object
+      additionalProperties: false
+      required:
+      - organizationId
+      - subdivisionId
+      - portAId
+      - portBId
+      - label
+      - reason
+      properties:
+        organizationId:
+          $ref: '#/components/schemas/Uuid'
+        subdivisionId:
+          $ref: '#/components/schemas/Uuid'
+        portAId:
+          $ref: '#/components/schemas/Uuid'
+        portBId:
+          $ref: '#/components/schemas/Uuid'
+        label:
+          type: string
+          maxLength: 128
+        reason:
+          $ref: '#/components/schemas/Reason'
+    EquipmentModel:
+      type: object
+      required:
+      - id
+      - organizationId
+      - manufacturerPartnerId
+      - code
+      - displayName
+      - formFactor
+      - rackUnits
+      - widthMm
+      - depthMm
+      - portTemplates
+      - status
+      - version
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        organizationId:
+          $ref: '#/components/schemas/Uuid'
+        manufacturerPartnerId:
+          $ref: '#/components/schemas/Uuid'
+        code:
+          type: string
+        displayName:
+          type: string
+        formFactor:
+          type: string
+        rackUnits:
+          type: integer
+        widthMm:
+          type: integer
+        depthMm:
+          type: integer
+        weightKg:
+          type:
+          - number
+          - 'null'
+        portTemplates:
+          type: array
+          items:
+            $ref: '#/components/schemas/PortTemplate'
+        status:
+          type: string
+        description:
+          type:
+          - string
+          - 'null'
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        lastReason:
+          type: string
+    Rack:
+      type: object
+      required:
+      - id
+      - organizationId
+      - subdivisionId
+      - roomId
+      - code
+      - displayName
+      - heightU
+      - widthMm
+      - depthMm
+      - status
+      - version
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        organizationId:
+          $ref: '#/components/schemas/Uuid'
+        subdivisionId:
+          $ref: '#/components/schemas/Uuid'
+        roomId:
+          $ref: '#/components/schemas/Uuid'
+        code:
+          type: string
+        displayName:
+          type: string
+        heightU:
+          type: integer
+        widthMm:
+          type: integer
+        depthMm:
+          type: integer
+        status:
+          type: string
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        lastReason:
+          type: string
+    Equipment:
+      type: object
+      required:
+      - id
+      - organizationId
+      - subdivisionId
+      - rackId
+      - modelId
+      - rsotObjectId
+      - startU
+      - face
+      - status
+      - version
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        organizationId:
+          $ref: '#/components/schemas/Uuid'
+        subdivisionId:
+          $ref: '#/components/schemas/Uuid'
+        rackId:
+          $ref: '#/components/schemas/Uuid'
+        modelId:
+          $ref: '#/components/schemas/Uuid'
+        rsotObjectId:
+          $ref: '#/components/schemas/Uuid'
+        itamAssetId:
+          oneOf:
+          - $ref: '#/components/schemas/Uuid'
+          - type: 'null'
+        serialNumber:
+          type:
+          - string
+          - 'null'
+        assetTag:
+          type:
+          - string
+          - 'null'
+        startU:
+          type: integer
+        face:
+          type: string
+        status:
+          type: string
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        lastReason:
+          type: string
+    PhysicalPort:
+      type: object
+      required:
+      - id
+      - organizationId
+      - equipmentId
+      - name
+      - kind
+      - media
+      - connector
+      - connected
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        organizationId:
+          $ref: '#/components/schemas/Uuid'
+        equipmentId:
+          $ref: '#/components/schemas/Uuid'
+        name:
+          type: string
+        kind:
+          type: string
+        media:
+          type: string
+        connector:
+          type: string
+        connected:
+          type: boolean
+    Cable:
+      type: object
+      required:
+      - id
+      - organizationId
+      - subdivisionId
+      - portAId
+      - portBId
+      - label
+      - media
+      - connector
+      - status
+      - version
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        organizationId:
+          $ref: '#/components/schemas/Uuid'
+        subdivisionId:
+          $ref: '#/components/schemas/Uuid'
+        portAId:
+          $ref: '#/components/schemas/Uuid'
+        portBId:
+          $ref: '#/components/schemas/Uuid'
+        label:
+          type: string
+        media:
+          type: string
+        connector:
+          type: string
+        status:
+          type: string
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        lastReason:
+          type: string
+    Problem:
+      type: object
+      required:
+      - type
+      - title
+      - status
+      - detail
+      - instance
+      - code
+      - message
+      - details
+      - metadata
+      - occurred_at
+      - timestamp
+      - correlation_id
+      - trace_id
+      properties:
+        type:
+          type: string
+          description: Stable InfraNexum problem type URI.
+        title:
+          type: string
+          description: Short human-readable problem summary.
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+          description: Safe redacted problem detail.
+        instance:
+          type: string
+          description: Request URI associated with this occurrence.
+        code:
+          type: string
+          description: Stable machine-readable InfraNexum error code.
+        message:
+          type: string
+          deprecated: true
+          description: Legacy compatibility alias of detail.
+        details:
+          type: object
+          additionalProperties: true
+          description: Structured validation or conflict details.
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Reserved non-sensitive problem metadata.
+        occurred_at:
+          type: string
+          format: date-time
+          description: UTC timestamp of this problem occurrence.
+        timestamp:
+          type: string
+          format: date-time
+          deprecated: true
+          description: Legacy compatibility alias of occurred_at.
+        correlation_id:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+          description: Canonical request UUIDv7 correlation identifier.
+        trace_id:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+          description: Compatibility trace identifier equal to correlation_id.
+      additionalProperties: false

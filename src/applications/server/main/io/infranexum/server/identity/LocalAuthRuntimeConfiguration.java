@@ -9,6 +9,7 @@ import io.infranexum.core.contracts.UuidV7Generator;
 import io.infranexum.identity.local.application.LocalAuthenticationPolicy;
 import io.infranexum.identity.local.application.LocalAuthenticationService;
 import io.infranexum.identity.local.domain.LocalPasswordPolicy;
+import io.infranexum.server.http.ApiProblemSupport;
 import io.infranexum.server.persistence.PersistenceMode;
 import io.infranexum.server.persistence.PersistenceRuntimeProperties;
 import java.nio.file.Path;
@@ -58,8 +59,8 @@ public class LocalAuthRuntimeConfiguration {
     }
 
     @Bean
-    LocalAuthenticationFilter localAuthenticationFilter(LocalAuthenticationService service) {
-        return new LocalAuthenticationFilter(service);
+    LocalAuthenticationFilter localAuthenticationFilter(LocalAuthenticationService service, ApiProblemSupport problems) {
+        return new LocalAuthenticationFilter(service, problems);
     }
 
     @Bean

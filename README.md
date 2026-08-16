@@ -1,3 +1,27 @@
+# InfraNexum 2.0.0-alpha.0.97 — PGM-05-E01 phase 4: canonical idempotency
+
+`alpha.0.97` closes the historical idempotency debt of **PGM-05-E01** from **39 to 0**. Thirty-two IAM/RSOT mutations now require the canonical `Idempotency-Key` contract (8..200 safe characters). A durable Core ledger scopes keys by authenticated actor and operation, fingerprints method/path/query/body, replays completed successful responses, rejects key reuse with different semantics, and blocks automatic re-execution when a process interruption leaves a mutation `IN_PROGRESS` or `INDETERMINATE`. The ledger is implemented for PostgreSQL and Oracle by migration `0032-core-api-idempotency`.
+
+Seven POST/DELETE operations are explicitly classified instead of being forced into unsafe generic replay semantics: authorization/permission/password-policy evaluations are `repeatable`; Local Auth session creation, session revocation and password rotation are `security-exempt` because replay persistence could retain or re-emit security-sensitive session/credential state. Existing Organization/ITAM/DCIM/DDI idempotency parameters are normalized to the same canonical header constraints. The API ratchet now reports **idempotency=0, pagination=0, capability=56, permission=85**. PGM-05-E01 remains **IN PROGRESS** until capability and permission metadata reach zero. See `docs/api-platform-contract-governance.md`.
+
+---
+
+# InfraNexum 2.0.0-alpha.0.96 — PGM-05-E01 phase 3: bounded pagination
+
+`alpha.0.96` closes the historical pagination debt of **PGM-05-E01** from **15 to 0** without breaking existing list consumers. The 15 affected operations now declare and execute a bounded pagination strategy: **8 cursor/keyset** collections for mutable/high-volume DCIM/DDI data and **7 bounded-offset** collections for administration/reference sets. JSON list bodies remain arrays; continuation is additive through `X-Page-Limit`, `X-Next-Cursor` or `X-Next-Offset` headers. Offset pagination is bounded to **1,000,000** at the core contract, runtime, OpenAPI and Web adapter layers.
+
+The Web adapters preserve their historical `payload` contract and additionally expose immutable `pagination` metadata so callers can follow continuation without manually parsing headers. The OpenAPI checker requires `x-infranexum-pagination: cursor|offset`, parameter bounds and continuation headers and the ratchet now reports **idempotency=39, pagination=0, capability=56, permission=85**. PGM-05-E01 remains **IN PROGRESS**; idempotency is the next debt-remediation phase before capability/permission metadata closure and PGM-10-E05. See `docs/api-platform-contract-governance.md`.
+
+---
+
+# InfraNexum 2.0.0-alpha.0.95 — PGM-05-E01 phase 2: canonical API problem runtime
+
+`alpha.0.95` advances **PGM-05-E01** by making the error contract certified in phase 1 real at every Server HTTP boundary. MVC exception handlers and terminal correlation/authentication/RBAC/ABAC filters now use one `ApiProblem` representation and one `ApiProblemSupport` serializer. Every public problem carries the RFC 9457 core fields plus InfraNexum `code`, `occurred_at`, `correlation_id` and `trace_id`; the historical `message`, `details` and `timestamp` fields are preserved as compatibility aliases. Unexpected failures remain fail-closed and public text is redacted and bounded.
+
+All registered OpenAPI 4xx/5xx responses now resolve to the same canonical `Problem` schema over `application/problem+json` and declare the `X-Correlation-ID` response header. The API contract checker resolves reusable response references and rejects drift in the canonical problem schema or correlation header. The existing PGM-05-E01 debt ratchet is unchanged at idempotency 39, pagination 15, capability 56 and permission 85; phase 2 therefore remains **IN PROGRESS**, with pagination/idempotency and operation metadata remediation still required before PGM-10-E05 can start. See `docs/api-platform-contract-governance.md`.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.94 — dense enterprise filters and data-navigation refinement
 
 `alpha.0.94` is a Web/UX corrective over the `alpha.0.93` PGM-05-E01 contract-governance foundation. Search, list-filter and scope-filter surfaces are consolidated into responsive `.inx-filter-bar` toolbars: controls stay in one horizontal line when desktop width permits and collapse predictably on narrow screens. Labels, controls and actions use a reduced vertical rhythm without changing native form values, stable-select semantics, temporal controls or API payloads.

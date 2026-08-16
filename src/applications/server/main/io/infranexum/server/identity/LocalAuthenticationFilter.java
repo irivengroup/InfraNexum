@@ -3,6 +3,7 @@ package io.infranexum.server.identity;
 import io.infranexum.identity.local.application.LocalAuthenticationService;
 import io.infranexum.identity.local.application.ValidatedSession;
 import io.infranexum.identity.local.domain.LocalSessionException;
+import io.infranexum.server.http.ApiProblemSupport;
 import io.infranexum.server.observability.CorrelationContext;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -10,11 +11,10 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Set;
 import org.springframework.core.Ordered;
-import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
@@ -32,9 +32,11 @@ public final class LocalAuthenticationFilter extends OncePerRequestFilter implem
     private static final Set<String> SAFE_METHODS = Set.of("GET", "HEAD", "OPTIONS");
 
     private final LocalAuthenticationService service;
+    private final ApiProblemSupport problems;
 
-    public LocalAuthenticationFilter(LocalAuthenticationService service) {
+    public LocalAuthenticationFilter(LocalAuthenticationService service, ApiProblemSupport problems) {
         this.service = Objects.requireNonNull(service, "service");
+        this.problems = Objects.requireNonNull(problems, "problems");
     }
 
     @Override
@@ -89,35 +91,17 @@ public final class LocalAuthenticationFilter extends OncePerRequestFilter implem
         return null;
     }
 
-    private static void reject(
+    private void reject(
             HttpServletRequest request, HttpServletResponse response, int status, String code, String title)
             throws IOException {
-        if (response.isCommitted()) {
-            throw new IOException("authentication rejection response was committed before the IAM boundary");
-        }
-        response.resetBuffer();
-        response.setStatus(status);
-        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
-        response.setHeader("Cache-Control", "no-store");
-        String correlation = CorrelationContext.traceId(request);
-        if (correlation != null) {
-            // Reassert the correlation header at the authentication boundary itself.
-            // CorrelationIdFilter establishes it earlier in the chain, but an auth
-            // rejection is a terminal response and must remain self-describing even
-            // if downstream response handling changes in the future.
-            response.setHeader(CorrelationContext.HEADER_NAME, correlation);
-        } else {
-            correlation = "unavailable";
-        }
-        String problem = "{\"status\":" + status
-                + ",\"title\":\"" + title + "\""
-                + ",\"code\":\"" + code + "\""
-                + ",\"correlation_id\":\"" + correlation + "\""
-                + ",\"trace_id\":\"" + correlation + "\"}\n";
-        byte[] body = problem.getBytes(StandardCharsets.UTF_8);
-        response.setContentLength(body.length);
-        response.getOutputStream().write(body);
-        response.flushBuffer();
+        HttpStatus httpStatus = HttpStatus.valueOf(status);
+        problems.write(response, problems.problem(
+                httpStatus,
+                code,
+                title,
+                title,
+                java.util.Map.of(),
+                java.util.Map.of(),
+                request));
     }
 }

@@ -8,7 +8,7 @@ const recordId = '019ffbda-2301-7002-8002-000000000002';
 const organizationId = '019ffbda-2302-7003-8003-000000000003';
 const configuration = Object.freeze({ apiBaseUrl: '/api', itamComplianceEnabled: true });
 const cookieProvider = () => 'INX_XSRF=csrf-token';
-function response(payload, { status = 200, etag = '"ver-2"' } = {}) { return { ok: status >= 200 && status < 300, status, headers: { get: (name) => name === 'etag' ? etag : null }, async json() { return payload; } }; }
+function response(payload, { status = 200, etag = '"ver-2"', headers = {} } = {}) { return { ok: status >= 200 && status < 300, status, headers: { get: (name) => name === 'etag' ? etag : (headers[String(name).toLowerCase()] ?? null) }, async json() { return payload; } }; }
 
 test('client fails closed and paginates contractual collections', async () => {
   assert.throws(() => new ItamComplianceClient({ apiBaseUrl: '/api', itamComplianceEnabled: false }), /disabled/);
@@ -34,7 +34,7 @@ test('software license client refuses raw secret key material', async () => {
 
 test('support authorization and catalog operations retain organization scope', async () => {
   let calls = []; const client = new ItamComplianceClient(configuration, { fetchFunction: async (url, options) => { calls.push({ url, options }); return response([]); }, cookieProvider });
-  await client.warrantyTypes(organizationId); assert.equal(calls.at(-1).url, `/api/v1/itam/warranty-types?organization_id=${organizationId}`);
+  await client.warrantyTypes(organizationId); assert.equal(calls.at(-1).url, `/api/v1/itam/warranty-types?organization_id=${organizationId}&offset=0&limit=50`);
   await client.createWarrantyType(organizationId, 'standard', 'Standard warranty', 'Govern catalog', 'catalog-key-0001');
   assert.deepEqual(JSON.parse(calls.at(-1).options.body), { organizationId, code: 'standard', displayName: 'Standard warranty', reason: 'Govern catalog' });
   await client.suspendSupportAuthorization(recordId, 2, 'Authorization suspended', 'support-key-0001');
@@ -43,7 +43,7 @@ test('support authorization and catalog operations retain organization scope', a
 
 test('alerts and history use bounded deterministic query parameters', async () => {
   let url; const client = new ItamComplianceClient(configuration, { fetchFunction: async (value) => { url = value; return response([]); }, cookieProvider });
-  await client.alerts(assetId, { asOf: '2026-08-15', horizonDays: 180 }); assert.equal(url, `/api/v1/itam/assets/${assetId}/compliance-alerts?horizon_days=180&as_of=2026-08-15`);
+  await client.alerts(assetId, { asOf: '2026-08-15', horizonDays: 180 }); assert.equal(url, `/api/v1/itam/assets/${assetId}/compliance-alerts?horizon_days=180&offset=0&limit=50&as_of=2026-08-15`);
   await client.history('warranties', recordId, { afterVersion: 2, limit: 50 }); assert.equal(url, `/api/v1/itam/warranties/${recordId}/history?after_version=2&limit=50`);
   await assert.rejects(async () => client.history('unknown', recordId), /unsupported/);
 });
@@ -53,4 +53,11 @@ test('problem+json and missing CSRF are translated safely', async () => {
   await assert.rejects(async () => failure.warranties(assetId), (error) => { assert.ok(error instanceof ItamComplianceApiError); assert.equal(error.status, 422); assert.equal(error.code, 'ITAM_COMPLIANCE_PRODUCER_MISMATCH'); return true; });
   const noCsrf = new ItamComplianceClient(configuration, { fetchFunction: async () => response({}), cookieProvider: () => '' });
   await assert.rejects(async () => noCsrf.activateWarranty(recordId, 1, 'Activate warranty', 'warranty-key-0003'), /CSRF/);
+});
+
+test('offset-paginated ITAM catalog exposes continuation metadata and enforces offset bound', async () => {
+  const client = new ItamComplianceClient(configuration, { fetchFunction: async () => response([], { headers: { 'x-page-limit': '50', 'x-next-offset': '50' } }), cookieProvider });
+  const page = await client.warrantyTypes(organizationId);
+  assert.deepEqual(page.pagination, { limit: 50, nextCursor: null, nextOffset: 50, hasNext: true });
+  await assert.rejects(async () => client.warrantyTypes(organizationId, { offset: 1_000_001 }), /offset must be between 0 and 1000000/);
 });

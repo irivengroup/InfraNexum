@@ -1,9 +1,8 @@
 openapi: 3.1.0
 info:
   title: InfraNexum DCIM Physical Facilities API
-  version: 2.0.0-alpha.0.94
-  description: PGM-07-E04 governed physical hierarchy for sites, buildings, floors,
-    rooms and technical zones.
+  version: 2.0.0-alpha.0.97
+  description: PGM-07-E04 governed physical hierarchy for sites, buildings, floors, rooms and technical zones.
 servers:
 - url: /
 security:
@@ -180,9 +179,8 @@ paths:
       - DCIM / Facilities
       operationId: changeDcimSiteStatus
       summary: Change DCIM site lifecycle status
-      description: 'The Server resolves the atomic permission from the target transition:
-        update by default, archive/delete when applicable, and dcim.room.lock for
-        room lock.'
+      description: 'The Server resolves the atomic permission from the target transition: update by default, archive/delete
+        when applicable, and dcim.room.lock for room lock.'
       x-infranexum-permission: dcim.site.update
       x-infranexum-capability: dcim.facilities
       parameters:
@@ -351,9 +349,8 @@ paths:
       - DCIM / Facilities
       operationId: changeDcimBuildingStatus
       summary: Change DCIM building lifecycle status
-      description: 'The Server resolves the atomic permission from the target transition:
-        update by default, archive/delete when applicable, and dcim.room.lock for
-        room lock.'
+      description: 'The Server resolves the atomic permission from the target transition: update by default, archive/delete
+        when applicable, and dcim.room.lock for room lock.'
       x-infranexum-permission: dcim.building.update
       x-infranexum-capability: dcim.facilities
       parameters:
@@ -522,9 +519,8 @@ paths:
       - DCIM / Facilities
       operationId: changeDcimFloorStatus
       summary: Change DCIM floor lifecycle status
-      description: 'The Server resolves the atomic permission from the target transition:
-        update by default, archive/delete when applicable, and dcim.room.lock for
-        room lock.'
+      description: 'The Server resolves the atomic permission from the target transition: update by default, archive/delete
+        when applicable, and dcim.room.lock for room lock.'
       x-infranexum-permission: dcim.floor.update
       x-infranexum-capability: dcim.facilities
       parameters:
@@ -693,9 +689,8 @@ paths:
       - DCIM / Facilities
       operationId: changeDcimRoomStatus
       summary: Change DCIM room lifecycle status
-      description: 'The Server resolves the atomic permission from the target transition:
-        update by default, archive/delete when applicable, and dcim.room.lock for
-        room lock.'
+      description: 'The Server resolves the atomic permission from the target transition: update by default, archive/delete
+        when applicable, and dcim.room.lock for room lock.'
       x-infranexum-permission: dcim.room.update
       x-infranexum-capability: dcim.facilities
       parameters:
@@ -864,9 +859,8 @@ paths:
       - DCIM / Facilities
       operationId: changeDcimZoneStatus
       summary: Change DCIM zone lifecycle status
-      description: 'The Server resolves the atomic permission from the target transition:
-        update by default, archive/delete when applicable, and dcim.room.lock for
-        room lock.'
+      description: 'The Server resolves the atomic permission from the target transition: update by default, archive/delete
+        when applicable, and dcim.room.lock for room lock.'
       x-infranexum-permission: dcim.zone.update
       x-infranexum-capability: dcim.facilities
       parameters:
@@ -922,11 +916,13 @@ components:
       name: Idempotency-Key
       in: header
       required: true
+      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request
+        semantics returns HTTP 409.
       schema:
         type: string
         minLength: 8
         maxLength: 200
-        pattern: ^[A-Za-z0-9][A-Za-z0-9._:-]{7,199}$
+        pattern: ^[A-Za-z0-9._:-]+$
     IfMatch:
       name: If-Match
       in: header
@@ -959,142 +955,423 @@ components:
     CreateSiteFacility:
       type: object
       additionalProperties: false
-      required: [organizationId, subdivisionId, code, displayName, addressLine1, postalCode, city, countryCode, timezone, reason]
+      required:
+      - organizationId
+      - subdivisionId
+      - code
+      - displayName
+      - addressLine1
+      - postalCode
+      - city
+      - countryCode
+      - timezone
+      - reason
       properties:
-        organizationId: { $ref: '#/components/schemas/UuidV7' }
-        subdivisionId: { $ref: '#/components/schemas/UuidV7' }
-        code: { type: string, pattern: '^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$' }
-        displayName: { type: string, minLength: 3, maxLength: 128 }
-        addressLine1: { type: string, minLength: 1, maxLength: 128 }
-        addressLine2: { type: string, minLength: 1, maxLength: 128 }
-        postalCode: { type: string, minLength: 1, maxLength: 16 }
-        city: { type: string, minLength: 1, maxLength: 64 }
-        countryCode: { type: string, pattern: '^[A-Za-z]{2}$' }
-        timezone: { type: string, minLength: 1, maxLength: 64 }
-        latitude: { type: number, minimum: -90, maximum: 90 }
-        longitude: { type: number, minimum: -180, maximum: 180 }
-        description: { type: string, minLength: 1, maxLength: 2000 }
-        reason: { type: string, minLength: 2, maxLength: 1024 }
+        organizationId:
+          $ref: '#/components/schemas/UuidV7'
+        subdivisionId:
+          $ref: '#/components/schemas/UuidV7'
+        code:
+          type: string
+          pattern: ^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$
+        displayName:
+          type: string
+          minLength: 3
+          maxLength: 128
+        addressLine1:
+          type: string
+          minLength: 1
+          maxLength: 128
+        addressLine2:
+          type: string
+          minLength: 1
+          maxLength: 128
+        postalCode:
+          type: string
+          minLength: 1
+          maxLength: 16
+        city:
+          type: string
+          minLength: 1
+          maxLength: 64
+        countryCode:
+          type: string
+          pattern: ^[A-Za-z]{2}$
+        timezone:
+          type: string
+          minLength: 1
+          maxLength: 64
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+        description:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        reason:
+          type: string
+          minLength: 2
+          maxLength: 1024
     UpdateSiteFacility:
       type: object
       additionalProperties: false
-      required: [displayName, addressLine1, postalCode, city, countryCode, timezone, reason]
+      required:
+      - displayName
+      - addressLine1
+      - postalCode
+      - city
+      - countryCode
+      - timezone
+      - reason
       properties:
-        displayName: { type: string, minLength: 3, maxLength: 128 }
-        addressLine1: { type: string, minLength: 1, maxLength: 128 }
-        addressLine2: { type: string, minLength: 1, maxLength: 128 }
-        postalCode: { type: string, minLength: 1, maxLength: 16 }
-        city: { type: string, minLength: 1, maxLength: 64 }
-        countryCode: { type: string, pattern: '^[A-Za-z]{2}$' }
-        timezone: { type: string, minLength: 1, maxLength: 64 }
-        latitude: { type: number, minimum: -90, maximum: 90 }
-        longitude: { type: number, minimum: -180, maximum: 180 }
-        description: { type: string, minLength: 1, maxLength: 2000 }
-        reason: { type: string, minLength: 2, maxLength: 1024 }
+        displayName:
+          type: string
+          minLength: 3
+          maxLength: 128
+        addressLine1:
+          type: string
+          minLength: 1
+          maxLength: 128
+        addressLine2:
+          type: string
+          minLength: 1
+          maxLength: 128
+        postalCode:
+          type: string
+          minLength: 1
+          maxLength: 16
+        city:
+          type: string
+          minLength: 1
+          maxLength: 64
+        countryCode:
+          type: string
+          pattern: ^[A-Za-z]{2}$
+        timezone:
+          type: string
+          minLength: 1
+          maxLength: 64
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+        description:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        reason:
+          type: string
+          minLength: 2
+          maxLength: 1024
     CreateBuildingFacility:
       type: object
       additionalProperties: false
-      required: [organizationId, subdivisionId, parentId, code, displayName, floorCount, reason]
+      required:
+      - organizationId
+      - subdivisionId
+      - parentId
+      - code
+      - displayName
+      - floorCount
+      - reason
       properties:
-        organizationId: { $ref: '#/components/schemas/UuidV7' }
-        subdivisionId: { $ref: '#/components/schemas/UuidV7' }
-        parentId: { $ref: '#/components/schemas/UuidV7' }
-        code: { type: string, pattern: '^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$' }
-        displayName: { type: string, minLength: 3, maxLength: 128 }
-        floorCount: { type: integer, minimum: 1 }
-        areaM2: { type: number, exclusiveMinimum: 0 }
-        latitude: { type: number, minimum: -90, maximum: 90 }
-        longitude: { type: number, minimum: -180, maximum: 180 }
-        description: { type: string, minLength: 1, maxLength: 4096 }
-        reason: { type: string, minLength: 2, maxLength: 1024 }
+        organizationId:
+          $ref: '#/components/schemas/UuidV7'
+        subdivisionId:
+          $ref: '#/components/schemas/UuidV7'
+        parentId:
+          $ref: '#/components/schemas/UuidV7'
+        code:
+          type: string
+          pattern: ^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$
+        displayName:
+          type: string
+          minLength: 3
+          maxLength: 128
+        floorCount:
+          type: integer
+          minimum: 1
+        areaM2:
+          type: number
+          exclusiveMinimum: 0
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+        description:
+          type: string
+          minLength: 1
+          maxLength: 4096
+        reason:
+          type: string
+          minLength: 2
+          maxLength: 1024
     UpdateBuildingFacility:
       type: object
       additionalProperties: false
-      required: [displayName, floorCount, reason]
+      required:
+      - displayName
+      - floorCount
+      - reason
       properties:
-        displayName: { type: string, minLength: 3, maxLength: 128 }
-        floorCount: { type: integer, minimum: 1 }
-        areaM2: { type: number, exclusiveMinimum: 0 }
-        latitude: { type: number, minimum: -90, maximum: 90 }
-        longitude: { type: number, minimum: -180, maximum: 180 }
-        description: { type: string, minLength: 1, maxLength: 4096 }
-        reason: { type: string, minLength: 2, maxLength: 1024 }
+        displayName:
+          type: string
+          minLength: 3
+          maxLength: 128
+        floorCount:
+          type: integer
+          minimum: 1
+        areaM2:
+          type: number
+          exclusiveMinimum: 0
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+        description:
+          type: string
+          minLength: 1
+          maxLength: 4096
+        reason:
+          type: string
+          minLength: 2
+          maxLength: 1024
     CreateFloorFacility:
       type: object
       additionalProperties: false
-      required: [organizationId, subdivisionId, parentId, code, displayName, levelNumber, reason]
+      required:
+      - organizationId
+      - subdivisionId
+      - parentId
+      - code
+      - displayName
+      - levelNumber
+      - reason
       properties:
-        organizationId: { $ref: '#/components/schemas/UuidV7' }
-        subdivisionId: { $ref: '#/components/schemas/UuidV7' }
-        parentId: { $ref: '#/components/schemas/UuidV7' }
-        code: { type: string, pattern: '^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$' }
-        displayName: { type: string, minLength: 3, maxLength: 128 }
-        levelNumber: { type: integer }
-        areaM2: { type: number, exclusiveMinimum: 0 }
-        levelHeightM: { type: number, exclusiveMinimum: 0 }
-        capacityKw: { type: number, exclusiveMinimum: 0 }
-        description: { type: string, minLength: 1, maxLength: 4096 }
-        reason: { type: string, minLength: 2, maxLength: 1024 }
+        organizationId:
+          $ref: '#/components/schemas/UuidV7'
+        subdivisionId:
+          $ref: '#/components/schemas/UuidV7'
+        parentId:
+          $ref: '#/components/schemas/UuidV7'
+        code:
+          type: string
+          pattern: ^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$
+        displayName:
+          type: string
+          minLength: 3
+          maxLength: 128
+        levelNumber:
+          type: integer
+        areaM2:
+          type: number
+          exclusiveMinimum: 0
+        levelHeightM:
+          type: number
+          exclusiveMinimum: 0
+        capacityKw:
+          type: number
+          exclusiveMinimum: 0
+        description:
+          type: string
+          minLength: 1
+          maxLength: 4096
+        reason:
+          type: string
+          minLength: 2
+          maxLength: 1024
     UpdateFloorFacility:
       type: object
       additionalProperties: false
-      required: [displayName, levelNumber, reason]
+      required:
+      - displayName
+      - levelNumber
+      - reason
       properties:
-        displayName: { type: string, minLength: 3, maxLength: 128 }
-        levelNumber: { type: integer }
-        areaM2: { type: number, exclusiveMinimum: 0 }
-        levelHeightM: { type: number, exclusiveMinimum: 0 }
-        capacityKw: { type: number, exclusiveMinimum: 0 }
-        description: { type: string, minLength: 1, maxLength: 4096 }
-        reason: { type: string, minLength: 2, maxLength: 1024 }
+        displayName:
+          type: string
+          minLength: 3
+          maxLength: 128
+        levelNumber:
+          type: integer
+        areaM2:
+          type: number
+          exclusiveMinimum: 0
+        levelHeightM:
+          type: number
+          exclusiveMinimum: 0
+        capacityKw:
+          type: number
+          exclusiveMinimum: 0
+        description:
+          type: string
+          minLength: 1
+          maxLength: 4096
+        reason:
+          type: string
+          minLength: 2
+          maxLength: 1024
     CreateRoomFacility:
       type: object
       additionalProperties: false
-      required: [organizationId, subdivisionId, parentId, code, displayName, areaM2, reason]
+      required:
+      - organizationId
+      - subdivisionId
+      - parentId
+      - code
+      - displayName
+      - areaM2
+      - reason
       properties:
-        organizationId: { $ref: '#/components/schemas/UuidV7' }
-        subdivisionId: { $ref: '#/components/schemas/UuidV7' }
-        parentId: { $ref: '#/components/schemas/UuidV7' }
-        code: { type: string, pattern: '^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$' }
-        displayName: { type: string, minLength: 3, maxLength: 128 }
-        areaM2: { type: number, exclusiveMinimum: 0 }
-        capacityKw: { type: number, exclusiveMinimum: 0 }
-        accessRestriction: { type: string, enum: [open, restricted, secure] }
-        description: { type: string, minLength: 1, maxLength: 4096 }
-        reason: { type: string, minLength: 2, maxLength: 1024 }
+        organizationId:
+          $ref: '#/components/schemas/UuidV7'
+        subdivisionId:
+          $ref: '#/components/schemas/UuidV7'
+        parentId:
+          $ref: '#/components/schemas/UuidV7'
+        code:
+          type: string
+          pattern: ^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$
+        displayName:
+          type: string
+          minLength: 3
+          maxLength: 128
+        areaM2:
+          type: number
+          exclusiveMinimum: 0
+        capacityKw:
+          type: number
+          exclusiveMinimum: 0
+        accessRestriction:
+          type: string
+          enum:
+          - open
+          - restricted
+          - secure
+        description:
+          type: string
+          minLength: 1
+          maxLength: 4096
+        reason:
+          type: string
+          minLength: 2
+          maxLength: 1024
     UpdateRoomFacility:
       type: object
       additionalProperties: false
-      required: [displayName, areaM2, reason]
+      required:
+      - displayName
+      - areaM2
+      - reason
       properties:
-        displayName: { type: string, minLength: 3, maxLength: 128 }
-        areaM2: { type: number, exclusiveMinimum: 0 }
-        capacityKw: { type: number, exclusiveMinimum: 0 }
-        accessRestriction: { type: string, enum: [open, restricted, secure] }
-        description: { type: string, minLength: 1, maxLength: 4096 }
-        reason: { type: string, minLength: 2, maxLength: 1024 }
+        displayName:
+          type: string
+          minLength: 3
+          maxLength: 128
+        areaM2:
+          type: number
+          exclusiveMinimum: 0
+        capacityKw:
+          type: number
+          exclusiveMinimum: 0
+        accessRestriction:
+          type: string
+          enum:
+          - open
+          - restricted
+          - secure
+        description:
+          type: string
+          minLength: 1
+          maxLength: 4096
+        reason:
+          type: string
+          minLength: 2
+          maxLength: 1024
     CreateZoneFacility:
       type: object
       additionalProperties: false
-      required: [organizationId, subdivisionId, parentId, code, displayName, zoneType, reason]
+      required:
+      - organizationId
+      - subdivisionId
+      - parentId
+      - code
+      - displayName
+      - zoneType
+      - reason
       properties:
-        organizationId: { $ref: '#/components/schemas/UuidV7' }
-        subdivisionId: { $ref: '#/components/schemas/UuidV7' }
-        parentId: { $ref: '#/components/schemas/UuidV7' }
-        code: { type: string, pattern: '^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$' }
-        displayName: { type: string, minLength: 3, maxLength: 128 }
-        zoneType: { type: string, enum: [cooling, power_distribution, airflow, security] }
-        description: { type: string, minLength: 1, maxLength: 4096 }
-        reason: { type: string, minLength: 2, maxLength: 1024 }
+        organizationId:
+          $ref: '#/components/schemas/UuidV7'
+        subdivisionId:
+          $ref: '#/components/schemas/UuidV7'
+        parentId:
+          $ref: '#/components/schemas/UuidV7'
+        code:
+          type: string
+          pattern: ^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$
+        displayName:
+          type: string
+          minLength: 3
+          maxLength: 128
+        zoneType:
+          type: string
+          enum:
+          - cooling
+          - power_distribution
+          - airflow
+          - security
+        description:
+          type: string
+          minLength: 1
+          maxLength: 4096
+        reason:
+          type: string
+          minLength: 2
+          maxLength: 1024
     UpdateZoneFacility:
       type: object
       additionalProperties: false
-      required: [displayName, zoneType, reason]
+      required:
+      - displayName
+      - zoneType
+      - reason
       properties:
-        displayName: { type: string, minLength: 3, maxLength: 128 }
-        zoneType: { type: string, enum: [cooling, power_distribution, airflow, security] }
-        description: { type: string, minLength: 1, maxLength: 4096 }
-        reason: { type: string, minLength: 2, maxLength: 1024 }
+        displayName:
+          type: string
+          minLength: 3
+          maxLength: 128
+        zoneType:
+          type: string
+          enum:
+          - cooling
+          - power_distribution
+          - airflow
+          - security
+        description:
+          type: string
+          minLength: 1
+          maxLength: 4096
+        reason:
+          type: string
+          minLength: 2
+          maxLength: 1024
     FacilityStatusChange:
       type: object
       additionalProperties: false
@@ -1247,7 +1524,6 @@ components:
           - type: 'null'
     Problem:
       type: object
-      additionalProperties: true
       required:
       - type
       - title
@@ -1255,27 +1531,65 @@ components:
       - detail
       - instance
       - code
+      - message
+      - details
+      - metadata
+      - occurred_at
+      - timestamp
+      - correlation_id
+      - trace_id
       properties:
         type:
           type: string
-          format: uri
+          description: Stable InfraNexum problem type URI.
         title:
           type: string
+          description: Short human-readable problem summary.
         status:
           type: integer
+          minimum: 400
+          maximum: 599
         detail:
           type: string
+          description: Safe redacted problem detail.
         instance:
           type: string
+          description: Request URI associated with this occurrence.
         code:
           type: string
-        occurredAt:
+          description: Stable machine-readable InfraNexum error code.
+        message:
+          type: string
+          deprecated: true
+          description: Legacy compatibility alias of detail.
+        details:
+          type: object
+          additionalProperties: true
+          description: Structured validation or conflict details.
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Reserved non-sensitive problem metadata.
+        occurred_at:
           type: string
           format: date-time
-        traceId:
-          type:
-          - string
-          - 'null'
+          description: UTC timestamp of this problem occurrence.
+        timestamp:
+          type: string
+          format: date-time
+          deprecated: true
+          description: Legacy compatibility alias of occurred_at.
+        correlation_id:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+          description: Canonical request UUIDv7 correlation identifier.
+        trace_id:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+          description: Compatibility trace identifier equal to correlation_id.
+      additionalProperties: false
   responses:
     FacilityMutation:
       description: Facility state with a strong ETag.
@@ -1293,33 +1607,58 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
     Unauthorized:
       description: Authentication required.
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
     Forbidden:
       description: Authorization or capability denied.
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
     NotFound:
       description: Facility not found.
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
     Conflict:
       description: Version, idempotency, quota or hierarchy conflict.
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
     UnprocessableEntity:
       description: Governance scope or hierarchy constraint rejected.
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+  headers:
+    CorrelationId:
+      description: Canonical UUIDv7 correlation identifier assigned to the request.
+      schema:
+        type: string
+        format: uuid
+        pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$

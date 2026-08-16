@@ -10,6 +10,10 @@ public interface IpamRepository {
  void lockRoutingEnvironment(DomainIdentifier organizationId,DomainIdentifier vrfId); void lockPool(DomainIdentifier poolId);
  boolean vrfCodeExists(DomainIdentifier organizationId,String code); boolean hasActiveNetworks(DomainIdentifier vrfId); boolean hasActiveNetworksForVlan(DomainIdentifier vlanId); boolean vlanExists(DomainIdentifier organizationId,Integer vlanId,Long vni); boolean networkOverlaps(DomainIdentifier organizationId,DomainIdentifier vrfId,IpCidr cidr,DomainIdentifier excludingId); boolean addressInUse(DomainIdentifier vrfId,String address); boolean poolOverlaps(DomainIdentifier networkId,String start,String end);
  Optional<IpamVrf> vrf(DomainIdentifier id); Optional<IpamVlan> vlan(DomainIdentifier id); Optional<IpamNetwork> network(DomainIdentifier id); Optional<IpamPool> pool(DomainIdentifier id); Optional<IpamAddress> address(DomainIdentifier id);
- List<IpamVrf> vrfs(DomainIdentifier organizationId,int limit); List<IpamVlan> vlans(DomainIdentifier organizationId,int limit); List<IpamNetwork> networks(DomainIdentifier organizationId,DomainIdentifier vrfId,int limit); List<IpamPool> pools(DomainIdentifier networkId,int limit); List<IpamAddress> addresses(DomainIdentifier organizationId,DomainIdentifier vrfId,DomainIdentifier networkId,int limit);
+ List<IpamVrf> vrfs(DomainIdentifier organizationId,DomainIdentifier afterId,int limit);
+ List<IpamVlan> vlans(DomainIdentifier organizationId,DomainIdentifier afterId,int limit);
+ List<IpamNetwork> networks(DomainIdentifier organizationId,DomainIdentifier vrfId,DomainIdentifier afterId,int limit);
+ List<IpamPool> pools(DomainIdentifier networkId,DomainIdentifier afterId,int limit);
+ List<IpamAddress> addresses(DomainIdentifier organizationId,DomainIdentifier vrfId,DomainIdentifier networkId,DomainIdentifier afterId,int limit);
  void insertVrf(IpamVrf value); void updateVrf(IpamVrf value,long expectedVersion); void insertVlan(IpamVlan value); void updateVlan(IpamVlan value,long expectedVersion); void insertNetwork(IpamNetwork value); void updateNetwork(IpamNetwork value,long expectedVersion); void insertPool(IpamPool value); void updatePool(IpamPool value,long expectedVersion); void insertAddress(IpamAddress value); void updateAddress(IpamAddress value,long expectedVersion);
 }

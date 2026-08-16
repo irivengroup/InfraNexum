@@ -23,6 +23,7 @@ import io.infranexum.identity.access.ports.OrganizationScopeReferencePort;
 import io.infranexum.identity.access.ports.PolicyDecisionObserver;
 import io.infranexum.identity.access.ports.PolicyInformationPort;
 import io.infranexum.identity.access.ports.RoleAssignmentPolicyGuard;
+import io.infranexum.server.http.ApiProblemSupport;
 import io.infranexum.server.identity.LocalAuthRuntimeProperties;
 import io.infranexum.identity.local.application.LocalAuthenticationService;
 import io.infranexum.server.identityaccess.cli.IdentityAccessCli;
@@ -169,16 +170,17 @@ public class IdentityAccessRuntimeConfiguration {
     }
 
     @Bean
-    RbacAuthorizationFilter rbacAuthorizationFilter(RbacAuthorizationService authorization) {
-        return new RbacAuthorizationFilter(authorization);
+    RbacAuthorizationFilter rbacAuthorizationFilter(RbacAuthorizationService authorization, ApiProblemSupport problems) {
+        return new RbacAuthorizationFilter(authorization, problems);
     }
 
     @Bean
     AdvancedAuthorizationFilter advancedAuthorizationFilter(
             PolicyDecisionService decisions,
             IdentityAccessFeaturePolicy features,
-            PlatformCapabilityService capabilities) {
-        return new AdvancedAuthorizationFilter(decisions, features, capabilities);
+            PlatformCapabilityService capabilities,
+            ApiProblemSupport problems) {
+        return new AdvancedAuthorizationFilter(decisions, features, capabilities, problems);
     }
 
     @Bean

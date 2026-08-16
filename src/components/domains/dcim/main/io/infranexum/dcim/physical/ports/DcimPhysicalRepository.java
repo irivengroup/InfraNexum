@@ -9,7 +9,11 @@ public interface DcimPhysicalRepository {
  boolean modelCodeExists(DomainIdentifier organizationId,DomainIdentifier manufacturerId,String code);
  boolean rackCodeExists(DomainIdentifier roomId,String code); boolean serialExists(String serialNumber);
  Optional<EquipmentModel> model(DomainIdentifier id); Optional<Rack> rack(DomainIdentifier id); Optional<Equipment> equipment(DomainIdentifier id); Optional<PhysicalPort> port(DomainIdentifier id); Optional<CableConnection> cable(DomainIdentifier id);
- List<EquipmentModel> models(DomainIdentifier organizationId,int limit); List<Rack> racks(DomainIdentifier organizationId,DomainIdentifier roomId,int limit); List<Equipment> equipment(DomainIdentifier organizationId,DomainIdentifier rackId,int limit); List<PhysicalPort> ports(DomainIdentifier equipmentId); List<CableConnection> cables(DomainIdentifier organizationId,int limit);
+ List<EquipmentModel> models(DomainIdentifier organizationId,int offset,int limit);
+ List<Rack> racks(DomainIdentifier organizationId,DomainIdentifier roomId,DomainIdentifier afterId,int limit);
+ List<Equipment> equipment(DomainIdentifier organizationId,DomainIdentifier rackId,DomainIdentifier afterId,int limit);
+ List<PhysicalPort> ports(DomainIdentifier equipmentId,int offset,int limit);
+ List<CableConnection> cables(DomainIdentifier organizationId,DomainIdentifier afterId,int limit);
  /** Serializes rack-unit allocation decisions within the current transaction. */
  void lockRackForOccupancy(DomainIdentifier rackId);
  /** Locks both physical ports in deterministic identifier order before connection checks. */

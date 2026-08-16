@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum RSOT Canonical Object API
-  version: 2.0.0-alpha.0.94
+  version: 2.0.0-alpha.0.97
 x-tagGroups:
 - name: RSOT
   tags:
@@ -152,12 +152,72 @@ components:
           format: date-time
     Problem:
       type: object
-      additionalProperties: true
+      required:
+      - type
+      - title
+      - status
+      - detail
+      - instance
+      - code
+      - message
+      - details
+      - metadata
+      - occurred_at
+      - timestamp
+      - correlation_id
+      - trace_id
       properties:
-        code:
+        type:
           type: string
+          description: Stable InfraNexum problem type URI.
+        title:
+          type: string
+          description: Short human-readable problem summary.
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
         detail:
           type: string
+          description: Safe redacted problem detail.
+        instance:
+          type: string
+          description: Request URI associated with this occurrence.
+        code:
+          type: string
+          description: Stable machine-readable InfraNexum error code.
+        message:
+          type: string
+          deprecated: true
+          description: Legacy compatibility alias of detail.
+        details:
+          type: object
+          additionalProperties: true
+          description: Structured validation or conflict details.
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Reserved non-sensitive problem metadata.
+        occurred_at:
+          type: string
+          format: date-time
+          description: UTC timestamp of this problem occurrence.
+        timestamp:
+          type: string
+          format: date-time
+          deprecated: true
+          description: Legacy compatibility alias of occurred_at.
+        correlation_id:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+          description: Canonical request UUIDv7 correlation identifier.
+        trace_id:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+          description: Compatibility trace identifier equal to correlation_id.
+      additionalProperties: false
     UuidV7:
       type: string
       format: uuid
@@ -169,24 +229,36 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
     Forbidden:
       description: Permission or capability denied.
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
     NotFound:
       description: Canonical object not found.
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
     BadRequest:
       description: Invalid identifier or pagination request.
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
   securitySchemes:
     LocalSessionCookie:
       type: apiKey
@@ -201,6 +273,13 @@ components:
         type: string
         format: uuid
         pattern: ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-7[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
+  headers:
+    CorrelationId:
+      description: Canonical UUIDv7 correlation identifier assigned to the request.
+      schema:
+        type: string
+        format: uuid
+        pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
 servers:
 - url: /
 security:

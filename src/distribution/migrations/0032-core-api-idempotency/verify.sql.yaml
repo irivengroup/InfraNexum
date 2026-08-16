@@ -1,0 +1,5 @@
+schema: infranexum.verify/v1
+checks:
+- id: api-idempotency-ledger
+  postgresql: "SELECT COUNT(*)=1 FROM information_schema.tables WHERE table_schema='infranexum_core' AND table_name='api_idempotency'"
+  oracle: "SELECT COUNT(*)=1 FROM user_tables WHERE table_name='INFRANEXUM_CORE_API_IDEMP'"

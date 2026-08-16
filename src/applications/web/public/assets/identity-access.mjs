@@ -24,7 +24,7 @@ export class IdentityAccessApiError extends Error {
 export async function identityAccessRequest(
   configuration,
   path,
-  { method = 'GET', body, justification, fetchFunction = fetch, cookieString = globalThis.document?.cookie ?? '' } = {},
+  { method = 'GET', body, justification, idempotencyKey, fetchFunction = fetch, cookieString = globalThis.document?.cookie ?? '' } = {},
 ) {
   if (!configuration?.identityAccessEnabled) throw new Error('Identity-access Web capability is disabled');
   if (typeof path !== 'string' || !path.startsWith('/v1/')) throw new TypeError('IAM API path must start with /v1/');
@@ -43,6 +43,7 @@ export async function identityAccessRequest(
     const csrf = csrfToken(cookieString);
     if (!csrf) throw new Error('CSRF token is unavailable');
     headers['X-CSRF-Token'] = csrf;
+    if (requiresIdempotency(path)) headers['Idempotency-Key'] = validatedIdempotencyKey(idempotencyKey ?? newIdempotencyKey());
   }
 
   const controller = new AbortController();
@@ -69,6 +70,23 @@ export async function identityAccessRequest(
   } finally {
     clearTimeout(timer);
   }
+}
+
+
+function requiresIdempotency(path) {
+  return !(/\/permissions\/validate(?:\?|$)/.test(path) || /\/authorization\/(?:decisions|explain)(?:\?|$)/.test(path));
+}
+
+function newIdempotencyKey() {
+  const generated = globalThis.crypto?.randomUUID?.();
+  if (typeof generated !== 'string') throw new Error('secure UUID idempotency generation is unavailable');
+  return generated;
+}
+
+function validatedIdempotencyKey(value) {
+  const normalized = String(value ?? '').trim();
+  if (!/^[A-Za-z0-9._:-]{8,200}$/.test(normalized)) throw new Error('Idempotency key must contain 8 to 200 safe characters');
+  return normalized;
 }
 
 /** Enables and wires the E03 IAM administration workspace after local authentication succeeds. */

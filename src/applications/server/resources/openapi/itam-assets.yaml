@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum ITAM Asset Lifecycle API
-  version: 2.0.0-alpha.0.94
+  version: 2.0.0-alpha.0.97
   description: PGM-07-E02 acquisition, custody, maintenance, retirement and disposition lifecycle for canonical ITAM assets.
 servers:
 - url: /
@@ -210,7 +210,8 @@ paths:
       - ITAM / Assets
       operationId: stockItamAsset
       summary: Move an asset into governed stock
-      description: Requires PGM-07-E03 verified warranty for hardware or verified license contract for software; support coverage may extend hardware supportability only within an active authorized scope.
+      description: Requires PGM-07-E03 verified warranty for hardware or verified license contract for software; support coverage
+        may extend hardware supportability only within an active authorized scope.
       x-infranexum-permission: itam.asset.update
       x-infranexum-capability: itam.assets
       parameters:
@@ -246,7 +247,8 @@ paths:
       - ITAM / Assets
       operationId: assignItamAsset
       summary: Assign an asset to an accountable internal custodian
-      description: Requires PGM-07-E03 verified warranty for hardware or verified license contract for software; support coverage may extend hardware supportability only within an active authorized scope.
+      description: Requires PGM-07-E03 verified warranty for hardware or verified license contract for software; support coverage
+        may extend hardware supportability only within an active authorized scope.
       x-infranexum-permission: itam.asset.update
       x-infranexum-capability: itam.assets
       parameters:
@@ -282,7 +284,8 @@ paths:
       - ITAM / Assets
       operationId: deployItamAsset
       summary: Deploy an assigned asset
-      description: Requires PGM-07-E03 verified warranty for hardware or verified license contract for software; support coverage may extend hardware supportability only within an active authorized scope.
+      description: Requires PGM-07-E03 verified warranty for hardware or verified license contract for software; support coverage
+        may extend hardware supportability only within an active authorized scope.
       x-infranexum-permission: itam.asset.update
       x-infranexum-capability: itam.assets
       parameters:
@@ -493,7 +496,8 @@ paths:
       - ITAM / Assets
       operationId: setItamAssetProducer
       summary: Set or correct the governed manufacturer or software publisher
-      description: Existing assets migrated without a producer remain readable but cannot pass the PGM-07-E03 operational readiness gate until this reference is set.
+      description: Existing assets migrated without a producer remain readable but cannot pass the PGM-07-E03 operational
+        readiness gate until this reference is set.
       x-infranexum-permission: itam.asset.update
       x-infranexum-capability: itam.assets
       parameters:
@@ -548,11 +552,13 @@ components:
       name: Idempotency-Key
       in: header
       required: true
+      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request
+        semantics returns HTTP 409.
       schema:
         type: string
         minLength: 8
         maxLength: 200
-        pattern: ^[A-Za-z0-9][A-Za-z0-9._:-]{7,199}$
+        pattern: ^[A-Za-z0-9._:-]+$
     IfMatch:
       name: If-Match
       in: header
@@ -628,7 +634,8 @@ components:
           $ref: '#/components/schemas/UuidV7'
         producerPartnerId:
           $ref: '#/components/schemas/UuidV7'
-          description: Canonical active manufacturer for hardware or software publisher for software. Optional only for backward-compatible migration; operational transitions require it.
+          description: Canonical active manufacturer for hardware or software publisher for software. Optional only for backward-compatible
+            migration; operational transitions require it.
         reason:
           type: string
           minLength: 2
@@ -794,27 +801,65 @@ components:
       - detail
       - instance
       - code
-      - occurredAt
-      - traceId
+      - message
+      - details
+      - metadata
+      - occurred_at
+      - timestamp
+      - correlation_id
+      - trace_id
       properties:
         type:
           type: string
-          format: uri
+          description: Stable InfraNexum problem type URI.
         title:
           type: string
+          description: Short human-readable problem summary.
         status:
           type: integer
+          minimum: 400
+          maximum: 599
         detail:
           type: string
+          description: Safe redacted problem detail.
         instance:
           type: string
+          description: Request URI associated with this occurrence.
         code:
           type: string
-        occurredAt:
+          description: Stable machine-readable InfraNexum error code.
+        message:
+          type: string
+          deprecated: true
+          description: Legacy compatibility alias of detail.
+        details:
+          type: object
+          additionalProperties: true
+          description: Structured validation or conflict details.
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Reserved non-sensitive problem metadata.
+        occurred_at:
           type: string
           format: date-time
-        traceId:
+          description: UTC timestamp of this problem occurrence.
+        timestamp:
           type: string
+          format: date-time
+          deprecated: true
+          description: Legacy compatibility alias of occurred_at.
+        correlation_id:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+          description: Canonical request UUIDv7 correlation identifier.
+        trace_id:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+          description: Compatibility trace identifier equal to correlation_id.
+      additionalProperties: false
   responses:
     AssetMutation:
       description: Current asset state.
@@ -832,12 +877,18 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
     Unauthorized:
       description: Authentication required
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
     Forbidden:
       description: Authorization
       capability or compliance gate denied the operation: null
@@ -845,12 +896,18 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
     NotFound:
       description: Asset not found
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
     Conflict:
       description: State
       quota: null
@@ -859,9 +916,22 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
     UnprocessableEntity:
       description: Cross-context reference or custody validation failed
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+  headers:
+    CorrelationId:
+      description: Canonical UUIDv7 correlation identifier assigned to the request.
+      schema:
+        type: string
+        format: uuid
+        pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$

@@ -156,6 +156,21 @@ public final class JdbcIdentityAccessRepository implements IdentityAccessReposit
     }
 
     @Override
+    public List<UserMembership> memberships(DomainIdentifier userId, int offset, int limit) {
+        Objects.requireNonNull(userId, "userId");
+        return withRead(connection -> {
+            String sql = "SELECT id,user_id,organization_id,subdivision_id,effective_from,effective_to,revoked_at FROM "
+                    + membershipTable() + " WHERE user_id=? ORDER BY effective_from,id " + pagination();
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                dialect.bindIdentifier(statement, 1, userId); bindPage(statement, offset, limit, 2);
+                try (ResultSet rows = statement.executeQuery()) {
+                    List<UserMembership> result = new ArrayList<>(); while (rows.next()) result.add(readMembership(rows)); return List.copyOf(result);
+                }
+            }
+        }, "page IAM memberships");
+    }
+
+    @Override
     public void insertMembership(UserMembership membership) {
         Objects.requireNonNull(membership, "membership");
         String sql = "INSERT INTO " + membershipTable()
@@ -362,6 +377,8 @@ public final class JdbcIdentityAccessRepository implements IdentityAccessReposit
 
     @Override
     public List<RoleAssignment> assignments(DomainIdentifier roleId){return withRead(connection->{try(PreparedStatement statement=connection.prepareStatement("SELECT id,role_id,actor_type,actor_id,scope_kind,organization_id,subdivision_id,effective_from,effective_to,revoked_at,revoked_by FROM "+assignmentTable()+" WHERE role_id=? ORDER BY effective_from,id")){dialect.bindIdentifier(statement,1,roleId);try(ResultSet rows=statement.executeQuery()){List<RoleAssignment> result=new ArrayList<>();while(rows.next())result.add(readAssignment(rows));return List.copyOf(result);}}},"list IAM role assignments");}
+    @Override
+    public List<RoleAssignment> assignments(DomainIdentifier roleId,int offset,int limit){return withRead(connection->{try(PreparedStatement statement=connection.prepareStatement("SELECT id,role_id,actor_type,actor_id,scope_kind,organization_id,subdivision_id,effective_from,effective_to,revoked_at,revoked_by FROM "+assignmentTable()+" WHERE role_id=? ORDER BY effective_from,id "+pagination())){dialect.bindIdentifier(statement,1,roleId);bindPage(statement,offset,limit,2);try(ResultSet rows=statement.executeQuery()){List<RoleAssignment> result=new ArrayList<>();while(rows.next())result.add(readAssignment(rows));return List.copyOf(result);}}},"page IAM role assignments");}
     @Override
     public Optional<RoleAssignment> findAssignment(DomainIdentifier assignmentId){return withRead(connection->{try(PreparedStatement statement=connection.prepareStatement("SELECT id,role_id,actor_type,actor_id,scope_kind,organization_id,subdivision_id,effective_from,effective_to,revoked_at,revoked_by FROM "+assignmentTable()+" WHERE id=?")){dialect.bindIdentifier(statement,1,assignmentId);try(ResultSet rows=statement.executeQuery()){return rows.next()?Optional.of(readAssignment(rows)):Optional.empty();}}},"find IAM role assignment");}
     @Override

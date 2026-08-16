@@ -12,9 +12,13 @@ import static org.mockito.Mockito.when;
 
 import io.infranexum.identity.local.application.LocalAuthenticationService;
 import io.infranexum.identity.local.domain.LocalSessionException;
+import io.infranexum.server.http.ApiProblemTestFixtures;
 import io.infranexum.core.contracts.DomainIdentifier;
 import io.infranexum.server.observability.CorrelationContext;
 import jakarta.servlet.http.Cookie;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -25,7 +29,7 @@ class LocalAuthenticationFilterTest {
     @Test
     void bypassesNonApiAuthEndpointsAndPublicBuildMetadata() throws Exception {
         LocalAuthenticationService service = mock(LocalAuthenticationService.class);
-        var filter = new LocalAuthenticationFilter(service);
+        var filter = filter(service);
         for (String path : new String[] {"/actuator/health/readiness", "/api/v1/iam/local-auth/session", "/api/v1/system/build"}) {
             var request = new MockHttpServletRequest("GET", path);
             var response = new MockHttpServletResponse();
@@ -41,7 +45,7 @@ class LocalAuthenticationFilterTest {
         when(service.validate(any())).thenThrow(new LocalSessionException("session is invalid"));
         var request = new MockHttpServletRequest("GET", "/api/v1/iam/local-authz");
         var response = new MockHttpServletResponse();
-        new LocalAuthenticationFilter(service).doFilter(request, response, (req, res) -> { throw new AssertionError(); });
+        filter(service).doFilter(request, response, (req, res) -> { throw new AssertionError(); });
         assertEquals(401, response.getStatus());
     }
 
@@ -53,7 +57,7 @@ class LocalAuthenticationFilterTest {
         CorrelationContext.bind(request, DomainIdentifier.parse(CORRELATION_ID));
         var response = new MockHttpServletResponse();
         AtomicBoolean reached = new AtomicBoolean();
-        new LocalAuthenticationFilter(service).doFilter(request, response, (req, res) -> reached.set(true));
+        filter(service).doFilter(request, response, (req, res) -> reached.set(true));
         assertFalse(reached.get());
         assertEquals(401, response.getStatus());
         assertTrue(response.getContentAsString().contains("INFRANEXUM_AUTHENTICATION_REQUIRED"));
@@ -70,7 +74,7 @@ class LocalAuthenticationFilterTest {
         when(service.validate(LocalAuthTestFixtures.TOKEN)).thenReturn(LocalAuthTestFixtures.validated(true));
         var request = request("GET", "/api/v1/iam/organizations", LocalAuthTestFixtures.TOKEN);
         var response = new MockHttpServletResponse();
-        new LocalAuthenticationFilter(service).doFilter(request, response, (req, res) -> { throw new AssertionError(); });
+        filter(service).doFilter(request, response, (req, res) -> { throw new AssertionError(); });
         assertEquals(403, response.getStatus());
         assertTrue(response.getContentAsString().contains("INFRANEXUM_BOOTSTRAP_PASSWORD_CHANGE_REQUIRED"));
     }
@@ -83,7 +87,7 @@ class LocalAuthenticationFilterTest {
         var request = request("GET", "/api/v1/iam/organizations", LocalAuthTestFixtures.TOKEN);
         var response = new MockHttpServletResponse();
         AtomicBoolean reached = new AtomicBoolean();
-        new LocalAuthenticationFilter(service).doFilter(request, response, (req, res) -> reached.set(true));
+        filter(service).doFilter(request, response, (req, res) -> reached.set(true));
         assertTrue(reached.get());
         assertNotNull(request.getAttribute(LocalAuthenticationFilter.ACCOUNT_ATTRIBUTE));
     }
@@ -97,7 +101,7 @@ class LocalAuthenticationFilterTest {
         var request = request("POST", "/api/v1/iam/organizations", LocalAuthTestFixtures.TOKEN);
         request.addHeader("X-CSRF-Token", "wrong");
         var response = new MockHttpServletResponse();
-        new LocalAuthenticationFilter(service).doFilter(request, response, (req, res) -> { throw new AssertionError(); });
+        filter(service).doFilter(request, response, (req, res) -> { throw new AssertionError(); });
         assertEquals(403, response.getStatus());
         assertTrue(response.getContentAsString().contains("INFRANEXUM_CSRF_VALIDATION_FAILED"));
     }
@@ -111,7 +115,7 @@ class LocalAuthenticationFilterTest {
         request.addHeader("X-CSRF-Token", LocalAuthTestFixtures.CSRF);
         var response = new MockHttpServletResponse();
         AtomicBoolean reached = new AtomicBoolean();
-        new LocalAuthenticationFilter(service).doFilter(request, response, (req, res) -> reached.set(true));
+        filter(service).doFilter(request, response, (req, res) -> reached.set(true));
         assertTrue(reached.get());
         verify(service).verifyCsrf(validated, LocalAuthTestFixtures.CSRF);
     }
@@ -120,5 +124,10 @@ class LocalAuthenticationFilterTest {
         var request = new MockHttpServletRequest(method, path);
         if (token != null) request.setCookies(new Cookie(LocalAuthController.SESSION_COOKIE, token));
         return request;
+    }
+
+    private static LocalAuthenticationFilter filter(LocalAuthenticationService service) {
+        Clock clock = Clock.fixed(Instant.parse("2026-08-16T10:00:00Z"), ZoneOffset.UTC);
+        return new LocalAuthenticationFilter(service, ApiProblemTestFixtures.support(clock));
     }
 }

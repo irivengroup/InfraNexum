@@ -59,8 +59,8 @@ class ApiContractCheckerTest(unittest.TestCase):
         self.assertEqual((), checker.run())
         self.assertEqual(13, len(checker.documents))
         self.assertEqual(170, len(checker.operations))
-        self.assertEqual(39, len(checker.current_debt.idempotency))
-        self.assertEqual(15, len(checker.current_debt.pagination))
+        self.assertEqual(0, len(checker.current_debt.idempotency))
+        self.assertEqual(0, len(checker.current_debt.pagination))
         self.assertEqual(56, len(checker.current_debt.capability))
         self.assertEqual(85, len(checker.current_debt.permission))
 
@@ -85,7 +85,7 @@ class ApiContractCheckerTest(unittest.TestCase):
         path = self.spec("catalogue.yaml")
         path.write_text("[]\n", encoding="utf-8")
         self.assertIn("CHECK-API-001", self.violations())
-        path.write_text("schema: infranexum.openapi-catalogue/v1\nversion: 2.0.0-alpha.0.94\nfragments: []\n", encoding="utf-8")
+        path.write_text("schema: infranexum.openapi-catalogue/v1\nversion: 2.0.0-alpha.0.97\nfragments: []\n", encoding="utf-8")
         self.assertIn("CHECK-API-005", self.violations())
 
     def test_duplicate_yaml_keys_are_rejected_but_merge_overrides_are_supported(self) -> None:
@@ -170,23 +170,82 @@ class ApiContractCheckerTest(unittest.TestCase):
         operation["responses"]["401"] = {"$ref": "#/components/responses/MissingProblem"}
         self.save("platform-entitlements.yaml", payload)
         ids = self.violations()
-        self.assertTrue({"CHECK-API-024", "CHECK-API-025"} <= ids)
+        self.assertTrue({"CHECK-API-024", "CHECK-API-025", "CHECK-API-030"} <= ids)
+
+    def test_declared_pagination_contract_requires_bounded_position_and_response_headers(self) -> None:
+        payload = self.load("identity-access-rbac.yaml")
+        operation = payload["paths"]["/api/v1/iam/users/{userId}/memberships"]["get"]
+        operation["x-infranexum-pagination"] = "offset"
+        operation["parameters"] = [{"name": "offset", "in": "query", "schema": {"type": "integer", "minimum": 0}}]
+        self.save("identity-access-rbac.yaml", payload)
+        self.assertIn("CHECK-API-031", self.violations())
+
+        payload = self.load("identity-access-rbac.yaml")
+        operation = payload["paths"]["/api/v1/iam/users/{userId}/memberships"]["get"]
+        operation["x-infranexum-pagination"] = "cursor"
+        operation["parameters"] = [
+            {"name": "limit", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 100}},
+            {"name": "cursor", "in": "query", "schema": {"type": "string", "format": "uuid"}},
+        ]
+        operation["responses"]["200"].setdefault("headers", {})["X-Page-Limit"] = {"schema": {"type": "integer"}}
+        operation["responses"]["200"]["headers"]["X-Next-Cursor"] = {"schema": {"type": "string", "format": "uuid"}}
+        self.save("identity-access-rbac.yaml", payload)
+        self.assertNotIn("CHECK-API-031", self.violations())
+
+    def test_declared_pagination_contract_rejects_ambiguous_and_malformed_modes(self) -> None:
+        payload = self.load("identity-access-rbac.yaml")
+        operation = payload["paths"]["/api/v1/iam/users/{userId}/memberships"]["get"]
+        operation["x-infranexum-pagination"] = "page"
+        self.save("identity-access-rbac.yaml", payload)
+        self.assertIn("CHECK-API-031", self.violations())
+
+        payload = self.load("identity-access-rbac.yaml")
+        operation = payload["paths"]["/api/v1/iam/users/{userId}/memberships"]["get"]
+        operation["x-infranexum-pagination"] = "offset"
+        operation["parameters"] = [
+            {"name": "limit", "in": "query", "schema": {"type": "string", "minimum": 1, "maximum": 100}},
+            {"name": "offset", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 1_000_001}},
+            {"name": "cursor", "in": "query", "schema": {"type": "string", "format": "uuid"}},
+        ]
+        operation["responses"]["200"].pop("headers", None)
+        self.save("identity-access-rbac.yaml", payload)
+        self.assertIn("CHECK-API-031", self.violations())
+
+        payload = self.load("identity-access-rbac.yaml")
+        operation = payload["paths"]["/api/v1/iam/users/{userId}/memberships"]["get"]
+        operation["x-infranexum-pagination"] = "cursor"
+        operation["parameters"] = [
+            {"name": "limit", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 100}},
+            {"name": "cursor", "in": "header", "schema": {"type": "integer"}},
+            {"name": "offset", "in": "query", "schema": {"type": "integer", "minimum": 0, "maximum": 100}},
+        ]
+        self.save("identity-access-rbac.yaml", payload)
+        self.assertIn("CHECK-API-031", self.violations())
+
+    def test_canonical_problem_schema_is_mandatory_in_every_fragment(self) -> None:
+        payload = self.load("platform-entitlements.yaml")
+        payload["components"]["schemas"]["Problem"]["properties"].pop("correlation_id")
+        self.save("platform-entitlements.yaml", payload)
+        self.assertIn("CHECK-API-029", self.violations())
+
+    def test_reusable_error_response_must_resolve_to_problem_and_correlation_header(self) -> None:
+        payload = self.load("identity-access-rbac.yaml")
+        bad = payload["components"]["responses"]["BadRequest"]
+        bad["content"] = {"application/json": {"schema": {"type": "object"}}}
+        bad["headers"].pop("X-Correlation-ID")
+        self.save("identity-access-rbac.yaml", payload)
+        ids = self.violations()
+        self.assertTrue({"CHECK-API-024", "CHECK-API-030"} <= ids)
 
     def test_contract_debt_is_a_ratchet_and_may_decrease(self) -> None:
-        baseline = self.root / "validation/api_contracts/baseline.json"
-        payload = json.loads(baseline.read_text(encoding="utf-8"))
-        payload["debt"]["idempotency"].remove("createIamUser")
-        baseline.write_text(json.dumps(payload), encoding="utf-8")
-        self.assertIn("CHECK-API-028", self.violations())
-
-        shutil.copy2(SOURCE / "validation/api_contracts/baseline.json", baseline)
         spec = self.load("identity-access-rbac.yaml")
         operation = spec["paths"]["/api/v1/iam/users"]["post"]
-        operation.setdefault("parameters", []).append({"$ref": "#/components/parameters/IdempotencyKey"})
-        spec.setdefault("components", {}).setdefault("parameters", {})["IdempotencyKey"] = {
-            "name": "Idempotency-Key", "in": "header", "required": True, "schema": {"type": "string"}
-        }
+        operation.pop("x-infranexum-idempotency", None)
+        operation["parameters"] = [p for p in operation.get("parameters", []) if p.get("$ref") != "#/components/parameters/IdempotencyKey"]
         self.save("identity-access-rbac.yaml", spec)
+        self.assertIn("CHECK-API-028", self.violations())
+
+        shutil.copy2(SOURCE / "src/applications/server/resources/openapi/identity-access-rbac.yaml", self.spec("identity-access-rbac.yaml"))
         self.assertNotIn("CHECK-API-028", self.violations())
 
     def test_invalid_debt_baseline_is_rejected(self) -> None:
@@ -361,7 +420,7 @@ class ApiContractCheckerTest(unittest.TestCase):
             def run(self):
                 base = {
                     "openapi": "3.1.0",
-                    "info": {"version": "2.0.0-alpha.0.94"},
+                    "info": {"version": "2.0.0-alpha.0.97"},
                     "tags": [{"name": "X / Shared"}],
                     "x-tagGroups": [{"name": "X", "tags": ["X / Shared", "X / Shared"]}],
                     "components": {"schemas": {"Thing": {"type": "object"}}},
@@ -384,7 +443,7 @@ class ApiContractCheckerTest(unittest.TestCase):
         class DuplicateRouteChecker(BaseChecker):
             def run(self):
                 op = {"operationId": "x", "tags": ["X / Y"], "summary": "X", "responses": {"200": {"description": "OK"}}}
-                doc = {"openapi": "3.1.0", "info": {"version": "2.0.0-alpha.0.94"}, "tags": [{"name": "X / Y"}], "x-tagGroups": [{"name": "X", "tags": ["X / Y"]}], "paths": {"/api/v1/x": {"get": op}}, "components": {}}
+                doc = {"openapi": "3.1.0", "info": {"version": "2.0.0-alpha.0.97"}, "tags": [{"name": "X / Y"}], "x-tagGroups": [{"name": "X", "tags": ["X / Y"]}], "paths": {"/api/v1/x": {"get": op}}, "components": {}}
                 self.documents = {"one.yaml": doc, "two.yaml": doc}
                 return ()
         with self.assertRaises(ValueError):
@@ -407,3 +466,23 @@ class ApiContractCheckerTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+    def test_idempotency_contract_supports_required_repeatable_and_security_exempt_modes(self) -> None:
+        payload = self.load("identity-access-rbac.yaml")
+        operation = payload["paths"]["/api/v1/iam/users"]["post"]
+        operation["x-infranexum-idempotency"] = "required"
+        operation["parameters"] = [p for p in operation.get("parameters", []) if p.get("$ref") != "#/components/parameters/IdempotencyKey"]
+        self.save("identity-access-rbac.yaml", payload)
+        self.assertIn("CHECK-API-032", self.violations())
+
+        payload = self.load("identity-access-rbac.yaml")
+        operation = payload["paths"]["/api/v1/organizations/{orgId}/permissions/validate"]["post"]
+        operation["x-infranexum-idempotency"] = "invalid"
+        self.save("identity-access-rbac.yaml", payload)
+        self.assertIn("CHECK-API-032", self.violations())
+
+    def test_canonical_idempotency_header_rejects_weak_bounds_or_pattern(self) -> None:
+        payload = self.load("identity-access-rbac.yaml")
+        payload["components"]["parameters"]["IdempotencyKey"]["schema"]["minLength"] = 1
+        self.save("identity-access-rbac.yaml", payload)
+        self.assertIn("CHECK-API-032", self.violations())

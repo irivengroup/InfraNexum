@@ -78,6 +78,14 @@ class IdentityAccessAdminServiceTest {
         UserMembership membership = service.addMembership(created.id(), ORG, SUBDIVISION, NOW, NOW.plusSeconds(60), context);
         assertEquals(SUBDIVISION, membership.subdivisionId());
         assertEquals(1, service.memberships(created.id()).size());
+        service.addMembership(created.id(), OTHER_ORG, null, NOW.plusSeconds(120), null, context);
+        OffsetPage<UserMembership> membershipPage1 = service.memberships(created.id(), 0, 1);
+        assertEquals(1, membershipPage1.items().size());
+        assertEquals(1, membershipPage1.nextOffset());
+        OffsetPage<UserMembership> membershipPage2 = service.memberships(created.id(), membershipPage1.nextOffset(), 1);
+        assertEquals(1, membershipPage2.items().size());
+        assertEquals(null, membershipPage2.nextOffset());
+        assertThrows(IllegalArgumentException.class, () -> service.memberships(created.id(), PaginationConstraints.MAX_OFFSET + 1, 1));
         assertTrue(repository.hasEffectiveMembership(created.id(), AuthorizationScope.subdivision(ORG, SUBDIVISION), NOW));
         assertFalse(repository.hasEffectiveMembership(created.id(), AuthorizationScope.subdivision(ORG, SUBDIVISION), NOW.plusSeconds(60)));
 
@@ -181,6 +189,12 @@ class IdentityAccessAdminServiceTest {
         IdentityGroup group = service.createGroup(ORG, "ops.assignment", "Assignment group", context);
         RoleAssignment groupAssignment = service.assignRole(orgRole.id(), AssignmentActorType.GROUP, group.id(), AuthorizationScope.organization(ORG), NOW, null, context);
         assertEquals(AssignmentActorType.GROUP, groupAssignment.actorType());
+        OffsetPage<RoleAssignment> assignmentPage1 = service.assignments(orgRole.id(), 0, 1);
+        assertEquals(1, assignmentPage1.items().size());
+        assertEquals(1, assignmentPage1.nextOffset());
+        OffsetPage<RoleAssignment> assignmentPage2 = service.assignments(orgRole.id(), assignmentPage1.nextOffset(), 1);
+        assertEquals(1, assignmentPage2.items().size());
+        assertEquals(null, assignmentPage2.nextOffset());
         assertCode("IAM_ASSIGNMENT_SCOPE_MISMATCH",
                 () -> service.assignRole(orgRole.id(), AssignmentActorType.GROUP, group.id(), AuthorizationScope.platform(), NOW, null, context));
 

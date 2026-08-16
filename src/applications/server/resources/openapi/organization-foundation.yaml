@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum Organization Foundation API
-  version: 2.0.0-alpha.0.94
+  version: 2.0.0-alpha.0.97
   description: Authoritative Organization/Subdivision/temporal-scope foundation. Local authentication establishes the actor
     and the Server PGM-03-E03 RBAC PEP enforces explicit authorization before this adapter executes.
 tags:
@@ -380,11 +380,13 @@ components:
       name: Idempotency-Key
       in: header
       required: true
+      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request
+        semantics returns HTTP 409.
       schema:
         type: string
         minLength: 8
-        maxLength: 128
-        pattern: ^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$
+        maxLength: 200
+        pattern: ^[A-Za-z0-9._:-]+$
     OrganizationId:
       name: organizationId
       in: path
@@ -419,9 +421,11 @@ components:
         maxLength: 512
   headers:
     CorrelationId:
-      description: Canonical UUIDv7 used to correlate the request, outbox event and structured Server logs.
+      description: Canonical UUIDv7 correlation identifier assigned to the request.
       schema:
-        $ref: '#/components/schemas/UuidV7'
+        type: string
+        format: uuid
+        pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
     VersionEtag:
       description: Quoted optimistic aggregate version.
       schema:
@@ -434,36 +438,36 @@ components:
         X-Correlation-ID:
           $ref: '#/components/headers/CorrelationId'
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: '#/components/schemas/Problem'
     NotFound:
       description: The resource is absent from the requested organization scope.
       headers:
         X-Correlation-ID:
           $ref: '#/components/headers/CorrelationId'
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: '#/components/schemas/Problem'
     Conflict:
       description: Lifecycle, optimistic version, uniqueness, idempotency or quota conflict.
       headers:
         X-Correlation-ID:
           $ref: '#/components/headers/CorrelationId'
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: '#/components/schemas/Problem'
     InternalFailure:
       description: Transaction failed closed; persistence details are not exposed.
       headers:
         X-Correlation-ID:
           $ref: '#/components/headers/CorrelationId'
       content:
-        application/json:
+        application/problem+json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: '#/components/schemas/Problem'
     Unauthorized:
       description: A valid local session is required.
       headers:
@@ -471,8 +475,8 @@ components:
           $ref: '#/components/headers/CorrelationId'
       content:
         application/problem+json:
-          schema: &id001
-            $ref: '#/components/schemas/Error'
+          schema:
+            $ref: '#/components/schemas/Problem'
     Forbidden:
       description: CSRF or RBAC authorization denied the request.
       headers:
@@ -480,7 +484,8 @@ components:
           $ref: '#/components/headers/CorrelationId'
       content:
         application/problem+json:
-          schema: *id001
+          schema:
+            $ref: '#/components/schemas/Problem'
   schemas:
     UuidV7:
       type: string
@@ -755,30 +760,77 @@ components:
           format: int64
           minimum: 0
     Error:
+      allOf:
+      - $ref: '#/components/schemas/Problem'
+      description: Deprecated compatibility alias of Problem.
+    Problem:
       type: object
-      additionalProperties: false
       required:
+      - type
+      - title
+      - status
+      - detail
+      - instance
       - code
       - message
-      - correlation_id
       - details
+      - metadata
+      - occurred_at
       - timestamp
+      - correlation_id
+      - trace_id
       properties:
+        type:
+          type: string
+          description: Stable InfraNexum problem type URI.
+        title:
+          type: string
+          description: Short human-readable problem summary.
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+          description: Safe redacted problem detail.
+        instance:
+          type: string
+          description: Request URI associated with this occurrence.
         code:
           type: string
+          description: Stable machine-readable InfraNexum error code.
         message:
           type: string
-        correlation_id:
-          anyOf:
-          - $ref: '#/components/schemas/UuidV7'
-          - type: string
-            const: unavailable
+          deprecated: true
+          description: Legacy compatibility alias of detail.
         details:
           type: object
           additionalProperties: true
+          description: Structured validation or conflict details.
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Reserved non-sensitive problem metadata.
+        occurred_at:
+          type: string
+          format: date-time
+          description: UTC timestamp of this problem occurrence.
         timestamp:
           type: string
           format: date-time
+          deprecated: true
+          description: Legacy compatibility alias of occurred_at.
+        correlation_id:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+          description: Canonical request UUIDv7 correlation identifier.
+        trace_id:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+          description: Compatibility trace identifier equal to correlation_id.
+      additionalProperties: false
   securitySchemes:
     LocalSessionCookie:
       type: apiKey

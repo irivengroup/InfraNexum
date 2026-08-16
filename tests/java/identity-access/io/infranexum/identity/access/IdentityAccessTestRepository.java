@@ -70,6 +70,13 @@ final class IdentityAccessTestRepository implements IdentityAccessRepository {
     }
 
     @Override public List<UserMembership> memberships(DomainIdentifier userId) { return userMemberships.stream().filter(value -> value.userId().equals(userId)).toList(); }
+
+    @Override
+    public List<UserMembership> memberships(DomainIdentifier userId, int offset, int limit) {
+        return userMemberships.stream().filter(value -> value.userId().equals(userId))
+                .sorted(Comparator.comparing(UserMembership::effectiveFrom).thenComparing(UserMembership::id))
+                .skip(offset).limit(limit).toList();
+    }
     @Override public void insertMembership(UserMembership membership) { userMemberships.add(membership); }
 
     @Override
@@ -174,6 +181,13 @@ final class IdentityAccessTestRepository implements IdentityAccessRepository {
     @Override public void updatePermission(Permission permission) { permissions.put(permission.id(), permission); }
 
     @Override public List<RoleAssignment> assignments(DomainIdentifier roleId) { return roleAssignments.values().stream().filter(value -> value.roleId().equals(roleId)).toList(); }
+
+    @Override
+    public List<RoleAssignment> assignments(DomainIdentifier roleId, int offset, int limit) {
+        return roleAssignments.values().stream().filter(value -> value.roleId().equals(roleId))
+                .sorted(Comparator.comparing(RoleAssignment::effectiveFrom).thenComparing(RoleAssignment::id))
+                .skip(offset).limit(limit).toList();
+    }
     @Override public Optional<RoleAssignment> findAssignment(DomainIdentifier assignmentId) { return Optional.ofNullable(roleAssignments.get(assignmentId)); }
     @Override public Set<String> rolePermissionCodes(DomainIdentifier roleId) { return rolePermissions.getOrDefault(roleId, Set.of()); }
     @Override public void insertAssignment(RoleAssignment assignment) { roleAssignments.put(assignment.id(), assignment); }

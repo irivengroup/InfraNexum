@@ -1,4 +1,5 @@
 import { csrfToken } from './auth.mjs';
+import { paginationMetadata } from './http-pagination.mjs';
 
 const REQUEST_TIMEOUT_MS = 15_000;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -47,19 +48,19 @@ export class ItamComplianceClient {
   activateSupportCoverage(id, version, reason, key) { return this.lifecycle('support-coverages', id, 'activate', version, reason, key); }
   expireSupportCoverage(id, version, reason, key) { return this.lifecycle('support-coverages', id, 'expire', version, reason, key); }
 
-  listSupportAuthorizations(organizationId) { return this.request(`/v1/itam/support-authorizations?organization_id=${encodeURIComponent(uuid(organizationId, 'organizationId'))}`); }
+  listSupportAuthorizations(organizationId, { offset = 0, limit = 50 } = {}) { return this.request(`/v1/itam/support-authorizations?organization_id=${encodeURIComponent(uuid(organizationId, 'organizationId'))}&offset=${boundedOffset(offset)}&limit=${integer(limit, 'limit', 1, 200)}`); }
   createSupportAuthorization(body, key) { return this.request('/v1/itam/support-authorizations', { method: 'POST', body: mutationBody(body), idempotencyKey: key }); }
   supportAuthorization(id) { return this.request(`/v1/itam/support-authorizations/${uuid(id, 'authorizationId')}`); }
   activateSupportAuthorization(id, version, reason, key) { return this.lifecycle('support-authorizations', id, 'activate', version, reason, key); }
   suspendSupportAuthorization(id, version, reason, key) { return this.lifecycle('support-authorizations', id, 'suspend', version, reason, key); }
 
-  warrantyTypes(organizationId) { return this.request(`/v1/itam/warranty-types?organization_id=${encodeURIComponent(uuid(organizationId, 'organizationId'))}`); }
+  warrantyTypes(organizationId, { offset = 0, limit = 50 } = {}) { return this.request(`/v1/itam/warranty-types?organization_id=${encodeURIComponent(uuid(organizationId, 'organizationId'))}&offset=${boundedOffset(offset)}&limit=${integer(limit, 'limit', 1, 200)}`); }
   createWarrantyType(organizationId, code, displayName, reason, key) {
     return this.request('/v1/itam/warranty-types', { method: 'POST', body: { organizationId: uuid(organizationId, 'organizationId'), code: text(code, 'code', 2, 64), displayName: text(displayName, 'displayName', 2, 160), reason: validatedReason(reason) }, idempotencyKey: key });
   }
-  alerts(assetId, { asOf, horizonDays = 180 } = {}) {
+  alerts(assetId, { asOf, horizonDays = 180, offset = 0, limit = 50 } = {}) {
     const horizon = integer(horizonDays, 'horizonDays', 1, 3650);
-    const query = new URLSearchParams({ horizon_days: String(horizon) });
+    const query = new URLSearchParams({ horizon_days: String(horizon), offset: String(boundedOffset(offset)), limit: String(integer(limit, 'limit', 1, 200)) });
     if (asOf !== undefined && asOf !== null && String(asOf).trim() !== '') query.set('as_of', isoDate(asOf, 'asOf'));
     return this.request(`/v1/itam/assets/${uuid(assetId, 'assetId')}/compliance-alerts?${query}`);
   }
@@ -101,7 +102,7 @@ export class ItamComplianceClient {
         throw new ItamComplianceApiError(response.status, problem?.code ?? problem?.title, problem?.detail ?? problem?.message);
       }
       const payload = response.status === 204 ? null : await response.json();
-      return Object.freeze({ payload, etag: response.headers?.get?.('etag') ?? null });
+      return Object.freeze({ payload, etag: response.headers?.get?.('etag') ?? null, pagination: paginationMetadata(response.headers) });
     } catch (error) {
       if (error?.name === 'AbortError') throw new ItamComplianceApiError(0, 'ITAM_COMPLIANCE_TIMEOUT', 'ITAM Compliance request timed out');
       throw error;
@@ -129,4 +130,5 @@ function validatedReason(value) { return text(value, 'reason', 2, 1024); }
 function text(value, field, minimum, maximum) { const normalized = String(value ?? '').trim(); if (normalized.length < minimum || normalized.length > maximum || /[\u0000-\u001f\u007f]/.test(normalized)) throw new TypeError(`${field} is invalid`); return normalized; }
 function isoDate(value, field) { const normalized = String(value ?? '').trim(); if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized) || Number.isNaN(Date.parse(`${normalized}T00:00:00Z`))) throw new TypeError(`${field} must be an ISO date`); return normalized; }
 function integer(value, field, minimum, maximum) { const parsed = Number(value); if (!Number.isSafeInteger(parsed) || parsed < minimum || parsed > maximum) throw new TypeError(`${field} must be between ${minimum} and ${maximum}`); return parsed; }
+function boundedOffset(value) { return integer(value, 'offset', 0, 1_000_000); }
 async function safeJson(response) { try { return await response.json(); } catch { return null; } }

@@ -1,5 +1,5 @@
 schema: infranexum.migration-catalogue/v1
-version: 1.30.0
+version: 1.31.0
 entries:
 - id: '0001'
   path: 0001-core-schema-history/migration.yaml
@@ -55,11 +55,13 @@ entries:
   path: 0026-dcim-facility-hierarchy/migration.yaml
 - id: '0027'
   path: 0027-identity-access-dcim-facility-permissions/migration.yaml
-- id: '0028'
+- id: 0028
   path: 0028-dcim-rack-equipment-cabling/migration.yaml
-- id: '0029'
+- id: 0029
   path: 0029-identity-access-dcim-physical-permissions/migration.yaml
 - id: '0030'
   path: 0030-ddi-ipam-foundation/migration.yaml
 - id: '0031'
   path: 0031-identity-access-ddi-ipam-permissions/migration.yaml
+- id: '0032'
+  path: 0032-core-api-idempotency/migration.yaml

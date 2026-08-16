@@ -50,7 +50,7 @@ export class RsotSchemaRegistryClient {
   }
 
   /** Sends one same-origin request with CSRF, optimistic revision and bounded latency. */
-  async request(path, { method = 'GET', body, revision } = {}) {
+  async request(path, { method = 'GET', body, revision, idempotencyKey } = {}) {
     if (typeof path !== 'string' || !path.startsWith('/v1/rsot/')) throw new TypeError('path is outside the RSOT schema registry boundary');
     const verb = String(method).toUpperCase();
     const headers = { Accept: 'application/json' };
@@ -60,6 +60,7 @@ export class RsotSchemaRegistryClient {
       const csrf = csrfToken(this.cookieProvider());
       if (!csrf) throw new Error('CSRF token is unavailable');
       headers['X-CSRF-Token'] = csrf;
+      headers['Idempotency-Key'] = validatedIdempotencyKey(idempotencyKey ?? newIdempotencyKey());
     }
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -83,6 +84,19 @@ export class RsotSchemaRegistryClient {
       clearTimeout(timer);
     }
   }
+}
+
+
+function newIdempotencyKey() {
+  const generated = globalThis.crypto?.randomUUID?.();
+  if (typeof generated !== 'string') throw new Error('secure UUID idempotency generation is unavailable');
+  return generated;
+}
+
+function validatedIdempotencyKey(value) {
+  const normalized = String(value ?? '').trim();
+  if (!/^[A-Za-z0-9._:-]{8,200}$/.test(normalized)) throw new Error('Idempotency key must contain 8 to 200 safe characters');
+  return normalized;
 }
 
 function uuid(value, field) {

@@ -1,185 +1,1127 @@
 openapi: 3.1.0
 info:
   title: InfraNexum DDI IPAM API
-  version: 2.0.0-alpha.0.94
-  description: PGM-08-E01 governed IPAM for VRFs, VLANs, networks, pools, reservations and addresses. DNS and DHCP are outside this contract.
+  version: 2.0.0-alpha.0.97
+  description: PGM-08-E01 governed IPAM for VRFs, VLANs, networks, pools, reservations and addresses. DNS and DHCP are outside
+    this contract.
 tags:
-  - name: DDI / IPAM / Routing Spaces
-  - name: DDI / IPAM / Networks
-  - name: DDI / IPAM / Addresses
+- name: DDI / IPAM / Routing Spaces
+- name: DDI / IPAM / Networks
+- name: DDI / IPAM / Addresses
 x-tagGroups:
-  - name: DDI
-    tags: [DDI / IPAM / Routing Spaces, DDI / IPAM / Networks, DDI / IPAM / Addresses]
+- name: DDI
+  tags:
+  - DDI / IPAM / Routing Spaces
+  - DDI / IPAM / Networks
+  - DDI / IPAM / Addresses
 paths:
   /api/v1/ddi/ipam/vrfs:
     get:
-      tags: [DDI / IPAM / Routing Spaces]
+      tags:
+      - DDI / IPAM / Routing Spaces
       operationId: listIpamVrfs
       x-infranexum-capability: ddi.ipam
       summary: List organization VRFs
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/OrganizationId'}, {$ref: '#/components/parameters/Limit'}]
-      responses: {'200': {description: VRFs, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Vrf'}}}}}, '403': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/OrganizationId'
+      - $ref: '#/components/parameters/Limit'
+      - name: cursor
+        in: query
+        required: false
+        description: Opaque continuation position encoded as the last returned InfraNexum UUIDv7 identifier.
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: VRFs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Vrf'
+          headers:
+            X-Page-Limit:
+              description: Effective bounded page size.
+              schema:
+                type: integer
+                minimum: 1
+            X-Next-Cursor:
+              description: Cursor for the next page; absent when the current page is terminal.
+              schema:
+                type: string
+                format: uuid
+        '403':
+          $ref: '#/components/responses/Problem'
+      x-infranexum-pagination: cursor
     post:
-      tags: [DDI / IPAM / Routing Spaces]
+      tags:
+      - DDI / IPAM / Routing Spaces
       operationId: createIpamVrf
       x-infranexum-capability: ddi.ipam
       summary: Create a governed VRF
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
-      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CreateVrf'}}}}
-      responses: {'201': {description: Created VRF, headers: {ETag: {$ref: '#/components/headers/ETag'}}, content: {application/json: {schema: {$ref: '#/components/schemas/Vrf'}}}}, '400': {$ref: '#/components/responses/Problem'}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVrf'
+      responses:
+        '201':
+          description: Created VRF
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vrf'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '409':
+          $ref: '#/components/responses/Problem'
   /api/v1/ddi/ipam/vrfs/{id}/status:
     post:
-      tags: [DDI / IPAM / Routing Spaces]
+      tags:
+      - DDI / IPAM / Routing Spaces
       operationId: changeIpamVrfStatus
       x-infranexum-capability: ddi.ipam
       summary: Change VRF lifecycle status
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/Id'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
-      requestBody: {$ref: '#/components/requestBodies/Status'}
-      responses: {'200': {description: Updated VRF, headers: {ETag: {$ref: '#/components/headers/ETag'}}, content: {application/json: {schema: {$ref: '#/components/schemas/Vrf'}}}}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/Id'
+      - $ref: '#/components/parameters/IfMatch'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        $ref: '#/components/requestBodies/Status'
+      responses:
+        '200':
+          description: Updated VRF
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vrf'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '409':
+          $ref: '#/components/responses/Problem'
   /api/v1/ddi/ipam/vlans:
     get:
-      tags: [DDI / IPAM / Routing Spaces]
+      tags:
+      - DDI / IPAM / Routing Spaces
       operationId: listIpamVlans
       x-infranexum-capability: ddi.ipam
       summary: List VLAN and VXLAN logical segments
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/OrganizationId'}, {$ref: '#/components/parameters/Limit'}]
-      responses: {'200': {description: VLANs, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Vlan'}}}}}, '403': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/OrganizationId'
+      - $ref: '#/components/parameters/Limit'
+      - name: cursor
+        in: query
+        required: false
+        description: Opaque continuation position encoded as the last returned InfraNexum UUIDv7 identifier.
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: VLANs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Vlan'
+          headers:
+            X-Page-Limit:
+              description: Effective bounded page size.
+              schema:
+                type: integer
+                minimum: 1
+            X-Next-Cursor:
+              description: Cursor for the next page; absent when the current page is terminal.
+              schema:
+                type: string
+                format: uuid
+        '403':
+          $ref: '#/components/responses/Problem'
+      x-infranexum-pagination: cursor
     post:
-      tags: [DDI / IPAM / Routing Spaces]
+      tags:
+      - DDI / IPAM / Routing Spaces
       operationId: createIpamVlan
       x-infranexum-capability: ddi.ipam
       summary: Create a VLAN or VXLAN logical segment
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
-      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CreateVlan'}}}}
-      responses: {'201': {description: Created VLAN, headers: {ETag: {$ref: '#/components/headers/ETag'}}, content: {application/json: {schema: {$ref: '#/components/schemas/Vlan'}}}}, '400': {$ref: '#/components/responses/Problem'}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVlan'
+      responses:
+        '201':
+          description: Created VLAN
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vlan'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '409':
+          $ref: '#/components/responses/Problem'
   /api/v1/ddi/ipam/vlans/{id}/status:
     post:
-      tags: [DDI / IPAM / Routing Spaces]
+      tags:
+      - DDI / IPAM / Routing Spaces
       operationId: changeIpamVlanStatus
       x-infranexum-capability: ddi.ipam
       summary: Change VLAN or VXLAN lifecycle status
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/Id'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
-      requestBody: {$ref: '#/components/requestBodies/Status'}
-      responses: {'200': {description: Updated VLAN, content: {application/json: {schema: {$ref: '#/components/schemas/Vlan'}}}}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/Id'
+      - $ref: '#/components/parameters/IfMatch'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        $ref: '#/components/requestBodies/Status'
+      responses:
+        '200':
+          description: Updated VLAN
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vlan'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '409':
+          $ref: '#/components/responses/Problem'
   /api/v1/ddi/ipam/networks:
     get:
-      tags: [DDI / IPAM / Networks]
+      tags:
+      - DDI / IPAM / Networks
       operationId: listIpamNetworks
       x-infranexum-capability: ddi.ipam
       summary: List address blocks, prefixes and subnets
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/OrganizationId'}, {name: vrf_id, in: query, schema: {$ref: '#/components/schemas/Uuid'}}, {$ref: '#/components/parameters/Limit'}]
-      responses: {'200': {description: Networks, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Network'}}}}}, '403': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/OrganizationId'
+      - name: vrf_id
+        in: query
+        schema:
+          $ref: '#/components/schemas/Uuid'
+      - $ref: '#/components/parameters/Limit'
+      - name: cursor
+        in: query
+        required: false
+        description: Opaque continuation position encoded as the last returned InfraNexum UUIDv7 identifier.
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Networks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Network'
+          headers:
+            X-Page-Limit:
+              description: Effective bounded page size.
+              schema:
+                type: integer
+                minimum: 1
+            X-Next-Cursor:
+              description: Cursor for the next page; absent when the current page is terminal.
+              schema:
+                type: string
+                format: uuid
+        '403':
+          $ref: '#/components/responses/Problem'
+      x-infranexum-pagination: cursor
     post:
-      tags: [DDI / IPAM / Networks]
+      tags:
+      - DDI / IPAM / Networks
       operationId: createIpamNetwork
       x-infranexum-capability: ddi.ipam
       summary: Create a non-overlapping address block, prefix or subnet
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
-      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CreateNetwork'}}}}
-      responses: {'201': {description: Created network, headers: {ETag: {$ref: '#/components/headers/ETag'}}, content: {application/json: {schema: {$ref: '#/components/schemas/Network'}}}}, '400': {$ref: '#/components/responses/Problem'}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNetwork'
+      responses:
+        '201':
+          description: Created network
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Network'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '409':
+          $ref: '#/components/responses/Problem'
   /api/v1/ddi/ipam/networks/{id}:
     patch:
-      tags: [DDI / IPAM / Networks]
+      tags:
+      - DDI / IPAM / Networks
       operationId: updateIpamNetworkMetadata
       x-infranexum-capability: ddi.ipam
       summary: Update governed network metadata without mutating CIDR or VRF
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/Id'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
-      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/UpdateNetwork'}}}}
-      responses: {'200': {description: Updated network, headers: {ETag: {$ref: '#/components/headers/ETag'}}, content: {application/json: {schema: {$ref: '#/components/schemas/Network'}}}}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/Id'
+      - $ref: '#/components/parameters/IfMatch'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNetwork'
+      responses:
+        '200':
+          description: Updated network
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Network'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '409':
+          $ref: '#/components/responses/Problem'
   /api/v1/ddi/ipam/networks/{id}/status:
     post:
-      tags: [DDI / IPAM / Networks]
+      tags:
+      - DDI / IPAM / Networks
       operationId: changeIpamNetworkStatus
       x-infranexum-capability: ddi.ipam
       summary: Change network lifecycle status
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/Id'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
-      requestBody: {$ref: '#/components/requestBodies/Status'}
-      responses: {'200': {description: Updated network, content: {application/json: {schema: {$ref: '#/components/schemas/Network'}}}}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/Id'
+      - $ref: '#/components/parameters/IfMatch'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        $ref: '#/components/requestBodies/Status'
+      responses:
+        '200':
+          description: Updated network
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Network'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '409':
+          $ref: '#/components/responses/Problem'
   /api/v1/ddi/ipam/networks/{id}/pools:
     get:
-      tags: [DDI / IPAM / Networks]
+      tags:
+      - DDI / IPAM / Networks
       operationId: listIpamPools
       x-infranexum-capability: ddi.ipam
       summary: List allocation pools in a subnet
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/Id'}, {$ref: '#/components/parameters/Limit'}]
-      responses: {'200': {description: Pools, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Pool'}}}}}, '403': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/Id'
+      - $ref: '#/components/parameters/Limit'
+      - name: cursor
+        in: query
+        required: false
+        description: Opaque continuation position encoded as the last returned InfraNexum UUIDv7 identifier.
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Pools
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pool'
+          headers:
+            X-Page-Limit:
+              description: Effective bounded page size.
+              schema:
+                type: integer
+                minimum: 1
+            X-Next-Cursor:
+              description: Cursor for the next page; absent when the current page is terminal.
+              schema:
+                type: string
+                format: uuid
+        '403':
+          $ref: '#/components/responses/Problem'
+      x-infranexum-pagination: cursor
   /api/v1/ddi/ipam/pools:
     post:
-      tags: [DDI / IPAM / Networks]
+      tags:
+      - DDI / IPAM / Networks
       operationId: createIpamPool
       x-infranexum-capability: ddi.ipam
       summary: Create a non-overlapping allocation pool in an active subnet
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
-      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CreatePool'}}}}
-      responses: {'201': {description: Created pool, content: {application/json: {schema: {$ref: '#/components/schemas/Pool'}}}}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePool'
+      responses:
+        '201':
+          description: Created pool
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pool'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '409':
+          $ref: '#/components/responses/Problem'
   /api/v1/ddi/ipam/addresses:
     get:
-      tags: [DDI / IPAM / Addresses]
+      tags:
+      - DDI / IPAM / Addresses
       operationId: listIpamAddresses
       x-infranexum-capability: ddi.ipam
       summary: List allocations and explicit reservations
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/OrganizationId'}, {name: vrf_id, in: query, schema: {$ref: '#/components/schemas/Uuid'}}, {name: network_id, in: query, schema: {$ref: '#/components/schemas/Uuid'}}, {$ref: '#/components/parameters/Limit'}]
-      responses: {'200': {description: Addresses, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Address'}}}}}, '403': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/OrganizationId'
+      - name: vrf_id
+        in: query
+        schema:
+          $ref: '#/components/schemas/Uuid'
+      - name: network_id
+        in: query
+        schema:
+          $ref: '#/components/schemas/Uuid'
+      - $ref: '#/components/parameters/Limit'
+      - name: cursor
+        in: query
+        required: false
+        description: Opaque continuation position encoded as the last returned InfraNexum UUIDv7 identifier.
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Addresses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Address'
+          headers:
+            X-Page-Limit:
+              description: Effective bounded page size.
+              schema:
+                type: integer
+                minimum: 1
+            X-Next-Cursor:
+              description: Cursor for the next page; absent when the current page is terminal.
+              schema:
+                type: string
+                format: uuid
+        '403':
+          $ref: '#/components/responses/Problem'
+      x-infranexum-pagination: cursor
     post:
-      tags: [DDI / IPAM / Addresses]
+      tags:
+      - DDI / IPAM / Addresses
       operationId: allocateIpamAddress
       x-infranexum-capability: ddi.ipam
       summary: Atomically allocate or explicitly reserve an IP address
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
-      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/AllocateAddress'}}}}
-      responses: {'201': {description: Allocation or reservation, headers: {ETag: {$ref: '#/components/headers/ETag'}}, content: {application/json: {schema: {$ref: '#/components/schemas/Address'}}}}, '400': {$ref: '#/components/responses/Problem'}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllocateAddress'
+      responses:
+        '201':
+          description: Allocation or reservation
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+        '400':
+          $ref: '#/components/responses/Problem'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '409':
+          $ref: '#/components/responses/Problem'
   /api/v1/ddi/ipam/addresses/{id}/release:
     post:
-      tags: [DDI / IPAM / Addresses]
+      tags:
+      - DDI / IPAM / Addresses
       operationId: releaseIpamAddress
       x-infranexum-capability: ddi.ipam
       summary: Release an allocated or reserved address while preserving audit history
-      security: [{sessionCookie: []}]
-      parameters: [{$ref: '#/components/parameters/Id'}, {$ref: '#/components/parameters/IfMatch'}, {$ref: '#/components/parameters/IdempotencyKey'}]
-      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ReasonRequest'}}}}
-      responses: {'200': {description: Released address, content: {application/json: {schema: {$ref: '#/components/schemas/Address'}}}}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/Id'
+      - $ref: '#/components/parameters/IfMatch'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReasonRequest'
+      responses:
+        '200':
+          description: Released address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+        '403':
+          $ref: '#/components/responses/Problem'
+        '409':
+          $ref: '#/components/responses/Problem'
 components:
   securitySchemes:
-    sessionCookie: {type: apiKey, in: cookie, name: INFRANEXUM_SESSION}
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: INFRANEXUM_SESSION
   parameters:
-    OrganizationId: {name: organization_id, in: query, required: true, schema: {$ref: '#/components/schemas/Uuid'}}
-    Id: {name: id, in: path, required: true, schema: {$ref: '#/components/schemas/Uuid'}}
-    Limit: {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 500, default: 100}}
-    IfMatch: {name: If-Match, in: header, required: true, schema: {type: string, pattern: '^"ver-[1-9][0-9]*"$'}}
-    IdempotencyKey: {name: Idempotency-Key, in: header, required: true, schema: {type: string, minLength: 8, maxLength: 200}}
-  headers: {ETag: {schema: {type: string}}}
+    OrganizationId:
+      name: organization_id
+      in: query
+      required: true
+      schema:
+        $ref: '#/components/schemas/Uuid'
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/Uuid'
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 500
+        default: 100
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      schema:
+        type: string
+        pattern: ^"ver-[1-9][0-9]*"$
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Caller-generated retry key scoped to the authenticated actor and operation. Reuse with different request
+        semantics returns HTTP 409.
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 200
+        pattern: ^[A-Za-z0-9._:-]+$
+  headers:
+    ETag:
+      schema:
+        type: string
+    CorrelationId:
+      description: Canonical UUIDv7 correlation identifier assigned to the request.
+      schema:
+        type: string
+        format: uuid
+        pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
   requestBodies:
-    Status: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/StatusRequest'}}}}
+    Status:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StatusRequest'
   responses:
-    Problem: {description: RFC 9457 problem, content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}}
+    Problem:
+      description: RFC 9457 problem
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
   schemas:
-    Uuid: {type: string, format: uuid}
-    Reason: {type: string, minLength: 2, maxLength: 1024}
-    CreateVrf: {type: object, additionalProperties: false, required: [organizationId,code,displayName,reason], properties: {organizationId: {$ref: '#/components/schemas/Uuid'}, code: {type: string, minLength: 1, maxLength: 64}, displayName: {type: string, minLength: 1, maxLength: 160}, routeDistinguisher: {type: [string,'null'], maxLength: 128}, reason: {$ref: '#/components/schemas/Reason'}}}
-    CreateVlan: {type: object, additionalProperties: false, required: [organizationId,name,reason], properties: {organizationId: {$ref: '#/components/schemas/Uuid'}, siteId: {oneOf: [{$ref: '#/components/schemas/Uuid'},{type: 'null'}]}, vlanId: {type: [integer,'null'], minimum: 1, maximum: 4094}, vni: {type: [integer,'null'], minimum: 1, maximum: 16777215}, name: {type: string, maxLength: 160}, reason: {$ref: '#/components/schemas/Reason'}}}
-    CreateNetwork: {type: object, additionalProperties: false, required: [organizationId,vrfId,kind,cidr,reason], properties: {organizationId: {$ref: '#/components/schemas/Uuid'}, subdivisionId: {oneOf: [{$ref: '#/components/schemas/Uuid'},{type: 'null'}]}, siteId: {oneOf: [{$ref: '#/components/schemas/Uuid'},{type: 'null'}]}, vrfId: {$ref: '#/components/schemas/Uuid'}, vlanId: {oneOf: [{$ref: '#/components/schemas/Uuid'},{type: 'null'}]}, parentNetworkId: {oneOf: [{$ref: '#/components/schemas/Uuid'},{type: 'null'}]}, kind: {type: string, enum: [block,prefix,subnet]}, cidr: {type: string, maxLength: 64}, usage: {type: [string,'null'], maxLength: 160}, trustLevel: {type: [string,'null'], maxLength: 64}, reason: {$ref: '#/components/schemas/Reason'}}}
-    UpdateNetwork: {type: object, additionalProperties: false, required: [reason], properties: {vlanId: {oneOf: [{$ref: '#/components/schemas/Uuid'},{type: 'null'}]}, usage: {type: [string,'null'], maxLength: 160}, trustLevel: {type: [string,'null'], maxLength: 64}, reason: {$ref: '#/components/schemas/Reason'}}}
-    CreatePool: {type: object, additionalProperties: false, required: [organizationId,networkId,startAddress,endAddress,name,reason], properties: {organizationId: {$ref: '#/components/schemas/Uuid'}, networkId: {$ref: '#/components/schemas/Uuid'}, startAddress: {type: string, maxLength: 45}, endAddress: {type: string, maxLength: 45}, name: {type: string, maxLength: 160}, reason: {$ref: '#/components/schemas/Reason'}}}
-    AllocateAddress: {type: object, additionalProperties: false, required: [organizationId,vrfId,networkId,reservation,reason], properties: {organizationId: {$ref: '#/components/schemas/Uuid'}, vrfId: {$ref: '#/components/schemas/Uuid'}, networkId: {$ref: '#/components/schemas/Uuid'}, poolId: {oneOf: [{$ref: '#/components/schemas/Uuid'},{type: 'null'}]}, requestedAddress: {type: [string,'null'], maxLength: 45}, reservation: {type: boolean}, hostname: {type: [string,'null'], maxLength: 253}, rsotObjectId: {oneOf: [{$ref: '#/components/schemas/Uuid'},{type: 'null'}]}, dcimEquipmentId: {oneOf: [{$ref: '#/components/schemas/Uuid'},{type: 'null'}]}, purpose: {type: [string,'null'], maxLength: 512}, reason: {$ref: '#/components/schemas/Reason'}}}
-    StatusRequest: {type: object, additionalProperties: false, required: [targetStatus,reason], properties: {targetStatus: {type: string, enum: [draft,active,reserved,deprecated,retired]}, reason: {$ref: '#/components/schemas/Reason'}}}
-    ReasonRequest: {type: object, additionalProperties: false, required: [reason], properties: {reason: {$ref: '#/components/schemas/Reason'}}}
-    Vrf: {type: object, required: [id,organizationId,code,displayName,status,version], properties: {id: {$ref: '#/components/schemas/Uuid'}, organizationId: {$ref: '#/components/schemas/Uuid'}, code: {type: string}, displayName: {type: string}, routeDistinguisher: {type: [string,'null']}, status: {type: string}, version: {type: integer}, createdAt: {type: string, format: date-time}, updatedAt: {type: string, format: date-time}}}
-    Vlan: {type: object, required: [id,organizationId,name,status,version], properties: {id: {$ref: '#/components/schemas/Uuid'}, organizationId: {$ref: '#/components/schemas/Uuid'}, siteId: {oneOf: [{$ref: '#/components/schemas/Uuid'},{type: 'null'}]}, vlanId: {type: [integer,'null']}, vni: {type: [integer,'null']}, name: {type: string}, status: {type: string}, version: {type: integer}, createdAt: {type: string, format: date-time}, updatedAt: {type: string, format: date-time}}}
-    Network: {type: object, required: [id,organizationId,vrfId,kind,cidr,status,addressCount,version], properties: {id: {$ref: '#/components/schemas/Uuid'}, organizationId: {$ref: '#/components/schemas/Uuid'}, subdivisionId: {oneOf: [{$ref: '#/components/schemas/Uuid'},{type: 'null'}]}, siteId: {oneOf: [{$ref: '#/components/schemas/Uuid'},{type: 'null'}]}, vrfId: {$ref: '#/components/schemas/Uuid'}, vlanId: {oneOf: [{$ref: '#/components/schemas/Uuid'},{type: 'null'}]}, parentNetworkId: {oneOf: [{$ref: '#/components/schemas/Uuid'},{type: 'null'}]}, kind: {type: string}, cidr: {type: string}, usage: {type: [string,'null']}, trustLevel: {type: [string,'null']}, status: {type: string}, addressCount: {type: string}, version: {type: integer}, createdAt: {type: string, format: date-time}, updatedAt: {type: string, format: date-time}}}
-    Pool: {type: object, required: [id,organizationId,networkId,startAddress,endAddress,name,status,version], properties: {id: {$ref: '#/components/schemas/Uuid'}, organizationId: {$ref: '#/components/schemas/Uuid'}, networkId: {$ref: '#/components/schemas/Uuid'}, startAddress: {type: string}, endAddress: {type: string}, name: {type: string}, status: {type: string}, version: {type: integer}, createdAt: {type: string, format: date-time}, updatedAt: {type: string, format: date-time}}}
-    Address: {type: object, required: [id,organizationId,vrfId,networkId,address,status,version], properties: {id: {$ref: '#/components/schemas/Uuid'}, organizationId: {$ref: '#/components/schemas/Uuid'}, vrfId: {$ref: '#/components/schemas/Uuid'}, networkId: {$ref: '#/components/schemas/Uuid'}, poolId: {oneOf: [{$ref: '#/components/schemas/Uuid'},{type: 'null'}]}, address: {type: string}, status: {type: string}, hostname: {type: [string,'null']}, rsotObjectId: {oneOf: [{$ref: '#/components/schemas/Uuid'},{type: 'null'}]}, dcimEquipmentId: {oneOf: [{$ref: '#/components/schemas/Uuid'},{type: 'null'}]}, purpose: {type: [string,'null']}, version: {type: integer}, createdAt: {type: string, format: date-time}, updatedAt: {type: string, format: date-time}}}
-    Problem: {type: object, properties: {type: {type: string}, title: {type: string}, status: {type: integer}, detail: {type: string}, code: {type: string}}}
+    Uuid:
+      type: string
+      format: uuid
+    Reason:
+      type: string
+      minLength: 2
+      maxLength: 1024
+    CreateVrf:
+      type: object
+      additionalProperties: false
+      required:
+      - organizationId
+      - code
+      - displayName
+      - reason
+      properties:
+        organizationId:
+          $ref: '#/components/schemas/Uuid'
+        code:
+          type: string
+          minLength: 1
+          maxLength: 64
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 160
+        routeDistinguisher:
+          type:
+          - string
+          - 'null'
+          maxLength: 128
+        reason:
+          $ref: '#/components/schemas/Reason'
+    CreateVlan:
+      type: object
+      additionalProperties: false
+      required:
+      - organizationId
+      - name
+      - reason
+      properties:
+        organizationId:
+          $ref: '#/components/schemas/Uuid'
+        siteId:
+          oneOf:
+          - $ref: '#/components/schemas/Uuid'
+          - type: 'null'
+        vlanId:
+          type:
+          - integer
+          - 'null'
+          minimum: 1
+          maximum: 4094
+        vni:
+          type:
+          - integer
+          - 'null'
+          minimum: 1
+          maximum: 16777215
+        name:
+          type: string
+          maxLength: 160
+        reason:
+          $ref: '#/components/schemas/Reason'
+    CreateNetwork:
+      type: object
+      additionalProperties: false
+      required:
+      - organizationId
+      - vrfId
+      - kind
+      - cidr
+      - reason
+      properties:
+        organizationId:
+          $ref: '#/components/schemas/Uuid'
+        subdivisionId:
+          oneOf:
+          - $ref: '#/components/schemas/Uuid'
+          - type: 'null'
+        siteId:
+          oneOf:
+          - $ref: '#/components/schemas/Uuid'
+          - type: 'null'
+        vrfId:
+          $ref: '#/components/schemas/Uuid'
+        vlanId:
+          oneOf:
+          - $ref: '#/components/schemas/Uuid'
+          - type: 'null'
+        parentNetworkId:
+          oneOf:
+          - $ref: '#/components/schemas/Uuid'
+          - type: 'null'
+        kind:
+          type: string
+          enum:
+          - block
+          - prefix
+          - subnet
+        cidr:
+          type: string
+          maxLength: 64
+        usage:
+          type:
+          - string
+          - 'null'
+          maxLength: 160
+        trustLevel:
+          type:
+          - string
+          - 'null'
+          maxLength: 64
+        reason:
+          $ref: '#/components/schemas/Reason'
+    UpdateNetwork:
+      type: object
+      additionalProperties: false
+      required:
+      - reason
+      properties:
+        vlanId:
+          oneOf:
+          - $ref: '#/components/schemas/Uuid'
+          - type: 'null'
+        usage:
+          type:
+          - string
+          - 'null'
+          maxLength: 160
+        trustLevel:
+          type:
+          - string
+          - 'null'
+          maxLength: 64
+        reason:
+          $ref: '#/components/schemas/Reason'
+    CreatePool:
+      type: object
+      additionalProperties: false
+      required:
+      - organizationId
+      - networkId
+      - startAddress
+      - endAddress
+      - name
+      - reason
+      properties:
+        organizationId:
+          $ref: '#/components/schemas/Uuid'
+        networkId:
+          $ref: '#/components/schemas/Uuid'
+        startAddress:
+          type: string
+          maxLength: 45
+        endAddress:
+          type: string
+          maxLength: 45
+        name:
+          type: string
+          maxLength: 160
+        reason:
+          $ref: '#/components/schemas/Reason'
+    AllocateAddress:
+      type: object
+      additionalProperties: false
+      required:
+      - organizationId
+      - vrfId
+      - networkId
+      - reservation
+      - reason
+      properties:
+        organizationId:
+          $ref: '#/components/schemas/Uuid'
+        vrfId:
+          $ref: '#/components/schemas/Uuid'
+        networkId:
+          $ref: '#/components/schemas/Uuid'
+        poolId:
+          oneOf:
+          - $ref: '#/components/schemas/Uuid'
+          - type: 'null'
+        requestedAddress:
+          type:
+          - string
+          - 'null'
+          maxLength: 45
+        reservation:
+          type: boolean
+        hostname:
+          type:
+          - string
+          - 'null'
+          maxLength: 253
+        rsotObjectId:
+          oneOf:
+          - $ref: '#/components/schemas/Uuid'
+          - type: 'null'
+        dcimEquipmentId:
+          oneOf:
+          - $ref: '#/components/schemas/Uuid'
+          - type: 'null'
+        purpose:
+          type:
+          - string
+          - 'null'
+          maxLength: 512
+        reason:
+          $ref: '#/components/schemas/Reason'
+    StatusRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - targetStatus
+      - reason
+      properties:
+        targetStatus:
+          type: string
+          enum:
+          - draft
+          - active
+          - reserved
+          - deprecated
+          - retired
+        reason:
+          $ref: '#/components/schemas/Reason'
+    ReasonRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - reason
+      properties:
+        reason:
+          $ref: '#/components/schemas/Reason'
+    Vrf:
+      type: object
+      required:
+      - id
+      - organizationId
+      - code
+      - displayName
+      - status
+      - version
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        organizationId:
+          $ref: '#/components/schemas/Uuid'
+        code:
+          type: string
+        displayName:
+          type: string
+        routeDistinguisher:
+          type:
+          - string
+          - 'null'
+        status:
+          type: string
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Vlan:
+      type: object
+      required:
+      - id
+      - organizationId
+      - name
+      - status
+      - version
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        organizationId:
+          $ref: '#/components/schemas/Uuid'
+        siteId:
+          oneOf:
+          - $ref: '#/components/schemas/Uuid'
+          - type: 'null'
+        vlanId:
+          type:
+          - integer
+          - 'null'
+        vni:
+          type:
+          - integer
+          - 'null'
+        name:
+          type: string
+        status:
+          type: string
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Network:
+      type: object
+      required:
+      - id
+      - organizationId
+      - vrfId
+      - kind
+      - cidr
+      - status
+      - addressCount
+      - version
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        organizationId:
+          $ref: '#/components/schemas/Uuid'
+        subdivisionId:
+          oneOf:
+          - $ref: '#/components/schemas/Uuid'
+          - type: 'null'
+        siteId:
+          oneOf:
+          - $ref: '#/components/schemas/Uuid'
+          - type: 'null'
+        vrfId:
+          $ref: '#/components/schemas/Uuid'
+        vlanId:
+          oneOf:
+          - $ref: '#/components/schemas/Uuid'
+          - type: 'null'
+        parentNetworkId:
+          oneOf:
+          - $ref: '#/components/schemas/Uuid'
+          - type: 'null'
+        kind:
+          type: string
+        cidr:
+          type: string
+        usage:
+          type:
+          - string
+          - 'null'
+        trustLevel:
+          type:
+          - string
+          - 'null'
+        status:
+          type: string
+        addressCount:
+          type: string
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Pool:
+      type: object
+      required:
+      - id
+      - organizationId
+      - networkId
+      - startAddress
+      - endAddress
+      - name
+      - status
+      - version
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        organizationId:
+          $ref: '#/components/schemas/Uuid'
+        networkId:
+          $ref: '#/components/schemas/Uuid'
+        startAddress:
+          type: string
+        endAddress:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Address:
+      type: object
+      required:
+      - id
+      - organizationId
+      - vrfId
+      - networkId
+      - address
+      - status
+      - version
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        organizationId:
+          $ref: '#/components/schemas/Uuid'
+        vrfId:
+          $ref: '#/components/schemas/Uuid'
+        networkId:
+          $ref: '#/components/schemas/Uuid'
+        poolId:
+          oneOf:
+          - $ref: '#/components/schemas/Uuid'
+          - type: 'null'
+        address:
+          type: string
+        status:
+          type: string
+        hostname:
+          type:
+          - string
+          - 'null'
+        rsotObjectId:
+          oneOf:
+          - $ref: '#/components/schemas/Uuid'
+          - type: 'null'
+        dcimEquipmentId:
+          oneOf:
+          - $ref: '#/components/schemas/Uuid'
+          - type: 'null'
+        purpose:
+          type:
+          - string
+          - 'null'
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Problem:
+      type: object
+      required:
+      - type
+      - title
+      - status
+      - detail
+      - instance
+      - code
+      - message
+      - details
+      - metadata
+      - occurred_at
+      - timestamp
+      - correlation_id
+      - trace_id
+      properties:
+        type:
+          type: string
+          description: Stable InfraNexum problem type URI.
+        title:
+          type: string
+          description: Short human-readable problem summary.
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+          description: Safe redacted problem detail.
+        instance:
+          type: string
+          description: Request URI associated with this occurrence.
+        code:
+          type: string
+          description: Stable machine-readable InfraNexum error code.
+        message:
+          type: string
+          deprecated: true
+          description: Legacy compatibility alias of detail.
+        details:
+          type: object
+          additionalProperties: true
+          description: Structured validation or conflict details.
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Reserved non-sensitive problem metadata.
+        occurred_at:
+          type: string
+          format: date-time
+          description: UTC timestamp of this problem occurrence.
+        timestamp:
+          type: string
+          format: date-time
+          deprecated: true
+          description: Legacy compatibility alias of occurred_at.
+        correlation_id:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+          description: Canonical request UUIDv7 correlation identifier.
+        trace_id:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+          description: Compatibility trace identifier equal to correlation_id.
+      additionalProperties: false

@@ -3,6 +3,7 @@ package io.infranexum.server.identityaccess;
 import io.infranexum.core.contracts.DomainIdentifier;
 import io.infranexum.identity.access.application.AuthorizationDecision;
 import io.infranexum.identity.access.application.RbacAuthorizationService;
+import io.infranexum.server.http.ApiProblemSupport;
 import io.infranexum.server.identity.LocalAuthenticationFilter;
 import io.infranexum.server.observability.CorrelationContext;
 import jakarta.servlet.FilterChain;
@@ -10,10 +11,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import org.springframework.core.Ordered;
-import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /** Server PEP enforcing the registered RBAC policy after successful authentication. */
@@ -24,8 +24,9 @@ public final class RbacAuthorizationFilter extends OncePerRequestFilter implemen
     private static final String AUTH_PREFIX="/api/v1/iam/local-auth";
     private static final String PUBLIC_BUILD_PATH="/api/v1/system/build";
     private final RbacAuthorizationService authorization;
+    private final ApiProblemSupport problems;
 
-    public RbacAuthorizationFilter(RbacAuthorizationService authorization){this.authorization=Objects.requireNonNull(authorization,"authorization");}
+    public RbacAuthorizationFilter(RbacAuthorizationService authorization, ApiProblemSupport problems){this.authorization=Objects.requireNonNull(authorization,"authorization");this.problems=Objects.requireNonNull(problems,"problems");}
     @Override public int getOrder(){return ORDER;}
 
     @Override protected boolean shouldNotFilter(HttpServletRequest request){String path=request.getRequestURI();return !path.startsWith(API_PREFIX)||path.equals(AUTH_PREFIX)||path.startsWith(AUTH_PREFIX+"/")||PUBLIC_BUILD_PATH.equals(path);}
@@ -51,12 +52,9 @@ public final class RbacAuthorizationFilter extends OncePerRequestFilter implemen
         chain.doFilter(request,response);
     }
 
-    private static void reject(HttpServletRequest request,HttpServletResponse response,int status,String code,String detail)throws IOException{
-        if(response.isCommitted())throw new IOException("authorization rejection response was committed before the RBAC boundary");
-        response.resetBuffer();response.setStatus(status);response.setCharacterEncoding(StandardCharsets.UTF_8.name());response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);response.setHeader("Cache-Control","no-store");
-        String correlation=CorrelationContext.traceId(request);if(correlation==null)correlation="unavailable";else response.setHeader(CorrelationContext.HEADER_NAME,correlation);
-        String body="{\"status\":"+status+",\"title\":\"Authorization denied\",\"code\":\""+code+"\",\"detail\":\""+json(detail)+"\",\"correlation_id\":\""+correlation+"\",\"trace_id\":\""+correlation+"\"}\n";
-        byte[] bytes=body.getBytes(StandardCharsets.UTF_8);response.setContentLength(bytes.length);response.getOutputStream().write(bytes);response.flushBuffer();
+    private void reject(HttpServletRequest request,HttpServletResponse response,int status,String code,String detail)throws IOException{
+        HttpStatus httpStatus=HttpStatus.valueOf(status);
+        problems.write(response,problems.problem(httpStatus,code,"Authorization denied",detail,java.util.Map.of(),java.util.Map.of(),request));
     }
-    private static String json(String value){return value.replace("\\","\\\\").replace("\"","\\\"").replace("\n","\\n").replace("\r","\\r").replace("\t","\\t");}
+
 }

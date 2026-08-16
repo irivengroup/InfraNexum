@@ -2,43 +2,31 @@ package io.infranexum.server.platform.entitlements;
 
 import io.infranexum.core.entitlements.EntitlementAccessException;
 import io.infranexum.core.entitlements.EntitlementRuntimeUnavailableException;
-import io.infranexum.server.observability.CorrelationContext;
-import io.infranexum.server.observability.SensitiveDataRedactor;
+import io.infranexum.server.http.ApiProblem;
+import io.infranexum.server.http.ApiProblemSupport;
 import jakarta.servlet.http.HttpServletRequest;
-import java.net.URI;
-import java.time.Clock;
-import java.time.Instant;
+import java.util.Map;
 import java.util.Objects;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-/** Translates entitlement failures into stable, non-sensitive RFC problem responses. */
-@ConditionalOnProperty(
-        name = "infranexum.entitlements.enabled",
-        havingValue = "true",
-        matchIfMissing = true)
+/** Translates entitlement failures into the canonical non-sensitive RFC 9457 problem contract. */
+@ConditionalOnProperty(name = "infranexum.entitlements.enabled", havingValue = "true", matchIfMissing = true)
 @RestControllerAdvice
 public final class EntitlementExceptionHandler {
-    private final Clock clock;
-    private final SensitiveDataRedactor redactor;
+    private final ApiProblemSupport problems;
 
-    public EntitlementExceptionHandler(
-            @Qualifier("entitlementClock") Clock clock, SensitiveDataRedactor redactor) {
-        this.clock = Objects.requireNonNull(clock, "clock");
-        this.redactor = Objects.requireNonNull(redactor, "redactor");
+    public EntitlementExceptionHandler(ApiProblemSupport problems) {
+        this.problems = Objects.requireNonNull(problems, "problems");
     }
 
     @ExceptionHandler(EntitlementAccessException.class)
-    public ResponseEntity<EntitlementProblem> handleAccess(
-            EntitlementAccessException error, HttpServletRequest request) {
+    public ResponseEntity<ApiProblem> handleAccess(EntitlementAccessException error, HttpServletRequest request) {
         return problem(
                 HttpStatus.FORBIDDEN,
-                "urn:infranexum:problem:entitlement-access-denied",
                 "Opération interdite par les droits d’usage",
                 error.getMessage(),
                 error.code().value(),
@@ -46,48 +34,18 @@ public final class EntitlementExceptionHandler {
     }
 
     @ExceptionHandler(EntitlementRuntimeUnavailableException.class)
-    public ResponseEntity<EntitlementProblem> handleUnavailable(
+    public ResponseEntity<ApiProblem> handleUnavailable(
             EntitlementRuntimeUnavailableException error, HttpServletRequest request) {
         return problem(
                 HttpStatus.SERVICE_UNAVAILABLE,
-                "urn:infranexum:problem:entitlement-runtime-unavailable",
                 "Décision de droits d’usage indisponible",
                 error.getMessage(),
                 "INFRANEXUM_ENTITLEMENT_RUNTIME_UNAVAILABLE",
                 request);
     }
 
-    private ResponseEntity<EntitlementProblem> problem(
-            HttpStatus status,
-            String type,
-            String title,
-            String detail,
-            String code,
-            HttpServletRequest request) {
-        Objects.requireNonNull(request, "request");
-        String traceId = CorrelationContext.traceId(request);
-        var body = new EntitlementProblem(
-                URI.create(type),
-                title,
-                status.value(),
-                redactor.redact("problem.detail", detail),
-                request.getRequestURI(),
-                code,
-                clock.instant(),
-                traceId);
-        return ResponseEntity.status(status)
-                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
-                .body(body);
+    private ResponseEntity<ApiProblem> problem(
+            HttpStatus status, String title, String detail, String code, HttpServletRequest request) {
+        return problems.response(status, code, title, detail, Map.of(), Map.of(), request);
     }
-
-    /** Canonical entitlement problem with controlled InfraNexum extensions. */
-    public record EntitlementProblem(
-            URI type,
-            String title,
-            int status,
-            String detail,
-            String instance,
-            String code,
-            Instant occurred_at,
-            String trace_id) {}
 }

@@ -44,3 +44,5 @@ artifacts/validation/*.json
 artifacts/validation/*.txt
 
 artifacts/validation/*.sha256
+
+artifacts/validation/openapi-product.yaml

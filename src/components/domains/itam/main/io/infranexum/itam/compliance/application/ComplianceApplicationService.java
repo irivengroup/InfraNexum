@@ -2,6 +2,8 @@ package io.infranexum.itam.compliance.application;
 
 import io.infranexum.core.contracts.ContractVersion;
 import io.infranexum.core.contracts.DomainIdentifier;
+import io.infranexum.core.contracts.OffsetPage;
+import io.infranexum.core.contracts.PaginationConstraints;
 import io.infranexum.core.contracts.UuidV7Generator;
 import io.infranexum.core.events.EventEnvelope;
 import io.infranexum.core.events.EventSource;
@@ -230,6 +232,7 @@ public final class ComplianceApplicationService {
     public SoftwareLicenseContract getLicense(DomainIdentifier id){requireEnabled();return repository.findLicense(Objects.requireNonNull(id,"id")).orElseThrow(ComplianceNotFoundException::new);}
     public SupportProviderAuthorization getSupportAuthorization(DomainIdentifier id){requireEnabled();return repository.findSupportAuthorization(Objects.requireNonNull(id,"id")).orElseThrow(ComplianceNotFoundException::new);}
     public List<SupportProviderAuthorization> supportAuthorizations(DomainIdentifier organizationId){requireEnabled();return repository.supportAuthorizations(Objects.requireNonNull(organizationId,"organizationId"));}
+    public OffsetPage<SupportProviderAuthorization> supportAuthorizationPage(DomainIdentifier organizationId,int offset,int limit){requireEnabled();return offsetPage(repository.supportAuthorizations(Objects.requireNonNull(organizationId,"organizationId")),offset,limit,200);}
     public SupportCoverage getSupportCoverage(DomainIdentifier id){requireEnabled();return repository.findSupportCoverage(Objects.requireNonNull(id,"id")).orElseThrow(ComplianceNotFoundException::new);}
 
     public List<Warranty> warranties(DomainIdentifier assetId){requireEnabled();requireAsset(assetId,null);return repository.warrantiesForAsset(assetId);}
@@ -239,12 +242,16 @@ public final class ComplianceApplicationService {
     public CompliancePage<SoftwareLicenseContract> licensePage(DomainIdentifier assetId,DomainIdentifier afterId,int limit){requireEnabled();requireAsset(assetId,null);return page(repository.licensePage(assetId,afterId,checkedLimit(limit)),limit,SoftwareLicenseContract::id);}
     public CompliancePage<SupportCoverage> supportCoveragePage(DomainIdentifier assetId,DomainIdentifier afterId,int limit){requireEnabled();requireAsset(assetId,null);return page(repository.supportCoveragePage(assetId,afterId,checkedLimit(limit)),limit,SupportCoverage::id);}
     public List<WarrantyType> warrantyTypes(){requireEnabled();return repository.warrantyTypes(true);}
+    public OffsetPage<WarrantyType> warrantyTypePage(int offset,int limit){requireEnabled();return offsetPage(repository.warrantyTypes(true),offset,limit,200);}
     public List<ComplianceRevision> history(String recordType,DomainIdentifier recordId,long afterVersion,int limit){requireEnabled();if(afterVersion<0)throw new IllegalArgumentException("afterVersion must not be negative");if(limit<1||limit>200)throw new IllegalArgumentException("limit must be between 1 and 200");return repository.revisions(recordType,recordId,afterVersion,limit);}
 
     public List<ComplianceAlert> upcomingAlerts(DomainIdentifier assetId,LocalDate asOf,int horizonDays){
         requireEnabled();requireAsset(assetId,null);Objects.requireNonNull(asOf,"asOf");if(horizonDays<1||horizonDays>3650)throw new IllegalArgumentException("horizonDays must be between 1 and 3650");
         List<ComplianceAlert> result=new ArrayList<>();for(Warranty w:repository.warrantiesForAsset(assetId)){addUpcoming(result,ComplianceAlertKind.WARRANTY_END,w.id(),assetId,w.warrantyEndDate(),asOf,horizonDays,alertThresholds);addUpcoming(result,ComplianceAlertKind.MANUFACTURER_SUPPORT_END,w.id(),assetId,w.manufacturerSupportEndDate(),asOf,horizonDays,alertThresholds);}for(SoftwareLicenseContract l:repository.licensesForAsset(assetId)){if(l.endsOn()!=null)addUpcoming(result,ComplianceAlertKind.LICENSE_END,l.id(),assetId,l.endsOn(),asOf,horizonDays,alertThresholds);addUpcoming(result,ComplianceAlertKind.SOFTWARE_SUPPORT_END,l.id(),assetId,l.publisherSupportEndDate(),asOf,horizonDays,alertThresholds);}for(SupportCoverage c:repository.supportCoveragesForAsset(assetId))addUpcoming(result,ComplianceAlertKind.THIRD_PARTY_SUPPORT_END,c.id(),assetId,c.endsOn(),asOf,horizonDays,alertThresholds);return result.stream().sorted(java.util.Comparator.comparing(ComplianceAlert::dueDate).thenComparing(a->a.kind().wireValue())).toList();
     }
+    public OffsetPage<ComplianceAlert> upcomingAlertPage(DomainIdentifier assetId,LocalDate asOf,int horizonDays,int offset,int limit){return offsetPage(upcomingAlerts(assetId,asOf,horizonDays),offset,limit,200);}
+
+    private static <T>OffsetPage<T> offsetPage(List<T> rows,int offset,int limit,int max){PaginationConstraints.requireOffset(offset);if(limit<1||limit>max)throw new IllegalArgumentException("limit must be between 1 and "+max);int from=Math.min(offset,rows.size());int to=Math.min(rows.size(),Math.addExact(from,limit));List<T> items=List.copyOf(rows.subList(from,to));Integer next=to<rows.size()?to:null;return new OffsetPage<>(items,next);}
 
     /** Idempotently publishes deadline events exactly on configured J-180/J-120/.../J-1 thresholds. */
     public int publishDueAlerts(LocalDate asOf,DomainIdentifier correlationId){

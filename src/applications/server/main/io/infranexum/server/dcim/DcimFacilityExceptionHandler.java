@@ -5,18 +5,14 @@ import io.infranexum.dcim.facility.domain.FacilityConflictException;
 import io.infranexum.dcim.facility.domain.FacilityNotFoundException;
 import io.infranexum.dcim.facility.domain.FacilityQuotaException;
 import io.infranexum.identity.access.domain.IdentityAccessException;
-import io.infranexum.server.observability.CorrelationContext;
+import io.infranexum.server.http.ApiProblem;
+import io.infranexum.server.http.ApiProblemSupport;
 import jakarta.servlet.http.HttpServletRequest;
-import java.net.URI;
-import java.time.Clock;
-import java.time.Instant;
-import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
@@ -27,24 +23,24 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Order(Ordered.HIGHEST_PRECEDENCE + 54)
 @RestControllerAdvice(assignableTypes = DcimFacilityController.class)
 public final class DcimFacilityExceptionHandler {
-    private final Clock clock;
+    private final ApiProblemSupport problems;
 
-    public DcimFacilityExceptionHandler(@Qualifier("platformClock") Clock clock) {
-        this.clock = Objects.requireNonNull(clock, "clock");
+    public DcimFacilityExceptionHandler(ApiProblemSupport problems) {
+        this.problems = Objects.requireNonNull(problems, "problems");
     }
 
     @ExceptionHandler(FacilityNotFoundException.class)
-    ResponseEntity<Problem> notFound(FacilityNotFoundException failure, HttpServletRequest request) {
+    ResponseEntity<ApiProblem> notFound(FacilityNotFoundException failure, HttpServletRequest request) {
         return problem(HttpStatus.NOT_FOUND, "DCIM_FACILITY_NOT_FOUND", failure.getMessage(), request);
     }
 
     @ExceptionHandler(FacilityQuotaException.class)
-    ResponseEntity<Problem> quota(FacilityQuotaException failure, HttpServletRequest request) {
+    ResponseEntity<ApiProblem> quota(FacilityQuotaException failure, HttpServletRequest request) {
         return problem(HttpStatus.CONFLICT, "DCIM_FACILITY_QUOTA_EXCEEDED", failure.getMessage(), request);
     }
 
     @ExceptionHandler(FacilityConflictException.class)
-    ResponseEntity<Problem> conflict(FacilityConflictException failure, HttpServletRequest request) {
+    ResponseEntity<ApiProblem> conflict(FacilityConflictException failure, HttpServletRequest request) {
         HttpStatus status = switch (failure.code()) {
             case "DCIM_FACILITY_CAPABILITY_UNAVAILABLE" -> HttpStatus.FORBIDDEN;
             case "DCIM_ORGANIZATION_INVALID", "DCIM_ORGANIZATION_INACTIVE", "DCIM_SUBDIVISION_INVALID",
@@ -56,38 +52,27 @@ public final class DcimFacilityExceptionHandler {
     }
 
     @ExceptionHandler(IdentityAccessException.class)
-    ResponseEntity<Problem> authorization(IdentityAccessException failure, HttpServletRequest request) {
+    ResponseEntity<ApiProblem> authorization(IdentityAccessException failure, HttpServletRequest request) {
         return problem(HttpStatus.FORBIDDEN, failure.code(), "authorization denied", request);
     }
 
     @ExceptionHandler({IllegalArgumentException.class, MissingRequestHeaderException.class})
-    ResponseEntity<Problem> invalid(Exception failure, HttpServletRequest request) {
-        return problem(HttpStatus.BAD_REQUEST, "DCIM_FACILITY_INVALID_REQUEST", safe(failure.getMessage()), request);
+    ResponseEntity<ApiProblem> invalid(Exception failure, HttpServletRequest request) {
+        return problem(HttpStatus.BAD_REQUEST, "DCIM_FACILITY_INVALID_REQUEST", failure.getMessage(), request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    ResponseEntity<Problem> invalidBody(MethodArgumentNotValidException failure, HttpServletRequest request) {
+    ResponseEntity<ApiProblem> invalidBody(MethodArgumentNotValidException failure, HttpServletRequest request) {
         return problem(HttpStatus.BAD_REQUEST, "DCIM_FACILITY_INVALID_REQUEST", "request validation failed", request);
     }
 
     @ExceptionHandler(TransactionExecutionException.class)
-    ResponseEntity<Problem> transaction(TransactionExecutionException failure, HttpServletRequest request) {
+    ResponseEntity<ApiProblem> transaction(TransactionExecutionException failure, HttpServletRequest request) {
         return problem(HttpStatus.INTERNAL_SERVER_ERROR, "DCIM_FACILITY_TRANSACTION_FAILED", "DCIM transaction failed", request);
     }
 
-    private ResponseEntity<Problem> problem(HttpStatus status, String code, String detail, HttpServletRequest request) {
-        Problem body = new Problem(
-                URI.create("urn:infranexum:problem:" + code.toLowerCase(Locale.ROOT).replace('_', '-')),
-                "DCIM facility request failed", status.value(), safe(detail), request.getRequestURI(), code,
-                clock.instant(), CorrelationContext.traceId(request));
-        return ResponseEntity.status(status).contentType(MediaType.APPLICATION_PROBLEM_JSON).body(body);
+    private ResponseEntity<ApiProblem> problem(
+            HttpStatus status, String code, String detail, HttpServletRequest request) {
+        return problems.response(status, code, "DCIM facility request failed", detail, Map.of(), Map.of(), request);
     }
-
-    private static String safe(String value) {
-        if (value == null || value.isBlank()) return "request failed";
-        String normalized = value.replaceAll("[\\r\\n\\t]+", " ").strip();
-        return normalized.length() <= 512 ? normalized : normalized.substring(0, 512);
-    }
-
-    record Problem(URI type, String title, int status, String detail, String instance, String code, Instant occurredAt, String traceId) {}
 }

@@ -1,0 +1,24 @@
+schema: infranexum.migration/v1
+id: '0032'
+name: core-api-idempotency
+owner_context: core
+dependencies:
+- '0031'
+preconditions:
+- core-schema-history-created
+postconditions:
+- api-idempotency-ledger-created
+recovery: rerun-idempotent-ddl-after-correcting-database-connectivity
+rollback: drops-only-api-idempotency-ledger-and-its-replay-history
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 30
+checksums:
+  postgresql.sql: 271d029f325281d65865abc458226fbbfdaf2ab6aa684a1e174acef1243b7832
+  oracle.sql: 210176dda68034c9ba5067b142a454f13f6b82790b8815b8ab645664b0e2dbc6
+  rollback/postgresql.sql: cbbb64fdbda4ea6b54e30b235c1aae76f9833f1be7c368539e959d76225629fb
+  rollback/oracle.sql: 48666be9137b366e70b16db5e3d6cf27245eaf29b60b7d804d568c41d6e6d410
+  logical-model.json: 47e1c18266549d1dd804a21c1da45e54ef8b3e28ef988e8ce81154e553a6acf4
+  verify.sql.yaml: 0bf0aff2f56efdbc4e13a80f6c07dc4bb81ce9c45c5238e8f5f5289bb3612b3c

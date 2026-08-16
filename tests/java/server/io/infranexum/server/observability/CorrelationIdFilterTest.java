@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.infranexum.core.contracts.DomainIdentifier;
 import io.infranexum.core.contracts.UuidV7Generator;
+import io.infranexum.server.http.ApiProblemTestFixtures;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.security.SecureRandom;
 import java.time.Clock;
@@ -112,6 +113,6 @@ class CorrelationIdFilterTest {
 
     private static CorrelationIdFilter filter(SimpleMeterRegistry registry) {
         Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
-        return new CorrelationIdFilter(new UuidV7Generator(clock, new SecureRandom()), clock, registry);
+        return new CorrelationIdFilter(new UuidV7Generator(clock, new SecureRandom()), registry, ApiProblemTestFixtures.support(clock));
     }
 }

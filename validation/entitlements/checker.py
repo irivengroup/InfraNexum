@@ -207,9 +207,10 @@ class EntitlementChecker:
                 '@RequestMapping("/api/v1/platform/evaluation")', '@GetMapping("/status")',
                 "CacheControl.noStore()"),
             self.SERVER / "EntitlementExceptionHandler.java": (
-                "MediaType.APPLICATION_PROBLEM_JSON",
+                "ApiProblemSupport",
+                "ResponseEntity<ApiProblem>",
                 "INFRANEXUM_ENTITLEMENT_RUNTIME_UNAVAILABLE",
-                "urn:infranexum:problem:entitlement-access-denied"),
+                "problems.response"),
         }
         for relative, tokens in checks.items():
             path = self.root / relative

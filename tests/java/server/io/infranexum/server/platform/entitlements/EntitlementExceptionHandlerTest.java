@@ -7,8 +7,8 @@ import io.infranexum.core.entitlements.EntitlementAccessException;
 import io.infranexum.core.entitlements.EntitlementErrorCodes;
 import io.infranexum.core.entitlements.EntitlementRuntimeUnavailableException;
 import io.infranexum.core.contracts.DomainIdentifier;
+import io.infranexum.server.http.ApiProblemTestFixtures;
 import io.infranexum.server.observability.CorrelationContext;
-import io.infranexum.server.observability.SensitiveDataRedactor;
 import java.time.Clock;
 import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
@@ -18,7 +18,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 
 class EntitlementExceptionHandlerTest {
     private final EntitlementExceptionHandler handler = new EntitlementExceptionHandler(
-            Clock.fixed(ActivationTestFixtures.NOW, ZoneOffset.UTC), new SensitiveDataRedactor());
+            ApiProblemTestFixtures.support(Clock.fixed(ActivationTestFixtures.NOW, ZoneOffset.UTC)));
 
     @Test
     void translatesAccessDenialsToCanonicalProblemJson() {
@@ -33,7 +33,7 @@ class EntitlementExceptionHandlerTest {
         assertEquals("INFRANEXUM_LITE_CONVERSION_REQUIRED", response.getBody().code());
         assertEquals("/api/v1/objects", response.getBody().instance());
         assertEquals("018bcfe5-6800-7001-8000-000000000001", response.getBody().trace_id());
-        assertEquals(ActivationTestFixtures.NOW, response.getBody().occurred_at());
+        assertEquals(ActivationTestFixtures.NOW.toString(), response.getBody().occurred_at());
     }
 
     @Test

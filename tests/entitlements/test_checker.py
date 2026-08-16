@@ -176,6 +176,7 @@ class EntitlementCheckerTest(unittest.TestCase):
             (FILES[31], "WebServerFactoryCustomizer<ConfigurableServletWebServerFactory>"),
             (FILES[32], "authority.requireMutation()"),
             (FILES[33], '@RequestMapping("/api/v1/platform/evaluation")'),
+            (FILES[34], "problems.response"),
         )
         for relative, token in mutations:
             self.mutate(relative, token)

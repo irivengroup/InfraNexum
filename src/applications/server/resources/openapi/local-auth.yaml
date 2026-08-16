@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum Local Authentication API
-  version: 2.0.0-alpha.0.94
+  version: 2.0.0-alpha.0.97
   description: Local human authentication foundation. Credentials are verified server-side with Argon2id; browser sessions
     are opaque, durable and revocable. The bootstrap administrator must replace its generated password before accessing protected
     v1 APIs. A validated session establishes the actor consumed by the downstream PGM-03-E03 RBAC PEP.
@@ -41,6 +41,7 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/AuthenticationFailed'
+      x-infranexum-idempotency: security-exempt
     get:
       tags:
       - IAM / Local authentication
@@ -73,6 +74,7 @@ paths:
           $ref: '#/components/responses/InvalidSession'
         '403':
           $ref: '#/components/responses/CsrfRejected'
+      x-infranexum-idempotency: security-exempt
   /api/v1/iam/local-auth/password:
     post:
       tags:
@@ -102,6 +104,7 @@ paths:
           $ref: '#/components/responses/AuthenticationFailed'
         '403':
           $ref: '#/components/responses/CsrfRejected'
+      x-infranexum-idempotency: security-exempt
   /api/v1/iam/local-auth/password-policy/validate:
     post:
       tags:
@@ -143,6 +146,7 @@ paths:
                       type: string
         '400':
           $ref: '#/components/responses/BadRequest'
+      x-infranexum-idempotency: repeatable
 components:
   securitySchemes:
     LocalSessionCookie:
@@ -225,52 +229,122 @@ components:
           format: date-time
     Problem:
       type: object
-      additionalProperties: true
       required:
+      - type
+      - title
+      - status
+      - detail
+      - instance
       - code
       - message
-      - correlation_id
+      - details
+      - metadata
+      - occurred_at
       - timestamp
+      - correlation_id
+      - trace_id
       properties:
+        type:
+          type: string
+          description: Stable InfraNexum problem type URI.
+        title:
+          type: string
+          description: Short human-readable problem summary.
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+          description: Safe redacted problem detail.
+        instance:
+          type: string
+          description: Request URI associated with this occurrence.
         code:
           type: string
+          description: Stable machine-readable InfraNexum error code.
         message:
           type: string
-        correlation_id:
-          type: string
+          deprecated: true
+          description: Legacy compatibility alias of detail.
         details:
           type: object
+          additionalProperties: true
+          description: Structured validation or conflict details.
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Reserved non-sensitive problem metadata.
+        occurred_at:
+          type: string
+          format: date-time
+          description: UTC timestamp of this problem occurrence.
         timestamp:
           type: string
           format: date-time
+          deprecated: true
+          description: Legacy compatibility alias of occurred_at.
+        correlation_id:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+          description: Canonical request UUIDv7 correlation identifier.
+        trace_id:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+          description: Compatibility trace identifier equal to correlation_id.
+      additionalProperties: false
   responses:
     BadRequest:
       description: Invalid request.
       content:
-        application/json:
+        application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
     AuthenticationFailed:
       description: Generic authentication failure. Account existence is never disclosed.
       content:
-        application/json:
+        application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
     InvalidSession:
       description: Session is missing, expired, revoked or invalid.
       content:
-        application/json:
+        application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
     CsrfRejected:
       description: CSRF validation failed.
       content:
-        application/json:
+        application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
     PasswordPolicy:
       description: Candidate password violates the authoritative local password policy.
       content:
-        application/json:
+        application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+  headers:
+    CorrelationId:
+      description: Canonical UUIDv7 correlation identifier assigned to the request.
+      schema:
+        type: string
+        format: uuid
+        pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$

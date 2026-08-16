@@ -52,7 +52,7 @@ class ComposeContractTest(unittest.TestCase):
     def test_web_cluster_is_two_private_nodes_behind_loopback_router(self) -> None:
         for name in WEB:
             service = self.services[name]
-            self.assertEqual("infranexum/web:${INFRANEXUM_VERSION:-2.0.0-alpha.0.94}", service["image"])
+            self.assertEqual("infranexum/web:${INFRANEXUM_VERSION:-2.0.0-alpha.0.97}", service["image"])
             self.assertEqual("service_healthy", service["depends_on"]["server"]["condition"])
             self.assertNotIn("ports", service)
             self.assertEqual("local", service["environment"]["INFRANEXUM_WEB_ENVIRONMENT"])
@@ -478,7 +478,7 @@ case "$url" in
     [ -z "$output" ] || printf '%s' "$body" > "$output"
     if [ -n "$writeout" ]; then printf '%s' '401'; else printf '%s' "$body"; fi ;;
   */health/ready) printf '%s' '{"status":"UP"}' ;;
-  */runtime-config.json) printf '%s' '{"component":"web","version":"2.0.0-alpha.0.94","apiBaseUrl":"/api"}' ;;
+  */runtime-config.json) printf '%s' '{"component":"web","version":"2.0.0-alpha.0.97","apiBaseUrl":"/api"}' ;;
   *) echo "unexpected curl URL: $url" >&2; exit 70 ;;
 esac
 '''), encoding="utf-8")
@@ -649,7 +649,7 @@ case "$url" in
     [ -z "$output" ] || printf '%s' "$body" > "$output"
     if [ -n "$writeout" ]; then printf '%s' '401'; else printf '%s' "$body"; fi ;;
   */health/ready) printf '%s' '{"status":"UP"}' ;;
-  */runtime-config.json) printf '%s' '{"component":"web","version":"2.0.0-alpha.0.94","apiBaseUrl":"/api"}' ;;
+  */runtime-config.json) printf '%s' '{"component":"web","version":"2.0.0-alpha.0.97","apiBaseUrl":"/api"}' ;;
   *) echo "unexpected curl URL: $url" >&2; exit 70 ;;
 esac
 '''), encoding="utf-8")
@@ -800,11 +800,15 @@ esac
         self.assertIn('grep -Eiq "^X-Correlation-ID:', sh)
         self.assertIn('grep -Fq \"\\\"correlation_id\\\":\\\"$correlation_id\\\"\"', sh)
         auth_filter = (ROOT / "src/applications/server/main/io/infranexum/server/identity/LocalAuthenticationFilter.java").read_text(encoding="utf-8")
-        self.assertIn("response.resetBuffer()", auth_filter)
-        self.assertIn("response.setContentLength(body.length)", auth_filter)
-        self.assertIn("response.flushBuffer()", auth_filter)
-        self.assertIn("correlation_id", auth_filter)
-        self.assertIn("trace_id", auth_filter)
+        problem_support = (ROOT / "src/applications/server/main/io/infranexum/server/http/ApiProblemSupport.java").read_text(encoding="utf-8")
+        problem_model = (ROOT / "src/applications/server/main/io/infranexum/server/http/ApiProblem.java").read_text(encoding="utf-8")
+        self.assertIn("ApiProblemSupport", auth_filter)
+        self.assertIn("problems.write", auth_filter)
+        self.assertIn("response.resetBuffer()", problem_support)
+        self.assertIn("response.setContentLength(body.length)", problem_support)
+        self.assertIn("response.flushBuffer()", problem_support)
+        self.assertIn("correlation_id", problem_model)
+        self.assertIn("trace_id", problem_model)
 
     def test_powershell_http_body_normalizer_decodes_binary_content_before_json_parsing(self) -> None:
         """Regression: PowerShell may expose application/problem+json as bytes."""

@@ -15,6 +15,11 @@ _PROHIBITED_TAGS = {"default", "misc", "utils", "helpers", "common", "divers", "
 _LIST_OPERATION = re.compile(r"^(list|search)", re.IGNORECASE)
 _COMPONENT_REF = re.compile(r"^#/components/([^/]+)/([^/]+)$")
 _SAFE_COMPONENT = re.compile(r"[^A-Za-z0-9_.-]+")
+_CANONICAL_PROBLEM_FIELDS = {
+    "type", "title", "status", "detail", "instance", "code", "message", "details", "metadata",
+    "occurred_at", "timestamp", "correlation_id", "trace_id",
+}
+_CANONICAL_PROBLEM_REQUIRED = _CANONICAL_PROBLEM_FIELDS
 
 
 class _UniqueKeyLoader(yaml.SafeLoader):
@@ -279,6 +284,21 @@ class ApiContractChecker:
                     self._add("CHECK-API-013", path, f"prohibited technical tag: {tag}")
                 if " / " not in tag:
                     self._add("CHECK-API-014", path, f"tag must encode component/context hierarchy: {tag}")
+            components = document.get("components")
+            schemas = components.get("schemas") if isinstance(components, dict) else None
+            problem = schemas.get("Problem") if isinstance(schemas, dict) else None
+            properties = problem.get("properties") if isinstance(problem, dict) else None
+            required = problem.get("required") if isinstance(problem, dict) else None
+            if (
+                not isinstance(problem, dict)
+                or problem.get("type") != "object"
+                or not isinstance(properties, dict)
+                or set(properties) != _CANONICAL_PROBLEM_FIELDS
+                or not isinstance(required, list)
+                or set(required) != _CANONICAL_PROBLEM_REQUIRED
+                or problem.get("additionalProperties") is not False
+            ):
+                self._add("CHECK-API-029", path, "components.schemas.Problem must match the canonical InfraNexum runtime problem contract")
             paths = document.get("paths")
             if not isinstance(paths, dict):
                 self._add("CHECK-API-015", path, "paths must be an object")
@@ -333,16 +353,124 @@ class ApiContractChecker:
                 for status, response in responses.items():
                     if not str(status).startswith(("4", "5")):
                         continue
-                    if isinstance(response, dict) and "$ref" in response:
-                        continue
-                    content = response.get("content") if isinstance(response, dict) else None
-                    if not isinstance(content, dict) or "application/problem+json" not in content:
+                    resolved = self._resolve_response(item.document, response)
+                    content = resolved.get("content") if isinstance(resolved, dict) else None
+                    problem_media = content.get("application/problem+json") if isinstance(content, dict) else None
+                    schema = problem_media.get("schema") if isinstance(problem_media, dict) else None
+                    if not isinstance(schema, dict) or schema.get("$ref") != "#/components/schemas/Problem":
                         self._add(
                             "CHECK-API-024",
                             path,
-                            f"{item.operation_id} HTTP {status} must use application/problem+json",
+                            f"{item.operation_id} HTTP {status} must use application/problem+json with the canonical Problem schema",
+                        )
+                    headers = resolved.get("headers") if isinstance(resolved, dict) else None
+                    correlation = headers.get("X-Correlation-ID") if isinstance(headers, dict) else None
+                    if not isinstance(correlation, dict) or correlation.get("$ref") != "#/components/headers/CorrelationId":
+                        self._add(
+                            "CHECK-API-030",
+                            path,
+                            f"{item.operation_id} HTTP {status} must expose X-Correlation-ID via components.headers.CorrelationId",
                         )
             self._validate_local_refs(item)
+            self._validate_pagination_contract(item)
+            self._validate_idempotency_contract(item)
+
+
+
+    def _validate_idempotency_contract(self, item: _Operation) -> None:
+        mode = item.operation.get("x-infranexum-idempotency")
+        parameters = {parameter.get("name"): parameter for parameter in self._resolved_parameters(item) if isinstance(parameter.get("name"), str)}
+        key = parameters.get("Idempotency-Key")
+        if mode is not None and mode not in {"required", "repeatable", "security-exempt"}:
+            self._add("CHECK-API-032", item.source, f"{item.operation_id} has unsupported idempotency mode {mode!r}")
+            return
+        if key is not None:
+            schema = key.get("schema") if isinstance(key, dict) else None
+            valid = (isinstance(key, dict) and key.get("in") == "header" and key.get("required") is True
+                     and isinstance(schema, dict) and schema.get("type") == "string"
+                     and schema.get("minLength") == 8 and schema.get("maxLength") == 200
+                     and schema.get("pattern") == "^[A-Za-z0-9._:-]+$")
+            if not valid:
+                self._add("CHECK-API-032", item.source, f"{item.operation_id} Idempotency-Key must use the canonical required 8..200 safe-character contract")
+        if mode == "required" and key is None:
+            self._add("CHECK-API-032", item.source, f"{item.operation_id} declares required idempotency without Idempotency-Key")
+        if mode in {"repeatable", "security-exempt"} and key is not None:
+            self._add("CHECK-API-032", item.source, f"{item.operation_id} {mode} operations must not expose Idempotency-Key")
+
+    def _validate_pagination_contract(self, item: _Operation) -> None:
+        mode = item.operation.get("x-infranexum-pagination")
+        if mode is None:
+            return
+        if mode not in {"cursor", "offset"}:
+            self._add("CHECK-API-031", item.source, f"{item.operation_id} has unsupported pagination mode {mode!r}")
+            return
+        parameters = {parameter.get("name"): parameter for parameter in self._resolved_parameters(item) if isinstance(parameter.get("name"), str)}
+        limit = parameters.get("limit") or parameters.get("page_size")
+        if not self._valid_integer_parameter(limit, minimum=1, require_maximum=True):
+            self._add("CHECK-API-031", item.source, f"{item.operation_id} pagination requires a bounded integer limit/page_size")
+        if mode == "offset":
+            position = parameters.get("offset")
+            if not self._valid_integer_parameter(position, minimum=0, require_maximum=True, maximum_ceiling=1_000_000):
+                self._add("CHECK-API-031", item.source, f"{item.operation_id} offset pagination requires a bounded offset")
+            if "cursor" in parameters:
+                self._add("CHECK-API-031", item.source, f"{item.operation_id} offset pagination cannot also expose cursor")
+            required_header = "X-Next-Offset"
+        else:
+            position = parameters.get("cursor")
+            schema = position.get("schema") if isinstance(position, dict) else None
+            if not isinstance(position, dict) or position.get("in") != "query" or not isinstance(schema, dict) or schema.get("type") != "string" or schema.get("format") != "uuid":
+                self._add("CHECK-API-031", item.source, f"{item.operation_id} cursor pagination requires an optional UUID cursor query parameter")
+            if "offset" in parameters:
+                self._add("CHECK-API-031", item.source, f"{item.operation_id} cursor pagination cannot also expose offset")
+            required_header = "X-Next-Cursor"
+        responses = item.operation.get("responses")
+        ok = responses.get("200") if isinstance(responses, dict) else None
+        resolved = self._resolve_response(item.document, ok)
+        headers = resolved.get("headers") if isinstance(resolved, dict) else None
+        if not isinstance(headers, dict) or "X-Page-Limit" not in headers or required_header not in headers:
+            self._add("CHECK-API-031", item.source, f"{item.operation_id} HTTP 200 must expose X-Page-Limit and {required_header}")
+
+    @staticmethod
+    def _valid_integer_parameter(parameter: Any, minimum: int, require_maximum: bool, maximum_ceiling: int = 1000) -> bool:
+        if not isinstance(parameter, dict) or parameter.get("in") != "query":
+            return False
+        schema = parameter.get("schema")
+        if not isinstance(schema, dict) or schema.get("type") != "integer":
+            return False
+        if schema.get("minimum") != minimum:
+            return False
+        maximum = schema.get("maximum")
+        if require_maximum and (not isinstance(maximum, int) or maximum < minimum or maximum > maximum_ceiling):
+            return False
+        return True
+
+    def _resolved_parameters(self, item: _Operation) -> list[dict[str, Any]]:
+        result: list[dict[str, Any]] = []
+        parameters = list(item.path_item.get("parameters") or []) + list(item.operation.get("parameters") or [])
+        component_parameters = ((item.document.get("components") or {}).get("parameters") or {})
+        for parameter in parameters:
+            if not isinstance(parameter, dict):
+                continue
+            resolved = parameter
+            ref = parameter.get("$ref")
+            if isinstance(ref, str):
+                match = _COMPONENT_REF.fullmatch(ref)
+                if match and match.group(1) == "parameters":
+                    candidate = component_parameters.get(match.group(2))
+                    if isinstance(candidate, dict):
+                        resolved = candidate
+            result.append(resolved)
+        return result
+
+    @staticmethod
+    def _resolve_response(document: dict[str, Any], response: Any) -> Any:
+        if not isinstance(response, dict):
+            return response
+        ref = response.get("$ref")
+        if not isinstance(ref, str) or not ref.startswith("#/components/responses/"):
+            return response
+        responses = ((document.get("components") or {}).get("responses") or {})
+        return responses.get(ref.rsplit("/", 1)[1], response) if isinstance(responses, dict) else response
 
     def _validate_local_refs(self, item: _Operation) -> None:
         components = item.document.get("components") if isinstance(item.document.get("components"), dict) else {}
@@ -362,7 +490,8 @@ class ApiContractChecker:
         permission: set[str] = set()
         for item in self.operations:
             params = self._parameter_names(item)
-            if item.method in _MUTATING_METHODS and "Idempotency-Key" not in params:
+            mode = item.operation.get("x-infranexum-idempotency")
+            if item.method in _MUTATING_METHODS and "Idempotency-Key" not in params and mode not in {"repeatable", "security-exempt"}:
                 idempotency.add(item.operation_id)
             if _LIST_OPERATION.match(item.operation_id):
                 has_size = "limit" in params or "page_size" in params
@@ -405,24 +534,7 @@ class ApiContractChecker:
                 )
 
     def _parameter_names(self, item: _Operation) -> set[str]:
-        result: set[str] = set()
-        parameters = list(item.path_item.get("parameters") or []) + list(item.operation.get("parameters") or [])
-        component_parameters = ((item.document.get("components") or {}).get("parameters") or {})
-        for parameter in parameters:
-            if not isinstance(parameter, dict):
-                continue
-            resolved = parameter
-            ref = parameter.get("$ref")
-            if isinstance(ref, str):
-                match = _COMPONENT_REF.fullmatch(ref)
-                if match and match.group(1) == "parameters":
-                    candidate = component_parameters.get(match.group(2))
-                    if isinstance(candidate, dict):
-                        resolved = candidate
-            name = resolved.get("name")
-            if isinstance(name, str):
-                result.add(name)
-        return result
+        return {parameter["name"] for parameter in self._resolved_parameters(item) if isinstance(parameter.get("name"), str)}
 
     def _rewrite_fragment(self, document: dict[str, Any], prefix: str) -> dict[str, Any]:
         rewritten = copy.deepcopy(document)

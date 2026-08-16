@@ -26,8 +26,9 @@ class ObservabilityArchitectureTest(unittest.TestCase):
 
     def test_invalid_correlation_is_fail_closed_and_never_reflected(self) -> None:
         filter_source = (OBSERVABILITY / "CorrelationIdFilter.java").read_text(encoding="utf-8")
-        self.assertIn("SC_BAD_REQUEST", filter_source)
+        self.assertIn("HttpStatus.BAD_REQUEST", filter_source)
         self.assertIn("INFRANEXUM_INVALID_CORRELATION_ID", filter_source)
+        self.assertIn("problems.write(response, problem)", filter_source)
         self.assertIn("infranexum.http.correlation.rejected", filter_source)
         self.assertNotIn("+ supplied", filter_source)
         self.assertNotIn("logger.warn", filter_source)
@@ -52,9 +53,12 @@ class ObservabilityArchitectureTest(unittest.TestCase):
 
     def test_entitlement_problem_uses_validated_context_not_raw_header(self) -> None:
         handler = (SERVER / "platform/entitlements/EntitlementExceptionHandler.java").read_text(encoding="utf-8")
-        self.assertIn("CorrelationContext.traceId(request)", handler)
+        support = (SERVER / "http/ApiProblemSupport.java").read_text(encoding="utf-8")
+        self.assertIn("problems.response", handler)
+        self.assertIn("CorrelationContext.traceId(request)", support)
         self.assertNotIn("getHeader(\"X-Correlation-ID\")", handler)
-        self.assertIn("redactor.redact(\"problem.detail\", detail)", handler)
+        self.assertNotIn("getHeader(\"X-Correlation-ID\")", support)
+        self.assertIn('redactor.redact("problem", source)', support)
 
     def test_current_openapi_surface_documents_correlation_contract(self) -> None:
         openapi = (ROOT / "src/applications/server/resources/openapi/platform-entitlements.yaml").read_text(

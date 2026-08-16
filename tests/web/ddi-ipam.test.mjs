@@ -40,3 +40,5 @@ test('DDI/IPAM workspace is a real five-catalogue UI and uses governed entity se
   assert.match(source,/class="nav-link/);
   assert.match(source,/selectFirst:true/);
 });
+
+test('DDI/IPAM client accepts cursor continuation and exposes response pagination metadata',async()=>{let url;const c=new DdiIpamClient({apiBaseUrl:'/api',ddiIpamEnabled:true},{fetchFunction:async(value)=>{url=value;return response([{id:ID}],200,{'x-page-limit':'1','x-next-cursor':ID});}});const result=await c.vrfs(ORG,1,ID);assert.equal(url,`/api/v1/ddi/ipam/vrfs?organization_id=${ORG}&limit=1&cursor=${ID}`);assert.deepEqual(result.pagination,{limit:1,nextCursor:ID,nextOffset:null,hasNext:true});});

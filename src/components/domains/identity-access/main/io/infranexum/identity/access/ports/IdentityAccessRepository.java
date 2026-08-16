@@ -18,6 +18,7 @@ public interface IdentityAccessRepository {
     void ensurePlatformAdministrator(DomainIdentifier userId, Instant now);
 
     List<UserMembership> memberships(DomainIdentifier userId);
+    List<UserMembership> memberships(DomainIdentifier userId, int offset, int limit);
     void insertMembership(UserMembership membership);
     boolean hasEffectiveMembership(DomainIdentifier userId, AuthorizationScope scope, Instant at);
 
@@ -48,6 +49,7 @@ public interface IdentityAccessRepository {
     void updatePermission(Permission permission);
 
     List<RoleAssignment> assignments(DomainIdentifier roleId);
+    List<RoleAssignment> assignments(DomainIdentifier roleId, int offset, int limit);
     Optional<RoleAssignment> findAssignment(DomainIdentifier assignmentId);
     Set<String> rolePermissionCodes(DomainIdentifier roleId);
     void insertAssignment(RoleAssignment assignment);

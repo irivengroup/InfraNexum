@@ -1,25 +1,25 @@
 openapi: 3.1.0
 info:
   title: InfraNexum Platform Entitlements API
-  version: 2.0.0-alpha.0.94
+  version: 2.0.0-alpha.0.97
 tags:
-  - name: Platform / Entitlements / Evaluation
-    description: Read-only evaluation and activation lifecycle status.
+- name: Platform / Entitlements / Evaluation
+  description: Read-only evaluation and activation lifecycle status.
 x-tagGroups:
-  - name: Platform
-    tags:
-      - Platform / Entitlements / Evaluation
+- name: Platform
+  tags:
+  - Platform / Entitlements / Evaluation
 paths:
   /api/v1/platform/evaluation/status:
     get:
       tags:
-        - Platform / Entitlements / Evaluation
+      - Platform / Entitlements / Evaluation
       operationId: getPlatformEvaluationStatus
       security:
       - LocalSessionCookie: []
       summary: Read the authoritative evaluation and activation lifecycle status
       parameters:
-        - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/CorrelationId'
       responses:
         '200':
           description: Current secret-free lifecycle decision.
@@ -52,7 +52,7 @@ paths:
           content:
             application/problem+json:
               schema:
-                $ref: '#/src/components/schemas/Problem'
+                $ref: '#/components/schemas/Problem'
 components:
   parameters:
     CorrelationId:
@@ -65,23 +65,24 @@ components:
         pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
   headers:
     CorrelationId:
-      description: Canonical UUIDv7 used to correlate the request with structured Server logs.
+      description: Canonical UUIDv7 correlation identifier assigned to the request.
       schema:
         type: string
-        pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+        format: uuid
+        pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
   schemas:
     EvaluationStatus:
       type: object
       additionalProperties: false
       required:
-        - installationId
-        - profile
-        - allocationTier
-        - phase
-        - evaluatedAt
-        - acceptedSequence
-        - serviceStartupPermitted
-        - mutationPermitted
+      - installationId
+      - profile
+      - allocationTier
+      - phase
+      - evaluatedAt
+      - acceptedSequence
+      - serviceStartupPermitted
+      - mutationPermitted
       properties:
         installationId:
           type: string
@@ -126,26 +127,70 @@ components:
           type: boolean
     Problem:
       type: object
-      additionalProperties: false
-      required: [type, title, status, detail, instance, code, occurred_at]
+      required:
+      - type
+      - title
+      - status
+      - detail
+      - instance
+      - code
+      - message
+      - details
+      - metadata
+      - occurred_at
+      - timestamp
+      - correlation_id
+      - trace_id
       properties:
         type:
           type: string
-          format: uri
+          description: Stable InfraNexum problem type URI.
         title:
           type: string
+          description: Short human-readable problem summary.
         status:
           type: integer
           minimum: 400
           maximum: 599
         detail:
           type: string
+          description: Safe redacted problem detail.
         instance:
           type: string
+          description: Request URI associated with this occurrence.
         code:
           type: string
+          description: Stable machine-readable InfraNexum error code.
+        message:
+          type: string
+          deprecated: true
+          description: Legacy compatibility alias of detail.
+        details:
+          type: object
+          additionalProperties: true
+          description: Structured validation or conflict details.
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Reserved non-sensitive problem metadata.
         occurred_at:
           type: string
           format: date-time
+          description: UTC timestamp of this problem occurrence.
+        timestamp:
+          type: string
+          format: date-time
+          deprecated: true
+          description: Legacy compatibility alias of occurred_at.
+        correlation_id:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+          description: Canonical request UUIDv7 correlation identifier.
         trace_id:
-          type: [string, 'null']
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+          description: Compatibility trace identifier equal to correlation_id.
+      additionalProperties: false
+  responses: {}

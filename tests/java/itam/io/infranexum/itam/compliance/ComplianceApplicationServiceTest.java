@@ -1,6 +1,7 @@
 package io.infranexum.itam.compliance;
 
 import io.infranexum.core.contracts.DomainIdentifier;
+import io.infranexum.core.contracts.PaginationConstraints;
 import io.infranexum.core.contracts.UuidV7Generator;
 import io.infranexum.core.events.InMemoryEventStore;
 import io.infranexum.itam.asset.application.AssetPage;
@@ -84,6 +85,13 @@ final class ComplianceApplicationServiceTest {
         WarrantyType typeReplay = service.createWarrantyType("manufacturer_standard", "Manufacturer standard warranty",
                 context(actor, correlation, "warranty-type-0001", "Governed warranty catalogue initialization"));
         require(typeReplay.id().equals(type.id()), "warranty-type idempotent replay failed");
+        service.createWarrantyType("extended_support", "Extended support warranty",
+                context(actor, correlation, "warranty-type-0002", "Second governed warranty type"));
+        var warrantyTypesPage1 = service.warrantyTypePage(0, 1);
+        require(warrantyTypesPage1.items().size() == 1 && Integer.valueOf(1).equals(warrantyTypesPage1.nextOffset()), "warranty type first page");
+        var warrantyTypesPage2 = service.warrantyTypePage(1, 1);
+        require(warrantyTypesPage2.items().size() == 1 && warrantyTypesPage2.nextOffset() == null, "warranty type second page");
+        expectIllegal(() -> service.warrantyTypePage(PaginationConstraints.MAX_OFFSET + 1, 1));
 
         CreateWarrantyCommand warrantyCommand = new CreateWarrantyCommand(
                 hardware.id(), manufacturer, type.id(), "parts_labour_onsite",
@@ -339,6 +347,13 @@ final class ComplianceApplicationServiceTest {
         private static <T> void version(T current, long expected, java.util.function.ToLongFunction<T> version) {
             if (current == null || version.applyAsLong(current) != expected) throw new ComplianceConflictException("VERSION_CONFLICT", "record version changed");
         }
+    }
+
+    private static void expectIllegal(ThrowingAction action) {
+        try { action.run(); }
+        catch (IllegalArgumentException expected) { return; }
+        catch (Exception error) { throw new AssertionError("unexpected exception", error); }
+        throw new AssertionError("expected IllegalArgumentException");
     }
 
     private static void expectCode(String code, ThrowingAction action) {
