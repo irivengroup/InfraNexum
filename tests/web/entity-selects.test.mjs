@@ -117,3 +117,16 @@ test('entity directory filters assignment choices by role and exposes policy cat
   assert.deepEqual(optionValues(assignment), [ASSIGN_A]);
   assert.deepEqual(optionValues(policy), [POLICY_A]);
 });
+
+
+test('authorized entity selects remain operable when their catalogue is empty', async () => {
+  const workspace = select({ id: 'workspace-org', value: ORG_A });
+  const actorType = select({ id: 'actor-type', value: 'GROUP' });
+  const actor = select({ 'data-inx-entity': 'actor', 'data-inx-type-source': 'actor-type', required: '' });
+  const documentObject = new FakeDocument([workspace, actorType, actor]);
+  const directory = createIamEntityDirectory(documentObject, apiMock([]), workspace);
+  directory.setCatalog('group', []);
+  assert.equal(actor.disabled, false);
+  assert.equal(actor.getAttribute('data-inx-entity-state'), 'empty');
+  assert.deepEqual(optionValues(actor), []);
+});

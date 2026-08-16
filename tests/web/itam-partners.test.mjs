@@ -58,3 +58,23 @@ test('ITAM Partner client maps problem+json without exposing transport internals
   });
   await assert.rejects(client.list(), (error) => error instanceof ItamPartnerApiError && error.code === 'PARTNER_DUPLICATE');
 });
+
+test('partner contacts are serialized from structured form fields instead of JSON blobs', async () => {
+  const { serializePartnerContacts } = await import('../../src/applications/web/public/assets/itam-workspace.mjs');
+  const row = (values) => ({ querySelector(selector) { const name = selector.match(/name="([^"]+)"/)?.[1]; return { value: values[name] ?? '' }; } });
+  const form = { querySelectorAll: () => [
+    row({ contactType: 'business', contactName: 'Marie Dupont', contactEmail: 'marie@example.test', contactPhone: '+33102030405', contactUri: '' }),
+    row({ contactType: 'support', contactName: 'NOC Europe', contactEmail: '', contactPhone: '+33111111111', contactUri: 'https://support.example.test' }),
+  ] };
+  assert.deepEqual(serializePartnerContacts(form), [
+    { type: 'business', name: 'Marie Dupont', email: 'marie@example.test', phone: '+33102030405', uri: null },
+    { type: 'support', name: 'NOC Europe', email: null, phone: '+33111111111', uri: 'https://support.example.test' },
+  ]);
+});
+
+test('partner contact requires a name and at least one communication channel', async () => {
+  const { serializePartnerContacts } = await import('../../src/applications/web/public/assets/itam-workspace.mjs');
+  const makeForm = (values) => ({ querySelectorAll: () => [{ querySelector(selector) { const name = selector.match(/name="([^"]+)"/)?.[1]; return { value: values[name] ?? '' }; } }] });
+  assert.throws(() => serializePartnerContacts(makeForm({ contactType: 'support', contactName: 'NOC' })), /email, phone or URL/);
+  assert.throws(() => serializePartnerContacts(makeForm({ contactType: 'support', contactEmail: 'noc@example.test' })), /type and name/);
+});

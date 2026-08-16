@@ -146,6 +146,8 @@ test('IAM section navigation exposes one active workspace and supports keyboard 
   assert.equal(users.classList.contains('active'), true);
   assert.equal(userPanel.classList.contains('active'), true);
   assert.equal(groupPanel.classList.contains('active'), false);
+  assert.equal(userPanel.hidden, false);
+  assert.equal(groupPanel.hidden, true);
   assert.equal(users.tabIndex, 0);
   assert.equal(groups.tabIndex, -1);
 
@@ -154,6 +156,8 @@ test('IAM section navigation exposes one active workspace and supports keyboard 
   assert.equal(groups.classList.contains('active'), true);
   assert.equal(groupPanel.getAttribute('aria-hidden'), 'false');
   assert.equal(userPanel.getAttribute('aria-hidden'), 'true');
+  assert.equal(userPanel.hidden, true);
+  assert.equal(groupPanel.hidden, false);
 
   assert.equal(groups.keydown('ArrowRight'), true);
   assert.equal(users.classList.contains('active'), true, 'hidden policy tab must be skipped');
@@ -192,7 +196,10 @@ test('IAM FreeIPA-style workflow navigation keeps one contextual operation visib
   assert.equal(settings.classList.contains('active'), true);
   assert.equal(settingsPanel.classList.contains('active'), true);
   assert.equal(createPanel.getAttribute('aria-hidden'), 'true');
-  assert.equal(rolePanel.getAttribute('aria-hidden'), null, 'another resource facet must not be modified');
+  assert.equal(rolePanel.getAttribute('aria-hidden'), 'false', 'each resource facet is initialized independently');
+  assert.equal(rolePanel.hidden, false);
+  assert.equal(settingsPanel.hidden, false);
+  assert.equal(createPanel.hidden, true);
 
   assert.equal(settings.keydown('ArrowRight'), true);
   assert.equal(memberships.classList.contains('active'), true);

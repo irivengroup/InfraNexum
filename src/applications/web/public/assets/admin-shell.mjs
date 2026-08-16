@@ -152,6 +152,7 @@ export function applyRoute(
 }
 
 export function initializeAdminShell(documentObject = document, windowObject = globalThis.window) {
+  const navigation = initializeResponsiveNavigation(documentObject, windowObject);
   const initialRoute = routeForHash(windowObject?.location?.hash ?? '');
   applyRoute(documentObject, initialRoute, windowObject, { replaceHash: initialRoute === 'overview' && Boolean(windowObject?.location?.hash) });
 
@@ -160,6 +161,7 @@ export function initializeAdminShell(documentObject = document, windowObject = g
       if (link.getAttribute?.('aria-disabled') === 'true') return;
       event?.preventDefault?.();
       applyRoute(documentObject, link.getAttribute?.('data-route'), windowObject);
+      navigation.close();
       documentObject?.getElementById?.('main')?.focus?.({ preventScroll: true });
     });
   }
@@ -178,6 +180,29 @@ export function initializeAdminShell(documentObject = document, windowObject = g
     refresh: () => applyRoute(documentObject, currentRoute(documentObject), windowObject, { replaceHash: false }),
     openCommandPalette: palette.open,
   });
+}
+
+function initializeResponsiveNavigation(documentObject, windowObject) {
+  const sidebar = documentObject?.getElementById?.('primary-sidebar');
+  const toggle = documentObject?.getElementById?.('sidebar-toggle');
+  const closeButton = documentObject?.getElementById?.('sidebar-close');
+  const backdrop = documentObject?.getElementById?.('sidebar-backdrop');
+  const isDesktop = () => windowObject?.matchMedia?.('(min-width: 992px)')?.matches === true;
+  const setOpen = (open) => {
+    if (!sidebar) return;
+    const visible = open === true || isDesktop();
+    sidebar.classList?.toggle?.('d-none', !visible);
+    sidebar.setAttribute?.('aria-hidden', visible ? 'false' : 'true');
+    toggle?.setAttribute?.('aria-expanded', open && !isDesktop() ? 'true' : 'false');
+    backdrop?.classList?.toggle?.('d-none', !(open && !isDesktop()));
+  };
+  const close = () => setOpen(false);
+  toggle?.addEventListener?.('click', () => setOpen(toggle.getAttribute?.('aria-expanded') !== 'true'));
+  closeButton?.addEventListener?.('click', close);
+  backdrop?.addEventListener?.('click', close);
+  windowObject?.addEventListener?.('resize', () => setOpen(false));
+  setOpen(false);
+  return Object.freeze({ open: () => setOpen(true), close });
 }
 
 export function buildCommands(documentObject, windowObject = globalThis.window) {

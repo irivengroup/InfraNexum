@@ -164,14 +164,22 @@ export function initializeTheme(documentObject = document, storageObject = globa
   }
   const initial = persisted === 'dark' || persisted === 'light' ? persisted : preferredTheme();
   applyTheme(documentObject, root, button, initial, Boolean(persisted));
-  button.addEventListener('click', () => {
-    const next = root.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
-    applyTheme(documentObject, root, button, next, true);
+  const commitTheme = (theme) => {
+    const selected = theme === 'dark' ? 'dark' : 'light';
+    applyTheme(documentObject, root, button, selected, true);
     try {
-      storageObject?.setItem(THEME_STORAGE_KEY, next);
+      storageObject?.setItem(THEME_STORAGE_KEY, selected);
     } catch {
       // Storage may be unavailable in hardened/private browser contexts.
     }
+    dispatchThemeChange(documentObject, selected);
+    return selected;
+  };
+  button.addEventListener('click', () => {
+    commitTheme(root.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark');
+  });
+  documentObject.addEventListener?.('infranexum:theme-request', (event) => {
+    commitTheme(event?.detail?.theme);
   });
   documentObject.addEventListener?.('infranexum:locale-change', () => {
     applyTheme(documentObject, root, button, root.getAttribute('data-bs-theme') === 'dark' ? 'dark' : 'light', root.getAttribute('data-theme-user') === 'true');
@@ -194,6 +202,17 @@ function applyTheme(documentObject, root, button, theme, explicit) {
   const icon = documentObject.getElementById('theme-toggle-icon');
   if (icon) icon.textContent = theme === 'dark' ? '☀' : '◐';
   setLocalizedAriaLabel(documentObject, button, theme === 'dark' ? 'theme.toLight' : 'theme.toDark');
+}
+
+function dispatchThemeChange(documentObject, theme) {
+  if (!documentObject?.dispatchEvent) return;
+  let event;
+  try {
+    event = new CustomEvent('infranexum:theme-change', { detail: { theme } });
+  } catch {
+    event = { type: 'infranexum:theme-change', detail: { theme } };
+  }
+  documentObject.dispatchEvent(event);
 }
 
 export async function bootstrap({
@@ -358,29 +377,27 @@ if (typeof document !== 'undefined') {
   try { initializeLocalization(document); } catch { /* auth must remain available */ }
   try { initializeTheme(document); } catch { /* auth must remain available */ }
 
-  void bootstrap().then(async (configuration) => {
+  // Global shell controls are wired before any asynchronous business workspace.
+  // Their availability must never depend on RSOT/ITAM/DCIM/DDI network latency.
+  let preferenceController = null;
+  let notificationCenter = null;
+  try { preferenceController = initializePreferences(document); } catch { /* non-critical */ }
+  try { initializeStableSelects(document); } catch { /* native selects remain as safe fallback */ }
+  try { initializeTemporalPickers(document); } catch { /* native temporal inputs remain as safe fallback */ }
+  try { notificationCenter = initializeNotificationCenter(document); } catch { /* non-critical */ }
+  try { initializeAdminShell(document, globalThis.window); } catch { /* non-critical */ }
+
+  void bootstrap({ notificationCenter, preferenceController }).then(async (configuration) => {
     if (!configuration) return;
 
-    let preferenceController = null;
-    let notificationCenter = null;
     try { await initializeRsotWorkspace(document, configuration, fetch); } catch (error) { console.error('RSOT workspace initialization failed', error); }
     try { await initializeItamWorkspace(document, configuration, fetch); } catch (error) { console.error('ITAM workspace initialization failed', error); }
     try { await initializeDcimWorkspace(document, configuration, fetch); } catch (error) { console.error('DCIM workspace initialization failed', error); }
     try { await initializeDdiIpamWorkspace(document, configuration, fetch); } catch (error) { console.error('DDI/IPAM workspace initialization failed', error); }
-    try { preferenceController = initializePreferences(document); } catch { /* non-critical */ }
-    try { initializeStableSelects(document); } catch { /* native selects remain as safe fallback */ }
-    try { initializeTemporalPickers(document); } catch { /* native temporal inputs remain as safe fallback */ }
-    try { notificationCenter = initializeNotificationCenter(document); } catch { /* non-critical */ }
-    try { initializeAdminShell(document, globalThis.window); } catch { /* non-critical */ }
 
     notificationCenter?.upsert?.({
       id: 'web-runtime', severity: 'success', titleKey: 'notification.runtimeReady.title', bodyKey: 'notification.runtimeReady.body',
       parameters: { version: configuration.version, environment: configuration.environment },
     });
-
-    if (preferenceController && document.getElementById('platform-insights-state')) {
-      const refreshInsights = () => loadPlatformInsights(document, configuration, fetch, notificationCenter);
-      initializePlatformAutoRefresh(document, refreshInsights, preferenceController.get(), globalThis);
-    }
   });
 }

@@ -8,6 +8,7 @@ import {
   applyTranslations,
   initializeLocalization,
   initializeLanguageSwitcher,
+  languageDisplayLabel,
   normalizeLocale,
   resolveLocale,
   setLocalizedElementText,
@@ -66,6 +67,8 @@ test('i18n supports exactly DE EN ES FR IT and normalizes browser locale variant
   assert.equal(normalizeLocale('es-MX'), 'es');
   assert.equal(normalizeLocale('pt-BR'), null);
   assert.equal(normalizeLocale(''), null);
+  assert.equal(languageDisplayLabel('fr-FR'), 'Français FR');
+  assert.equal(languageDisplayLabel('en-US'), 'English EN');
 });
 
 test('locale resolution prefers persisted choice, then browser preferences, then English fallback', () => {
@@ -89,7 +92,7 @@ test('all supported locales translate navigation and interpolate safe runtime va
     assert.notEqual(translate(locale, 'notification.title'), 'notification.title');
     assert.notEqual(translate(locale, 'preference.title'), 'preference.title');
     assert.notEqual(translate(locale, 'platform.title'), 'platform.title');
-    assert.match(translate(locale, 'common.version', { value: '2.0.0-alpha.0.85' }), /2\.0\.0-alpha\.0\.85/);
+    assert.match(translate(locale, 'common.version', { value: '2.0.0-alpha.0.92' }), /2\.0\.0-alpha\.0\.92/);
   }
   assert.equal(translate('pt', 'nav.overview'), 'Overview');
   assert.equal(translate('en', 'missing.translation.key'), 'missing.translation.key');
@@ -162,7 +165,7 @@ test('stable language switcher stays open across background translation refreshe
   options[3].click();
   assert.deepEqual(selected, ['fr']);
   assert.equal(root.getAttribute('lang'), 'fr');
-  assert.equal(current.textContent, 'FR');
+  assert.equal(current.textContent, 'Français FR');
   assert.equal(options[3].getAttribute('aria-selected'), 'true');
   assert.equal(menu.hidden, true);
   assert.equal(trigger.getAttribute('aria-expanded'), 'false');

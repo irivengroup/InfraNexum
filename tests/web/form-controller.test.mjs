@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { wireAsyncForm } from '../../src/applications/web/public/assets/form-controller.mjs';
+import { wireAsyncAction, wireAsyncForm } from '../../src/applications/web/public/assets/form-controller.mjs';
 
 class FakeElement {
   constructor() { this.listeners = new Map(); this.attributes = new Map(); this.disabled = false; this.hidden = false; }
@@ -67,4 +67,26 @@ test('async form controller does not execute an invalid native form and surfaces
   const failureController = wireAsyncForm(failing, { execute: async () => { throw new Error('boom'); }, onError: (error) => { assert.equal(error.message, 'boom'); errors += 1; } });
   assert.equal(await failureController.run(failing.buttons[0]), false);
   assert.equal(errors, 1);
+});
+
+
+test('async form controller preserves buttons that were intentionally disabled before a mutation', async () => {
+  const primary = new FakeElement();
+  const forbidden = new FakeElement(); forbidden.disabled = true;
+  const form = new FakeForm([primary, forbidden]);
+  const controller = wireAsyncForm(form, { execute: async () => {} });
+  assert.equal(await controller.run(primary), true);
+  assert.equal(primary.disabled, false);
+  assert.equal(forbidden.disabled, true);
+  assert.equal(forbidden.attributes.get('aria-disabled'), 'true');
+});
+
+test('async action controller converts rejected mutations into deterministic error feedback', async () => {
+  const button = new FakeElement();
+  let errors = 0;
+  const controller = wireAsyncAction(button, { execute: async () => { throw new Error('network failed'); }, onError: (error) => { assert.equal(error.message, 'network failed'); errors += 1; } });
+  assert.equal(await controller.run(), false);
+  assert.equal(errors, 1);
+  assert.equal(button.disabled, false);
+  assert.equal(button.attributes.has('aria-busy'), false);
 });

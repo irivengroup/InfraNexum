@@ -27,10 +27,14 @@ function dashboardDocument() {
     'organization-workspace', 'theme-toggle',
   ];
   const elements = new Map(ids.map((id) => [id, new Element()]));
+  const listeners = new Map();
   return {
     documentElement: new Element(),
     getElementById: (id) => elements.get(id),
+    addEventListener: (name, listener) => listeners.set(name, listener),
+    dispatchEvent: (event) => { listeners.get(event.type)?.(event); return true; },
     elements,
+    listeners,
   };
 }
 
@@ -38,19 +42,34 @@ const configuration = {
   schema: 'infranexum.web-runtime-config/v1',
   product: 'InfraNexum',
   component: 'web',
-  version: '2.0.0-alpha.0.85',
+  version: '2.0.0-alpha.0.92',
   architectureBaseline: '2.0.0-draft.21',
   environment: 'local',
   apiBaseUrl: '/api',
   organizationFoundationEnabled: false,
 };
 
+
+test('settings theme requests use the same persisted theme contract as the topbar toggle', () => {
+  const documentObject = dashboardDocument();
+  const values = new Map([['infranexum.theme', 'light']]);
+  const storage = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, value),
+  };
+  initializeTheme(documentObject, storage);
+  documentObject.dispatchEvent({ type: 'infranexum:theme-request', detail: { theme: 'dark' } });
+  assert.equal(documentObject.documentElement.getAttribute('data-bs-theme'), 'dark');
+  assert.equal(values.get('infranexum.theme'), 'dark');
+  assert.equal(documentObject.elements.get('theme-toggle').attributes['aria-pressed'], 'true');
+});
+
 test('dashboard renders truthful runtime posture without inventing unavailable metrics', () => {
   const documentObject = dashboardDocument();
   renderRuntimeConfiguration(documentObject, configuration);
   assert.equal(documentObject.elements.get('dashboard-runtime').textContent, 'Operational');
   assert.equal(documentObject.elements.get('dashboard-environment').textContent, 'local');
-  assert.equal(documentObject.elements.get('dashboard-version').textContent, 'Version 2.0.0-alpha.0.85');
+  assert.equal(documentObject.elements.get('dashboard-version').textContent, 'Version 2.0.0-alpha.0.92');
   assert.equal(documentObject.elements.get('dashboard-foundation').textContent, 'Disabled');
   assert.equal(documentObject.elements.get('dashboard-organization-count').textContent, 'N/A');
   assert.equal(documentObject.elements.get('runtime-health-badge').textContent, 'UP');

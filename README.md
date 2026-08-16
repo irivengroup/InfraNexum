@@ -1,3 +1,27 @@
+# InfraNexum 2.0.0-alpha.0.92 — effective Settings, IAM navigation and login refinement
+
+`alpha.0.91` is a Web/UX corrective over `alpha.0.90`. Settings now applies every persisted presentation preference to the live shell before closing: Page/Fluid layout, comfortable/compact density, responsive/expanded/compact navigation, operational refresh cadence and the shared Light/Dark theme contract. The primary sidebar keeps its established background surfaces; only text/icon states use the IONOS-derived palette. Identity & Access vertical facets use full-width uniform active surfaces with WCAG-readable text. The language control no longer depends on emoji flags and displays native language names plus alpha-2 (`Deutsch DE`, `English EN`, `Español ES`, `Français FR`, `Italiano IT`) with a single Bootstrap chevron. The login capability chips are removed and the core product promise is promoted with stronger, enterprise-grade typography. No business epic, API, migration or authorization contract changes are introduced.
+
+---
+
+# InfraNexum 2.0.0-alpha.0.90 — premium login, settings drawer and display controls
+
+`alpha.0.90` is a corrective presentation/configuration release over `alpha.0.89`. Country selectors now display only localized country names while retaining ISO 3166-1 alpha-2 values; the language switcher exposes only flag + language code; the login screen is rebuilt as a product showcase with top-aligned InfraNexum identity and a high-contrast sign-in card; Settings is restored as a narrow right-side drawer and now controls Page/Fluid workspace layout plus the persisted Light/Dark theme; sidebar active/hover/focus/disabled states use the IONOS-inspired Midnight/Blue/Turquoise/Orange palette without blue-on-blue text. No business epic, API, database migration or authorization contract changes in this release.
+
+The shell is designed as one coherent administration product rather than a set of independently themed Bootstrap pages: split-screen secure login, branded sidebar, responsive mobile drawer, glassy topbar, contextual hero, KPI surfaces, workspace frames, tables, tabs, forms, alerts, dropdowns and dialogs share the same spacing, radius, elevation, focus and state vocabulary. Custom classes are permitted only under the `inx-*` namespace; arbitrary third-party or unscoped presentation classes remain rejected by architecture tests.
+
+The release also fixes the Windows/Chromium single-select regression in depth. The native `<select class="form-select">` remains present, owns the `name`, selected value, constraint validation and `FormData`, but single-select pointer interaction is rendered through an accessible `.inx-select` combobox/listbox. It cannot close merely because the mouse button is released: it closes only after an explicit option choice, Escape, Tab or a pointer interaction outside the component. Choosing an option writes the native value and dispatches native `input` and `change` events, preserving all Organization → Subdivision → Site and RSOT/ITAM/DCIM/DDI dependency flows. Dynamic catalogue replacement explicitly resynchronizes the visible control and `form.reset()` resynchronizes it after the browser resets the native value. Multi-selects remain native.
+
+No business epic, migration, RBAC/ABAC rule or public API contract is added by this corrective. The dependency chain remains **PGM-05-E01 → PGM-10-E05 → PGM-08-E02/PGM-08-E03**.
+
+---
+
+# InfraNexum 2.0.0-alpha.0.87 — premium Bootstrap 5 administration experience
+
+`alpha.0.87` was the first premium-admin corrective over `alpha.0.86`: it hardened asynchronous forms, entity cascades and the responsive administration shell while keeping a Bootstrap-only presentation contract. Operator feedback on Windows/Chromium then demonstrated that the native single-select picker still closed on pointer release and that suppressing the product-specific visual layer reduced the perceived quality of the interface. `alpha.0.88` supersedes that presentation decision without changing the delivered business capabilities.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.85 — Server contract stabilization
 
 `alpha.0.85` is a corrective release over `alpha.0.84`. The operator Java 25 Docker build confirmed the previous text-block repair and then exposed two stale Server composition contracts: DCIM Physical referenced the obsolete `Asset.organizationId()` accessor instead of the authoritative ITAM `Asset.owningOrganizationId()`, and DDI/IPAM still called an obsolete three-argument `JdbcRsotRepository` constructor even though the RSOT repository is read-only and its current contract is `(DataSource, JdbcDatabaseDialect)`. Both call sites are corrected against the existing domain/JDBC contracts; no public API, migration or business rule changes.

@@ -1,3 +1,53 @@
+# InfraNexum 2.0.0-alpha.0.92 — deterministic Settings and notification drawer corrective
+
+**Nature : corrective Web/UX, sans nouvel epic métier.** Cette révision ferme le défaut opérateur où le bouton Settings « Enregistrer » pouvait être visible mais ne produire aucun effet observable sur le chemin navigateur réel. Les contrôles shell globaux sont désormais câblés avant toute initialisation asynchrone RSOT/ITAM/DCIM/DDI, le bouton Save possède un handler `click` explicite et indépendant du submit implicite du navigateur, et chaque application de préférences resynchronise les `.inx-select` visibles avec leur `<select>` natif autoritatif.
+
+**Settings :** Save lit les valeurs natives, persiste le document versionné, applique immédiatement `density`, `navigation`, `layout` et `refresh`, demande le thème Clair/Sombre partagé avec la topbar, émet `infranexum:preferences-change`, marque le drawer `saved` puis le ferme. Le test de non-régression reproduit maintenant un clic réel sur `#preferences-save` au lieu d'appeler indirectement la soumission de formulaire.
+
+**Notifications :** l'icône topbar devient une cloche SVG monochrome héritant de `currentColor`. Le centre de notifications est un drawer modal vertical aligné à droite, avec largeur bornée, backdrop, animation, Escape, clic backdrop, retour du focus et liste scrollable. Il ne dépend plus du grand `.inx-dialog` central.
+
+**Login :** “Operate infrastructure with clarity.” reste le message produit principal mais sa taille est rééquilibrée à `clamp(2.15rem, 3.45vw, 3.45rem)`, avec largeur de lecture réduite et interligne adapté au split-screen. L'identité produit reste en haut et la carte d'authentification conserve sa hiérarchie indépendante.
+
+**Validation alpha.0.92 :** **EXÉCUTÉ** — Web **176/176**, couverture runtime **99,73 % lignes / 98,53 % branches / 100 % fonctions**, smoke `passed`; tests d'architecture Web directement concernés **24/24**; Architecture-as-Code `PASS`; Compose contract **64/64**; Toolchains **25/25**; Migrations **114/114**; Source Integrity **45/45** et checker **0 violation** avant gel Git. Les gates exacts JDK 25, Node 24.18.1/pnpm 11.17.0, navigateur Windows réel et Docker Desktop PRO restent des gates de promotion externes.
+
+---
+
+# InfraNexum 2.0.0-alpha.0.90 — premium login/settings/display corrective
+
+**Nature : corrective Web/UX et préférences d’affichage, sans nouvel epic métier.** Cette révision améliore la vitrine d’authentification, simplifie l’affichage des pays et langues, restaure le panneau Settings vertical à droite et ajoute le choix de largeur Page/Fluide ainsi que le thème Clair/Sombre dans ce même panneau.
+
+**Login :** l’identité `IN / InfraNexum / Infrastructure Control & Governance Platform` reste positionnée en haut de la vitrine, le récit produit et les capacités principales structurent la zone de marque, et `Sign in to InfraNexum` possède une couleur explicite et lisible sur la carte d’authentification en thème clair comme sombre. Les contrastes et surfaces restent dérivés de la palette IONOS Midnight/Blue/Turquoise/Orange.
+
+**Settings et affichage :** `preferences-dialog` redevient un drawer modal étroit, aligné à droite, avec backdrop et animation latérale. Le schéma de préférences passe de `web-preferences/v1` à `v2` uniquement pour ajouter `layout=page|fluid`; la migration conserve densité, navigation et intervalle de rafraîchissement existants. Le thème n’est pas dupliqué dans ce JSON : Settings et le bouton topbar pilotent le même stockage historique `infranexum.theme` avec les valeurs `light|dark`.
+
+**Pays et internationalisation :** les options pays affichent uniquement le nom localisé ; l’alpha-2 reste la valeur soumise au Server. Le sélecteur de langue affiche uniquement drapeau + code `DE/EN/ES/FR/IT`, les noms complets restant disponibles aux technologies d’assistance via `aria-label`.
+
+**Sidebar :** les états normal, hover/focus, actif et indisponible utilisent des tons distincts de la palette produit. Le texte n’utilise jamais le bleu IONOS sur le fond bleu de la sidebar ; l’état actif inverse sur une surface turquoise avec texte Midnight, le hover combine Blue/Turquoise et un accent Orange sur l’icône.
+
+**Validation alpha.0.90 :** **EXÉCUTÉ** — Web **175/175**, couverture runtime **99,73 % lignes / 98,53 % branches / 100 % fonctions**, smoke `passed`; tests d’architecture Web ciblés **24/24**; Source Integrity **45/45 à 100 %**, checker **0 violation**; Architecture-as-Code `PASS`; Toolchains **25/25** (99 %), checker 0 violation; Migrations **114/114** (99 %), checker 0 violation; Compose contract **64/64**; Archive Compatibility **12/12 à 100 %**, checker 0 violation. Le ZIP final est extrait avec `unzip` puis rejoué sur Source Integrity, Architecture-as-Code, Compose et Web avec les mêmes résultats; le mode `-rwxr-xr-x` de `docker/dev-compose.sh` est conservé.
+
+**NON EXÉCUTÉ** — revue visuelle pixel-perfect dans le navigateur Windows cible; compilation Maven/JUnit/JaCoCo complète sous Temurin JDK 25.0.4+7; toolchain Web exacte Node 24.18.1/pnpm 11.17.0; Docker Desktop PRO `up`, `smoke` et `ha-smoke`; couverture Architecture instrumentée globale. Ces contrôles restent des gates de promotion et ne sont pas présentés comme validés.
+
+**Dépendance roadmap :** aucun epic n’est avancé. La chaîne métier reste `PGM-05-E01 → PGM-10-E05 → PGM-08-E02/PGM-08-E03`.
+
+---
+
+# InfraNexum 2.0.0-alpha.0.90 — enterprise IAM/forms/calendar/Partner corrective
+
+**Nature : corrective fonctionnelle Web/UX et invariants de période, sans nouvel epic métier.** Cette révision corrige les tabs Identity & Access, rétablit un calendrier InfraNexum déterministe, remplace la saisie JSON des contacts Partner par des champs structurés, introduit le catalogue ISO 3166-1 alpha-2 groupé par continent et renforce les surfaces Partner/IAM pour un rendu logiciel d’entreprise.
+
+**Identity & Access :** les navigations principales et secondaires pilotent désormais explicitement `hidden`, `aria-hidden`, `aria-selected` et le focus clavier. Chaque facet s’initialise indépendamment ; un panneau inactif ne peut plus rester visible derrière le panneau actif.
+
+**Calendriers et périodes :** les champs `date`/`datetime-local` restent les valeurs FormData autoritatives mais sont rendus via `.inx-temporal-*`, sans dépendre du popup natif Windows/Chromium. Le calendrier est Monday-first, propose une grille rapide de 16 années et une navigation par pas de 12 ans. Toute paire début/fin reconnue synchronise `min/max` et interdit une fin strictement antérieure au début. L’égalité est autorisée. Les invariants correspondants sont également conservés côté domaines concernés.
+
+**Partners et pays :** `contacts` n’est plus saisi comme JSON. L’éditeur répétable expose type, nom, e-mail, téléphone et URL avec validation HTML puis sérialisation dans le contrat API existant. `countryCode` est un `select` alimenté par les 249 entrées ISO 3166-1 alpha-2 ; les libellés sont localisés et regroupés dans sept continents, tandis que la valeur soumise reste le code alpha-2. Le même catalogue est réutilisable par DCIM.
+
+**Ergonomie entreprise :** les panneaux IAM, formulaires Partner, détails gouvernés, contacts, tabs, tables et calendriers utilisent la couche produit `.inx-*` / `--inx-*` au-dessus de Bootstrap 5.3.6, avec palette IONOS Midnight/Blue/Turquoise/Orange, contrastes élevés et surfaces cohérentes. Le détail Partner n’est plus un dump JSON : il présente une fiche gouvernée lisible et les contacts structurés.
+
+**Dépendance roadmap :** aucun epic n’est avancé. La chaîne métier reste `PGM-05-E01 → PGM-10-E05 → PGM-08-E02/PGM-08-E03`.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.85 — Server contract stabilization
 
 **Nature : correction de non-régression, sans nouvel epic métier.** Le build Docker Java 25 de `alpha.0.84` a franchi les défauts de text blocks corrigés précédemment puis a révélé deux incompatibilités de contrat internes au Server. DCIM Physical appelait `Asset.organizationId()` alors que l'agrégat ITAM expose contractuellement `owningOrganizationId()`. DDI/IPAM construisait `JdbcRsotRepository` avec `(DataSource, JdbcTransactionalEventStore, JdbcDatabaseDialect)` alors que ce repository RSOT est read-only et expose `(DataSource, JdbcDatabaseDialect)`. `alpha.0.85` corrige ces deux call sites sans modifier le modèle métier, les migrations, les endpoints, les permissions ni les contrats Web.

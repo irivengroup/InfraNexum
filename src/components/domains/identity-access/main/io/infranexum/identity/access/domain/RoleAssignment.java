@@ -11,7 +11,7 @@ public record RoleAssignment(
     public RoleAssignment {
         Objects.requireNonNull(id, "id"); Objects.requireNonNull(roleId, "roleId"); Objects.requireNonNull(actorType, "actorType");
         Objects.requireNonNull(actorId, "actorId"); Objects.requireNonNull(scope, "scope"); Objects.requireNonNull(effectiveFrom, "effectiveFrom");
-        if (effectiveTo != null && !effectiveTo.isAfter(effectiveFrom)) throw new IllegalArgumentException("effectiveTo must be after effectiveFrom");
+        if (effectiveTo != null && effectiveTo.isBefore(effectiveFrom)) throw new IllegalArgumentException("effectiveTo must not precede effectiveFrom");
         if ((revokedAt == null) != (revokedBy == null)) throw new IllegalArgumentException("revocation timestamp and actor must be supplied together");
     }
 

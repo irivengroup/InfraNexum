@@ -101,6 +101,32 @@ class ItamPartnerCatalogueArchitectureTest(unittest.TestCase):
         self.assertIn("INFRANEXUM_WEB_ITAM_PARTNERS_ENABLED", config)
         self.assertIn("itam.partners,lite;pro;enterprise,server", catalog)
 
+    def test_web_partner_form_uses_structured_contacts_and_iso_alpha2_country_catalogue(self) -> None:
+        workspace = (self.WEB / "public/assets/itam-workspace.mjs").read_text(encoding="utf-8")
+        countries = (self.WEB / "public/assets/country-catalog.mjs").read_text(encoding="utf-8")
+        stable = (self.WEB / "public/assets/stable-select.mjs").read_text(encoding="utf-8")
+        self.assertIn('name="countryCode" class="form-select" data-inx-country-select', workspace)
+        self.assertNotIn("jsonField('itam-partner-contacts'", workspace)
+        for field in ("contactName", "contactEmail", "contactPhone", "contactUri"):
+            self.assertIn(f'name="{field}"', workspace)
+        self.assertIn("serializePartnerContacts", workspace)
+        self.assertIn("COUNTRY_CATALOG", countries)
+        self.assertIn("Object.freeze", countries)
+        self.assertIn("OPTGROUP", stable)
+        self.assertIn("inx-select-group", stable)
+
+    def test_partner_validity_is_a_calendar_period_with_fail_closed_ordering(self) -> None:
+        workspace = (self.WEB / "public/assets/itam-workspace.mjs").read_text(encoding="utf-8")
+        temporal = (self.WEB / "public/assets/temporal-picker.mjs").read_text(encoding="utf-8")
+        partner = (self.ITAM / "main/io/infranexum/itam/partner/domain/Partner.java").read_text(encoding="utf-8")
+        self.assertIn('name="validFrom" type="date" data-inx-temporal="date"', workspace)
+        self.assertIn('name="validUntil" type="date" data-inx-temporal="date"', workspace)
+        self.assertIn("['validFrom', 'validUntil']", temporal)
+        self.assertIn("end.min = startValue", temporal)
+        self.assertIn("start.max = endValue", temporal)
+        self.assertIn("validUntil.isBefore(validFrom)", partner)
+
+
 
 if __name__ == "__main__":
     unittest.main()

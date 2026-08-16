@@ -41,12 +41,14 @@ export function initializeNotificationCenter(documentObject = document, clock = 
     render();
   };
   const open = () => {
+    dialog?.setAttribute?.('data-notification-state', 'open');
     if (dialog && !dialog.open) dialog.showModal?.();
     trigger?.setAttribute?.('aria-expanded', 'true');
     markAllRead();
   };
-  const close = () => {
-    if (dialog?.open) dialog.close?.();
+  const close = (returnValue = 'close') => {
+    dialog?.setAttribute?.('data-notification-state', 'closed');
+    if (dialog?.open) dialog.close?.(returnValue);
     trigger?.setAttribute?.('aria-expanded', 'false');
     trigger?.focus?.();
   };
@@ -68,7 +70,8 @@ export function initializeNotificationCenter(documentObject = document, clock = 
   trigger?.addEventListener?.('click', open);
   closer?.addEventListener?.('click', close);
   markRead?.addEventListener?.('click', markAllRead);
-  dialog?.addEventListener?.('click', (event) => { if (event.target === dialog) close(); });
+  dialog?.addEventListener?.('click', (event) => { if (event.target === dialog) close('backdrop'); });
+  dialog?.addEventListener?.('cancel', (event) => { event?.preventDefault?.(); close('cancel'); });
   documentObject?.addEventListener?.('infranexum:locale-change', render);
 
   const center = Object.freeze({ open, close, upsert, remove, markAllRead, snapshot: () => [...notices.values()] });

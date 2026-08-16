@@ -35,4 +35,8 @@ test('DDI/IPAM workspace is a real five-catalogue UI and uses governed entity se
   for(const id of ['ddi-org','ddi-subdivision','ddi-site','ddi-network-vrf','ddi-network-vlan','ddi-network-parent','ddi-pool-network','ddi-address-vrf','ddi-address-network','ddi-address-pool','ddi-address-rsot','ddi-address-equipment']) assert.match(source,new RegExp(`id="${id}"`));
   for(const action of ['createVrf','createVlan','createNetwork','createPool','allocate','release','updateNetwork']) assert.match(source,new RegExp(`client\\.${action}|client\\[.*${action}`));
   assert.doesNotMatch(source,/<input[^>]+name=["'](?:vrfId|parentNetworkId|networkId|poolId|rsotObjectId|dcimEquipmentId)["']/);
+  assert.match(source,/wireAsyncForm/);
+  assert.match(source,/wireAsyncAction/);
+  assert.match(source,/class="nav-link/);
+  assert.match(source,/selectFirst:true/);
 });

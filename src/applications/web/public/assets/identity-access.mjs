@@ -110,8 +110,19 @@ async function bindOrganizationSelector(documentObject, select, api, status) {
       option.textContent = `${safeText(organization.code)} — ${safeText(organization.displayName)}`;
       return option;
     });
-    select.replaceChildren(...options);
-    select.disabled = options.length === 0;
+    if (options.length === 0) {
+      const empty = documentObject.createElement('option');
+      empty.value = '';
+      empty.textContent = translate(localeFromDocument(documentObject), 'iam.noOrganizations');
+      empty.selected = true;
+      select.replaceChildren(empty);
+      select.value = '';
+    } else {
+      select.replaceChildren(...options);
+      select.value = options[0].value;
+    }
+    select.disabled = false;
+    select.setAttribute?.('data-inx-select-state', options.length === 0 ? 'empty' : 'ready');
     setStatus(documentObject, status, options.length === 0 ? 'iam.noOrganizations' : 'iam.ready', options.length === 0);
     return organizations;
   } catch (error) {
@@ -606,6 +617,7 @@ export function initializeIamWorkflowNavigation(documentObject) {
       if (!String(panel.getAttribute('data-iam-workflow-panel') ?? '').startsWith(`${section}:`)) continue;
       const active = panel.getAttribute('data-iam-workflow-panel') === name;
       panel.classList?.toggle?.('active', active);
+      panel.hidden = !active;
       panel.setAttribute?.('aria-hidden', active ? 'false' : 'true');
     }
     if (focus) target.focus?.();
@@ -626,6 +638,12 @@ export function initializeIamWorkflowNavigation(documentObject) {
       else if (event.key === 'End') next = visible[visible.length - 1];
       if (next) { event.preventDefault?.(); activate(next.getAttribute('data-iam-workflow'), true); }
     });
+  }
+  const sections = [...new Set(buttons.map((button) => String(button.getAttribute('data-iam-workflow') ?? '').split(':', 1)[0]).filter(Boolean))];
+  for (const section of sections) {
+    const current = buttons.find((button) => !button.hidden && String(button.getAttribute('data-iam-workflow') ?? '').startsWith(`${section}:`) && button.getAttribute('aria-selected') === 'true')
+      ?? buttons.find((button) => !button.hidden && String(button.getAttribute('data-iam-workflow') ?? '').startsWith(`${section}:`));
+    if (current) activate(current.getAttribute('data-iam-workflow'));
   }
   return Object.freeze({ activate });
 }
@@ -687,6 +705,7 @@ export function initializeIamSectionNavigation(documentObject) {
     for (const panel of panels) {
       const active = panel.getAttribute('data-iam-panel') === name;
       panel.classList?.toggle?.('active', active);
+      panel.hidden = !active;
       panel.setAttribute?.('aria-hidden', active ? 'false' : 'true');
     }
     if (focus) target.focus?.();

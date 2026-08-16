@@ -132,13 +132,15 @@ class IdentityAccessDomainTest {
         assertFalse(membership.effectiveAt(NOW.minusNanos(1)));
         assertFalse(membership.effectiveAt(NOW.plusSeconds(10)));
         assertFalse(new UserMembership(id(51), id(10), id(1), null, NOW, null, NOW.plusSeconds(1)).effectiveAt(NOW.plusSeconds(2)));
-        assertThrows(IllegalArgumentException.class, () -> new UserMembership(id(51), id(10), id(1), null, NOW, NOW, null));
+        assertFalse(new UserMembership(id(52), id(10), id(1), null, NOW, NOW, null).effectiveAt(NOW));
+        assertThrows(IllegalArgumentException.class, () -> new UserMembership(id(53), id(10), id(1), null, NOW, NOW.minusSeconds(1), null));
 
         RoleAssignment assignment = new RoleAssignment(id(60), id(40), AssignmentActorType.USER, id(10), AuthorizationScope.organization(id(1)), NOW, NOW.plusSeconds(10), null, null);
         assertTrue(assignment.effectiveAt(NOW));
         assertFalse(assignment.effectiveAt(NOW.minusNanos(1)));
         assertFalse(assignment.effectiveAt(NOW.plusSeconds(10)));
-        assertThrows(IllegalArgumentException.class, () -> new RoleAssignment(id(61), id(40), AssignmentActorType.USER, id(10), AuthorizationScope.platform(), NOW, NOW, null, null));
+        assertFalse(new RoleAssignment(id(62), id(40), AssignmentActorType.USER, id(10), AuthorizationScope.platform(), NOW, NOW, null, null).effectiveAt(NOW));
+        assertThrows(IllegalArgumentException.class, () -> new RoleAssignment(id(63), id(40), AssignmentActorType.USER, id(10), AuthorizationScope.platform(), NOW, NOW.minusSeconds(1), null, null));
         assertThrows(IllegalArgumentException.class, () -> new RoleAssignment(id(61), id(40), AssignmentActorType.USER, id(10), AuthorizationScope.platform(), NOW, null, NOW, null));
         assertFalse(new RoleAssignment(id(61), id(40), AssignmentActorType.USER, id(10), AuthorizationScope.platform(), NOW, null, NOW.plusSeconds(1), id(99)).effectiveAt(NOW.plusSeconds(2)));
     }

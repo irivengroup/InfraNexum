@@ -56,8 +56,12 @@ test('notification center counts only unread observed facts and marks them read 
 
   center.open();
   assert.equal(documentObject.elements.get('notification-center').open, true);
+  assert.equal(documentObject.elements.get('notification-trigger').getAttribute('aria-expanded'), 'true');
   assert.equal(documentObject.elements.get('notification-count').hidden, true);
   assert.equal(center.snapshot().every((item) => item.read), true);
+  center.close();
+  assert.equal(documentObject.elements.get('notification-center').open, false);
+  assert.equal(documentObject.elements.get('notification-trigger').getAttribute('aria-expanded'), 'false');
 });
 
 test('upserting the same observed fact does not create duplicates', () => {

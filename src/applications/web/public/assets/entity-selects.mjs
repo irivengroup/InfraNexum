@@ -171,7 +171,7 @@ export function createIamEntityDirectory(documentObject, api, workspaceOrganizat
     select.replaceChildren(...nodes);
     const stillPresent = options.some((item) => item.id === previous);
     select.value = stillPresent ? previous : '';
-    select.disabled = isUnavailable(select) || options.length === 0 || scopeDisables(select);
+    select.disabled = isUnavailable(select) || scopeDisables(select);
     select.setAttribute?.('data-inx-entity-state', isUnavailable(select) ? 'unavailable' : options.length ? 'ready' : 'empty');
     if (required && !stillPresent) select.value = '';
     dispatchEntitySync(select);

@@ -11,7 +11,7 @@ public record UserMembership(
     public UserMembership {
         Objects.requireNonNull(id, "id"); Objects.requireNonNull(userId, "userId"); Objects.requireNonNull(organizationId, "organizationId");
         Objects.requireNonNull(effectiveFrom, "effectiveFrom");
-        if (effectiveTo != null && !effectiveTo.isAfter(effectiveFrom)) throw new IllegalArgumentException("effectiveTo must be after effectiveFrom");
+        if (effectiveTo != null && effectiveTo.isBefore(effectiveFrom)) throw new IllegalArgumentException("effectiveTo must not precede effectiveFrom");
     }
     public boolean effectiveAt(Instant at) { return revokedAt == null && !at.isBefore(effectiveFrom) && (effectiveTo == null || at.isBefore(effectiveTo)); }
 }

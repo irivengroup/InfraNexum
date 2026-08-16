@@ -58,42 +58,42 @@ export async function initializeRsotWorkspace(documentObject = document, configu
 
 export function rsotWorkspaceTemplate() {
   return `
-    <header class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4 mb-3">
+    <header class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
       <div><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="rsot.eyebrow">Resource source of truth</p><h2 id="rsot-workspace-title" data-i18n="rsot.title">RSOT</h2><p data-i18n="rsot.description">Canonical resources, immutable schemas and composable profiles.</p></div>
       <button id="rsot-refresh" class="btn btn-outline-primary" type="button" data-i18n="common.refresh">Refresh</button>
     </header>
     <p id="rsot-status" class="alert alert-info py-2" role="status" aria-live="polite" data-state="info" data-i18n="workspace.ready">Ready.</p>
-    <div class="nav nav-pills gap-2 mb-3" role="tablist" aria-label="RSOT">
+    <div class="nav nav-underline gap-3 mb-4 border-bottom" role="tablist" aria-label="RSOT">
       <button class="nav-link active" type="button" role="tab" aria-selected="true" data-rsot-tab="objects" data-i18n="rsot.objects">Canonical objects</button>
       <button class="nav-link" type="button" role="tab" aria-selected="false" data-rsot-tab="schemas" data-i18n="rsot.schemas">Schema registry</button>
       <button class="nav-link" type="button" role="tab" aria-selected="false" data-rsot-tab="profiles" data-i18n="rsot.profiles">Schema profiles</button>
     </div>
 
     <section class="tab-pane" role="tabpanel" data-rsot-panel="objects">
-      <form id="rsot-object-filter" class="card card-body bg-body-tertiary border mb-3 row g-2" autocomplete="off">
+      <form id="rsot-object-filter" class="card card-body bg-body-tertiary border mb-4 row g-3" autocomplete="off">
         <div class="col-lg-5"><label class="form-label" for="rsot-object-organization" data-i18n="common.organization">Organization</label><select id="rsot-object-organization" name="organizationId" class="form-select"></select></div>
         <div class="col-lg-3"><label class="form-label" for="rsot-object-type" data-i18n="rsot.objectType">Object type</label><input id="rsot-object-type" name="objectType" class="form-control" maxlength="160" /></div>
         <div class="col-lg-2"><label class="form-label" for="rsot-object-status" data-i18n="common.status">Status</label><select id="rsot-object-status" name="status" class="form-select"><option value="" data-i18n="common.all">All</option><option>proposed</option><option>validated</option><option>reconciled</option><option>deprecated</option><option>archived</option></select></div>
         <div class="col-lg-2 d-flex align-items-end"><button class="btn btn-primary w-100" type="submit" data-i18n="common.filter">Filter</button></div>
       </form>
       ${table('rsot-object-table-body', [['rsot.id','ID'],['rsot.objectType','Object type'],['common.organization','Organization'],['common.status','Status'],['common.version','Version'],['common.updated','Updated']])}
-      <pre id="rsot-object-detail" class="p-3 rounded border bg-body-tertiary mb-3 overflow-auto" tabindex="0" aria-label="RSOT object detail">—</pre>
+      <pre id="rsot-object-detail" class="p-3 rounded-3 border bg-body-tertiary mb-4 overflow-auto small" tabindex="0" aria-label="RSOT object detail">—</pre>
     </section>
 
     <section class="tab-pane" role="tabpanel" data-rsot-panel="schemas" hidden aria-hidden="true">
       <div class="d-grid gap-3">
         <div>
-          <form id="rsot-schema-filter" class="card card-body bg-body-tertiary border mb-3 row g-2" autocomplete="off">
+          <form id="rsot-schema-filter" class="card card-body bg-body-tertiary border mb-4 row g-3" autocomplete="off">
             <div class="col-md-4"><label class="form-label" for="rsot-schema-key-filter" data-i18n="rsot.schemaKey">Schema key</label><input id="rsot-schema-key-filter" name="schemaKey" class="form-control" maxlength="160" /></div>
             <div class="col-md-3"><label class="form-label" for="rsot-schema-kind-filter" data-i18n="rsot.kind">Kind</label><select id="rsot-schema-kind-filter" name="kind" class="form-select"><option value="" data-i18n="common.all">All</option><option value="CORE">CORE</option><option value="RSOT_EXTENSION">RSOT_EXTENSION</option></select></div>
             <div class="col-md-3"><label class="form-label" for="rsot-schema-status-filter" data-i18n="common.status">Status</label><select id="rsot-schema-status-filter" name="status" class="form-select"><option value="" data-i18n="common.all">All</option><option value="DRAFT">DRAFT</option><option value="PUBLISHED">PUBLISHED</option><option value="DEPRECATED">DEPRECATED</option></select></div>
             <div class="col-md-2 d-flex align-items-end"><button class="btn btn-outline-primary w-100" type="submit" data-i18n="common.filter">Filter</button></div>
           </form>
           ${table('rsot-schema-table-body', [['rsot.schemaKey','Schema key'],['rsot.kind','Kind'],['common.version','Version'],['common.status','Status'],['rsot.revision','Revision']])}
-          <pre id="rsot-schema-detail" class="p-3 rounded border bg-body-tertiary mb-3 overflow-auto" tabindex="0">—</pre>
+          <pre id="rsot-schema-detail" class="p-3 rounded-3 border bg-body-tertiary mb-4 overflow-auto small" tabindex="0">—</pre>
         </div>
         <div class="d-grid gap-3">
-          <form id="rsot-schema-form" class="border rounded p-3 bg-body-tertiary row g-2">
+          <form id="rsot-schema-form" class="border rounded-3 p-3 p-xl-4 bg-body-tertiary row g-3">
             <h3 data-i18n="rsot.schemaCreate">Create schema</h3>
             <div class="col-12"><label class="form-label" for="rsot-schema-key" data-i18n="rsot.schemaKey">Schema key</label><input id="rsot-schema-key" name="schemaKey" class="form-control" maxlength="160" required /></div>
             <div class="col-md-6"><label class="form-label" for="rsot-schema-kind" data-i18n="rsot.kind">Kind</label><select id="rsot-schema-kind" name="kind" class="form-select" required><option value="CORE">CORE</option><option value="RSOT_EXTENSION">RSOT_EXTENSION</option></select></div>
@@ -103,7 +103,7 @@ export function rsotWorkspaceTemplate() {
             <div class="col-12"><label class="form-label" for="rsot-schema-definition" data-i18n="rsot.definition">JSON Schema definition</label><textarea id="rsot-schema-definition" name="definition" class="form-control font-monospace" rows="12" required spellcheck="false">{"type":"object","properties":{}}</textarea></div>
             <div class="col-12"><button class="btn btn-primary" type="submit" data-i18n="common.create">Create</button></div>
           </form>
-          <form id="rsot-schema-lifecycle" class="border rounded p-3 bg-body-tertiary row g-2">
+          <form id="rsot-schema-lifecycle" class="border rounded-3 p-3 p-xl-4 bg-body-tertiary row g-3">
             <h3 data-i18n="rsot.schemaLifecycle">Selected schema</h3>
             <input name="schemaId" type="hidden" /><input name="revision" type="hidden" />
             <div class="col-12"><label class="form-label" for="rsot-schema-update-definition" data-i18n="rsot.definition">JSON Schema definition</label><textarea id="rsot-schema-update-definition" name="definition" class="form-control font-monospace" rows="8" required spellcheck="false"></textarea></div>
@@ -111,7 +111,7 @@ export function rsotWorkspaceTemplate() {
             <div class="col-md-6"><label class="form-label" for="rsot-schema-sunset" data-i18n="rsot.sunsetAt">Sunset at</label><input id="rsot-schema-sunset" name="sunsetAt" class="form-control" type="datetime-local" data-inx-temporal="datetime" /></div>
             <div class="col-md-6"><label class="form-label" for="rsot-schema-reason" data-i18n="common.reason">Reason</label><input id="rsot-schema-reason" name="reason" class="form-control" maxlength="500" /></div>
             <div class="col-12 d-flex flex-wrap gap-2"><button class="btn btn-outline-primary" type="submit" value="update" data-i18n="common.update">Update draft</button><button class="btn btn-outline-secondary" type="submit" value="compatibility" data-i18n="rsot.compatibility">Compatibility</button><button class="btn btn-outline-success" type="submit" value="publish" data-i18n="common.publish">Publish</button><button class="btn btn-outline-warning" type="submit" value="deprecate" data-i18n="common.deprecate">Deprecate</button></div>
-            <pre id="rsot-compatibility-result" class="p-3 rounded border bg-body-tertiary mb-3 overflow-auto" tabindex="0">—</pre>
+            <pre id="rsot-compatibility-result" class="p-3 rounded-3 border bg-body-tertiary mb-4 overflow-auto small" tabindex="0">—</pre>
           </form>
         </div>
       </div>
@@ -119,9 +119,9 @@ export function rsotWorkspaceTemplate() {
 
     <section class="tab-pane" role="tabpanel" data-rsot-panel="profiles" hidden aria-hidden="true">
       <div class="d-grid gap-3">
-        <div>${table('rsot-profile-table-body', [['rsot.profileCode','Profile code'],['rsot.owner','Owner'],['common.version','Version'],['common.status','Status'],['rsot.revision','Revision']])}<pre id="rsot-profile-detail" class="p-3 rounded border bg-body-tertiary mb-3 overflow-auto" tabindex="0">—</pre></div>
+        <div>${table('rsot-profile-table-body', [['rsot.profileCode','Profile code'],['rsot.owner','Owner'],['common.version','Version'],['common.status','Status'],['rsot.revision','Revision']])}<pre id="rsot-profile-detail" class="p-3 rounded-3 border bg-body-tertiary mb-4 overflow-auto small" tabindex="0">—</pre></div>
         <div class="d-grid gap-3">
-          <form id="rsot-profile-form" class="border rounded p-3 bg-body-tertiary row g-2">
+          <form id="rsot-profile-form" class="border rounded-3 p-3 p-xl-4 bg-body-tertiary row g-3">
             <h3 data-i18n="rsot.profileCreate">Create profile</h3>
             <div class="col-md-6"><label class="form-label" for="rsot-profile-code" data-i18n="rsot.profileCode">Profile code</label><input id="rsot-profile-code" name="code" class="form-control" maxlength="160" required /></div>
             <div class="col-md-6"><label class="form-label" for="rsot-profile-version" data-i18n="common.version">Version</label><input id="rsot-profile-version" name="version" class="form-control" value="1.0.0" maxlength="64" required /></div>
@@ -129,7 +129,7 @@ export function rsotWorkspaceTemplate() {
             <div class="col-12"><label class="form-label" for="rsot-profile-schemas" data-i18n="rsot.profileSchemas">Schemas</label><select id="rsot-profile-schemas" name="schemaIds" class="form-select" multiple size="8" required></select></div>
             <div class="col-12"><button class="btn btn-primary" type="submit" data-i18n="common.create">Create</button></div>
           </form>
-          <form id="rsot-profile-lifecycle" class="border rounded p-3 bg-body-tertiary row g-2">
+          <form id="rsot-profile-lifecycle" class="border rounded-3 p-3 p-xl-4 bg-body-tertiary row g-3">
             <h3 data-i18n="rsot.profileLifecycle">Selected profile</h3><input name="profileId" type="hidden" /><input name="revision" type="hidden" />
             <div class="col-md-6"><label class="form-label" for="rsot-profile-sunset" data-i18n="rsot.sunsetAt">Sunset at</label><input id="rsot-profile-sunset" name="sunsetAt" class="form-control" type="datetime-local" data-inx-temporal="datetime" /></div>
             <div class="col-md-6"><label class="form-label" for="rsot-profile-reason" data-i18n="common.reason">Reason</label><input id="rsot-profile-reason" name="reason" class="form-control" maxlength="500" /></div>
@@ -143,7 +143,7 @@ export function rsotWorkspaceTemplate() {
 async function populateOrganizations(documentObject, configuration, fetchFunction) {
   try {
     const organizations = await organizationDirectory(configuration, fetchFunction);
-    fillSelect(documentObject, documentObject.getElementById('rsot-object-organization'), organizations, { label: (item) => `${item.code ?? ''} — ${item.displayName ?? item.id}` });
+    fillSelect(documentObject, documentObject.getElementById('rsot-object-organization'), organizations, { label: (item) => `${item.code ?? ''} — ${item.displayName ?? item.id}`, selectFirst: true });
   } catch (error) {
     setWorkspaceStatus(documentObject, 'rsot-status', 'workspace.directoryUnavailable', 'warning');
   }
@@ -151,13 +151,23 @@ async function populateOrganizations(documentObject, configuration, fetchFunctio
 
 function wireObjectFilters(documentObject, client, state) {
   const form = documentObject.getElementById('rsot-object-filter');
-  form?.addEventListener('submit', (event) => { event.preventDefault(); void loadObjects(documentObject, client, state); });
-  form?.querySelectorAll?.('select,input')?.forEach((control) => control.addEventListener?.('change', () => void loadObjects(documentObject, client, state)));
+  const controller = wireAsyncForm(form, {
+    execute: async () => loadObjects(documentObject, client, state),
+    onWorking: () => setWorkspaceStatus(documentObject, 'rsot-status', 'workspace.loading'),
+    onSuccess: () => setWorkspaceStatus(documentObject, 'rsot-status', 'workspace.ready', 'success'),
+    onError: (error) => showError(documentObject, 'rsot-status', error),
+  });
+  form?.querySelectorAll?.('select,input')?.forEach((control) => control.addEventListener?.('change', () => { void controller.run(); }));
 }
 
 function wireSchemaActions(documentObject, client, state) {
   const filter = documentObject.getElementById('rsot-schema-filter');
-  filter?.addEventListener('submit', (event) => { event.preventDefault(); void loadSchemas(documentObject, client, state); });
+  wireAsyncForm(filter, {
+    execute: async () => loadSchemas(documentObject, client, state),
+    onWorking: () => setWorkspaceStatus(documentObject, 'rsot-status', 'workspace.loading'),
+    onSuccess: () => setWorkspaceStatus(documentObject, 'rsot-status', 'workspace.ready', 'success'),
+    onError: (error) => showError(documentObject, 'rsot-status', error),
+  });
   wireAsyncForm(documentObject.getElementById('rsot-schema-form'), {
     execute: async (form) => {
       const body = { schemaKey: field(form, 'schemaKey'), kind: field(form, 'kind'), owner: field(form, 'owner'), version: field(form, 'version'), definition: parseJsonObject(field(form, 'definition'), 'definition'), effectiveAt: nullable(field(form, 'effectiveAt')) };
@@ -271,7 +281,7 @@ function renderProfiles(documentObject, state) {
 }
 
 function table(tbodyId, headings) {
-  return `<div class="border rounded overflow-hidden mb-3"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr>${headings.map(([key, fallback]) => `<th scope="col" data-i18n="${key}">${fallback}</th>`).join('')}</tr></thead><tbody id="${tbodyId}"></tbody></table></div></div>`;
+  return `<div class="border rounded-3 overflow-hidden mb-4 bg-body shadow-sm"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr>${headings.map(([key, fallback]) => `<th scope="col" data-i18n="${key}">${fallback}</th>`).join('')}</tr></thead><tbody id="${tbodyId}"></tbody></table></div></div>`;
 }
 
 function showError(documentObject, statusId, error) {

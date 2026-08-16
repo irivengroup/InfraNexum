@@ -61,21 +61,61 @@ export function setWorkspaceStatus(documentObject, id, key, state = 'info', para
   element.setAttribute?.('data-i18n-params', JSON.stringify(parameters));
 }
 
-export function fillSelect(documentObject, select, items, { placeholderKey = 'entity.choose', value = (item) => item.id, label = (item) => item.displayName ?? item.code ?? item.id, preserve = true } = {}) {
-  if (!select) return;
-  const previous = preserve ? clean(select.value) : '';
-  const placeholder = documentObject.createElement('option');
-  placeholder.value = ''; placeholder.textContent = translate(localeFromDocument(documentObject), placeholderKey);
-  const options = [placeholder];
-  for (const item of items) {
+export function fillSelect(documentObject, select, items, {
+  placeholderKey = 'entity.choose',
+  emptyKey = 'common.emptyList',
+  value = (item) => item.id,
+  label = (item) => item.displayName ?? item.code ?? item.id,
+  preserve = true,
+  selectFirst = false,
+  disabled = false,
+} = {}) {
+  if (!select) return '';
+  const source = Array.isArray(items) ? items : [];
+  const previousValues = select.multiple
+    ? new Set(preserve ? selectedValues(select) : [])
+    : new Set(preserve && clean(select.value) ? [clean(select.value)] : []);
+  const options = [];
+
+  if (!select.multiple) {
+    const placeholder = documentObject.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = translate(localeFromDocument(documentObject), source.length ? placeholderKey : emptyKey);
+    placeholder.disabled = select.required === true && source.length > 0;
+    placeholder.selected = true;
+    options.push(placeholder);
+  }
+
+  for (const item of source) {
     const option = documentObject.createElement('option');
-    option.value = clean(value(item)); option.textContent = clean(label(item)) || option.value;
+    option.value = clean(value(item));
+    option.textContent = clean(label(item)) || option.value;
+    option.selected = previousValues.has(option.value);
     options.push(option);
   }
+
   select.replaceChildren(...options);
-  if (previous && options.some((option) => option.value === previous)) select.value = previous;
-  else select.value = '';
-  select.disabled = items.length === 0;
+  if (!select.multiple) {
+    const previous = [...previousValues][0] ?? '';
+    if (previous && options.some((option) => option.value === previous)) select.value = previous;
+    else if (selectFirst && source[0]) select.value = clean(value(source[0]));
+    else select.value = '';
+  }
+  select.disabled = disabled === true;
+  select.setAttribute?.('data-inx-select-state', disabled ? 'disabled' : source.length ? 'ready' : 'empty');
+  select.setAttribute?.('aria-disabled', select.disabled ? 'true' : 'false');
+  notifySelectVisual(documentObject, select);
+  return clean(select.value);
+}
+
+
+function notifySelectVisual(documentObject, select) {
+  const EventConstructor = documentObject?.defaultView?.Event ?? globalThis.Event;
+  if (typeof EventConstructor === 'function') {
+    select.dispatchEvent?.(new EventConstructor('infranexum:entity-sync', { bubbles: false }));
+  } else {
+    select.dispatchEvent?.({ type: 'infranexum:entity-sync', bubbles: false });
+  }
 }
 
 export function replaceRows(documentObject, tbody, rows, cellValues, onSelect) {
@@ -99,18 +139,45 @@ export function replaceRows(documentObject, tbody, rows, cellValues, onSelect) {
 export function bindTabSet(documentObject, selector, panelSelector, dataAttribute) {
   const tabs = [...(documentObject.querySelectorAll?.(selector) ?? [])];
   const panels = [...(documentObject.querySelectorAll?.(panelSelector) ?? [])];
-  const activate = (value) => {
+  const panelAttribute = dataAttribute.replace('tab', 'panel');
+  const activate = (value, focus = false) => {
     const target = String(value ?? '');
-    if (!tabs.some((tab) => tab.getAttribute(dataAttribute) === target && !tab.hidden)) return false;
+    const targetTab = tabs.find((tab) => tab.getAttribute(dataAttribute) === target && !tab.hidden && !tab.disabled);
+    if (!targetTab) return false;
     for (const tab of tabs) {
-      const active = tab.getAttribute(dataAttribute) === target;
-      tab.classList?.toggle?.('active', active); tab.setAttribute?.('aria-selected', active ? 'true' : 'false'); tab.tabIndex = active ? 0 : -1;
+      const active = tab === targetTab;
+      tab.classList?.toggle?.('active', active);
+      tab.setAttribute?.('aria-selected', active ? 'true' : 'false');
+      tab.tabIndex = active ? 0 : -1;
     }
-    for (const panel of panels) { const active = panel.getAttribute(dataAttribute.replace('tab', 'panel')) === target; panel.hidden = !active; panel.setAttribute?.('aria-hidden', active ? 'false' : 'true'); }
+    for (const panel of panels) {
+      const active = panel.getAttribute(panelAttribute) === target;
+      panel.hidden = !active;
+      panel.setAttribute?.('aria-hidden', active ? 'false' : 'true');
+      panel.classList?.toggle?.('active', active);
+      panel.classList?.toggle?.('show', active);
+    }
+    if (focus) targetTab.focus?.();
     return true;
   };
-  for (const tab of tabs) tab.addEventListener?.('click', () => activate(tab.getAttribute(dataAttribute)));
-  const initial = tabs.find((tab) => tab.getAttribute('aria-selected') === 'true' && !tab.hidden) ?? tabs.find((tab) => !tab.hidden);
+  const enabledTabs = () => tabs.filter((tab) => !tab.hidden && !tab.disabled);
+  for (const tab of tabs) {
+    tab.addEventListener?.('click', () => activate(tab.getAttribute(dataAttribute)));
+    tab.addEventListener?.('keydown', (event) => {
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) return;
+      const available = enabledTabs();
+      const current = available.indexOf(tab);
+      if (current < 0 || available.length === 0) return;
+      event.preventDefault?.();
+      let next = current;
+      if (event.key === 'Home') next = 0;
+      else if (event.key === 'End') next = available.length - 1;
+      else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = (current - 1 + available.length) % available.length;
+      else next = (current + 1) % available.length;
+      activate(available[next].getAttribute(dataAttribute), true);
+    });
+  }
+  const initial = tabs.find((tab) => tab.getAttribute('aria-selected') === 'true' && !tab.hidden && !tab.disabled) ?? enabledTabs()[0];
   if (initial) activate(initial.getAttribute(dataAttribute));
   return Object.freeze({ activate });
 }

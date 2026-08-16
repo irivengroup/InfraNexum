@@ -199,9 +199,10 @@ test('login shell uses the secure-area card and hides healthy authentication ser
   const fs = await import('node:fs/promises');
   const html = await fs.readFile(new URL('../../src/applications/web/public/index.html', import.meta.url), 'utf8');
   const login = html.slice(html.indexOf('<div id="auth-login-view">'), html.indexOf('<div id="auth-password-view"'));
-  assert.match(login, /<h2 id="auth-title" data-i18n="auth\.title">Secure Area<\/h2>/);
-  assert.doesNotMatch(login, /inx-eyebrow/);
-  assert.doesNotMatch(login, /inx-auth-lead/);
+  assert.match(login, /data-i18n="auth\.title">Secure Area<\/p>/);
+  assert.match(login, /<h1 id="auth-title"[^>]*data-i18n="auth\.brandTitle">Sign in to InfraNexum<\/h1>/);
+  assert.match(html, /class="[^"]*inx-auth-brand[^"]*"[\s\S]*InfraNexum[\s\S]*Infrastructure Control &amp; Governance Platform/);
+  assert.match(html, /class="[^"]*inx-auth-story[^"]*"/);
   assert.match(login, /id="auth-service-state"[^>]*hidden/);
   assert.match(login, /id="auth-login-submit"[^>]*data-auth-wired="false"[^>]*disabled/);
   assert.match(html, /id="auth-password-submit"[^>]*data-auth-wired="false"[^>]*disabled/);
