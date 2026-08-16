@@ -1,19 +1,19 @@
 openapi: 3.1.0
 info:
   title: InfraNexum DDI IPAM API
-  version: 2.0.0-alpha.0.92
+  version: 2.0.0-alpha.0.94
   description: PGM-08-E01 governed IPAM for VRFs, VLANs, networks, pools, reservations and addresses. DNS and DHCP are outside this contract.
 tags:
-  - name: DDI IPAM Routing Spaces
-  - name: DDI IPAM Networks
-  - name: DDI IPAM Addresses
+  - name: DDI / IPAM / Routing Spaces
+  - name: DDI / IPAM / Networks
+  - name: DDI / IPAM / Addresses
 x-tagGroups:
   - name: DDI
-    tags: [DDI IPAM Routing Spaces, DDI IPAM Networks, DDI IPAM Addresses]
+    tags: [DDI / IPAM / Routing Spaces, DDI / IPAM / Networks, DDI / IPAM / Addresses]
 paths:
   /api/v1/ddi/ipam/vrfs:
     get:
-      tags: [DDI IPAM Routing Spaces]
+      tags: [DDI / IPAM / Routing Spaces]
       operationId: listIpamVrfs
       x-infranexum-capability: ddi.ipam
       summary: List organization VRFs
@@ -21,7 +21,7 @@ paths:
       parameters: [{$ref: '#/components/parameters/OrganizationId'}, {$ref: '#/components/parameters/Limit'}]
       responses: {'200': {description: VRFs, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Vrf'}}}}}, '403': {$ref: '#/components/responses/Problem'}}
     post:
-      tags: [DDI IPAM Routing Spaces]
+      tags: [DDI / IPAM / Routing Spaces]
       operationId: createIpamVrf
       x-infranexum-capability: ddi.ipam
       summary: Create a governed VRF
@@ -31,7 +31,7 @@ paths:
       responses: {'201': {description: Created VRF, headers: {ETag: {$ref: '#/components/headers/ETag'}}, content: {application/json: {schema: {$ref: '#/components/schemas/Vrf'}}}}, '400': {$ref: '#/components/responses/Problem'}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
   /api/v1/ddi/ipam/vrfs/{id}/status:
     post:
-      tags: [DDI IPAM Routing Spaces]
+      tags: [DDI / IPAM / Routing Spaces]
       operationId: changeIpamVrfStatus
       x-infranexum-capability: ddi.ipam
       summary: Change VRF lifecycle status
@@ -41,7 +41,7 @@ paths:
       responses: {'200': {description: Updated VRF, headers: {ETag: {$ref: '#/components/headers/ETag'}}, content: {application/json: {schema: {$ref: '#/components/schemas/Vrf'}}}}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
   /api/v1/ddi/ipam/vlans:
     get:
-      tags: [DDI IPAM Routing Spaces]
+      tags: [DDI / IPAM / Routing Spaces]
       operationId: listIpamVlans
       x-infranexum-capability: ddi.ipam
       summary: List VLAN and VXLAN logical segments
@@ -49,7 +49,7 @@ paths:
       parameters: [{$ref: '#/components/parameters/OrganizationId'}, {$ref: '#/components/parameters/Limit'}]
       responses: {'200': {description: VLANs, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Vlan'}}}}}, '403': {$ref: '#/components/responses/Problem'}}
     post:
-      tags: [DDI IPAM Routing Spaces]
+      tags: [DDI / IPAM / Routing Spaces]
       operationId: createIpamVlan
       x-infranexum-capability: ddi.ipam
       summary: Create a VLAN or VXLAN logical segment
@@ -59,7 +59,7 @@ paths:
       responses: {'201': {description: Created VLAN, headers: {ETag: {$ref: '#/components/headers/ETag'}}, content: {application/json: {schema: {$ref: '#/components/schemas/Vlan'}}}}, '400': {$ref: '#/components/responses/Problem'}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
   /api/v1/ddi/ipam/vlans/{id}/status:
     post:
-      tags: [DDI IPAM Routing Spaces]
+      tags: [DDI / IPAM / Routing Spaces]
       operationId: changeIpamVlanStatus
       x-infranexum-capability: ddi.ipam
       summary: Change VLAN or VXLAN lifecycle status
@@ -69,7 +69,7 @@ paths:
       responses: {'200': {description: Updated VLAN, content: {application/json: {schema: {$ref: '#/components/schemas/Vlan'}}}}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
   /api/v1/ddi/ipam/networks:
     get:
-      tags: [DDI IPAM Networks]
+      tags: [DDI / IPAM / Networks]
       operationId: listIpamNetworks
       x-infranexum-capability: ddi.ipam
       summary: List address blocks, prefixes and subnets
@@ -77,7 +77,7 @@ paths:
       parameters: [{$ref: '#/components/parameters/OrganizationId'}, {name: vrf_id, in: query, schema: {$ref: '#/components/schemas/Uuid'}}, {$ref: '#/components/parameters/Limit'}]
       responses: {'200': {description: Networks, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Network'}}}}}, '403': {$ref: '#/components/responses/Problem'}}
     post:
-      tags: [DDI IPAM Networks]
+      tags: [DDI / IPAM / Networks]
       operationId: createIpamNetwork
       x-infranexum-capability: ddi.ipam
       summary: Create a non-overlapping address block, prefix or subnet
@@ -87,7 +87,7 @@ paths:
       responses: {'201': {description: Created network, headers: {ETag: {$ref: '#/components/headers/ETag'}}, content: {application/json: {schema: {$ref: '#/components/schemas/Network'}}}}, '400': {$ref: '#/components/responses/Problem'}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
   /api/v1/ddi/ipam/networks/{id}:
     patch:
-      tags: [DDI IPAM Networks]
+      tags: [DDI / IPAM / Networks]
       operationId: updateIpamNetworkMetadata
       x-infranexum-capability: ddi.ipam
       summary: Update governed network metadata without mutating CIDR or VRF
@@ -97,7 +97,7 @@ paths:
       responses: {'200': {description: Updated network, headers: {ETag: {$ref: '#/components/headers/ETag'}}, content: {application/json: {schema: {$ref: '#/components/schemas/Network'}}}}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
   /api/v1/ddi/ipam/networks/{id}/status:
     post:
-      tags: [DDI IPAM Networks]
+      tags: [DDI / IPAM / Networks]
       operationId: changeIpamNetworkStatus
       x-infranexum-capability: ddi.ipam
       summary: Change network lifecycle status
@@ -107,7 +107,7 @@ paths:
       responses: {'200': {description: Updated network, content: {application/json: {schema: {$ref: '#/components/schemas/Network'}}}}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
   /api/v1/ddi/ipam/networks/{id}/pools:
     get:
-      tags: [DDI IPAM Networks]
+      tags: [DDI / IPAM / Networks]
       operationId: listIpamPools
       x-infranexum-capability: ddi.ipam
       summary: List allocation pools in a subnet
@@ -116,7 +116,7 @@ paths:
       responses: {'200': {description: Pools, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Pool'}}}}}, '403': {$ref: '#/components/responses/Problem'}}
   /api/v1/ddi/ipam/pools:
     post:
-      tags: [DDI IPAM Networks]
+      tags: [DDI / IPAM / Networks]
       operationId: createIpamPool
       x-infranexum-capability: ddi.ipam
       summary: Create a non-overlapping allocation pool in an active subnet
@@ -126,7 +126,7 @@ paths:
       responses: {'201': {description: Created pool, content: {application/json: {schema: {$ref: '#/components/schemas/Pool'}}}}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
   /api/v1/ddi/ipam/addresses:
     get:
-      tags: [DDI IPAM Addresses]
+      tags: [DDI / IPAM / Addresses]
       operationId: listIpamAddresses
       x-infranexum-capability: ddi.ipam
       summary: List allocations and explicit reservations
@@ -134,7 +134,7 @@ paths:
       parameters: [{$ref: '#/components/parameters/OrganizationId'}, {name: vrf_id, in: query, schema: {$ref: '#/components/schemas/Uuid'}}, {name: network_id, in: query, schema: {$ref: '#/components/schemas/Uuid'}}, {$ref: '#/components/parameters/Limit'}]
       responses: {'200': {description: Addresses, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Address'}}}}}, '403': {$ref: '#/components/responses/Problem'}}
     post:
-      tags: [DDI IPAM Addresses]
+      tags: [DDI / IPAM / Addresses]
       operationId: allocateIpamAddress
       x-infranexum-capability: ddi.ipam
       summary: Atomically allocate or explicitly reserve an IP address
@@ -144,7 +144,7 @@ paths:
       responses: {'201': {description: Allocation or reservation, headers: {ETag: {$ref: '#/components/headers/ETag'}}, content: {application/json: {schema: {$ref: '#/components/schemas/Address'}}}}, '400': {$ref: '#/components/responses/Problem'}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
   /api/v1/ddi/ipam/addresses/{id}/release:
     post:
-      tags: [DDI IPAM Addresses]
+      tags: [DDI / IPAM / Addresses]
       operationId: releaseIpamAddress
       x-infranexum-capability: ddi.ipam
       summary: Release an allocated or reserved address while preserving audit history

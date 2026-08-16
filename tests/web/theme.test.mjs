@@ -141,3 +141,30 @@ test('premium administration shell keeps Bootstrap-native responsive navigation,
     }
   }
 });
+
+test('enterprise filter toolbars stay horizontally dense on desktop and collapse accessibly on narrow screens', async () => {
+  const [index, rsot, itam, dcim, ddi, theme] = await Promise.all([
+    read('index.html'), read('assets/rsot-workspace.mjs'), read('assets/itam-workspace.mjs'),
+    read('assets/dcim-workspace.mjs'), read('assets/ddi-ipam-workspace.mjs'), read('assets/infranexum-theme.css'),
+  ]);
+  for (const source of [index, rsot, itam, dcim, ddi]) assert.match(source, /inx-filter-bar/);
+  for (const id of ['rsot-object-filter', 'rsot-schema-filter', 'itam-partner-filter', 'itam-asset-filter', 'itam-alert-filter', 'itam-history-filter']) {
+    const source = id.startsWith('rsot-') ? rsot : itam;
+    assert.match(source, new RegExp(`id="${id}"[^>]*class="[^"]*inx-filter-bar`));
+  }
+  assert.match(theme, /\.inx-filter-bar\s*\{[\s\S]*display:\s*flex[\s\S]*flex-wrap:\s*wrap[\s\S]*align-items:\s*flex-end/);
+  assert.match(theme, /@media \(min-width:\s*768px\)[\s\S]*\.inx-filter-bar\s*\{\s*flex-wrap:\s*nowrap/);
+  assert.match(theme, /@media \(max-width:\s*767\.98px\)[\s\S]*\.inx-filter-actions[\s\S]*flex:\s*1 1 100%/);
+  assert.match(theme, /\.inx-filter-bar \.form-label[\s\S]*font-size:\s*\.72rem/);
+});
+
+test('table and tab headers use a restrained InfraNexum color hierarchy with readable active states', async () => {
+  const theme = await read('assets/infranexum-theme.css');
+  assert.match(theme, /--inx-table-head:\s*linear-gradient\([^;]*var\(--inx-midnight\)[^;]*var\(--inx-blue\)/);
+  assert.match(theme, /--inx-tab-spectrum:\s*linear-gradient\([^;]*rgba\(0,61,143[^;]*rgba\(17,199,230[^;]*rgba\(8,127,91[^;]*rgba\(255,170,0/);
+  assert.match(theme, /\.table > thead > tr > th\s*\{[\s\S]*color:\s*#f8fbff\s*!important[\s\S]*background:\s*var\(--inx-table-head\)\s*!important[\s\S]*border-bottom:\s*\.18rem solid var\(--inx-turquoise\)/);
+  assert.match(theme, /\.table > thead > tr > th:first-child[\s\S]*var\(--inx-green\)/);
+  assert.match(theme, /\.table > thead > tr > th:last-child[\s\S]*rgba\(255,170,0/);
+  assert.match(theme, /\.inx-workspace \.nav-underline\[role="tablist"\][\s\S]*background:\s*var\(--inx-tab-spectrum\)/);
+  assert.match(theme, /\.inx-workspace \.nav-underline\[role="tablist"\] \.nav-link\.active[\s\S]*color:\s*#fff\s*!important[\s\S]*var\(--inx-midnight\)[\s\S]*var\(--inx-blue\)/);
+});

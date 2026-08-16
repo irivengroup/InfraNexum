@@ -1,3 +1,19 @@
+# InfraNexum 2.0.0-alpha.0.94 — dense enterprise filters and data-navigation refinement
+
+`alpha.0.94` is a Web/UX corrective over the `alpha.0.93` PGM-05-E01 contract-governance foundation. Search, list-filter and scope-filter surfaces are consolidated into responsive `.inx-filter-bar` toolbars: controls stay in one horizontal line when desktop width permits and collapse predictably on narrow screens. Labels, controls and actions use a reduced vertical rhythm without changing native form values, stable-select semantics, temporal controls or API payloads.
+
+Tables and tab navigation receive a stronger enterprise visual hierarchy using the InfraNexum/IONOS-derived Midnight, Blue, Turquoise, Green and Orange palette. Table headers use a high-contrast Midnight/Blue surface with restrained Turquoise/Green/Orange accents; tab bars use a subtle spectral surface and a clearly selected Midnight/Blue active state. The change is presentation-only: no route, migration, authorization rule, OpenAPI operation or PGM-05-E01 debt baseline is modified.
+
+---
+
+# InfraNexum 2.0.0-alpha.0.93 — PGM-05-E01 API contract governance foundation
+
+`alpha.0.93` starts **PGM-05-E01** without pretending to complete it. The release registers all 13 Server OpenAPI 3.1 fragments (170 operations) in one canonical catalogue, introduces a product-wide fail-closed contract validator and generates one deterministic product-complete OpenAPI contract from the certified fragments. The generated contract is a build artifact; the registered fragments remain the only manually maintained API sources of truth.
+
+The gate certifies release-version parity, global `operationId` and route uniqueness, component/context functional grouping, security declarations and `application/problem+json` documentation for every defined HTTP error. Historical gaps are frozen by exact operation ID in a non-expandable ratchet: idempotency 39, pagination 15, capability metadata 56 and permission metadata 85. These counts may only decrease in later PGM-05-E01 phases. No existing route, migration or authorization rule is removed or renamed in phase 1. See `docs/api-platform-contract-governance.md`.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.92 — effective Settings, IAM navigation and login refinement
 
 `alpha.0.91` is a Web/UX corrective over `alpha.0.90`. Settings now applies every persisted presentation preference to the live shell before closing: Page/Fluid layout, comfortable/compact density, responsive/expanded/compact navigation, operational refresh cadence and the shared Light/Dark theme contract. The primary sidebar keeps its established background surfaces; only text/icon states use the IONOS-derived palette. Identity & Access vertical facets use full-width uniform active surfaces with WCAG-readable text. The language control no longer depends on emoji flags and displays native language names plus alpha-2 (`Deutsch DE`, `English EN`, `Español ES`, `Français FR`, `Italiano IT`) with a single Bootstrap chevron. The login capability chips are removed and the core product promise is promoted with stronger, enterprise-grade typography. No business epic, API, migration or authorization contract changes are introduced.

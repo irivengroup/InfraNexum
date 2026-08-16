@@ -1,20 +1,20 @@
 openapi: 3.1.0
 info:
   title: InfraNexum DCIM Physical API
-  version: 2.0.0-alpha.0.92
+  version: 2.0.0-alpha.0.94
   description: PGM-07-E05 rack occupancy, equipment footprints, physical ports and point-to-point cabling.
 tags:
-  - name: DCIM Physical Models
-  - name: DCIM Physical Racks
-  - name: DCIM Physical Equipment
-  - name: DCIM Physical Cabling
+  - name: DCIM / Physical / Models
+  - name: DCIM / Physical / Racks
+  - name: DCIM / Physical / Equipment
+  - name: DCIM / Physical / Cabling
 x-tagGroups:
   - name: DCIM
-    tags: [DCIM Physical Models, DCIM Physical Racks, DCIM Physical Equipment, DCIM Physical Cabling]
+    tags: [DCIM / Physical / Models, DCIM / Physical / Racks, DCIM / Physical / Equipment, DCIM / Physical / Cabling]
 paths:
   /api/v1/dcim/equipment-models:
     get:
-      tags: [DCIM Physical Models]
+      tags: [DCIM / Physical / Models]
       operationId: listDcimEquipmentModels
       x-infranexum-capability: dcim.physical
       summary: List governed equipment models
@@ -22,7 +22,7 @@ paths:
       parameters: [{$ref: '#/components/parameters/OrganizationId'}, {$ref: '#/components/parameters/Limit'}]
       responses: {'200': {description: Equipment models, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/EquipmentModel'}}}}}, '403': {$ref: '#/components/responses/Problem'}}
     post:
-      tags: [DCIM Physical Models]
+      tags: [DCIM / Physical / Models]
       operationId: createDcimEquipmentModel
       x-infranexum-capability: dcim.physical
       summary: Create a multi-vendor equipment model and port templates
@@ -32,7 +32,7 @@ paths:
       responses: {'201': {description: Created model, headers: {ETag: {$ref: '#/components/headers/ETag'}}, content: {application/json: {schema: {$ref: '#/components/schemas/EquipmentModel'}}}}, '400': {$ref: '#/components/responses/Problem'}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}, '422': {$ref: '#/components/responses/Problem'}}
   /api/v1/dcim/equipment-models/{id}/status:
     post:
-      tags: [DCIM Physical Models]
+      tags: [DCIM / Physical / Models]
       operationId: changeDcimEquipmentModelStatus
       x-infranexum-capability: dcim.physical
       summary: Change equipment model lifecycle status
@@ -42,7 +42,7 @@ paths:
       responses: {'200': {description: Updated model, content: {application/json: {schema: {$ref: '#/components/schemas/EquipmentModel'}}}}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
   /api/v1/dcim/racks:
     get:
-      tags: [DCIM Physical Racks]
+      tags: [DCIM / Physical / Racks]
       operationId: listDcimRacks
       x-infranexum-capability: dcim.physical
       summary: List racks, optionally within a room
@@ -50,7 +50,7 @@ paths:
       parameters: [{$ref: '#/components/parameters/OrganizationId'}, {name: room_id, in: query, schema: {$ref: '#/components/schemas/Uuid'}}, {$ref: '#/components/parameters/Limit'}]
       responses: {'200': {description: Racks, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Rack'}}}}}, '403': {$ref: '#/components/responses/Problem'}}
     post:
-      tags: [DCIM Physical Racks]
+      tags: [DCIM / Physical / Racks]
       operationId: createDcimRack
       x-infranexum-capability: dcim.physical
       summary: Create a rack in an existing room
@@ -60,7 +60,7 @@ paths:
       responses: {'201': {description: Created rack, content: {application/json: {schema: {$ref: '#/components/schemas/Rack'}}}}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}, '422': {$ref: '#/components/responses/Problem'}}
   /api/v1/dcim/racks/{id}/status:
     post:
-      tags: [DCIM Physical Racks]
+      tags: [DCIM / Physical / Racks]
       operationId: changeDcimRackStatus
       x-infranexum-capability: dcim.physical
       summary: Change rack lifecycle status
@@ -70,7 +70,7 @@ paths:
       responses: {'200': {description: Updated rack, content: {application/json: {schema: {$ref: '#/components/schemas/Rack'}}}}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
   /api/v1/dcim/equipment:
     get:
-      tags: [DCIM Physical Equipment]
+      tags: [DCIM / Physical / Equipment]
       operationId: listDcimEquipment
       x-infranexum-capability: dcim.physical
       summary: List installed equipment
@@ -78,7 +78,7 @@ paths:
       parameters: [{$ref: '#/components/parameters/OrganizationId'}, {name: rack_id, in: query, schema: {$ref: '#/components/schemas/Uuid'}}, {$ref: '#/components/parameters/Limit'}]
       responses: {'200': {description: Equipment, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Equipment'}}}}}, '403': {$ref: '#/components/responses/Problem'}}
     post:
-      tags: [DCIM Physical Equipment]
+      tags: [DCIM / Physical / Equipment]
       operationId: installDcimEquipment
       x-infranexum-capability: dcim.physical
       summary: Install equipment into free rack units and instantiate physical ports
@@ -88,7 +88,7 @@ paths:
       responses: {'201': {description: Installed equipment, content: {application/json: {schema: {$ref: '#/components/schemas/Equipment'}}}}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}, '422': {$ref: '#/components/responses/Problem'}}
   /api/v1/dcim/equipment/{id}/move:
     post:
-      tags: [DCIM Physical Equipment]
+      tags: [DCIM / Physical / Equipment]
       operationId: moveDcimEquipment
       x-infranexum-capability: dcim.physical
       summary: Move equipment to another free rack footprint
@@ -98,7 +98,7 @@ paths:
       responses: {'200': {description: Moved equipment, content: {application/json: {schema: {$ref: '#/components/schemas/Equipment'}}}}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
   /api/v1/dcim/equipment/{id}/status:
     post:
-      tags: [DCIM Physical Equipment]
+      tags: [DCIM / Physical / Equipment]
       operationId: changeDcimEquipmentStatus
       x-infranexum-capability: dcim.physical
       summary: Change equipment lifecycle status
@@ -108,7 +108,7 @@ paths:
       responses: {'200': {description: Updated equipment, content: {application/json: {schema: {$ref: '#/components/schemas/Equipment'}}}}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}}
   /api/v1/dcim/equipment/{id}/ports:
     get:
-      tags: [DCIM Physical Equipment]
+      tags: [DCIM / Physical / Equipment]
       operationId: listDcimEquipmentPorts
       x-infranexum-capability: dcim.physical
       summary: List instantiated physical ports for equipment
@@ -117,7 +117,7 @@ paths:
       responses: {'200': {description: Physical ports, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/PhysicalPort'}}}}}, '403': {$ref: '#/components/responses/Problem'}, '404': {$ref: '#/components/responses/Problem'}}
   /api/v1/dcim/cables:
     get:
-      tags: [DCIM Physical Cabling]
+      tags: [DCIM / Physical / Cabling]
       operationId: listDcimCables
       x-infranexum-capability: dcim.physical
       summary: List physical cable connections
@@ -125,7 +125,7 @@ paths:
       parameters: [{$ref: '#/components/parameters/OrganizationId'}, {$ref: '#/components/parameters/Limit'}]
       responses: {'200': {description: Cables, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Cable'}}}}}, '403': {$ref: '#/components/responses/Problem'}}
     post:
-      tags: [DCIM Physical Cabling]
+      tags: [DCIM / Physical / Cabling]
       operationId: connectDcimPorts
       x-infranexum-capability: dcim.physical
       summary: Connect two compatible free physical ports
@@ -135,7 +135,7 @@ paths:
       responses: {'201': {description: Created cable, content: {application/json: {schema: {$ref: '#/components/schemas/Cable'}}}}, '403': {$ref: '#/components/responses/Problem'}, '409': {$ref: '#/components/responses/Problem'}, '422': {$ref: '#/components/responses/Problem'}}
   /api/v1/dcim/cables/{id}/disconnect:
     post:
-      tags: [DCIM Physical Cabling]
+      tags: [DCIM / Physical / Cabling]
       operationId: disconnectDcimCable
       x-infranexum-capability: dcim.physical
       summary: Disconnect an active physical cable

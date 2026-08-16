@@ -1,11 +1,13 @@
 {
   "schema": "infranexum.source-baseline/v1",
   "product": "InfraNexum — Infrastructure Control & Governance Platform",
-  "implementation_version": "2.0.0-alpha.0.92",
+  "implementation_version": "2.0.0-alpha.0.94",
   "architecture_baseline": "2.0.0-draft.21",
   "roadmap_baseline": "2.0.0-draft.21",
   "architecture_archive_sha256": "372cf19929f8ea3b7586c3af3e7c5004e590cf746ff2d6d59d4d0b88912aea64",
   "implemented_scope": [
+    "PGM-05-E01 phase 1 alpha.0.93: canonical OpenAPI fragment catalogue, global OpenAPI 3.1 contract validator, deterministic generated product-complete specification and fail-closed debt ratchet; 13 fragments/170 operations are governed, historical debt is frozen at idempotency=39, pagination=15, capability=56 and permission=85 and may only decrease; existing route behavior is preserved and the epic remains in progress pending runtime error, pagination, idempotency and metadata remediation.",
+    "alpha.0.94 corrective Web data-navigation density: responsive inx-filter-bar search/filter/context toolbars keep fields inline on desktop and collapse below 768px; table headers use high-contrast Midnight/Blue with restrained Turquoise/Green/Orange accents; nav-underline tablists use a subtle palette spectrum with readable Midnight/Blue active state; no API, migration, authorization or PGM-05-E01 ratchet change.",
     "Web/UX corrective alpha.0.92: Settings global controls are wired before asynchronous business workspaces; Save has a direct deterministic click path, persists and visibly applies density/navigation/layout/refresh plus shared Light/Dark theme, synchronizes enhanced selects and closes only after commit; notifications use a right-side drawer with a bell icon; login product promise is rebalanced for the split-screen composition; no business epic, migration, authorization or public API change.",
     "PGM-01-E01 src-contained product monorepo with external tests, shortened Java physical source roots and enforced 120-character repository path budget",
     "PGM-01-E02 exact Java, Maven, Go, Node, pnpm, TypeScript, Python, CMake and GCC toolchain catalogue with drift gates",
@@ -91,7 +93,7 @@
   ],
   "roadmap_archive_sha256": "11db7d27bbc79f688cd1fda31a24aaf31b56a56db36b6487b64154c148ab54d3",
   "engineering_governance_sha256": "f24357051a5401f598c3d77bbe5814d3759a176095537659243658ba3ff109c7",
-  "runtime_validation_note": "alpha.0.92 corrective shell controls: local Web suite 176/176 with 99.73% lines, 98.53% branches and 100% functions plus Web smoke PASS; 24 directly affected architecture tests pass and Architecture-as-Code PASS; Toolchains 25/25; Migrations 114/114; Compose contract 64/64; Source Integrity 45/45 and zero-violation checker before final Git/archive freeze. Exact Node 24.18.1/pnpm 11.17.0, JDK 25 Maven/JUnit, operator-browser review and Docker Desktop PRO up/smoke/ha-smoke remain promotion gates.",
+  "runtime_validation_note": "alpha.0.94 Web/UX corrective: Web 178/178 with 99.73% line/98.53% branch/100% function coverage plus smoke PASS; directly affected architecture 8/8 and Architecture-as-Code PASS; Source Integrity 45/45 at 100% and zero violations; API Contracts 28/28 at 99%, 13 fragments/170 operations and unchanged debt 39/15/56/85; Toolchains 25/25, Migrations 114/114, Eventing 10/10, Persistence 12/12, Capabilities 10/10, Entitlements 10/10, Audit 8/8, Compose 64/64. Full architecture unittest run timed out after 33 tests without observed assertion failure; exact target JDK25, Node24.18.1/pnpm11.17.0, Docker Desktop PRO and operator-browser review remain promotion gates.",
   "server_contract_stabilization_alpha085": "EXECUTED_15_OF_15_TARGETED_DCIM_DDI_TEXT_BLOCK_AND_REPOSITORY_COMPOSITION_REGRESSIONS_PASS_JDBC_REPOSITORY_CONSTRUCTOR_ARITY_SCAN_ZERO_MISMATCHES",
   "maven_target_jdk25_alpha085": "NON_EXECUTED_LOCAL_JDK21_0_11_TARGET_TEMURIN25_0_4_DOWNLOAD_FAILED_DNS_GITHUB_COM_OPERATOR_DOCKER_REVALIDATION_REQUIRED",
   "docker_runtime_alpha085": "NON_EXECUTED_LOCAL_DOCKER_AND_PWSH_UNAVAILABLE_OPERATOR_PRO_UP_SMOKE_HA_SMOKE_REQUIRED",
@@ -136,5 +138,13 @@
   "architecture_web_alpha092": "EXECUTED_24_OF_24_AND_ARCHITECTURE_AS_CODE_PASS",
   "compose_contract_alpha092": "EXECUTED_64_OF_64",
   "settings_alpha092": "DIRECT_CLICK_SAVE_APPLIES_PERSISTS_SYNCHRONIZES_AND_CLOSES_DRAWER_BEFORE_BUSINESS_WORKSPACE_BOOTSTRAP",
-  "notifications_alpha092": "RIGHT_SIDE_MODAL_DRAWER_BELL_ICON_ESCAPE_BACKDROP_AND_FOCUS_RETURN"
+  "notifications_alpha092": "RIGHT_SIDE_MODAL_DRAWER_BELL_ICON_ESCAPE_BACKDROP_AND_FOCUS_RETURN",
+  "api_contract_governance_alpha093": "EXECUTED_28_OF_28_99_PERCENT_13_FRAGMENTS_170_OPERATIONS_ZERO_VIOLATIONS_DEBT_39_15_56_85",
+  "architecture_api_governance_alpha093": "EXECUTED_5_OF_5_AND_ARCHITECTURE_AS_CODE_PASS_GLOBAL_INSTRUMENTED_ARCHITECTURE_NON_EXECUTED_TIMEOUT",
+  "web_local_runtime_alpha093": "EXECUTED_LOCAL_NODE_176_OF_176_LINE99_73_BRANCH98_53_FUNCTION100_PROCESS_SMOKE_PASS_TARGET_NODE24_18_1_PNPM11_17_0_PENDING",
+  "java_api_related_smokes_alpha093": "EXECUTED_JAVA_CONTRACT_AND_POLICY_SMOKES_PASS_LOCAL_JDK21_TARGET_JDK25_MAVEN_PENDING",
+  "web_local_runtime_alpha094": "EXECUTED_LOCAL_NODE_178_OF_178_LINE99_73_BRANCH98_53_FUNCTION100_PROCESS_SMOKE_PASS_TARGET_NODE24_18_1_PNPM11_17_0_PENDING",
+  "architecture_web_alpha094": "EXECUTED_8_OF_8_DIRECTLY_AFFECTED_AND_ARCHITECTURE_AS_CODE_PASS_GLOBAL_SUITE_TIMEOUT_AFTER_33_TESTS",
+  "api_contract_governance_alpha094": "EXECUTED_28_OF_28_99_PERCENT_13_FRAGMENTS_170_OPERATIONS_ZERO_VIOLATIONS_DEBT_UNCHANGED_39_15_56_85",
+  "compose_contract_alpha094": "EXECUTED_64_OF_64"
 }

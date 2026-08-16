@@ -70,14 +70,14 @@ export function dcimWorkspaceTemplate(){
       <button id="dcim-refresh" class="btn btn-outline-primary" type="button" data-i18n="common.refresh">Refresh</button>
     </header>
     <p id="dcim-status" class="alert alert-info py-2" role="status" aria-live="polite" data-state="info" data-i18n="workspace.ready">Ready.</p>
-    <section class="card card-body bg-body-tertiary border mb-4 row g-3" aria-labelledby="dcim-context-title">
+    <section class="inx-filter-bar inx-filter-context mb-4" aria-labelledby="dcim-context-title">
       <h3 id="dcim-context-title" class="visually-hidden" data-i18n="dcim.context">Physical hierarchy context</h3>
-      <div class="col-xl-4 col-md-6"><label class="form-label" for="dcim-organization" data-i18n="common.organization">Organization</label><select id="dcim-organization" class="form-select" required></select></div>
-      <div class="col-xl-4 col-md-6"><label class="form-label" for="dcim-subdivision" data-i18n="common.subdivision">Subdivision</label><select id="dcim-subdivision" class="form-select" required disabled></select></div>
-      <div class="col-xl-4 col-md-6"><label class="form-label" for="dcim-site-context" data-i18n="dcim.site">Site</label><select id="dcim-site-context" class="form-select" disabled></select></div>
-      <div class="col-xl-4 col-md-6"><label class="form-label" for="dcim-building-context" data-i18n="dcim.building">Building</label><select id="dcim-building-context" class="form-select" disabled></select></div>
-      <div class="col-xl-4 col-md-6"><label class="form-label" for="dcim-floor-context" data-i18n="dcim.floor">Floor</label><select id="dcim-floor-context" class="form-select" disabled></select></div>
-      <div class="col-xl-4 col-md-6"><label class="form-label" for="dcim-room-context" data-i18n="dcim.room">Room</label><select id="dcim-room-context" class="form-select" disabled></select></div>
+      <div class="inx-filter-field inx-filter-field-wide"><label class="form-label" for="dcim-organization" data-i18n="common.organization">Organization</label><select id="dcim-organization" class="form-select" required></select></div>
+      <div class="inx-filter-field inx-filter-field-wide"><label class="form-label" for="dcim-subdivision" data-i18n="common.subdivision">Subdivision</label><select id="dcim-subdivision" class="form-select" required disabled></select></div>
+      <div class="inx-filter-field"><label class="form-label" for="dcim-site-context" data-i18n="dcim.site">Site</label><select id="dcim-site-context" class="form-select" disabled></select></div>
+      <div class="inx-filter-field"><label class="form-label" for="dcim-building-context" data-i18n="dcim.building">Building</label><select id="dcim-building-context" class="form-select" disabled></select></div>
+      <div class="inx-filter-field"><label class="form-label" for="dcim-floor-context" data-i18n="dcim.floor">Floor</label><select id="dcim-floor-context" class="form-select" disabled></select></div>
+      <div class="inx-filter-field"><label class="form-label" for="dcim-room-context" data-i18n="dcim.room">Room</label><select id="dcim-room-context" class="form-select" disabled></select></div>
     </section>
     <div class="nav nav-underline gap-3 mb-4 border-bottom" role="tablist" aria-label="DCIM facilities">
       ${tab('sites','dcim.sites',true)}${tab('buildings','dcim.buildings')}${tab('floors','dcim.floors')}${tab('rooms','dcim.rooms')}${tab('zones','dcim.zones')}
@@ -96,10 +96,10 @@ function panel(resource,fields){return `
   <section class="tab-pane" role="tabpanel" data-dcim-panel="${resource}"${resource==='sites'?'':' hidden aria-hidden="true"'}>
     <div class="d-grid gap-3">
       <div>
-        <div class="card card-body bg-body-tertiary border mb-4 row g-3">
-          <div class="col-md-5"><label class="form-label" for="dcim-${resource}-status-filter" data-i18n="common.status">Status</label><select id="dcim-${resource}-status-filter" class="form-select"><option value="" data-i18n="common.all">All</option>${statusOptions()}</select></div>
-          ${resource==='sites'?'<div class="col-md-4"><label class="form-label" for="dcim-sites-country-filter" data-i18n="dcim.countryFilter">Country</label><select id="dcim-sites-country-filter" class="form-select" data-inx-country-select></select></div>':''}
-          <div class="col-md-3 d-flex align-items-end"><button id="dcim-${resource}-list-refresh" class="btn btn-outline-primary w-100" type="button" data-i18n="common.refresh">Refresh</button></div>
+        <div class="inx-filter-bar mb-4">
+          <div class="inx-filter-field inx-filter-field-wide"><label class="form-label" for="dcim-${resource}-status-filter" data-i18n="common.status">Status</label><select id="dcim-${resource}-status-filter" class="form-select"><option value="" data-i18n="common.all">All</option>${statusOptions()}</select></div>
+          ${resource==='sites'?'<div class="inx-filter-field"><label class="form-label" for="dcim-sites-country-filter" data-i18n="dcim.countryFilter">Country</label><select id="dcim-sites-country-filter" class="form-select" data-inx-country-select></select></div>':''}
+          <div class="inx-filter-actions"><button id="dcim-${resource}-list-refresh" class="btn btn-outline-primary" type="button" data-i18n="common.refresh">Refresh</button></div>
         </div>
         <div class="border rounded-3 overflow-hidden mb-4 bg-body shadow-sm"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th data-i18n="dcim.code">Code</th><th data-i18n="dcim.name">Name</th><th data-i18n="common.status">Status</th><th data-i18n="common.version">Version</th><th data-i18n="dcim.parent">Parent</th></tr></thead><tbody id="dcim-${resource}-rows"></tbody></table></div></div>
         <pre id="dcim-${resource}-detail" class="p-3 rounded-3 border bg-body-tertiary mb-4 overflow-auto small" tabindex="0">—</pre>

@@ -70,11 +70,11 @@ export function rsotWorkspaceTemplate() {
     </div>
 
     <section class="tab-pane" role="tabpanel" data-rsot-panel="objects">
-      <form id="rsot-object-filter" class="card card-body bg-body-tertiary border mb-4 row g-3" autocomplete="off">
-        <div class="col-lg-5"><label class="form-label" for="rsot-object-organization" data-i18n="common.organization">Organization</label><select id="rsot-object-organization" name="organizationId" class="form-select"></select></div>
-        <div class="col-lg-3"><label class="form-label" for="rsot-object-type" data-i18n="rsot.objectType">Object type</label><input id="rsot-object-type" name="objectType" class="form-control" maxlength="160" /></div>
-        <div class="col-lg-2"><label class="form-label" for="rsot-object-status" data-i18n="common.status">Status</label><select id="rsot-object-status" name="status" class="form-select"><option value="" data-i18n="common.all">All</option><option>proposed</option><option>validated</option><option>reconciled</option><option>deprecated</option><option>archived</option></select></div>
-        <div class="col-lg-2 d-flex align-items-end"><button class="btn btn-primary w-100" type="submit" data-i18n="common.filter">Filter</button></div>
+      <form id="rsot-object-filter" class="inx-filter-bar mb-4" autocomplete="off">
+        <div class="inx-filter-field inx-filter-field-wide"><label class="form-label" for="rsot-object-organization" data-i18n="common.organization">Organization</label><select id="rsot-object-organization" name="organizationId" class="form-select"></select></div>
+        <div class="inx-filter-field"><label class="form-label" for="rsot-object-type" data-i18n="rsot.objectType">Object type</label><input id="rsot-object-type" name="objectType" class="form-control" maxlength="160" /></div>
+        <div class="inx-filter-field inx-filter-field-sm"><label class="form-label" for="rsot-object-status" data-i18n="common.status">Status</label><select id="rsot-object-status" name="status" class="form-select"><option value="" data-i18n="common.all">All</option><option>proposed</option><option>validated</option><option>reconciled</option><option>deprecated</option><option>archived</option></select></div>
+        <div class="inx-filter-actions"><button class="btn btn-primary" type="submit" data-i18n="common.filter">Filter</button></div>
       </form>
       ${table('rsot-object-table-body', [['rsot.id','ID'],['rsot.objectType','Object type'],['common.organization','Organization'],['common.status','Status'],['common.version','Version'],['common.updated','Updated']])}
       <pre id="rsot-object-detail" class="p-3 rounded-3 border bg-body-tertiary mb-4 overflow-auto small" tabindex="0" aria-label="RSOT object detail">—</pre>
@@ -83,11 +83,11 @@ export function rsotWorkspaceTemplate() {
     <section class="tab-pane" role="tabpanel" data-rsot-panel="schemas" hidden aria-hidden="true">
       <div class="d-grid gap-3">
         <div>
-          <form id="rsot-schema-filter" class="card card-body bg-body-tertiary border mb-4 row g-3" autocomplete="off">
-            <div class="col-md-4"><label class="form-label" for="rsot-schema-key-filter" data-i18n="rsot.schemaKey">Schema key</label><input id="rsot-schema-key-filter" name="schemaKey" class="form-control" maxlength="160" /></div>
-            <div class="col-md-3"><label class="form-label" for="rsot-schema-kind-filter" data-i18n="rsot.kind">Kind</label><select id="rsot-schema-kind-filter" name="kind" class="form-select"><option value="" data-i18n="common.all">All</option><option value="CORE">CORE</option><option value="RSOT_EXTENSION">RSOT_EXTENSION</option></select></div>
-            <div class="col-md-3"><label class="form-label" for="rsot-schema-status-filter" data-i18n="common.status">Status</label><select id="rsot-schema-status-filter" name="status" class="form-select"><option value="" data-i18n="common.all">All</option><option value="DRAFT">DRAFT</option><option value="PUBLISHED">PUBLISHED</option><option value="DEPRECATED">DEPRECATED</option></select></div>
-            <div class="col-md-2 d-flex align-items-end"><button class="btn btn-outline-primary w-100" type="submit" data-i18n="common.filter">Filter</button></div>
+          <form id="rsot-schema-filter" class="inx-filter-bar mb-4" autocomplete="off">
+            <div class="inx-filter-field inx-filter-field-wide"><label class="form-label" for="rsot-schema-key-filter" data-i18n="rsot.schemaKey">Schema key</label><input id="rsot-schema-key-filter" name="schemaKey" class="form-control" maxlength="160" /></div>
+            <div class="inx-filter-field"><label class="form-label" for="rsot-schema-kind-filter" data-i18n="rsot.kind">Kind</label><select id="rsot-schema-kind-filter" name="kind" class="form-select"><option value="" data-i18n="common.all">All</option><option value="CORE">CORE</option><option value="RSOT_EXTENSION">RSOT_EXTENSION</option></select></div>
+            <div class="inx-filter-field"><label class="form-label" for="rsot-schema-status-filter" data-i18n="common.status">Status</label><select id="rsot-schema-status-filter" name="status" class="form-select"><option value="" data-i18n="common.all">All</option><option value="DRAFT">DRAFT</option><option value="PUBLISHED">PUBLISHED</option><option value="DEPRECATED">DEPRECATED</option></select></div>
+            <div class="inx-filter-actions"><button class="btn btn-outline-primary" type="submit" data-i18n="common.filter">Filter</button></div>
           </form>
           ${table('rsot-schema-table-body', [['rsot.schemaKey','Schema key'],['rsot.kind','Kind'],['common.version','Version'],['common.status','Status'],['rsot.revision','Revision']])}
           <pre id="rsot-schema-detail" class="p-3 rounded-3 border bg-body-tertiary mb-4 overflow-auto small" tabindex="0">—</pre>

@@ -1,3 +1,29 @@
+# InfraNexum 2.0.0-alpha.0.94 — dense enterprise filters and data-navigation refinement
+
+**Nature : corrective Web/UX, sans nouvel epic métier.** Les formulaires de recherche/filtrage et les sélecteurs de contexte utilisent désormais une barre `.inx-filter-bar` compacte : sur écran desktop, champs, selects et actions restent alignés sur une seule ligne lorsque l'espace le permet ; sous 768 px, la barre se replie proprement en largeur complète. Les libellés et hauteurs de contrôles sont réduits uniquement dans ce contexte afin de diminuer l'espace vertical sans modifier les formulaires de création/édition.
+
+**Tables et tabs :** les en-têtes de tables utilisent un fond Midnight/Blue à contraste élevé, souligné par Turquoise et ponctué d'accents Green/Orange aux extrémités. Les `nav-underline` utilisés comme tablists deviennent de véritables surfaces de navigation : fond spectral très léger Blue/Turquoise/Green/Orange, état actif Midnight/Blue avec texte blanc et indicateur Turquoise. Les couleurs restent concentrées sur les zones de repérage et n'altèrent ni les contenus de données ni les états Bootstrap existants.
+
+**Compatibilité :** aucun endpoint, contrat OpenAPI, modèle métier, migration, permission, capability ou règle RBAC/ABAC n'est modifié. La phase 1 de PGM-05-E01 livrée en `alpha.0.93` reste inchangée et son ratchet contractuel demeure 39/15/56/85.
+
+**Validation alpha.0.94 :** **EXÉCUTÉ** — Web **178/178**, couverture runtime **99,73 % lignes / 98,53 % branches / 100 % fonctions**, smoke `passed`; architecture UI directement concernée **8/8** et Architecture-as-Code `PASS`; Source Integrity **45/45 à 100 %**, checker **0 violation**; API Contracts **28/28 à 99 %**, **13 fragments / 170 opérations**, dette ratchet inchangée **39/15/56/85**; Toolchains **25/25**; Migrations **114/114**; Eventing **10/10**; Persistence **12/12**; Capabilities **10/10**; Entitlements **10/10**; Audit **8/8**; Compose **64/64**; snapshot Git temporaire **1230 chemins suivis / 1229 checksums / inventaire canonique 1227 chemins**, zéro violation; Archive Compatibility **12/12 à 100 %**, checker **0 violation**. **NON EXÉCUTÉ globalement** — suite Architecture complète : timeout du runner après 33 tests sans assertion observée; les 8 tests directement affectés et le checker passent séparément. Les toolchains cibles exactes JDK 25 / Node 24.18.1-pnpm 11.17.0, Docker Desktop PRO et la revue navigateur opérateur restent des gates externes.
+
+---
+
+# InfraNexum 2.0.0-alpha.0.93 — PGM-05-E01 phase 1: API contract governance
+
+**Nature : évolution fonctionnelle de gouvernance API, PGM-05-E01 EN COURS.** Cette tranche introduit le catalogue canonique de tous les fragments OpenAPI Server, un validateur global fail-closed et la génération déterministe du contrat OpenAPI produit complet. Elle ne modifie ni les routes publiques existantes, ni les migrations, ni les règles RBAC/ABAC.
+
+**Contrat certifié :** les 13 fragments OpenAPI 3.1 et leurs 170 opérations sont enregistrés dans `openapi/catalogue.yaml`. Le gate impose version produit cohérente, `operationId` globalement uniques, absence de collision méthode/route, organisation fonctionnelle composant/contexte, sécurité déclarée, résumés explicites et erreurs 4xx/5xx documentées en `application/problem+json`. `artifacts/validation/openapi-product.yaml` est généré depuis les fragments certifiés ; il n'est jamais une seconde source de vérité manuelle.
+
+**Ratchet de dette :** la dette historique est figée par `operationId` et ne peut plus augmenter : idempotence **39**, pagination **15**, capability metadata **56**, permission metadata **85**. Toute nouvelle opération qui crée une dette supplémentaire fait échouer la certification. Les phases suivantes de PGM-05-E01 doivent réduire ces quatre compteurs jusqu'à zéro et normaliser le comportement runtime correspondant.
+
+**Dépendance roadmap :** PGM-05-E01 n'est pas encore déclaré livré. `PGM-10-E05` reste bloqué jusqu'à fermeture des phases runtime/contractuelles restantes ; DNS/DHCP restent donc en aval. Voir `docs/api-platform-contract-governance.md`.
+
+**Validation alpha.0.93 :** **EXÉCUTÉ** — API Contracts **28/28**, couverture **99 %**, **13 fragments / 170 opérations**, zéro violation et dette ratchet stable **39/15/56/85**; Source Integrity **45/45 à 100 %**, checker zéro violation; cinq tests d'architecture directement concernés **5/5** et Architecture-as-Code `PASS`; Toolchains **25/25**, Migrations **114/114**, Eventing **10/10**, Persistence **12/12**, Capabilities **10/10**, Entitlements **10/10**, Audit **8/8**, Compose **64/64**; Web **176/176**, couverture **99,73 % lignes / 98,53 % branches / 100 % fonctions**, smoke `passed`; Java contract/policy smokes `PASS` sous JDK 21 local. **NON EXÉCUTÉ** — couverture Architecture globale instrumentée (timeout du runner), Maven/JUnit exact sous Temurin JDK 25.0.4+7, Node 24.18.1/pnpm 11.17.0 exacts, Docker Desktop PRO et revue navigateur opérateur.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.92 — deterministic Settings and notification drawer corrective
 
 **Nature : corrective Web/UX, sans nouvel epic métier.** Cette révision ferme le défaut opérateur où le bouton Settings « Enregistrer » pouvait être visible mais ne produire aucun effet observable sur le chemin navigateur réel. Les contrôles shell globaux sont désormais câblés avant toute initialisation asynchrone RSOT/ITAM/DCIM/DDI, le bouton Save possède un handler `click` explicite et indépendant du submit implicite du navigateur, et chaque application de préférences resynchronise les `.inx-select` visibles avec leur `<select>` natif autoritatif.

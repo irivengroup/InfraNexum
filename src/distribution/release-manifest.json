@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.92",
-  "profile": "alpha091-corrective-web-settings-sidebar-iam-i18n-login-pro-ha-local-development",
+  "version": "2.0.0-alpha.0.94",
+  "profile": "alpha094-corrective-web-dense-filters-table-tab-headers-pro-ha-local-development",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -22,7 +22,7 @@
     },
     {
       "id": "infranexum-web",
-      "status": "alpha091-web-ux-corrective-transactional-settings-visible-density-navigation-layout-refresh-theme-application-right-drawer-close-on-save-sidebar-surfaces-preserved-text-icon-palette-iam-uniform-readable-active-facets-native-language-name-alpha2-single-chevron-impactful-login-target-node24-docker-browser-review-pending"
+      "status": "alpha094-web-ux-corrective-responsive-inline-filter-bars-high-contrast-midnight-blue-table-heads-restrained-turquoise-green-orange-accents-spectral-tab-bars-active-readable-no-business-contract-change-target-node24-docker-browser-review-pending"
     },
     {
       "id": "source-integrity-v1",
@@ -58,7 +58,7 @@
     },
     {
       "id": "web-admin-dashboard-v1",
-      "status": "professional-responsive-page-fluid-admin-shell-freeipa-inspired-iam-navigation-uniform-readable-full-width-active-facets-governed-inx-select-comboboxes-deterministic-inx-temporal-calendar-with-period-bounds-iso-country-catalogue-structured-partner-contact-editor-transactional-visible-settings-bootstrap5.3.6-plus-bounded-inx-design-system-i18n-de-en-es-fr-it"
+      "status": "professional-responsive-page-fluid-admin-shell-freeipa-inspired-iam-navigation-governed-selects-temporal-calendar-structured-partner-contacts-dense-inline-filter-toolbars-high-contrast-table-heads-and-palette-driven-tabs-bootstrap5.3.6-plus-bounded-inx-design-system-i18n-de-en-es-fr-it"
     },
     {
       "id": "local-identity-authentication-v1",
@@ -514,15 +514,15 @@
     "pre_commit_hook": ".githooks/pre-commit"
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.92",
+    "prefix": "infranexum-2.0.0-alpha.0.94",
     "archive_entries": 1221,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
     "source_recorded_files": 1220,
     "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
-    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.92-validation-evidence.zip"
+    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.94-validation-evidence.zip"
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.92-validation-evidence.zip",
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.94-validation-evidence.zip",
   "runtime_validation": {
     "web_local_runtime_alpha058": "EXECUTED_38_OF_38_LINE_99_67_BRANCH_98_33_FUNCTION_100_PROCESS_SMOKE_PASS_LOCAL_NODE22_BOOTSTRAP5_3_6_PROFESSIONAL_ADMIN_DASHBOARD_THEME_TOGGLE_TRUTHFUL_KPI_SAME_ORIGIN_ORGANIZATION_UI",
     "architecture_functional_alpha058": "EXECUTED_57_OF_57",
@@ -856,7 +856,7 @@
     "archive_compatibility_unit_alpha091": "EXECUTED_12_OF_12_100_PERCENT",
     "archive_compatibility_alpha091": "EXECUTED_CANDIDATE_GIT_ARCHIVE_ZERO_VIOLATIONS"
   },
-  "runtime_validation_note": "alpha.0.91 is a corrective Web/UX release over alpha.0.90: Settings Save now persists and visibly applies density, navigation, layout, refresh and the shared Light/Dark theme before closing; primary sidebar backgrounds are preserved while only text/icon states use the IONOS-derived palette; Identity & Access vertical facets use uniform full-width readable active surfaces; locale UI uses native language names plus alpha-2 with one Bootstrap chevron and no emoji flags; login capability chips are removed and the product promise is visually strengthened. Executed: Web 176/176 with 99.73% line, 98.53% branch and 100% function runtime coverage plus smoke; targeted Web architecture 24/24; Source Integrity 45/45 at 100% and 0 violations; Architecture-as-Code PASS; Toolchains 25/25; Migrations 114/114; Eventing 10/10; Persistence 12/12; Capabilities 10/10; Entitlements 10/10; Audit 8/8; Compose 64/64; Archive Compatibility 12/12 at 100% and 0 violations. Exact JDK25/Node24 toolchains, Windows browser visual review and Docker Desktop PRO runtime remain external promotion gates.",
+  "runtime_validation_note": "alpha.0.94 is a Web/UX corrective over the alpha.0.93 PGM-05-E01 phase-1 baseline. Search/filter/context controls use responsive inline inx-filter-bar toolbars; table headers use high-contrast Midnight/Blue with restrained Turquoise/Green/Orange accents; tablists use a subtle palette spectrum with a readable Midnight/Blue active state. Executed: Web 178/178 with 99.73% line, 98.53% branch and 100% function coverage plus smoke; directly affected architecture 8/8 and Architecture-as-Code PASS; Source Integrity 45/45 at 100% and 0 violations; API Contracts 28/28 at 99%, 13 fragments/170 operations, debt unchanged 39/15/56/85; Toolchains 25/25; Migrations 114/114; Eventing 10/10; Persistence 12/12; Capabilities 10/10; Entitlements 10/10; Audit 8/8; Compose 64/64. Full architecture test run timed out after 33 tests with no observed assertion failure. Exact JDK25, Node24.18.1/pnpm11.17.0, Windows browser review and Docker Desktop PRO remain external gates.",
   "pgm08e01_ddi_ipam_alpha083": "EXECUTED_DOMAIN_JDBC_API_CLI_WEB_MIGRATION_ARCHITECTURE_AND_OFFLINE_SMOKE_TARGET_JDK25_MAVEN_AND_LIVE_DATABASES_PENDING",
   "architecture_functional_alpha083": "EXECUTED_151_OF_151_SPLIT_DETERMINISTIC_GROUPS",
   "architecture_check_alpha083": "EXECUTED_PASS_ZERO_VIOLATIONS",
@@ -964,5 +964,26 @@
   "git_blob_checksums_alpha089": 1220,
   "browser_render_alpha089": "NON_EXECUTED_OPERATOR_BROWSER_REVIEW_REQUIRED",
   "docker_runtime_alpha089": "NON_EXECUTED_LOCAL_DOCKER_AND_PWSH_UNAVAILABLE_OPERATOR_DOCKER_DESKTOP_PRO_UP_SMOKE_HA_SMOKE_REQUIRED",
-  "maven_target_alpha089": "NON_EXECUTED_LOCAL_JAVA21_TARGET_JDK25_REQUIRED"
+  "maven_target_alpha089": "NON_EXECUTED_LOCAL_JAVA21_TARGET_JDK25_REQUIRED",
+  "web_local_runtime_alpha094": "EXECUTED_LOCAL_NODE_178_OF_178_LINE99_73_BRANCH98_53_FUNCTION100_PROCESS_SMOKE_PASS_TARGET_NODE24_18_1_PENDING",
+  "architecture_web_alpha094": "EXECUTED_8_OF_8_DIRECTLY_AFFECTED_ARCHITECTURE_AS_CODE_PASS_GLOBAL_TEST_RUN_TIMEOUT_AFTER_33_TESTS",
+  "source_integrity_prepack_alpha094": "EXECUTED_45_OF_45_100_PERCENT_ZERO_VIOLATIONS_CANONICAL_INVENTORY_1227_PATHS",
+  "api_contracts_alpha094": "EXECUTED_28_OF_28_99_PERCENT_13_FRAGMENTS_170_OPERATIONS_ZERO_VIOLATIONS_DEBT_39_15_56_85",
+  "toolchain_alpha094": "EXECUTED_25_OF_25_99_PERCENT_ZERO_VIOLATIONS",
+  "migration_alpha094": "EXECUTED_114_OF_114_99_PERCENT_ZERO_VIOLATIONS_NO_MIGRATION_CHANGE",
+  "eventing_alpha094": "EXECUTED_10_OF_10_100_PERCENT_ZERO_VIOLATIONS",
+  "persistence_alpha094": "EXECUTED_12_OF_12_98_PERCENT_ZERO_VIOLATIONS",
+  "capabilities_alpha094": "EXECUTED_10_OF_10_99_PERCENT_ZERO_VIOLATIONS",
+  "entitlements_alpha094": "EXECUTED_10_OF_10_100_PERCENT_ZERO_VIOLATIONS",
+  "audit_alpha094": "EXECUTED_8_OF_8_100_PERCENT_ZERO_VIOLATIONS",
+  "compose_contract_alpha094": "EXECUTED_64_OF_64",
+  "browser_render_alpha094": "NON_EXECUTED_OPERATOR_WINDOWS_BROWSER_REVIEW_REQUIRED",
+  "docker_runtime_alpha094": "NON_EXECUTED_LOCAL_DOCKER_AND_PWSH_UNAVAILABLE_OPERATOR_DOCKER_DESKTOP_PRO_UP_SMOKE_HA_SMOKE_REQUIRED",
+  "maven_target_alpha094": "NON_EXECUTED_LOCAL_JAVA21_TARGET_JDK25_0_4_REQUIRED_NO_JAVA_BEHAVIOR_CHANGE",
+  "packaging_tracked_files_alpha094": 1230,
+  "git_blob_checksums_alpha094": 1229,
+  "source_inventory_paths_alpha094": 1227,
+  "source_integrity_alpha094": "EXECUTED_45_OF_45_100_PERCENT_STAGED_SNAPSHOT_1230_TRACKED_PATHS_1229_GIT_BLOB_CHECKSUMS_1227_CANONICAL_INVENTORY_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
+  "archive_compatibility_unit_alpha094": "EXECUTED_12_OF_12_100_PERCENT",
+  "archive_compatibility_alpha094": "EXECUTED_CANDIDATE_GIT_ARCHIVE_ZERO_VIOLATIONS_AND_GIT_ARCHIVE_PARITY"
 }

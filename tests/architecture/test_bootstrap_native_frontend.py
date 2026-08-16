@@ -115,5 +115,30 @@ class BootstrapNativeFrontendTest(unittest.TestCase):
                 self.assertGreaterEqual(self._contrast_ratio(foreground, background), 4.5)
 
 
+    def test_enterprise_filters_use_the_namespaced_dense_toolbar_contract(self) -> None:
+        files = [
+            self.PUBLIC / "index.html",
+            self.PUBLIC / "assets/rsot-workspace.mjs",
+            self.PUBLIC / "assets/itam-workspace.mjs",
+            self.PUBLIC / "assets/dcim-workspace.mjs",
+            self.PUBLIC / "assets/ddi-ipam-workspace.mjs",
+        ]
+        combined = "\n".join(path.read_text(encoding="utf-8") for path in files)
+        for identifier in (
+            "rsot-object-filter", "rsot-schema-filter", "itam-partner-filter",
+            "itam-asset-filter", "itam-alert-filter", "itam-history-filter",
+        ):
+            self.assertRegex(combined, rf'id="{identifier}"[^>]*class="[^"]*inx-filter-bar')
+        self.assertIn(".inx-filter-bar", self.theme_css)
+        self.assertRegex(self.theme_css, r'@media \(min-width:\s*768px\)[\s\S]*\.inx-filter-bar\s*\{\s*flex-wrap:\s*nowrap')
+
+    def test_table_and_tab_navigation_headers_keep_high_contrast_product_accents(self) -> None:
+        self.assertRegex(self.theme_css, r'\.table > thead > tr > th\s*\{[\s\S]*color:\s*#f8fbff\s*!important')
+        self.assertRegex(self.theme_css, r'\.table > thead > tr > th\s*\{[\s\S]*background:\s*var\(--inx-table-head\)')
+        self.assertRegex(self.theme_css, r'\.inx-workspace \.nav-underline\[role="tablist"\][\s\S]*background:\s*var\(--inx-tab-spectrum\)')
+        self.assertRegex(self.theme_css, r'\.inx-workspace \.nav-underline\[role="tablist"\] \.nav-link\.active[\s\S]*color:\s*#fff\s*!important')
+        self.assertGreaterEqual(self._contrast_ratio("#f8fbff", "#003d8f"), 4.5)
+
+
 if __name__ == "__main__":
     unittest.main()

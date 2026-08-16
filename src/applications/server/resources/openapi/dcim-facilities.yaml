@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum DCIM Physical Facilities API
-  version: 2.0.0-alpha.0.92
+  version: 2.0.0-alpha.0.94
   description: PGM-07-E04 governed physical hierarchy for sites, buildings, floors,
     rooms and technical zones.
 servers:
