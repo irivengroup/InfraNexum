@@ -13,6 +13,7 @@ import java.util.regex.Pattern;
 /** Versioned composition of published schemas, independently publishable from the member contracts. */
 public final class SchemaProfile {
     private static final Pattern CODE = Pattern.compile("[a-z][a-z0-9.-]{2,159}");
+    private static final Pattern OWNER = Pattern.compile("[a-z][a-z0-9._-]{2,159}");
     private final DomainIdentifier id;
     private final String code;
     private final String owner;
@@ -45,7 +46,7 @@ public final class SchemaProfile {
             String deprecationReason) {
         this.id = Objects.requireNonNull(id, "id");
         this.code = code(code);
-        this.owner = token(owner, "owner", 160).toLowerCase(Locale.ROOT);
+        this.owner = owner(owner);
         this.version = Objects.requireNonNull(version, "version");
         this.status = Objects.requireNonNull(status, "status");
         this.members = validatedMembers(members);
@@ -132,6 +133,13 @@ public final class SchemaProfile {
         return normalized;
     }
 
+
+    private static String owner(String value) {
+        String normalized = token(value, "owner", 160).toLowerCase(Locale.ROOT);
+        if (!OWNER.matcher(normalized).matches()) throw new IllegalArgumentException("invalid owner");
+        return normalized;
+    }
+
     private static String checksum(String value) {
         String normalized = token(value, "checksumSha256", 64).toLowerCase(Locale.ROOT);
         if (normalized.length() != 64 || !normalized.chars().allMatch(character -> Character.digit(character, 16) >= 0)) {
@@ -142,17 +150,24 @@ public final class SchemaProfile {
 
     private static String token(String value, String field, int maximum) {
         Objects.requireNonNull(value, field);
+        if (value.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException("invalid " + field);
+        }
         String normalized = value.strip();
-        if (normalized.isEmpty() || normalized.length() > maximum || normalized.chars().anyMatch(Character::isISOControl)) {
+        if (normalized.isEmpty() || normalized.length() > maximum) {
             throw new IllegalArgumentException("invalid " + field);
         }
         return normalized;
     }
 
     private static String nullableText(String value, int maximum) {
-        if (value == null || value.isBlank()) return null;
+        if (value == null) return null;
+        if (value.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException("invalid text value");
+        }
+        if (value.isBlank()) return null;
         String normalized = value.strip();
-        if (normalized.length() > maximum || normalized.chars().anyMatch(Character::isISOControl)) {
+        if (normalized.length() > maximum) {
             throw new IllegalArgumentException("invalid text value");
         }
         return normalized;

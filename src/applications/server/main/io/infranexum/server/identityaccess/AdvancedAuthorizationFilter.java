@@ -1,5 +1,6 @@
 package io.infranexum.server.identityaccess;
 
+import io.infranexum.server.http.AuthenticatedActorContext;
 import io.infranexum.core.contracts.DomainIdentifier;
 import io.infranexum.identity.access.application.PolicyDecisionService;
 import io.infranexum.identity.access.domain.PolicyEvaluationRequest;
@@ -7,7 +8,6 @@ import io.infranexum.identity.access.domain.PolicyEvaluationResult;
 import io.infranexum.identity.access.domain.PolicyObligation;
 import io.infranexum.identity.access.ports.IdentityAccessFeaturePolicy;
 import io.infranexum.server.http.ApiProblemSupport;
-import io.infranexum.server.identity.LocalAuthenticationFilter;
 import io.infranexum.server.observability.CorrelationContext;
 import io.infranexum.server.platform.PlatformCapabilityService;
 import jakarta.servlet.FilterChain;
@@ -61,7 +61,7 @@ public final class AdvancedAuthorizationFilter extends OncePerRequestFilter impl
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-        Object actorValue = request.getAttribute(LocalAuthenticationFilter.ACCOUNT_ATTRIBUTE);
+        Object actorValue = request.getAttribute(AuthenticatedActorContext.ACCOUNT_ATTRIBUTE);
         Object requirementValue = request.getAttribute(RbacAuthorizationFilter.REQUIREMENT_ATTRIBUTE);
         DomainIdentifier correlation = CorrelationContext.identifier(request).orElse(null);
         if (!(actorValue instanceof DomainIdentifier actor) || !(requirementValue instanceof AuthorizationRequirement requirement)

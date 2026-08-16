@@ -225,6 +225,29 @@ class LocalAuthenticationServiceTest {
         assertEquals(replacement.account().id(), service.validate(replacement.bearerToken()).account().id());
     }
 
+
+    @Test
+    void failedAuthenticationSecurityRaceAndEqualSessionTimeoutsCoverFailClosedBranches() {
+        LocalAccount account = bootstrap();
+        identities.rotateBeforeFailedAuthentication = true;
+        char[] wrong = "Wrong-Password!Aa1".toCharArray();
+        assertThrows(LocalAuthenticationException.class, () -> service.authenticate("admin", wrong));
+        assertTrue(allZero(wrong));
+        assertTrue(sessions.byHash.isEmpty());
+        assertEquals(account.securityEpoch() + 1, identities.findById(account.id()).orElseThrow().securityEpoch());
+
+        identities = new MemoryIdentities();
+        sessions = new MemorySessions();
+        hasher = new FakeHasher();
+        tokens = new FakeTokens();
+        service = new LocalAuthenticationService(identities, sessions, hasher, tokens, new LocalPasswordPolicy(),
+                new LocalAuthenticationPolicy(3, Duration.ofMinutes(15), Duration.ofMinutes(30), Duration.ofMinutes(30), Duration.ZERO),
+                new UuidV7Generator(clock, new SecureRandom(new byte[] {4,3,2,1})), clock);
+        bootstrap();
+        AuthenticatedSession session = service.authenticate("admin", "Bootstrap-Password!Aa1".toCharArray());
+        assertEquals(session.session().absoluteExpiresAt(), session.session().idleExpiresAt());
+    }
+
     @Test
     void zeroTouchIntervalDoesNotWriteSessionOnValidation() {
         bootstrap();
@@ -279,6 +302,7 @@ class LocalAuthenticationServiceTest {
     private static final class MemoryIdentities implements LocalIdentityRepository {
         final Map<String, LocalAccount> byUsername = new HashMap<>();
         final Map<DomainIdentifier, LocalAccount> byId = new HashMap<>();
+        boolean rotateBeforeFailedAuthentication;
         boolean rotateBeforeSuccessfulAuthentication;
         boolean rotateBeforePasswordChange;
         @Override public boolean hasAnyAccount() { return !byId.isEmpty(); }
@@ -287,7 +311,12 @@ class LocalAuthenticationServiceTest {
         @Override public void insert(LocalAccount account) { if (hasAnyAccount()) throw new IllegalStateException("duplicate"); replace(account); }
         void replace(LocalAccount account) { byUsername.put(account.username(), account); byId.put(account.id(), account); }
         @Override public LocalAccount recordFailedAuthentication(DomainIdentifier id, long expectedEpoch, int threshold, Duration duration, Instant now) {
-            LocalAccount old = byId.get(id); if (old.securityEpoch() != expectedEpoch) throw new io.infranexum.identity.local.domain.LocalCredentialStateChangedException();
+            LocalAccount old = byId.get(id);
+            if (rotateBeforeFailedAuthentication) {
+                old = new LocalAccount(old.id(), old.username(), old.displayName(), old.passwordHash(), old.mustChange(), old.status(), old.failedAttempts(), old.lockedUntil(), old.securityEpoch() + 1, old.version() + 1, old.createdAt(), now);
+                replace(old);
+            }
+            if (old.securityEpoch() != expectedEpoch) throw new io.infranexum.identity.local.domain.LocalCredentialStateChangedException();
             int failures = old.failedAttempts() + 1;
             Instant locked = failures >= threshold ? now.plus(duration) : null; if (locked != null) failures = 0;
             LocalAccount updated = new LocalAccount(old.id(), old.username(), old.displayName(), old.passwordHash(), old.mustChange(), old.status(),

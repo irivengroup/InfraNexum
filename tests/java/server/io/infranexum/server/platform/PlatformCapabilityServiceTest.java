@@ -41,7 +41,7 @@ class PlatformCapabilityServiceTest {
         var plan = QuotaCatalog.loadEmbedded(version).allocate(
                 InstallationProfile.LITE, AllocationTier.STANDARD, version, Map.of());
         var service = new PlatformCapabilityService(registry, environment, plan);
-        assertEquals(21, service.snapshot().decisions().size());
+        assertEquals(32, service.snapshot().decisions().size());
         assertTrue(service.explain("iam.local-auth").available());
         assertFalse(service.explain("iam.ldap").available());
         assertEquals(5, service.quotaPlan().limit("iam.users.max"));

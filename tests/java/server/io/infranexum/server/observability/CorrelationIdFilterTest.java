@@ -1,5 +1,7 @@
 package io.infranexum.server.observability;
 
+import io.infranexum.server.http.CorrelationIdFilter;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;

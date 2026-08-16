@@ -36,7 +36,7 @@ class PlatformCapabilityControllerTest {
         var controller = new PlatformCapabilityController(service);
         var snapshot = controller.capabilities();
         assertEquals("no-store", snapshot.getHeaders().getCacheControl());
-        assertEquals(21, snapshot.getBody().capabilities().size());
+        assertEquals(32, snapshot.getBody().capabilities().size());
         var local = controller.capability("iam.local-auth");
         assertTrue(local.getBody().available());
         assertEquals("LITE", local.getBody().profile());

@@ -31,6 +31,7 @@ class LocalIdentityValueObjectsTest {
         assertViolation(policy, "ABCDEFGHIJ1!", "lowercase");
         assertViolation(policy, "Abcdefghijkl!", "digit");
         assertViolation(policy, "Abcdefghijk1", "special");
+        assertViolation(policy, "Abcdefghi 1", "special");
         assertViolation(policy, "Abcdefghi1!\n", "control_character");
         assertViolation(policy, "A1!" + "x".repeat(126), "max_length");
         assertThrows(NullPointerException.class, () -> policy.validate(null));
@@ -99,7 +100,9 @@ class LocalIdentityValueObjectsTest {
         assertThrows(IllegalArgumentException.class, () -> policy(0, 1, 30, 60, 1));
         assertThrows(IllegalArgumentException.class, () -> policy(21, 1, 30, 60, 1));
         assertThrows(IllegalArgumentException.class, () -> policy(5, 0, 30, 60, 1));
+        assertThrows(IllegalArgumentException.class, () -> policy(5, -1, 30, 60, 1));
         assertThrows(IllegalArgumentException.class, () -> policy(5, 1, 0, 60, 1));
+        assertThrows(IllegalArgumentException.class, () -> policy(5, 1, -1, 60, 1));
         assertThrows(IllegalArgumentException.class, () -> policy(5, 1, 60, 30, 1));
         assertThrows(IllegalArgumentException.class, () -> policy(5, 1, 30, 60, -1));
         assertThrows(NullPointerException.class, () -> new LocalAuthenticationPolicy(5, null, Duration.ofMinutes(1), Duration.ofMinutes(2), Duration.ZERO));

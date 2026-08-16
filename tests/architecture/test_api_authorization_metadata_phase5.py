@@ -90,7 +90,7 @@ class ApiAuthorizationMetadataPhase5Tests(unittest.TestCase):
             ROOT / "src/applications/server/main/io/infranexum/server/platform/ApiCapabilityFilter.java"
         ).read_text(encoding="utf-8")
         correlation = (
-            ROOT / "src/applications/server/main/io/infranexum/server/observability/CorrelationIdFilter.java"
+            ROOT / "src/applications/server/main/io/infranexum/server/http/CorrelationIdFilter.java"
         ).read_text(encoding="utf-8")
         local_auth_candidates = list(
             (ROOT / "src/applications/server/main/io/infranexum/server").rglob("LocalAuthenticationFilter.java")

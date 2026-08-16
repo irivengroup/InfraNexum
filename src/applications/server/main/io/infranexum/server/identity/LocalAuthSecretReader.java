@@ -25,6 +25,9 @@ final class LocalAuthSecretReader {
             while (decoded.hasRemaining() && Character.isWhitespace(decoded.get(decoded.limit() - 1))) {
                 decoded.limit(decoded.limit() - 1);
             }
+            if (!decoded.hasRemaining()) {
+                throw new IllegalStateException("local-auth bootstrap password file is empty");
+            }
             char[] result = new char[decoded.remaining()];
             decoded.get(result);
             return result;

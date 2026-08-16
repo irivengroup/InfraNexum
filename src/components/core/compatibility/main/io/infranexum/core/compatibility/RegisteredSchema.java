@@ -183,17 +183,24 @@ public final class RegisteredSchema {
 
     private static String token(String value, String field, int maximum) {
         Objects.requireNonNull(value, field);
+        if (value.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException("invalid " + field);
+        }
         String normalized = value.strip();
-        if (normalized.isEmpty() || normalized.length() > maximum || normalized.chars().anyMatch(Character::isISOControl)) {
+        if (normalized.isEmpty() || normalized.length() > maximum) {
             throw new IllegalArgumentException("invalid " + field);
         }
         return normalized;
     }
 
     private static String nullableText(String value, int maximum) {
-        if (value == null || value.isBlank()) return null;
+        if (value == null) return null;
+        if (value.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException("invalid text value");
+        }
+        if (value.isBlank()) return null;
         String normalized = value.strip();
-        if (normalized.length() > maximum || normalized.chars().anyMatch(Character::isISOControl)) {
+        if (normalized.length() > maximum) {
             throw new IllegalArgumentException("invalid text value");
         }
         return normalized;

@@ -29,6 +29,7 @@ public record PolicyRule(
         if (conditions.isEmpty() || conditions.size() > 32) throw new IllegalArgumentException("policy rule requires between 1 and 32 conditions");
         obligations = Set.copyOf(Objects.requireNonNull(obligations, "obligations"));
         if (obligations.size() > 8) throw new IllegalArgumentException("policy rule has too many obligations");
+        if (advice != null) IdentityUser.rejectIsoControls(advice, "advice");
         advice = advice == null ? "" : advice.strip();
         if (advice.length() > 500 || advice.indexOf('\0') >= 0) throw new IllegalArgumentException("policy rule advice is invalid");
     }

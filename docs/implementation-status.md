@@ -1,10 +1,14 @@
-# InfraNexum 2.0.0-alpha.0.103 — qualification JDK25 corrective
+# InfraNexum 2.0.0-alpha.0.104 — qualification JDK25 corrective
 
-**Nature : corrective, aucun nouvel epic.** Cette version traite l'ensemble des échecs révélés par `--fail-at-end` et `java-module-verify` sur `alpha.0.102`, sans réduction du seuil JaCoCo 98 %, exclusion de classes ni désactivation de tests.
+**Nature : corrective, aucun nouvel epic.** Cette version traite l'ensemble des échecs révélés par `--fail-at-end`, `java-module-verify` et la matrice PostgreSQL sur `alpha.0.103`, sans réduction du seuil JaCoCo 98 %, exclusion de classes ni désactivation de tests.
 
-**Contrats et sécurité :** les tests obsolètes sont réalignés sur les API réellement publiées ; les validations de texte rejettent les caractères de contrôle sur l'entrée brute avant normalisation ; le fingerprint d'idempotence des mises à jour DCIM inclut désormais le payload métier complet ; et la hiérarchie DDI autorise un enfant contenu dans son parent sans désactiver l'anti-chevauchement vis-à-vis des autres préfixes.
+**Persistance webhook :** `connector_inbox.payload_json` ne porte plus seul l'autorité du corps authentifié, car JSONB réécrit légitimement sa représentation lexicale. La migration forward-only `0035-integrations-connector-raw-payload` ajoute `payload_raw` (`TEXT` PostgreSQL / `CLOB` Oracle), backfille les lignes historiques et impose `NOT NULL`. Toute nouvelle admission écrit simultanément le corps brut et sa représentation JSON structurée ; les lectures/replays utilisent le corps brut.
 
-**Qualification locale auxiliaire :** les sources JDK-only touchées compilent sous Java 21 avec `-Xlint:all -Werror`; un harness JUnit-compatible fonctionnel exécute **228 tests** sur Workers/Capabilities/Compatibility/Organization/Identity/RSOT/ITAM/DCIM/DDI/Integrations, tous passants ; **56 tests JDBC non-PostgreSQL** passent également, dont `JdbcInfrastructureCoverageTest` **8/8**. Ce harness ne remplace pas Maven/JUnit/JaCoCo. **NON EXÉCUTÉ localement :** Temurin 25 exact, calcul JaCoCo cible et PostgreSQL 17/18 live ; le rerun GitHub Actions reste obligatoire avant promotion formelle de PGM-10-E05.
+**Architecture Server :** les contrôleurs/handlers IAM sont conditionnés avec le runtime IAM ; `AuthenticatedActorContext` appartient à la frontière HTTP ; `CorrelationIdFilter` et `ApiProblemSupport` sont composés par `HttpBoundaryConfiguration`. Les cycles Modulith `http↔identity` et `http↔observability` signalés par JDK 25 sont ainsi supprimés sans exclusion de package. Le bootstrap local-auth rejette également un secret décodé vide.
+
+**Contrats et sécurité :** les validations de texte rejettent les caractères de contrôle sur l'entrée brute avant normalisation ; le fingerprint d'idempotence des mises à jour DCIM inclut le payload métier complet ; et la hiérarchie DDI autorise un enfant contenu dans son parent sans désactiver l'anti-chevauchement vis-à-vis des autres préfixes.
+
+**Qualification locale auxiliaire :** les surfaces dependency-free touchées compilent sous Java 21 avec `-Xlint:all -Werror`; un harness JUnit-compatible fonctionnel exécute **386 tests Core/domaines**, tous passants ; **56 tests JDBC déterministes non-PostgreSQL** passent également. Architecture est exécutée en mode split **199/199** et Architecture-as-Code reste `PASS`. Web reste **192/192**, couverture **99,73 % lignes / 98,53 % branches / 100 % fonctions**. Ce harness ne remplace pas Maven/JUnit/JaCoCo. **NON EXÉCUTÉ localement :** Temurin 25 exact, calcul JaCoCo cible et PostgreSQL 17/18 live ; le rerun GitHub Actions reste obligatoire avant promotion formelle de PGM-10-E05.
 
 ---
 

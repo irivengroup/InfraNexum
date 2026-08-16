@@ -36,6 +36,7 @@ public record IdentityGroup(
 
     public static String normalizeCode(String value) {
         Objects.requireNonNull(value, "code");
+        IdentityUser.rejectIsoControls(value, "code");
         String normalized = value.strip().toLowerCase(Locale.ROOT);
         if (!CODE.matcher(normalized).matches()) throw new IllegalArgumentException("invalid group code");
         return normalized;

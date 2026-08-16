@@ -1,5 +1,6 @@
 package io.infranexum.server.itam;
 
+import io.infranexum.server.http.AuthenticatedActorContext;
 import static io.infranexum.server.itam.ItamComplianceApiModels.*;
 
 import io.infranexum.core.contracts.DomainIdentifier;
@@ -11,7 +12,6 @@ import io.infranexum.itam.asset.domain.Asset;
 import io.infranexum.itam.compliance.application.*;
 import io.infranexum.itam.compliance.domain.*;
 import io.infranexum.server.http.ApiPagination;
-import io.infranexum.server.identity.LocalAuthenticationFilter;
 import io.infranexum.server.identityaccess.ScopedAuthorizationGuard;
 import io.infranexum.server.observability.CorrelationContext;
 import jakarta.servlet.http.HttpServletRequest;
@@ -166,7 +166,7 @@ public final class ItamComplianceController {
     List<RevisionResponse> history(@PathVariable String recordType,@PathVariable String recordId,@RequestParam(name="after_version",defaultValue="0") long afterVersion,@RequestParam(defaultValue="100") int limit,HttpServletRequest request,HttpServletResponse response){String internal=switch(recordType){case "warranties"->"warranty";case "licenses"->"license";case "support-coverages"->"support_coverage";default->throw new IllegalArgumentException("unsupported record type");};DomainIdentifier assetId=switch(internal){case "warranty"->compliance.getWarranty(id(recordId)).assetId();case "license"->compliance.getLicense(id(recordId)).assetId();case "support_coverage"->compliance.getSupportCoverage(id(recordId)).assetId();default->throw new IllegalStateException();};requireAsset(assetId.toString(),PermissionCodes.ITAM_AUDIT_READ,request,response);return compliance.history(internal,id(recordId),afterVersion,limit).stream().map(RevisionResponse::from).toList();}
 
     private Asset requireAsset(String assetId,String permission,HttpServletRequest request,HttpServletResponse response){Asset asset=assets.get(id(assetId));authorization.require(request,response,permission,AuthorizationScope.organization(asset.owningOrganizationId()),"itam-asset",asset.id().toString());return asset;}
-    private ComplianceCommandContext context(HttpServletRequest request,String key,String reason){Object actor=request.getAttribute(LocalAuthenticationFilter.ACCOUNT_ATTRIBUTE);if(!(actor instanceof DomainIdentifier actorId))throw new IllegalStateException("authenticated actor missing after RBAC boundary");return new ComplianceCommandContext(actorId,CorrelationContext.identifier(request).orElseGet(ids::next),key,reason);}
+    private ComplianceCommandContext context(HttpServletRequest request,String key,String reason){Object actor=request.getAttribute(AuthenticatedActorContext.ACCOUNT_ATTRIBUTE);if(!(actor instanceof DomainIdentifier actorId))throw new IllegalStateException("authenticated actor missing after RBAC boundary");return new ComplianceCommandContext(actorId,CorrelationContext.identifier(request).orElseGet(ids::next),key,reason);}
     private static CreateWarrantyCommand warrantyCommand(DomainIdentifier assetId,WarrantyRequest b){return new CreateWarrantyCommand(assetId,id(b.manufacturerPartnerId()),id(b.warrantyTypeId()),b.coverageLevel(),b.warrantyStartDate(),b.warrantyEndDate(),b.manufacturerSupportEndDate(),b.contractOrCertificateNumber(),b.proofReference(),b.source());}
     private static CreateLicenseCommand licenseCommand(DomainIdentifier assetId,LicenseRequest b){return new CreateLicenseCommand(assetId,id(b.publisherPartnerId()),b.contractNumber(),b.licenseModel(),b.usageRights(),b.entitlementQuantity(),b.startsOn(),b.endsOn(),b.publisherSupportEndDate(),b.proofReference(),b.source());}
     private static CreateSupportCoverageCommand coverageCommand(DomainIdentifier assetId,SupportCoverageRequest b){return new CreateSupportCoverageCommand(assetId,id(b.providerPartnerId()),id(b.authorizationId()),b.contractReference(),b.coverageType(),b.serviceLevel(),b.startsOn(),b.endsOn(),b.proofReference());}

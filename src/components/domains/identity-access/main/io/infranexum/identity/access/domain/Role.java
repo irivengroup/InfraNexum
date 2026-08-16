@@ -40,6 +40,7 @@ public record Role(
 
     public static String normalizeCode(String value) {
         Objects.requireNonNull(value, "code");
+        IdentityUser.rejectIsoControls(value, "code");
         String normalized = value.strip().toLowerCase(Locale.ROOT);
         if (normalized.length() > 160 || !CODE.matcher(normalized).matches()) throw new IllegalArgumentException("invalid role code");
         return normalized;

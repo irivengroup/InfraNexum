@@ -4,6 +4,7 @@ import io.infranexum.identity.local.application.LocalAuthenticationService;
 import io.infranexum.identity.local.application.ValidatedSession;
 import io.infranexum.identity.local.domain.LocalSessionException;
 import io.infranexum.server.http.ApiProblemSupport;
+import io.infranexum.server.http.AuthenticatedActorContext;
 import io.infranexum.server.observability.CorrelationContext;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -25,7 +26,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * change has completed. Browser mutations additionally require the double-submit CSRF token.
  */
 public final class LocalAuthenticationFilter extends OncePerRequestFilter implements Ordered {
-    public static final String ACCOUNT_ATTRIBUTE = LocalAuthenticationFilter.class.getName() + ".account";
+    /** @deprecated use {@link AuthenticatedActorContext#ACCOUNT_ATTRIBUTE}. */
+    @Deprecated(forRemoval = false)
+    public static final String ACCOUNT_ATTRIBUTE = AuthenticatedActorContext.ACCOUNT_ATTRIBUTE;
     private static final String API_PREFIX = "/api/v1/";
     private static final String AUTH_PREFIX = "/api/v1/iam/local-auth";
     private static final String PUBLIC_BUILD_PATH = "/api/v1/system/build";
@@ -81,7 +84,7 @@ public final class LocalAuthenticationFilter extends OncePerRequestFilter implem
             }
         }
 
-        request.setAttribute(ACCOUNT_ATTRIBUTE, validated.account().id());
+        request.setAttribute(AuthenticatedActorContext.ACCOUNT_ATTRIBUTE, validated.account().id());
         chain.doFilter(request, response);
     }
 

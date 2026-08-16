@@ -175,10 +175,11 @@ class OrganizationApplicationServiceTest {
         long subdivisionLimit = 500;
         long hierarchyDepth = 3;
         boolean subdivisionsSupported = true;
+        boolean hierarchySupported = true;
 
         @Override
         public boolean supportsOrganizationHierarchy() {
-            return true;
+            return hierarchySupported;
         }
 
         @Override

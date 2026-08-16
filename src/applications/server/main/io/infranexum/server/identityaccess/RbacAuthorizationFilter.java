@@ -1,10 +1,10 @@
 package io.infranexum.server.identityaccess;
 
+import io.infranexum.server.http.AuthenticatedActorContext;
 import io.infranexum.core.contracts.DomainIdentifier;
 import io.infranexum.identity.access.application.AuthorizationDecision;
 import io.infranexum.identity.access.application.RbacAuthorizationService;
 import io.infranexum.server.http.ApiProblemSupport;
-import io.infranexum.server.identity.LocalAuthenticationFilter;
 import io.infranexum.server.observability.CorrelationContext;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -33,7 +33,7 @@ public final class RbacAuthorizationFilter extends OncePerRequestFilter implemen
     @Override protected boolean shouldNotFilter(HttpServletRequest request){String path=request.getRequestURI();return !path.startsWith(API_PREFIX)||path.equals(AUTH_PREFIX)||path.startsWith(AUTH_PREFIX+"/")||PUBLIC_BUILD_PATH.equals(path)||path.startsWith(WEBHOOK_PREFIX);}
 
     @Override protected void doFilterInternal(HttpServletRequest request,HttpServletResponse response,FilterChain chain)throws ServletException,IOException{
-        Object actorValue=request.getAttribute(LocalAuthenticationFilter.ACCOUNT_ATTRIBUTE);
+        Object actorValue=request.getAttribute(AuthenticatedActorContext.ACCOUNT_ATTRIBUTE);
         if(!(actorValue instanceof DomainIdentifier actor)){reject(request,response,HttpServletResponse.SC_UNAUTHORIZED,"INFRANEXUM_AUTHENTICATION_CONTEXT_MISSING","Authentication context missing");return;}
         DomainIdentifier correlation=CorrelationContext.identifier(request).orElse(null);
         if(correlation==null){reject(request,response,HttpServletResponse.SC_INTERNAL_SERVER_ERROR,"INFRANEXUM_CORRELATION_CONTEXT_MISSING","Correlation context missing");return;}

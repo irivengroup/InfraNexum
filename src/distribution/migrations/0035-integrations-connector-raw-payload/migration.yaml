@@ -1,0 +1,24 @@
+schema: infranexum.migration/v1
+id: '0035'
+name: integrations-connector-raw-payload
+owner_context: integrations
+dependencies:
+- '0034'
+preconditions:
+- connector-inbox-created
+postconditions:
+- connector-authenticated-payload-preserved
+recovery: rerun-idempotent-backfill-after-correcting-database-connectivity
+rollback: drops-only-the-raw-payload-shadow-column
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 30
+checksums:
+  postgresql.sql: 5c859dcae1392b5f8bb4fb22353d66288cf0347bd4c181e861b66268522d2372
+  oracle.sql: 8579a8f5cb763e5d726e729acbd7272bc213277b684b900e1cf1742540244ecf
+  rollback/postgresql.sql: 155ef1483337b629efa38a37ce08cebee86c0be6a896d40a5d81c65852af7861
+  rollback/oracle.sql: d086932d0950084de3a81a7b4be1b758553f985aaef360bd08eb3bb4661e976a
+  logical-model.json: c0485fbf804b9f4030de7dc8d39044f030e90d114dc8c5dc2707290420a863fc
+  verify.sql.yaml: cb82b1f33439752f93f15ffde26c0471e7ce8ea604c145ba5914b88f5d8aa7b1

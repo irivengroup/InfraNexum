@@ -1,5 +1,6 @@
 package io.infranexum.server.organization;
 
+import io.infranexum.server.http.AuthenticatedActorContext;
 import static io.infranexum.server.organization.OrganizationApiModels.CreateOrganizationRequest;
 import static io.infranexum.server.organization.OrganizationApiModels.CreateScopeRequest;
 import static io.infranexum.server.organization.OrganizationApiModels.CreateSubdivisionRequest;
@@ -17,7 +18,6 @@ import io.infranexum.organization.application.OrganizationApplicationService;
 import io.infranexum.organization.application.OrganizationCommandContext;
 import io.infranexum.organization.domain.OrganizationState;
 import io.infranexum.server.observability.CorrelationContext;
-import io.infranexum.server.identity.LocalAuthenticationFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.security.SecureRandom;
@@ -194,7 +194,7 @@ public final class OrganizationController {
 
 
     private static String authenticatedActor(HttpServletRequest request) {
-        Object value = request.getAttribute(LocalAuthenticationFilter.ACCOUNT_ATTRIBUTE);
+        Object value = request.getAttribute(AuthenticatedActorContext.ACCOUNT_ATTRIBUTE);
         if (value instanceof DomainIdentifier actor) return actor.toString();
         throw new IllegalStateException("authenticated actor missing after RBAC boundary");
     }

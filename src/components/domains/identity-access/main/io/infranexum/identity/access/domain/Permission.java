@@ -42,6 +42,7 @@ public record Permission(
 
     public static String normalizeCode(String value) {
         Objects.requireNonNull(value, "code");
+        IdentityUser.rejectIsoControls(value, "code");
         String normalized = value.strip().toLowerCase(Locale.ROOT);
         if (normalized.length() > 160 || !CODE.matcher(normalized).matches()) throw new IllegalArgumentException("invalid permission code");
         return normalized;
@@ -49,6 +50,7 @@ public record Permission(
 
     private static String token(String value, String field) {
         Objects.requireNonNull(value, field);
+        IdentityUser.rejectIsoControls(value, field);
         String normalized = value.strip().toLowerCase(Locale.ROOT);
         if (!TOKEN.matcher(normalized).matches()) throw new IllegalArgumentException("invalid " + field);
         return normalized;

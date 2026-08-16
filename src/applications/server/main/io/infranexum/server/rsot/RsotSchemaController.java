@@ -1,5 +1,6 @@
 package io.infranexum.server.rsot;
 
+import io.infranexum.server.http.AuthenticatedActorContext;
 import static io.infranexum.server.rsot.RsotSchemaApiModels.*;
 
 import io.infranexum.core.compatibility.CreateProfileCommand;
@@ -11,7 +12,6 @@ import io.infranexum.core.compatibility.SchemaRegistryService;
 import io.infranexum.core.contracts.DomainIdentifier;
 import io.infranexum.core.contracts.UuidV7Generator;
 import io.infranexum.server.configuration.ServerTemporalInputParser;
-import io.infranexum.server.identity.LocalAuthenticationFilter;
 import io.infranexum.server.observability.CorrelationContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -164,7 +164,7 @@ public final class RsotSchemaController {
     }
 
     private SchemaRegistryCommandContext context(HttpServletRequest request) {
-        Object actor = request.getAttribute(LocalAuthenticationFilter.ACCOUNT_ATTRIBUTE);
+        Object actor = request.getAttribute(AuthenticatedActorContext.ACCOUNT_ATTRIBUTE);
         if (!(actor instanceof DomainIdentifier actorId)) throw new IllegalStateException("authenticated actor missing after RBAC boundary");
         return new SchemaRegistryCommandContext(actorId, CorrelationContext.identifier(request).orElseGet(ids::next));
     }

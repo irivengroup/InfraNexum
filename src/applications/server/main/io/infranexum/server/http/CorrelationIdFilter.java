@@ -1,8 +1,8 @@
-package io.infranexum.server.observability;
+package io.infranexum.server.http;
 
 import io.infranexum.core.contracts.DomainIdentifier;
 import io.infranexum.core.contracts.UuidV7Generator;
-import io.infranexum.server.http.ApiProblemSupport;
+import io.infranexum.server.observability.CorrelationContext;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.servlet.FilterChain;

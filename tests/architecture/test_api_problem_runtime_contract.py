@@ -32,7 +32,7 @@ class ApiProblemRuntimeContractTest(unittest.TestCase):
 
     def test_terminal_security_filters_use_the_same_problem_writer(self) -> None:
         filters = (
-            SERVER / "observability/CorrelationIdFilter.java",
+            SERVER / "http/CorrelationIdFilter.java",
             SERVER / "identity/LocalAuthenticationFilter.java",
             SERVER / "identityaccess/RbacAuthorizationFilter.java",
             SERVER / "identityaccess/AdvancedAuthorizationFilter.java",

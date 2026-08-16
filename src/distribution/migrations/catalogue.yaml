@@ -1,5 +1,5 @@
 schema: infranexum.migration-catalogue/v1
-version: 1.33.0
+version: 1.34.0
 entries:
 - id: '0001'
   path: 0001-core-schema-history/migration.yaml
@@ -69,3 +69,5 @@ entries:
   path: 0033-integrations-connector-inbox/migration.yaml
 - id: '0034'
   path: 0034-identity-access-integrations-permissions/migration.yaml
+- id: '0035'
+  path: 0035-integrations-connector-raw-payload/migration.yaml

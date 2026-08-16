@@ -1,5 +1,8 @@
 package io.infranexum.server.identityaccess;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+
+import io.infranexum.server.http.AuthenticatedActorContext;
 import static io.infranexum.server.identityaccess.PolicyApiModels.*;
 
 import io.infranexum.core.contracts.DomainIdentifier;
@@ -10,7 +13,6 @@ import io.infranexum.identity.access.application.RbacAuthorizationService;
 import io.infranexum.identity.access.domain.Role;
 import io.infranexum.identity.access.domain.PolicyEvaluationRequest;
 import io.infranexum.server.configuration.ServerTemporalInputParser;
-import io.infranexum.server.identity.LocalAuthenticationFilter;
 import io.infranexum.server.observability.CorrelationContext;
 import io.infranexum.server.platform.PlatformCapabilityService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Normative PGM-03-E04 PAP/PDP HTTP adapter. */
+@ConditionalOnProperty(name = "infranexum.identity.local.enabled", havingValue = "true")
 @RestController
 public final class PolicyController {
     private final PolicyAdministrationService administration;
@@ -121,7 +124,7 @@ public final class PolicyController {
     }
 
     private static DomainIdentifier actor(HttpServletRequest request) {
-        Object value = request.getAttribute(LocalAuthenticationFilter.ACCOUNT_ATTRIBUTE);
+        Object value = request.getAttribute(AuthenticatedActorContext.ACCOUNT_ATTRIBUTE);
         if (!(value instanceof DomainIdentifier actor)) throw new IllegalStateException("authenticated actor missing after authorization boundary");
         return actor;
     }

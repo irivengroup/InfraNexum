@@ -25,9 +25,9 @@ class PlatformCapabilityConfigurationTest {
         var service = configuration.platformCapabilityService(
                 properties, capabilityCatalog, quotaCatalog, false);
         assertEquals(119, service.quotaPlan().limits().size());
-        assertEquals(21, service.snapshot().decisions().size());
+        assertEquals(32, service.snapshot().decisions().size());
         var snapshot = CapabilitySnapshotResponse.from(service.snapshot());
-        assertEquals(21, snapshot.capabilities().size());
+        assertEquals(32, snapshot.capabilities().size());
         assertEquals(service.snapshot().capabilityHash(), snapshot.capabilityHash());
         var quotaPlan = QuotaPlanResponse.from(service.quotaPlan());
         assertEquals(119, quotaPlan.quotas().size());

@@ -92,7 +92,7 @@ test('all supported locales translate navigation and interpolate safe runtime va
     assert.notEqual(translate(locale, 'notification.title'), 'notification.title');
     assert.notEqual(translate(locale, 'preference.title'), 'preference.title');
     assert.notEqual(translate(locale, 'platform.title'), 'platform.title');
-    assert.match(translate(locale, 'common.version', { value: '2.0.0-alpha.0.103' }), /2\.0\.0-alpha\.0\.103/);
+    assert.match(translate(locale, 'common.version', { value: '2.0.0-alpha.0.104' }), /2\.0\.0-alpha\.0\.104/);
   }
   assert.equal(translate('pt', 'nav.overview'), 'Overview');
   assert.equal(translate('en', 'missing.translation.key'), 'missing.translation.key');

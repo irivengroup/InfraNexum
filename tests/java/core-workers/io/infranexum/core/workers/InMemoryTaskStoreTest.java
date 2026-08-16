@@ -186,6 +186,27 @@ final class InMemoryTaskStoreTest {
     }
 
     @Test
+    void remainingStoreBranchesPreserveDeterministicTerminalAndPendingCancellationSemantics() {
+        InMemoryTaskStore store = new InMemoryTaskStore();
+        store.submit(id(10), submission("pending-cancel"), RetrySafety.RETRY_SAFE, START);
+        assertEquals(CancellationOutcome.REQUESTED, store.requestCancellation(id(10), START));
+        assertEquals(TaskStatus.CANCELLED, store.find(id(10)).orElseThrow().status());
+
+        store.submit(id(11), submission("blank-failure"), RetrySafety.AT_MOST_ONCE, START);
+        TaskRecord blank = store.claimBatch("worker", 1, START, LEASE, RETRY).getFirst();
+        store.markTerminalFailure(blank.taskId(), "worker", blank.leaseVersion(), START, new RuntimeException(" "));
+        assertEquals("RuntimeException", store.find(id(11)).orElseThrow().lastFailure());
+
+        store.submit(id(12), submission("null-failure"), RetrySafety.AT_MOST_ONCE, START);
+        TaskRecord noMessage = store.claimBatch("worker", 1, START, LEASE, RETRY).getFirst();
+        store.markTerminalFailure(noMessage.taskId(), "worker", noMessage.leaseVersion(), START, new RuntimeException());
+        assertEquals("RuntimeException", store.find(id(12)).orElseThrow().lastFailure());
+
+        assertThrows(IllegalArgumentException.class, () ->
+                store.submit(id(12), submission("different-idempotency"), RetrySafety.RETRY_SAFE, START));
+    }
+
+    @Test
     void validationRejectsUnsafeStoreOperations() {
         assertThrows(IllegalArgumentException.class, () -> new InMemoryTaskStore(0));
         InMemoryTaskStore store = new InMemoryTaskStore();

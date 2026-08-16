@@ -1,5 +1,7 @@
 package io.infranexum.server.identityaccess;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+
 import io.infranexum.identity.access.domain.IdentityAccessException;
 import io.infranexum.server.http.ApiProblem;
 import io.infranexum.server.http.ApiProblemSupport;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /** Canonical RFC 9457 translation for IAM RBAC and policy failures. */
+@ConditionalOnProperty(name = "infranexum.identity.local.enabled", havingValue = "true")
 @RestControllerAdvice(assignableTypes = {IdentityAccessController.class, PolicyController.class})
 public final class IdentityAccessExceptionHandler {
     private final ApiProblemSupport problems;

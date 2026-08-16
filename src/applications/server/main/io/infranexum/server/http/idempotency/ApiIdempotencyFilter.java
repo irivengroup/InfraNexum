@@ -1,9 +1,9 @@
 package io.infranexum.server.http.idempotency;
 
+import io.infranexum.server.http.AuthenticatedActorContext;
 import io.infranexum.core.contracts.DomainIdentifier;
 import io.infranexum.core.contracts.IdempotencyLedger;
 import io.infranexum.server.http.ApiProblemSupport;
-import io.infranexum.server.identity.LocalAuthenticationFilter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -58,7 +58,7 @@ public final class ApiIdempotencyFilter extends OncePerRequestFilter implements 
         String key = normalizeKey(request.getHeader(HEADER));
         if (key == null) { reject(response, request, HttpStatus.BAD_REQUEST, "INFRANEXUM_IDEMPOTENCY_KEY_REQUIRED", "Idempotency key required", "Idempotency-Key must contain 8..200 safe characters"); return; }
 
-        Object actorValue = request.getAttribute(LocalAuthenticationFilter.ACCOUNT_ATTRIBUTE);
+        Object actorValue = request.getAttribute(AuthenticatedActorContext.ACCOUNT_ATTRIBUTE);
         if (!(actorValue instanceof DomainIdentifier actor)) { reject(response, request, HttpStatus.UNAUTHORIZED, "INFRANEXUM_IDEMPOTENCY_ACTOR_REQUIRED", "Authenticated actor required", "Idempotency protection requires an authenticated actor"); return; }
 
         BufferedHttpServletRequest buffered;

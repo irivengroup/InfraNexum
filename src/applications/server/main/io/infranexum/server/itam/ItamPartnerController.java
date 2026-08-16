@@ -1,5 +1,6 @@
 package io.infranexum.server.itam;
 
+import io.infranexum.server.http.AuthenticatedActorContext;
 import static io.infranexum.server.itam.ItamPartnerApiModels.*;
 
 import io.infranexum.core.contracts.DomainIdentifier;
@@ -13,7 +14,6 @@ import io.infranexum.itam.partner.application.PartnerSearchCriteria;
 import io.infranexum.itam.partner.domain.Partner;
 import io.infranexum.itam.partner.domain.PartnerAuthorizationStatus;
 import io.infranexum.itam.partner.domain.PartnerRole;
-import io.infranexum.server.identity.LocalAuthenticationFilter;
 import io.infranexum.server.identityaccess.ScopedAuthorizationGuard;
 import io.infranexum.server.observability.CorrelationContext;
 import jakarta.servlet.http.HttpServletRequest;
@@ -144,7 +144,7 @@ public final class ItamPartnerController {
     }
 
     private PartnerCommandContext context(HttpServletRequest request, String idempotencyKey, String reason) {
-        Object actor = request.getAttribute(LocalAuthenticationFilter.ACCOUNT_ATTRIBUTE);
+        Object actor = request.getAttribute(AuthenticatedActorContext.ACCOUNT_ATTRIBUTE);
         if (!(actor instanceof DomainIdentifier actorId)) {
             throw new IllegalStateException("authenticated actor missing after RBAC boundary");
         }

@@ -6,6 +6,7 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 SERVER = ROOT / "src/applications/server/main/io/infranexum/server"
 OBSERVABILITY = SERVER / "observability"
+HTTP = SERVER / "http"
 APPLICATION = ROOT / "src/applications/server/resources/application.yaml"
 COMPOSE = ROOT / "docker/compose.yaml"
 
@@ -14,7 +15,7 @@ class ObservabilityArchitectureTest(unittest.TestCase):
     """Keep the first PGM-12-E01 HTTP observability contract deterministic and secret-safe."""
 
     def test_every_http_request_has_canonical_uuidv7_correlation_context(self) -> None:
-        filter_source = (OBSERVABILITY / "CorrelationIdFilter.java").read_text(encoding="utf-8")
+        filter_source = (HTTP / "CorrelationIdFilter.java").read_text(encoding="utf-8")
         context = (OBSERVABILITY / "CorrelationContext.java").read_text(encoding="utf-8")
         self.assertIn('HEADER_NAME = "X-Correlation-ID"', context)
         self.assertIn('MDC_KEY = "correlation_id"', context)
@@ -25,7 +26,7 @@ class ObservabilityArchitectureTest(unittest.TestCase):
         self.assertIn("MDC.remove(CorrelationContext.MDC_KEY)", filter_source)
 
     def test_invalid_correlation_is_fail_closed_and_never_reflected(self) -> None:
-        filter_source = (OBSERVABILITY / "CorrelationIdFilter.java").read_text(encoding="utf-8")
+        filter_source = (HTTP / "CorrelationIdFilter.java").read_text(encoding="utf-8")
         self.assertIn("HttpStatus.BAD_REQUEST", filter_source)
         self.assertIn("INFRANEXUM_INVALID_CORRELATION_ID", filter_source)
         self.assertIn("problems.write(response, problem)", filter_source)

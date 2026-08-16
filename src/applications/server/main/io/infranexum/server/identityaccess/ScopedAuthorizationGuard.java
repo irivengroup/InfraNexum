@@ -1,5 +1,6 @@
 package io.infranexum.server.identityaccess;
 
+import io.infranexum.server.http.AuthenticatedActorContext;
 import io.infranexum.core.contracts.DomainIdentifier;
 import io.infranexum.identity.access.application.AuthorizationDecision;
 import io.infranexum.identity.access.application.PolicyDecisionService;
@@ -9,7 +10,6 @@ import io.infranexum.identity.access.domain.IdentityAccessException;
 import io.infranexum.identity.access.domain.PolicyEvaluationRequest;
 import io.infranexum.identity.access.domain.PolicyObligation;
 import io.infranexum.identity.access.ports.IdentityAccessFeaturePolicy;
-import io.infranexum.server.identity.LocalAuthenticationFilter;
 import io.infranexum.server.observability.CorrelationContext;
 import io.infranexum.server.platform.PlatformCapabilityService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -78,7 +78,7 @@ public final class ScopedAuthorizationGuard {
     }
 
     private static DomainIdentifier actor(HttpServletRequest request) {
-        Object value = request.getAttribute(LocalAuthenticationFilter.ACCOUNT_ATTRIBUTE);
+        Object value = request.getAttribute(AuthenticatedActorContext.ACCOUNT_ATTRIBUTE);
         if (!(value instanceof DomainIdentifier actor)) {
             throw new IllegalStateException("authenticated actor missing after RBAC boundary");
         }

@@ -229,6 +229,19 @@ class RsotFoundationTest {
     }
 
     @Test
+    void authorityPatternAndOpenEndedActivityBranchesAreExplicit() {
+        AttributeAuthorityPolicy exact = policy(90, "rsot.asset", "location.site", AuthorityContext.DCIM, NOW, null);
+        assertTrue(exact.matches("RSOT.ASSET", "LOCATION.SITE"));
+        assertFalse(exact.matches("rsot.router", "location.site"));
+        assertTrue(exact.activeAt(NOW.plusSeconds(3600)));
+        assertFalse(exact.activeAt(NOW.minusNanos(1)));
+
+        AttributeAuthorityPolicy wildcard = policy(91, "rsot.*", "network.*", AuthorityContext.DDI, NOW, null);
+        assertTrue(wildcard.matches("rsot.router", "network.address"));
+        assertFalse(wildcard.matches("rsot.router", "identity.user"));
+    }
+
+    @Test
     void governanceValueObjectsAndRsotExceptionValidateTheirPublicContracts() {
         assertThrows(IllegalArgumentException.class,
                 () -> new AuthorityMatrixEntry(0, "info", "authority", "contribution", "strategy", "v1"));

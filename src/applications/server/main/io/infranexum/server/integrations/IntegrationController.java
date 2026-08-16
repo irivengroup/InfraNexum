@@ -1,12 +1,12 @@
 package io.infranexum.server.integrations;
 
+import io.infranexum.server.http.AuthenticatedActorContext;
 import static io.infranexum.server.integrations.IntegrationApiModels.*;
 
 import io.infranexum.core.contracts.DomainIdentifier;
 import io.infranexum.integrations.ConnectorKey;
 import io.infranexum.integrations.ConnectorWebhookService;
 import io.infranexum.server.http.ApiPagination;
-import io.infranexum.server.identity.LocalAuthenticationFilter;
 import io.infranexum.server.observability.CorrelationContext;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Clock;
@@ -138,7 +138,7 @@ public final class IntegrationController {
     }
 
     private static DomainIdentifier actor(HttpServletRequest request) {
-        Object value = request.getAttribute(LocalAuthenticationFilter.ACCOUNT_ATTRIBUTE);
+        Object value = request.getAttribute(AuthenticatedActorContext.ACCOUNT_ATTRIBUTE);
         if (value instanceof DomainIdentifier id) {
             return id;
         }

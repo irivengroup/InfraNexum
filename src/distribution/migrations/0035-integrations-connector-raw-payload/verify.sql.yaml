@@ -1,0 +1,8 @@
+schema: infranexum.verify/v1
+checks:
+- id: connector-raw-payload-column
+  postgresql: "SELECT COUNT(*)=1 FROM information_schema.columns WHERE table_schema='infranexum_integrations' AND table_name='connector_inbox' AND column_name='payload_raw' AND is_nullable='NO'"
+  oracle: "SELECT COUNT(*)=1 FROM user_tab_columns WHERE table_name='INFRANEXUM_INTEGRATION_INBOX' AND column_name='PAYLOAD_RAW' AND nullable='N'"
+- id: connector-raw-payload-backfill
+  postgresql: "SELECT COUNT(*)=0 FROM infranexum_integrations.connector_inbox WHERE payload_raw IS NULL"
+  oracle: "SELECT COUNT(*)=0 FROM INFRANEXUM_INTEGRATION_INBOX WHERE PAYLOAD_RAW IS NULL"

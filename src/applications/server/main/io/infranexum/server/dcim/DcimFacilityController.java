@@ -1,5 +1,6 @@
 package io.infranexum.server.dcim;
 
+import io.infranexum.server.http.AuthenticatedActorContext;
 import static io.infranexum.server.dcim.DcimFacilityApiModels.*;
 
 import io.infranexum.core.contracts.DomainIdentifier;
@@ -14,7 +15,6 @@ import io.infranexum.dcim.facility.domain.FacilityNode;
 import io.infranexum.dcim.facility.domain.FacilityStatus;
 import io.infranexum.identity.access.domain.AuthorizationScope;
 import io.infranexum.identity.access.domain.PermissionCodes;
-import io.infranexum.server.identity.LocalAuthenticationFilter;
 import io.infranexum.server.identityaccess.ScopedAuthorizationGuard;
 import io.infranexum.server.observability.CorrelationContext;
 import jakarta.servlet.http.HttpServletRequest;
@@ -156,7 +156,7 @@ public final class DcimFacilityController {
     }
 
     private FacilityCommandContext context(HttpServletRequest request, String idempotencyKey, String reason) {
-        Object actor = request.getAttribute(LocalAuthenticationFilter.ACCOUNT_ATTRIBUTE);
+        Object actor = request.getAttribute(AuthenticatedActorContext.ACCOUNT_ATTRIBUTE);
         if (!(actor instanceof DomainIdentifier actorId)) {
             throw new IllegalStateException("authenticated actor missing after RBAC boundary");
         }

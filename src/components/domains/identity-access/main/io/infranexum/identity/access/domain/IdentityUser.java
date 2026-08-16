@@ -45,6 +45,7 @@ public record IdentityUser(
 
     public static String canonicalLogin(String value) {
         Objects.requireNonNull(value, "login");
+        rejectIsoControls(value, "login");
         String normalized = value.strip().toLowerCase(Locale.ROOT);
         if (!LOGIN.matcher(normalized).matches()) throw new IllegalArgumentException("invalid login");
         return normalized;
@@ -52,6 +53,7 @@ public record IdentityUser(
 
     private static String optionalEmail(String value) {
         if (value == null || value.isBlank()) return null;
+        rejectIsoControls(value, "email");
         String normalized = value.strip().toLowerCase(Locale.ROOT);
         if (normalized.length() > 320 || !normalized.contains("@") || normalized.chars().anyMatch(Character::isISOControl)) {
             throw new IllegalArgumentException("invalid email");
@@ -61,10 +63,17 @@ public record IdentityUser(
 
     static String text(String value, String field, int max) {
         Objects.requireNonNull(value, field);
+        rejectIsoControls(value, field);
         String normalized = value.strip();
         if (normalized.isEmpty() || normalized.length() > max || normalized.chars().anyMatch(Character::isISOControl)) {
             throw new IllegalArgumentException("invalid " + field);
         }
         return normalized;
+    }
+
+    static void rejectIsoControls(String value, String field) {
+        if (value.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException("invalid " + field);
+        }
     }
 }

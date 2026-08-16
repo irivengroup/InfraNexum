@@ -1,5 +1,6 @@
 package io.infranexum.server.itam;
 
+import io.infranexum.server.http.AuthenticatedActorContext;
 import static io.infranexum.server.itam.ItamAssetApiModels.*;
 
 import io.infranexum.core.contracts.DomainIdentifier;
@@ -15,7 +16,6 @@ import io.infranexum.itam.asset.domain.AssetCustodian;
 import io.infranexum.itam.asset.domain.AssetCustodianKind;
 import io.infranexum.itam.asset.domain.AssetLifecycleStatus;
 import io.infranexum.itam.asset.domain.AssetType;
-import io.infranexum.server.identity.LocalAuthenticationFilter;
 import io.infranexum.server.identityaccess.ScopedAuthorizationGuard;
 import io.infranexum.server.observability.CorrelationContext;
 import jakarta.servlet.http.HttpServletRequest;
@@ -216,7 +216,7 @@ public final class ItamAssetController {
 
     private AssetCommandContext context(
             HttpServletRequest request, String idempotencyKey, String reason, String evidenceReference) {
-        Object actor = request.getAttribute(LocalAuthenticationFilter.ACCOUNT_ATTRIBUTE);
+        Object actor = request.getAttribute(AuthenticatedActorContext.ACCOUNT_ATTRIBUTE);
         if (!(actor instanceof DomainIdentifier actorId)) {
             throw new IllegalStateException("authenticated actor missing after RBAC boundary");
         }

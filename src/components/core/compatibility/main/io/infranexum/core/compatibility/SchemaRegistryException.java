@@ -22,8 +22,11 @@ public final class SchemaRegistryException extends RuntimeException {
 
     private static String requireMessage(String value) {
         Objects.requireNonNull(value, "message");
+        if (value.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException("invalid message");
+        }
         String normalized = value.strip();
-        if (normalized.isEmpty() || normalized.length() > 1024 || normalized.chars().anyMatch(Character::isISOControl)) {
+        if (normalized.isEmpty() || normalized.length() > 1024) {
             throw new IllegalArgumentException("invalid message");
         }
         return normalized;

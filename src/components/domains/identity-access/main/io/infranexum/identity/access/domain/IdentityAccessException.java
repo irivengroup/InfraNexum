@@ -16,6 +16,7 @@ public final class IdentityAccessException extends RuntimeException {
 
     private static String token(String value) {
         Objects.requireNonNull(value, "code");
+        IdentityUser.rejectIsoControls(value, "code");
         String normalized = value.strip();
         if (!normalized.matches("[A-Z][A-Z0-9_]{2,63}")) throw new IllegalArgumentException("invalid IAM error code");
         return normalized;

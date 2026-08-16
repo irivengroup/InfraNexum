@@ -90,7 +90,9 @@ Migration `0033-integrations-connector-inbox` adds the inbox and connector runti
 
 Migration `0034-identity-access-integrations-permissions` adds the four operator permissions and grants them to the platform-administrator role according to the existing IAM migration model.
 
-Both migrations provide PostgreSQL/Oracle `up`, `down`, verification metadata and canonical migration hashes.
+Migration `0035-integrations-connector-raw-payload` separates durable authenticated-body authority from the structured JSON representation. New rows persist the exact accepted payload in `payload_raw` (`TEXT` on PostgreSQL, `CLOB` on Oracle) while `payload_json` remains queryable structured JSON. Historical rows are backfilled from the database JSON representation because their original lexical whitespace was not recoverable before this migration.
+
+All three migrations provide PostgreSQL/Oracle forward/rollback/verification metadata and canonical migration hashes.
 
 ## 9. Observability
 

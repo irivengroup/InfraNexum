@@ -26,7 +26,7 @@ class PlatformCapabilityHttpTest {
                 .andExpect(header().string("Cache-Control", "no-store"))
                 .andExpect(jsonPath("$.catalogVersion").value("2.0.0-draft.21"))
                 .andExpect(jsonPath("$.profileVersion").value(1))
-                .andExpect(jsonPath("$.capabilities.length()").value(21));
+                .andExpect(jsonPath("$.capabilities.length()").value(32));
         mockMvc.perform(get("/api/v1/platform/capabilities/iam.local-auth"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.available").value(true))

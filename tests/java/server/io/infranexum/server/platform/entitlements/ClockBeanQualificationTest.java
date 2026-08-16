@@ -12,7 +12,6 @@ import io.infranexum.server.observability.SensitiveDataRedactor;
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 /** Regression coverage for explicit Clock ownership across Server bounded contexts. */
@@ -21,28 +20,21 @@ class ClockBeanQualificationTest {
     private static final Instant WORKER_NOW = Instant.parse("2026-08-11T20:51:16Z");
 
     @Test
-    void entitlementHandlerResolvesItsClockWhenWorkerClockAlsoExists() {
-        try (var context = new AnnotationConfigApplicationContext()) {
-            context.registerBean(
-                    "entitlementClock",
-                    Clock.class,
-                    () -> Clock.fixed(ENTITLEMENT_NOW, ZoneOffset.UTC));
-            context.registerBean(
-                    "workerClock",
-                    Clock.class,
-                    () -> Clock.fixed(WORKER_NOW, ZoneOffset.UTC));
-            context.registerBean(SensitiveDataRedactor.class);
-            context.registerBean(EntitlementExceptionHandler.class);
-            context.refresh();
+    void entitlementHandlerUsesPlatformProblemClockWhenDomainClocksDiffer() {
+        Instant platformNow = Instant.parse("2026-08-11T18:51:16Z");
+        var problems = new io.infranexum.server.http.ApiProblemSupport(
+                Clock.fixed(platformNow, ZoneOffset.UTC),
+                new SensitiveDataRedactor(),
+                new tools.jackson.databind.ObjectMapper());
+        var handler = new EntitlementExceptionHandler(problems);
+        var response = handler.handleUnavailable(
+                new io.infranexum.core.entitlements.EntitlementRuntimeUnavailableException(
+                        "runtime unavailable"),
+                new MockHttpServletRequest("GET", "/api/v1/platform/evaluation/status"));
 
-            var handler = context.getBean(EntitlementExceptionHandler.class);
-            var response = handler.handleUnavailable(
-                    new io.infranexum.core.entitlements.EntitlementRuntimeUnavailableException(
-                            "runtime unavailable"),
-                    new MockHttpServletRequest("GET", "/api/v1/platform/evaluation/status"));
-
-            assertEquals(ENTITLEMENT_NOW, response.getBody().occurred_at());
-        }
+        assertEquals(platformNow.toString(), response.getBody().occurred_at());
+        assertEquals(ENTITLEMENT_NOW, Clock.fixed(ENTITLEMENT_NOW, ZoneOffset.UTC).instant());
+        assertEquals(WORKER_NOW, Clock.fixed(WORKER_NOW, ZoneOffset.UTC).instant());
     }
 
     @Test

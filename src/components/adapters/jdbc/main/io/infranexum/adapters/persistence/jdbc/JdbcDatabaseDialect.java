@@ -137,19 +137,24 @@ public enum JdbcDatabaseDialect {
         return this == POSTGRESQL ? "CAST(? AS JSONB)" : "?";
     }
 
+    /** Binds long text without allowing a database JSON type to rewrite its lexical representation. */
+    void bindText(PreparedStatement statement, int index, String text) throws SQLException {
+        Objects.requireNonNull(statement, "statement");
+        String value = Objects.requireNonNull(text, "text");
+        if (this == POSTGRESQL) {
+            statement.setString(index, value);
+        } else {
+            statement.setCharacterStream(index, new java.io.StringReader(value), value.length());
+        }
+    }
+
     /**
      * Binds JSON without relying on driver-specific implicit casts. PostgreSQL receives a text value
      * through an explicit JSONB cast in SQL; Oracle receives a character stream suitable for CLOB
      * JSON columns, avoiding VARCHAR size limits for larger manifests and event payloads.
      */
     void bindJson(PreparedStatement statement, int index, String json) throws SQLException {
-        Objects.requireNonNull(statement, "statement");
-        String value = Objects.requireNonNull(json, "json");
-        if (this == POSTGRESQL) {
-            statement.setString(index, value);
-        } else {
-            statement.setCharacterStream(index, new java.io.StringReader(value), value.length());
-        }
+        bindText(statement, index, Objects.requireNonNull(json, "json"));
     }
 
     String claimReturningSql() {

@@ -1,5 +1,8 @@
 package io.infranexum.server.identityaccess;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+
+import io.infranexum.server.http.AuthenticatedActorContext;
 import static io.infranexum.server.identityaccess.IdentityAccessApiModels.*;
 
 import io.infranexum.core.contracts.DomainIdentifier;
@@ -14,7 +17,6 @@ import io.infranexum.identity.access.domain.PermissionCodes;
 import io.infranexum.identity.access.domain.ScopeKind;
 import io.infranexum.server.configuration.ServerTemporalInputParser;
 import io.infranexum.server.http.ApiPagination;
-import io.infranexum.server.identity.LocalAuthenticationFilter;
 import io.infranexum.server.observability.CorrelationContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -29,6 +31,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /** HTTP adapter for users, groups, roles, permissions, memberships and temporal assignments. */
+@ConditionalOnProperty(name = "infranexum.identity.local.enabled", havingValue = "true")
 @RestController
 public final class IdentityAccessController {
     private final IdentityAccessAdminService service;
@@ -128,7 +131,7 @@ public final class IdentityAccessController {
     PermissionResponse deletePermission(@PathVariable String orgId,@PathVariable String permissionId,@RequestParam(required=false)String reason,HttpServletRequest request){permission(orgId,permissionId);return PermissionResponse.from(service.deletePermission(id(permissionId),context(request,reason)));}
 
     private void requirePermission(HttpServletRequest request,String permission,AuthorizationScope scope,String targetType,String targetId){DomainIdentifier actor=authenticatedActor(request);AuthorizationDecision decision=authorization.decide(actor,permission,scope,correlation(request),targetType,targetId,"HTTP");if(!decision.allowed())throw new io.infranexum.identity.access.domain.IdentityAccessException("IAM_AUTHORIZATION_DENIED",decision.explanation());}
-    private static DomainIdentifier authenticatedActor(HttpServletRequest request){Object actorValue=request.getAttribute(LocalAuthenticationFilter.ACCOUNT_ATTRIBUTE);if(!(actorValue instanceof DomainIdentifier actor))throw new IllegalStateException("authenticated actor missing after RBAC boundary");return actor;}
+    private static DomainIdentifier authenticatedActor(HttpServletRequest request){Object actorValue=request.getAttribute(AuthenticatedActorContext.ACCOUNT_ATTRIBUTE);if(!(actorValue instanceof DomainIdentifier actor))throw new IllegalStateException("authenticated actor missing after RBAC boundary");return actor;}
     private DomainIdentifier correlation(HttpServletRequest request){return CorrelationContext.identifier(request).orElseGet(ids::next);}
     private IdentityAccessCommandContext context(HttpServletRequest request,String reason){return new IdentityAccessCommandContext(authenticatedActor(request),correlation(request),reason==null||reason.isBlank()?"IAM administration":reason,"HTTP");}
     private java.time.Instant instant(String value,String field){return temporal.optionalInstant(value,field);}
