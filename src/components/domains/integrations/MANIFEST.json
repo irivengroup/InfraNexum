@@ -4,7 +4,17 @@
   "kind": "component",
   "owner": "team.automation-ecosystem",
   "lifecycle": "active",
-  "languages": ["java"],
-  "dependencies": ["components.core.contracts", "components.core.events"],
-  "source_baseline": ["PGM-10-E05", "PGM-02-E03", "PGM-05-E01"]
+  "languages": [
+    "java"
+  ],
+  "dependencies": [
+    "components.core.contracts",
+    "components.core.events"
+  ],
+  "source_baseline": [
+    "PGM-10-E06",
+    "PGM-10-E05",
+    "PGM-02-E03",
+    "PGM-05-E01"
+  ]
 }

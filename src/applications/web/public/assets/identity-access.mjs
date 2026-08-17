@@ -3,7 +3,7 @@ import { setIdentityAccessAvailability } from './admin-shell.mjs';
 import { localeFromDocument, setLocalizedElementText, translate } from './i18n.mjs';
 import { wireAsyncForm } from './form-controller.mjs';
 import { createIamEntityDirectory } from './entity-selects.mjs';
-import { initializeEnterpriseDataTables, openCrudEditor, wireCrudPanel } from './enterprise-crud.mjs';
+import { initializeEnterpriseDataTables, openCrudEditor, refreshEnterpriseDataTable, wireCrudPanel } from './enterprise-crud.mjs';
 
 const REQUEST_TIMEOUT_MS = 15_000;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -176,9 +176,18 @@ function bindForms(documentObject, organizationSelect, api, status, entityDirect
   bindForm(documentObject, 'iam-user-update-form', async (form) => {
     const values = new FormData(form);
     const userId = requiredUuid(field(values, 'userId'), 'userId');
+    const reason = optionalField(values, 'reason');
+    const requestedStatus = field(values, 'status').toLowerCase();
+    const originalStatus = String(form.getAttribute?.('data-inx-original-status') ?? '').toLowerCase();
+    if (!['pending', 'active', 'suspended'].includes(requestedStatus)) throw new Error('Unsupported managed user status');
     await api(`/v1/iam/users/${userId}`, { method: 'PATCH', body: {
-      email: field(values, 'email'), displayName: field(values, 'displayName'), reason: optionalField(values, 'reason'),
+      email: field(values, 'email'), displayName: field(values, 'displayName'), reason,
     }});
+    if (requestedStatus !== originalStatus) {
+      if (requestedStatus === 'active') await api(`/v1/iam/users/${userId}/activate`, { method: 'POST', body: { reason: reason || 'Web user status update' } });
+      else if (requestedStatus === 'suspended') await api(`/v1/iam/users/${userId}/suspend`, { method: 'POST', body: { reason: reason || 'Web user status update' } });
+      else throw new Error('Pending status cannot be restored from the Web editor');
+    }
   }, documentObject, organizationSelect, api, status, 'users', true, entityDirectory);
 
   bindForm(documentObject, 'iam-membership-form', async (form) => {
@@ -227,17 +236,7 @@ function bindForms(documentObject, organizationSelect, api, status, entityDirect
       memberType: field(values, 'memberType').toUpperCase(), memberId: requiredUuid(field(values, 'memberId'), 'memberId'),
       reason: optionalField(values, 'reason'),
     }});
-  }, documentObject, organizationSelect, api, status, 'groups', true, entityDirectory);
-
-  bindForm(documentObject, 'iam-group-member-remove-form', async (form) => {
-    if (typeof confirmFunction === 'function' && !confirmFunction(translate(localeFromDocument(documentObject), 'common.confirmDelete'))) return;
-    const org = requiredOrganization(organizationSelect);
-    const values = new FormData(form);
-    const groupId = requiredUuid(field(values, 'groupId'), 'groupId');
-    const memberId = requiredUuid(field(values, 'memberId'), 'memberId');
-    const memberType = field(values, 'memberType').toUpperCase();
-    const reason = optionalField(values, 'reason');
-    await api(`/v1/organizations/${org}/groups/${groupId}/members/${memberId}?memberType=${encodeURIComponent(memberType)}${reason ? `&reason=${encodeURIComponent(reason)}` : ''}`, { method: 'DELETE' });
+    await refreshDirectGroupMembers(documentObject, org, groupId, api, entityDirectory);
   }, documentObject, organizationSelect, api, status, 'groups', true, entityDirectory);
 
   bindForm(documentObject, 'iam-group-role-form', async (form) => {
@@ -350,22 +349,44 @@ function bindDelegatedActions(documentObject, organizationSelect, api, status, c
     if (!button) return;
     event.preventDefault();
     const action = button.getAttribute('data-iam-action');
-    const id = requiredUuid(button.getAttribute('data-iam-id'), 'action.id');
     if (action?.startsWith('select-')) {
-      populateSelection(documentObject, action, button.getAttribute('data-iam-record'), workflowNavigation, button.getAttribute('data-iam-workflow-target'));
+      const id = requiredUuid(button.getAttribute('data-iam-id'), 'action.id');
+      populateSelection(documentObject, action, button.getAttribute('data-iam-record'), workflowNavigation, button.getAttribute('data-iam-workflow-target'), button.getAttribute('data-iam-facet-group'));
       setStatus(documentObject, status, 'iam.selected', false);
       setFeedback(documentObject, 'iam.selected', false);
+      if (action === 'select-group' && button.getAttribute('data-iam-facet-group') === 'members') {
+        const org = requiredOrganization(organizationSelect);
+        void refreshDirectGroupMembers(documentObject, org, id, api, entityDirectory).catch((error) => setError(documentObject, status, error));
+      }
       return;
     }
     const org = requiredOrganization(organizationSelect);
+    if (action === 'refresh-group-members') {
+      const id = requiredUuid(button.getAttribute('data-iam-id'), 'groupMembers.groupId');
+      button.disabled = true;
+      void refreshDirectGroupMembers(documentObject, org, id, api, entityDirectory).catch((error) => setError(documentObject, status, error)).finally(() => { button.disabled = false; });
+      return;
+    }
+    if (action === 'remove-group-member') {
+      const id = requiredUuid(button.getAttribute('data-iam-id'), 'groupMember.memberId');
+      if (typeof confirmFunction === 'function' && !confirmFunction(translate(localeFromDocument(documentObject), 'common.confirmDelete'))) return;
+      const groupId = requiredUuid(button.getAttribute('data-iam-group-id'), 'groupMember.groupId');
+      const memberType = String(button.getAttribute('data-iam-member-type') ?? '').toUpperCase();
+      if (!['USER', 'GROUP'].includes(memberType)) throw new Error('Invalid IAM group member type');
+      button.disabled = true;
+      clearFeedback(documentObject); setStatus(documentObject, status, 'iam.working', false);
+      void api(`/v1/organizations/${org}/groups/${groupId}/members/${id}?memberType=${encodeURIComponent(memberType)}&reason=${encodeURIComponent('Web administration')}`, { method: 'DELETE' })
+        .then(async () => { await refreshDirectGroupMembers(documentObject, org, groupId, api, entityDirectory); await refreshIamSectionSafely(documentObject, org, api, 'groups', entityDirectory); setStatus(documentObject, status, 'iam.saved', false); })
+        .catch((error) => setError(documentObject, status, error)).finally(() => { button.disabled = false; });
+      return;
+    }
+    const id = requiredUuid(button.getAttribute('data-iam-id'), 'action.id');
     if (action?.startsWith('delete-') && typeof confirmFunction === 'function' && !confirmFunction(translate(localeFromDocument(documentObject), 'iam.confirmDelete'))) return;
     button.disabled = true;
     clearFeedback(documentObject);
     setStatus(documentObject, status, 'iam.working', false);
     void executeAction(action, id, org, api).then(async (result) => {
-      if (action === 'effective-group' && result) {
-        requiredElement(documentObject, 'iam-effective-group-members').textContent = requireArray(result.userIds).join('\n') || '—';
-      }
+      if (action === 'effective-group' && result) renderEffectiveGroupMembers(documentObject, requireArray(result.userIds), entityDirectory);
       setStatus(documentObject, status, 'iam.saved', false);
       await refreshWorkspace(documentObject, org, api, status, entityDirectory);
     }).catch((error) => setError(documentObject, status, error)).finally(() => { button.disabled = false; });
@@ -374,8 +395,6 @@ function bindDelegatedActions(documentObject, organizationSelect, api, status, c
 
 async function executeAction(action, id, org, api) {
   switch (action) {
-    case 'activate-user': await api(`/v1/iam/users/${id}/activate`, { method: 'POST', body: { reason: 'Web administration' } }); break;
-    case 'suspend-user': await api(`/v1/iam/users/${id}/suspend`, { method: 'POST', body: { reason: 'Web administration' } }); break;
     case 'delete-user': await api(`/v1/iam/users/${id}?reason=${encodeURIComponent('Web administration')}`, { method: 'DELETE' }); break;
     case 'delete-group': await api(`/v1/organizations/${org}/groups/${id}?reason=${encodeURIComponent('Web administration')}`, { method: 'DELETE' }); break;
     case 'delete-role': await api(`/v1/organizations/${org}/roles/${id}?reason=${encodeURIComponent('Web administration')}`, { method: 'DELETE' }); break;
@@ -510,6 +529,7 @@ function renderRows(documentObject, targetId, items, cells) {
     cell.textContent = translate(localeFromDocument(documentObject), 'iam.empty');
     row.appendChild(cell);
     target.replaceChildren(row);
+    refreshEnterpriseDataTable(target.closest?.('table'));
     return;
   }
   target.replaceChildren(...items.map((item) => {
@@ -527,6 +547,7 @@ function renderRows(documentObject, targetId, items, cells) {
           button.setAttribute('data-iam-id', requiredUuid(item.id, 'item.id'));
           if (action.record) button.setAttribute('data-iam-record', JSON.stringify(action.record));
           if (action.workflow) button.setAttribute('data-iam-workflow-target', action.workflow);
+          if (action.facetGroup) button.setAttribute('data-iam-facet-group', action.facetGroup);
           cell.appendChild(button);
         }
       } else if (value && typeof value === 'object' && 'text' in value) {
@@ -540,60 +561,46 @@ function renderRows(documentObject, targetId, items, cells) {
     }
     return row;
   }));
+  refreshEnterpriseDataTable(target.closest?.('table'));
 }
 
 function idCell(id) {
   const normalized = requiredUuid(id, 'item.id');
   return { text: `${normalized.slice(0, 8)}…${normalized.slice(-4)}`, title: normalized, className: 'font-monospace small' };
 }
-function selectAction(kind, item, workflow = null, labelKey = 'common.edit') {
-  return { action: `select-${kind}`, labelKey, primary: true, record: item, workflow };
+function selectAction(kind, item, workflow = null, labelKey = 'common.edit', facetGroup = 'edit') {
+  return { action: `select-${kind}`, labelKey, primary: true, record: item, workflow, facetGroup };
 }
 function userCells(item) {
   requiredUuid(item.id, 'user.id');
   const status = String(item.status ?? '').toLowerCase();
   const actions = [selectAction('user', item, 'users:settings')];
-  if (status !== 'deleted') {
-    actions.push(selectAction('user', item, 'users:memberships', 'iam.memberships'));
-    actions.push(selectAction('user', item, 'users:roles', 'iam.workflow.roleAssignments'));
-    actions.push({ action: status === 'active' ? 'suspend-user' : 'activate-user', labelKey: status === 'active' ? 'iam.suspend' : 'iam.activate' });
-    actions.push({ action: 'delete-user', labelKey: 'iam.delete', danger: true });
-  }
+  if (status !== 'deleted') actions.push({ action: 'delete-user', labelKey: 'iam.delete', danger: true });
   return [idCell(item.id), item.login, item.email, item.displayName, item.status, { actions }];
 }
 function groupCells(item) {
   requiredUuid(item.id, 'group.id');
   const actions = [
     selectAction('group', item, 'groups:settings'),
-    selectAction('group', item, 'groups:members', 'iam.groupMemberAdd'),
-    selectAction('group', item, 'groups:remove-member', 'iam.groupMemberRemove'),
-    selectAction('group', item, 'groups:roles', 'iam.workflow.roleAssignments'),
-    selectAction('group', item, 'groups:effective', 'iam.effectiveMembers'),
+    selectAction('group', item, 'groups:direct-members', 'iam.members', 'members'),
   ];
   if (!item.systemGroup) actions.push({ action: 'delete-group', labelKey: 'iam.delete', danger: true });
   return [idCell(item.id), item.code, item.displayName, { actions }];
 }
 function roleCells(item) {
   requiredUuid(item.id, 'role.id');
-  const actions = [
-    selectAction('role', item, 'roles:settings'),
-    selectAction('role', item, 'roles:assignments', 'iam.workflow.assignments'),
-    selectAction('role', item, 'roles:revoke', 'iam.revoke'),
-  ];
+  const actions = [selectAction('role', item, 'roles:settings')];
   if (!item.systemRole) actions.push({ action: 'delete-role', labelKey: 'iam.delete', danger: true });
   return [idCell(item.id), item.code, item.displayName, item.scopeKind, item.systemRole ? 'system' : 'custom', { actions }];
 }
 function permissionCells(item) {
   requiredUuid(item.id, 'permission.id');
-  const actions = [
-    selectAction('permission', item, 'permissions:settings'),
-    selectAction('permission', item, 'permissions:effective', 'iam.evaluate'),
-  ];
+  const actions = [selectAction('permission', item, 'permissions:settings')];
   if (!item.systemDefined) actions.push({ action: 'delete-permission', labelKey: 'iam.delete', danger: true });
   return [idCell(item.id), item.code, item.resourceType, item.action, item.sensitivity, item.scopeKind, item.systemDefined ? 'system' : 'custom', { actions }];
 }
 
-function populateSelection(documentObject, action, rawRecord, workflowNavigation, workflowTarget = null) {
+function populateSelection(documentObject, action, rawRecord, workflowNavigation, workflowTarget = null, facetGroup = null) {
   let item;
   try { item = JSON.parse(rawRecord || '{}'); } catch { throw new Error('Selected IAM record is invalid'); }
   const id = requiredUuid(item.id, 'selected.id');
@@ -609,34 +616,94 @@ function populateSelection(documentObject, action, rawRecord, workflowNavigation
     }
   };
   if (action === 'select-user') {
-    set('iam-user-update-form', 'userId', id); set('iam-user-update-form', 'email', item.email ?? ''); set('iam-user-update-form', 'displayName', item.displayName ?? '');
+    set('iam-user-update-form', 'userId', id); set('iam-user-update-form', 'email', item.email ?? ''); set('iam-user-update-form', 'displayName', item.displayName ?? ''); set('iam-user-update-form', 'status', String(item.status ?? 'pending').toLowerCase());
+    const userForm = documentObject.getElementById('iam-user-update-form'); userForm?.setAttribute?.('data-inx-original-status', String(item.status ?? 'pending').toLowerCase());
     set('iam-membership-form', 'userId', id); set('iam-user-role-form', 'userId', id); set('iam-permission-evaluate-form', 'actorId', id);
     const policySubject = documentObject.getElementById('iam-policy-subject'); if (policySubject) { policySubject.value = id; dispatchChange(documentObject, policySubject); }
-    workflowNavigation?.activate?.(workflowTarget ?? 'users:settings');
+    workflowNavigation?.activate?.(workflowTarget ?? 'users:settings', false, true, facetGroup ?? 'edit');
   } else if (action === 'select-group') {
-    for (const formId of ['iam-group-update-form', 'iam-group-member-form', 'iam-group-member-remove-form', 'iam-group-role-form']) set(formId, 'groupId', id);
+    for (const formId of ['iam-group-update-form', 'iam-group-member-form', 'iam-group-role-form']) set(formId, 'groupId', id);
+    const memberRefresh = documentObject.querySelector?.('[data-iam-action="refresh-group-members"]'); if (memberRefresh) memberRefresh.setAttribute?.('data-iam-id', id);
     set('iam-group-update-form', 'displayName', item.displayName ?? '');
     set('iam-role-assignment-form', 'actorId', id); set('iam-role-assignment-form', 'actorType', 'GROUP');
-    workflowNavigation?.activate?.(workflowTarget ?? 'groups:settings');
+    workflowNavigation?.activate?.(workflowTarget ?? 'groups:settings', false, true, facetGroup ?? 'edit');
   } else if (action === 'select-role') {
     for (const formId of ['iam-user-role-form', 'iam-group-role-form', 'iam-role-update-form', 'iam-role-assignment-form', 'iam-role-revoke-form']) set(formId, 'roleId', id);
     set('iam-role-update-form', 'code', item.code ?? ''); set('iam-role-update-form', 'displayName', item.displayName ?? '');
-    workflowNavigation?.activate?.(workflowTarget ?? 'roles:settings');
+    workflowNavigation?.activate?.(workflowTarget ?? 'roles:settings', false, true, facetGroup ?? 'edit');
   } else if (action === 'select-permission') {
     set('iam-permission-update-form', 'permissionId', id); set('iam-permission-update-form', 'resourceType', item.resourceType ?? '');
     set('iam-permission-update-form', 'action', item.action ?? ''); set('iam-permission-update-form', 'sensitivity', item.sensitivity ?? 'normal');
     set('iam-permission-update-form', 'scopeKind', item.scopeKind ?? 'ORGANIZATION');
     const active = documentObject.getElementById('iam-permission-active'); if (active) active.checked = item.active !== false;
-    workflowNavigation?.activate?.(workflowTarget ?? 'permissions:settings');
+    workflowNavigation?.activate?.(workflowTarget ?? 'permissions:settings', false, true, facetGroup ?? 'edit');
   } else throw new Error(`Unsupported IAM selection ${action}`);
 }
 
+
+const IAM_EDITOR_FACET_GROUP = Object.freeze({
+  'users:settings': 'edit', 'users:memberships': 'edit', 'users:roles': 'edit',
+  'groups:settings': 'edit', 'groups:roles': 'edit',
+  'groups:direct-members': 'members', 'groups:members': 'members', 'groups:effective': 'members',
+  'roles:settings': 'edit', 'roles:assignments': 'edit', 'roles:revoke': 'edit',
+  'permissions:settings': 'edit', 'permissions:effective': 'edit',
+});
 
 /**
  * Controls the FreeIPA-inspired object action facets. Exactly one operation pane
  * is visible for an IAM resource at a time, which keeps list/detail workflows
  * readable without changing any Server contract.
  */
+async function refreshDirectGroupMembers(documentObject, organizationId, groupId, api, entityDirectory) {
+  const org = requiredUuid(organizationId, 'groupMembers.organizationId');
+  const group = requiredUuid(groupId, 'groupMembers.groupId');
+  const members = requireArray(await api(`/v1/organizations/${org}/groups/${group}/members?offset=0&limit=200`));
+  renderDirectGroupMembers(documentObject, group, members, entityDirectory);
+}
+
+function renderDirectGroupMembers(documentObject, groupId, members, entityDirectory) {
+  const target = requiredElement(documentObject, 'iam-direct-group-members');
+  if (members.length === 0) {
+    const row = documentObject.createElement('tr'); const cell = documentObject.createElement('td');
+    cell.colSpan = 3; cell.className = 'text-body-secondary text-center py-3'; cell.textContent = translate(localeFromDocument(documentObject), 'iam.empty');
+    row.appendChild(cell); target.replaceChildren(row); return;
+  }
+  target.replaceChildren(...members.map((member) => {
+    const type = String(member?.memberType ?? '').toUpperCase();
+    if (!['USER', 'GROUP'].includes(type)) throw new Error('Invalid IAM group member projection');
+    const memberId = requiredUuid(member?.memberId, 'groupMember.memberId');
+    const row = documentObject.createElement('tr');
+    const typeCell = documentObject.createElement('td'); typeCell.textContent = type;
+    const memberCell = documentObject.createElement('td'); memberCell.textContent = entityDirectory?.labelFor?.(type.toLowerCase(), memberId) ?? translate(localeFromDocument(documentObject), 'iam.entity.unavailable');
+    const actionCell = documentObject.createElement('td'); actionCell.className = 'text-nowrap';
+    const remove = documentObject.createElement('button'); remove.type = 'button'; remove.className = 'btn btn-sm btn-outline-danger'; remove.textContent = translate(localeFromDocument(documentObject), 'iam.remove');
+    remove.setAttribute('data-iam-action', 'remove-group-member'); remove.setAttribute('data-iam-id', memberId); remove.setAttribute('data-iam-group-id', groupId); remove.setAttribute('data-iam-member-type', type);
+    actionCell.appendChild(remove); row.append(typeCell, memberCell, actionCell); return row;
+  }));
+  refreshEnterpriseDataTable(target.closest?.('table'));
+}
+
+function renderEffectiveGroupMembers(documentObject, userIds, entityDirectory) {
+  const target = requiredElement(documentObject, 'iam-effective-group-members');
+  const ids = userIds.map((value) => requiredUuid(value, 'effectiveMember.userId'));
+  if (String(target.tagName ?? '').toUpperCase() !== 'TBODY') {
+    target.textContent = ids.map((id) => entityDirectory?.labelFor?.('user', id) ?? id).join('\n') || '—';
+    return;
+  }
+  if (ids.length === 0) {
+    const row = documentObject.createElement('tr');
+    const cell = documentObject.createElement('td');
+    cell.colSpan = 1; cell.className = 'text-body-secondary text-center py-3'; cell.textContent = translate(localeFromDocument(documentObject), 'iam.empty');
+    row.appendChild(cell); target.replaceChildren(row); return;
+  }
+  target.replaceChildren(...ids.map((id) => {
+    const row = documentObject.createElement('tr');
+    const cell = documentObject.createElement('td');
+    cell.textContent = entityDirectory?.labelFor?.('user', id) ?? id;
+    row.appendChild(cell); return row;
+  }));
+}
+
 export function initializeIamWorkflowNavigation(documentObject) {
   const buttons = [...(documentObject?.querySelectorAll?.('[data-iam-workflow]') ?? [])];
   const panels = [...(documentObject?.querySelectorAll?.('[data-iam-workflow-panel]') ?? [])];
@@ -645,12 +712,18 @@ export function initializeIamWorkflowNavigation(documentObject) {
   const sections = [...new Set(panels.map((panel) => String(panel.getAttribute('data-iam-workflow-panel') ?? '').split(':', 1)[0]).filter(Boolean))];
   prepareIamCrudPanels(documentObject, sections, buttons, panels);
 
-  const activate = (name, focus = false, openEditor = true) => {
+  const activate = (name, focus = false, openEditor = true, requestedFacetGroup = null) => {
     const target = buttons.find((button) => button.getAttribute('data-iam-workflow') === name);
     if (!target) return false;
     const [section] = String(name).split(':', 1);
+    const facetGroup = requestedFacetGroup ?? IAM_EDITOR_FACET_GROUP[name] ?? 'edit';
     for (const button of buttons) {
-      if (!String(button.getAttribute('data-iam-workflow') ?? '').startsWith(`${section}:`)) continue;
+      const workflow = String(button.getAttribute('data-iam-workflow') ?? '');
+      if (!workflow.startsWith(`${section}:`)) continue;
+      const workflowGroup = IAM_EDITOR_FACET_GROUP[workflow];
+      const visibleFacet = workflow.endsWith(':create') ? false : workflowGroup === facetGroup;
+      button.hidden = !visibleFacet;
+      button.setAttribute?.('aria-hidden', visibleFacet ? 'false' : 'true');
       const active = button === target;
       button.classList?.toggle?.('active', active);
       button.setAttribute?.('aria-selected', active ? 'true' : 'false');
@@ -669,9 +742,32 @@ export function initializeIamWorkflowNavigation(documentObject) {
     return true;
   };
 
-  // Hidden workflow tab buttons remain as semantic metadata/backwards-compatible
-  // hooks, but are not a second navigation surface. Operations are opened from
-  // the DataTable Actions column or the + New button.
+  // Editor facet buttons are a secondary navigation surface inside a selected
+  // entity detail. Create remains list-driven via + New and never appears here.
+  for (const button of buttons) {
+    const name = String(button.getAttribute?.('data-iam-workflow') ?? '');
+    button.addEventListener?.('click', (event) => {
+      if (button.hidden || name.endsWith(':create')) return;
+      event?.preventDefault?.();
+      activate(name, false, true, IAM_EDITOR_FACET_GROUP[name] ?? 'edit');
+    });
+    button.addEventListener?.('keydown', (event) => {
+      if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return;
+      const [section] = name.split(':', 1);
+      const visible = buttons.filter((candidate) => !candidate.hidden && String(candidate.getAttribute?.('data-iam-workflow') ?? '').startsWith(`${section}:`));
+      if (visible.length < 2) return;
+      const index = visible.indexOf(button);
+      const next = event.key === 'Home' ? visible[0]
+        : event.key === 'End' ? visible[visible.length - 1]
+          : visible[(index + (event.key === 'ArrowRight' ? 1 : -1) + visible.length) % visible.length];
+      event.preventDefault?.();
+      activate(next.getAttribute('data-iam-workflow'), false, true, IAM_EDITOR_FACET_GROUP[name] ?? 'edit');
+      next.focus?.();
+    });
+  }
+
+  // Initialize each resource independently while keeping create workflows out of
+  // the detail-facet navigation.
   for (const section of sections) {
     const current = buttons.find((button) => String(button.getAttribute('data-iam-workflow') ?? '').startsWith(`${section}:`) && button.getAttribute('aria-selected') === 'true')
       ?? buttons.find((button) => String(button.getAttribute('data-iam-workflow') ?? '').startsWith(`${section}:`));
@@ -707,7 +803,11 @@ function prepareIamCrudPanels(documentObject, sections, buttons, workflowPanels)
     const legacyHeading = editor.querySelector?.('[data-i18n="iam.objectActions"]')?.parentElement;
     if (legacyHeading) legacyHeading.hidden = true;
     const workflowTabs = editor.querySelector?.('[data-i18n-aria-label="iam.workflowViews"]');
-    if (workflowTabs) { workflowTabs.hidden = true; workflowTabs.setAttribute?.('aria-hidden', 'true'); }
+    if (workflowTabs) {
+      workflowTabs.hidden = false;
+      workflowTabs.classList?.add?.('inx-crud-editor-facets');
+      workflowTabs.setAttribute?.('aria-hidden', 'false');
+    }
 
     const header = documentObject.createElement('div');
     header.className = 'inx-crud-editor-header';
@@ -749,7 +849,7 @@ function bindWorkspaceChrome(documentObject, organizationSelect, api, status, wo
   for (const button of documentObject?.querySelectorAll?.('[data-iam-open-workflow]') ?? []) {
     button.addEventListener?.('click', () => {
       const name = button.getAttribute('data-iam-open-workflow');
-      workflowNavigation?.activate?.(name, true);
+      workflowNavigation?.activate?.(name, true, true, IAM_EDITOR_FACET_GROUP[name] ?? 'edit');
       const panel = documentObject?.querySelector?.(`[data-iam-workflow-panel="${name}"]`);
       panel?.querySelector?.('input, select, textarea, button')?.focus?.();
     });

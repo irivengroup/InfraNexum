@@ -4,6 +4,7 @@ import io.infranexum.core.contracts.DomainIdentifier;
 import io.infranexum.identity.access.domain.AssignmentActorType;
 import io.infranexum.identity.access.domain.AuthorizationScope;
 import io.infranexum.identity.access.domain.IdentityGroup;
+import io.infranexum.identity.access.domain.GroupMember;
 import io.infranexum.identity.access.domain.IdentityUser;
 import io.infranexum.identity.access.domain.IdentityUserStatus;
 import io.infranexum.identity.access.domain.Permission;
@@ -134,6 +135,15 @@ final class IdentityAccessTestRepository implements IdentityAccessRepository {
     }
 
     @Override public long groupMemberCount(DomainIdentifier organizationId, DomainIdentifier groupId) { return groupUsers.getOrDefault(groupId, Set.of()).size() + groupChildren.getOrDefault(groupId, Set.of()).size(); }
+
+    @Override
+    public List<GroupMember> groupMembers(DomainIdentifier organizationId, DomainIdentifier groupId, int offset, int limit) {
+        ArrayList<GroupMember> members = new ArrayList<>();
+        groupUsers.getOrDefault(groupId, Set.of()).forEach(id -> members.add(new GroupMember(AssignmentActorType.USER, id)));
+        groupChildren.getOrDefault(groupId, Set.of()).forEach(id -> members.add(new GroupMember(AssignmentActorType.GROUP, id)));
+        return members.stream().sorted(Comparator.comparing((GroupMember member) -> member.memberType().name()).thenComparing(GroupMember::memberId))
+                .skip(offset).limit(limit).toList();
+    }
 
     @Override
     public Set<DomainIdentifier> effectiveGroupMembers(DomainIdentifier groupId) {

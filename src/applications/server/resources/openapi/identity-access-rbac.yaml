@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum Identity Access RBAC API
-  version: 2.0.0-alpha.0.112
+  version: 2.0.0-alpha.0.114
   description: PGM-03-E03 RBAC foundation for users, memberships, groups, roles, permissions, temporal scoped assignments and explainable
     permission evaluation. Local authentication establishes the actor; the Server RBAC PEP denies unregistered protected routes by default.
 tags:
@@ -711,6 +711,63 @@ paths:
     - *id001
     - *id006
     - *id007
+    get:
+      tags:
+      - IAM / Access / Groups
+      operationId: listIamGroupMembers
+      summary: List direct user and nested-group membership edges
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 1000000
+          default: 0
+      responses:
+        '200':
+          description: Direct membership edges only; nested effective users are exposed by the dedicated effective-members endpoint.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            X-Page-Limit:
+              description: Effective bounded page size.
+              schema:
+                type: integer
+                minimum: 1
+            X-Next-Offset:
+              description: Offset for the next page; absent when the current page is terminal.
+              schema:
+                type: integer
+                minimum: 0
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GroupMember'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      x-infranexum-pagination: offset
+      x-infranexum-capability: iam.access
+      x-infranexum-permission:
+        mode: permission
+        code: iam.group.read
     post:
       tags:
       - IAM / Access / Groups
@@ -1795,6 +1852,16 @@ components:
           minLength: 1
           maxLength: 200
         reason: *id010
+    GroupMember:
+      type: object
+      additionalProperties: false
+      required:
+      - memberType
+      - memberId
+      properties:
+        memberType:
+          $ref: '#/components/schemas/ActorType'
+        memberId: *id009
     GroupMemberRequest:
       type: object
       additionalProperties: false

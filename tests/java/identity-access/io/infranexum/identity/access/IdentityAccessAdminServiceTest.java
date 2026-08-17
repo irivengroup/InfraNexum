@@ -162,6 +162,13 @@ class IdentityAccessAdminServiceTest {
         service.addMembership(member.id(), ORG, null, NOW, null, context);
         service.addUserToGroup(ORG, child.id(), member.id(), context);
         service.addGroupToGroup(ORG, parent.id(), child.id(), context);
+        var parentMembers = service.groupMembers(ORG, parent.id(), 0, 50);
+        assertEquals(1, parentMembers.items().size());
+        assertEquals(AssignmentActorType.GROUP, parentMembers.items().getFirst().memberType());
+        assertEquals(child.id(), parentMembers.items().getFirst().memberId());
+        var childMembers = service.groupMembers(ORG, child.id(), 0, 50);
+        assertEquals(AssignmentActorType.USER, childMembers.items().getFirst().memberType());
+        assertEquals(member.id(), childMembers.items().getFirst().memberId());
         assertTrue(service.effectiveGroupMembers(parent.id()).contains(member.id()));
         assertCode("IAM_GROUP_CYCLE", () -> service.addGroupToGroup(ORG, child.id(), parent.id(), context));
         assertCode("IAM_GROUP_CYCLE", () -> service.addGroupToGroup(ORG, parent.id(), parent.id(), context));

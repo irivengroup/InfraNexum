@@ -1,3 +1,33 @@
+# InfraNexum 2.0.0-alpha.0.114 — PGM-10-E06 phase 4: Connector Governance
+
+**Statut : EN COURS / NON TERMINÉ. Nature : évolution fonctionnelle bornée.** Cette version préserve Jira Assets, ServiceNow, Notifications et la corrective Web/IAM `alpha.0.113`, puis rend exécutable la gouvernance commune des connecteurs exigée par la roadmap : autorité, direction de synchronisation, conflits, suppressions, autorité par champ et stratégie de rollback.
+
+**Politique runtime :** Jira Assets et ServiceNow restent `FEDERATED_READ / EXTERNAL / REJECT / IGNORE / NONE_REQUIRED`. Le nouveau planner dry-run est fail-closed : toute direction différente de celle configurée, mutation sans champs gouvernés, propagation de suppression avec politique `IGNORE`, champ non gouverné ou mutation sans rollback admissible est refusée. Aucun objet InfraNexum ou fournisseur n'est modifié par ce dry-run.
+
+**API/Web :** trois opérations sont ajoutées sous `/api/v1/integrations/governance` : catalogue paginé, détail et `sync-plan` dry-run. Elles utilisent `integrations.connectors` + `integrations.connector.read` au scope PLATFORM ; les verbes/chemins non enregistrés restent deny-by-default. Le workspace Integrations expose direction, autorité, conflits, suppression, rollback et dry-run dans DE/EN/ES/FR/IT sans bearer token, secret ou Authorization fournisseur dans le navigateur. Le contrat passe à **15 fragments / 195 opérations, dette 0/0/0/0**.
+
+**Frontière de livraison :** `ConnectorRollbackStrategy` est ici une déclaration de gouvernance et une condition d'admission, **pas encore un moteur de rollback exécutable**. Les synchronisations mutantes, checkpoints durables, compensation/rollback vérifié, propagation contrôlée des suppressions et mappings provider spécifiques restent à livrer. OpenService demeure non implémenté : `draft.21` le nomme mais ne fournit toujours pas de contrat produit/API/authentification/schéma métier faisant autorité. PGM-10-E06 reste donc **EN COURS**. PGM-10-E05 reste formellement **NON TERMINÉ** jusqu'aux preuves exactes Temurin 25/JaCoCo/PostgreSQL 17/18.
+
+**Qualification de développement avant gel :** invariants Connector Governance **6/6** ; API Contracts **48/48**, couverture **98 %**, **15 fragments / 195 opérations**, dette **0/0/0/0** ; Architecture fonctionnelle **197/197**, méta-checker **29/29**, Architecture-as-Code `PASS` ; Web **217/217**, couverture **99,73 % lignes / 98,54 % branches / 100 % fonctions** ; Migrations **117/117**, Eventing **10/10**, Persistence **12/12**, Capabilities **10/10**, Entitlements **10/10**, Audit **8/8**, Toolchains **25/25**, SDK **19/19**, Compose **69/69** ; smokes Java dependency-free Integrations/Governance/Notifications, Policy, JDBC/JDBC-audit et API Capability **195 opérations** passent sous Java 21. Les preuves exactes Maven/JUnit/JaCoCo sous JDK25, PostgreSQL 17/18 live, Docker PRO, PowerShell 7 et navigateur réel restent des gates externes/non exécutés dans ce runner.
+
+Voir `docs/integrations-connector-governance.md`.
+
+---
+
+# InfraNexum 2.0.0-alpha.0.113 — corrective Web/UX transverse
+
+**Nature : corrective Web/UX, aucune avancée de roadmap.** La passe traite le comportement commun plutôt que des écrans isolés : géométrie DataTable bornée, colonnes dimensionnées selon leur contenu, suppression des identifiants techniques dans les listes, fiche détaillée avec identifiant read-only, délégation des actions `+ New`, consolidation des actions IAM et intégration visuelle du menu avatar.
+
+**IAM :** `Utilisateur → Modifier` regroupe Paramètres, Appartenances, Rôles et statut `ACTIVE/SUSPENDED`. `Groupe → Modifier` regroupe Paramètres et Rôles ; l'action distincte `Membres` regroupe la liste paginée des appartenances directes, l'ajout, le retrait ligne par ligne et une vue séparée des membres effectifs issus des groupes imbriqués. `Rôle → Modifier` regroupe Paramètres, Affectations et Révocation. Les actions secondaires ne polluent plus la DataTable. Les facettes de fiche sont navigables au clavier (`←/→/Home/End`) avec déplacement effectif du focus.
+
+**DataTables/CRUD :** les wrappers sont limités à 100 % du workspace, `table-layout:auto` remplace l'ancien layout fixe, les colonnes compactes restent au contenu, les colonnes longues absorbent l'espace disponible avec bornes de lisibilité, et le scroll horizontal reste interne au wrapper uniquement lorsque nécessaire. Les boutons CRUD injectés après le premier rendu sont capturés par délégation d'événements. Les colonnes primaires `ID/UUID` sont masquées dans les listes et l'identifiant sélectionné est réinjecté en lecture seule dans la fiche.
+
+**État roadmap :** PGM-10-E05 reste formellement **NON TERMINÉ** tant que ses gates JDK25/JaCoCo/PostgreSQL 17/18 ne sont pas closes. PGM-10-E06 reste **EN COURS**. `alpha.0.113` ajoute uniquement `GET /api/v1/organizations/{orgId}/groups/{groupId}/members` pour distinguer les liens d'appartenance directs des membres effectifs ; l'opération réutilise `iam.group.read` et `iam.access`. Aucune migration, nouvelle permission ou nouvelle capability n'est ajoutée.
+
+**Validation de développement :** suite Web complète **214/214**, couverture **99,73 % lignes / 98,54 % branches / 100 % fonctions**, smoke process `passed` ; API Contracts **48/48**, **15 fragments / 192 opérations**, dette **0/0/0/0** ; Architecture fonctionnelle **191/191**, méta-checker **29/29**, Architecture-as-Code `PASS`. Les validateurs transverses et les preuves de packaging finales sont consignés dans le manifeste de livraison.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.112 — explicit Spring constructor binding corrective
 
 **Nature : corrective de démarrage Server, aucune avancée de roadmap.** Les logs Docker PRO de `alpha.0.111` montrent que la suppression des maps YAML vides a fermé le premier défaut de conversion, mais a révélé un second défaut : Spring Boot 4.1 tente d'instancier `IntegrationRuntimeProperties` comme JavaBean et échoue avec `No default constructor found` sur les quatre nœuds Server. Le record possède en effet son constructeur canonique et un constructeur de compatibilité, ce qui rend le choix du constructeur de binding ambigu sans qualification explicite.

@@ -136,6 +136,25 @@ public class IntegrationRuntimeConfiguration {
     }
 
     @Bean
+    ConnectorGovernanceRegistry connectorGovernanceRegistry(IntegrationRuntimeProperties properties) {
+        return new ConfiguredConnectorGovernanceRegistry(
+                properties.jiraAssetsDefinitions(), properties.serviceNowDefinitions());
+    }
+
+    @Bean
+    ConnectorGovernancePlanner connectorGovernancePlanner() { return new ConnectorGovernancePlanner(); }
+
+    @Bean
+    ConnectorGovernanceOperationsService connectorGovernanceOperationsService(
+            ConnectorGovernanceRegistry registry,
+            ConnectorGovernancePlanner planner,
+            AuditJournal audit,
+            @Qualifier("integrationIdentifiers") UuidV7Generator ids,
+            @Qualifier("platformClock") Clock clock) {
+        return new ConnectorGovernanceOperationsService(registry, planner, audit, ids, clock);
+    }
+
+    @Bean
     ImmutableConnectorHandlerRegistry connectorHandlerRegistry(ObjectProvider<ConnectorDeliveryHandler> handlers) {
         return new ImmutableConnectorHandlerRegistry(handlers.orderedStream().toList());
     }

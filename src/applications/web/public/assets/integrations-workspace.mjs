@@ -2,6 +2,7 @@ import { applyTranslations, localeFromDocument, translate } from './i18n.mjs';
 import { initializeEnterpriseDataTables, refreshEnterpriseDataTable } from './enterprise-crud.mjs';
 import { JiraAssetsClient } from './jira-assets.mjs';
 import { NotificationClient } from './integration-notifications.mjs';
+import { ConnectorGovernanceClient } from './connector-governance.mjs';
 import { ServiceNowClient } from './service-now.mjs';
 
 /** PGM-10-E06 UI for governed providers, federated reads and durable outbound notifications. */
@@ -17,12 +18,14 @@ export async function initializeIntegrationsWorkspace(documentObject = document,
   const jira = new JiraAssetsClient(configuration, { fetchFunction });
   const serviceNow = new ServiceNowClient(configuration, { fetchFunction });
   const notifications = new NotificationClient(configuration, { fetchFunction });
-  wire(documentObject, jira, serviceNow, notifications);
+  const governance = new ConnectorGovernanceClient(configuration, { fetchFunction });
+  wire(documentObject, jira, serviceNow, notifications, governance);
   initializeEnterpriseDataTables(root);
 
   const refresh = () => Promise.all([
     refreshProvider(documentObject, jira, 'jira-assets'),
     refreshProvider(documentObject, serviceNow, 'service-now'),
+    refreshGovernance(documentObject, governance),
     refreshNotifications(documentObject, notifications),
   ]);
   try { await refresh(); setStatus(documentObject, 'integrations.status.ready', 'success'); }
@@ -35,11 +38,16 @@ export function integrationsWorkspaceTemplate() { return template(); }
 function template() {
   return `<header class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4"><div><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="integrations.eyebrow">Integrations</p><h2 id="integrations-workspace-title" data-i18n="integrations.title">Connector providers</h2><p data-i18n="integrations.description">Governed external providers with explicit authority and sync direction.</p></div><button id="integrations-refresh" class="btn btn-outline-primary" type="button" data-i18n="common.refresh">Refresh</button></header>
 <p id="integrations-status" class="alert alert-info py-2" role="status" aria-live="polite" data-state="info" data-i18n="integrations.status.loading">Loading connectors…</p>
+${governanceSection()}
 ${providerSection('jira-assets','integrations.jira.title','integrations.jira.federated')}
 <section class="border rounded p-3 bg-body-tertiary mb-4"><h3 class="h5" data-i18n="integrations.search.title">Federated AQL read</h3><p class="small text-body-secondary" data-i18n="integrations.search.description">Query Jira Assets without copying provider attributes.</p><form id="jira-assets-search" class="row g-3"><div class="col-md-4"><label class="form-label" for="jira-assets-connector" data-i18n="integrations.connector">Connector</label><select id="jira-assets-connector" class="form-select" required></select></div><div class="col-md-6"><label class="form-label" for="jira-assets-aql" data-i18n="integrations.aql">AQL</label><input id="jira-assets-aql" class="form-control" maxlength="4096" required autocomplete="off" placeholder="objectType = Server"></div><div class="col-md-2 d-flex align-items-end"><button class="btn btn-primary w-100" type="submit" data-i18n="integrations.search">Search</button></div></form><div class="table-responsive mt-3"><table class="table table-hover align-middle"><thead><tr><th data-i18n="integrations.objectKey">Object key</th><th data-i18n="integrations.label">Label</th><th data-i18n="integrations.objectType">Object type</th><th data-i18n="integrations.remoteId">Remote ID</th></tr></thead><tbody id="jira-assets-results"></tbody></table></div><p id="jira-assets-page" class="small text-body-secondary mb-0" aria-live="polite"></p></section>
 ${providerSection('service-now','integrations.servicenow.title','integrations.servicenow.federated')}
 <section class="border rounded p-3 bg-body-tertiary mb-4"><h3 class="h5" data-i18n="integrations.servicenow.searchTitle">Federated CMDB read</h3><p class="small text-body-secondary" data-i18n="integrations.servicenow.searchDescription">Search the selected ServiceNow CMDB without copying provider attributes.</p><form id="service-now-search" class="row g-3"><div class="col-md-4"><label class="form-label" for="service-now-connector" data-i18n="integrations.connector">Connector</label><select id="service-now-connector" class="form-select" required></select></div><div class="col-md-6"><label class="form-label" for="service-now-query" data-i18n="integrations.servicenow.query">CI name</label><input id="service-now-query" class="form-control" maxlength="256" required autocomplete="off" placeholder="server"></div><div class="col-md-2 d-flex align-items-end"><button class="btn btn-primary w-100" type="submit" data-i18n="integrations.search">Search</button></div></form><div class="table-responsive mt-3"><table class="table table-hover align-middle"><thead><tr><th data-i18n="integrations.servicenow.name">Name</th><th data-i18n="integrations.servicenow.class">Class</th><th data-i18n="integrations.remoteId">Remote ID</th><th data-i18n="integrations.servicenow.updated">Updated</th></tr></thead><tbody id="service-now-results"></tbody></table></div><p id="service-now-page" class="small text-body-secondary mb-0" aria-live="polite"></p></section>
 ${notificationSection()}`;
+}
+
+function governanceSection() {
+  return `<section class="mb-4" aria-labelledby="connector-governance-title"><div class="mb-2"><h3 id="connector-governance-title" class="h5 mb-1" data-i18n="integrations.governance.title">Connector governance</h3><p class="small text-body-secondary mb-0" data-i18n="integrations.governance.description">Authority · synchronization direction · conflicts · deletion policy · rollback contract</p></div><div class="table-responsive"><table class="table table-hover align-middle"><thead><tr><th data-i18n="integrations.connector">Connector</th><th data-i18n="integrations.provider">Provider</th><th data-i18n="integrations.direction">Direction</th><th data-i18n="integrations.authority">Authority</th><th data-i18n="integrations.governance.conflicts">Conflicts</th><th data-i18n="integrations.governance.deletions">Deletions</th><th data-i18n="integrations.governance.rollback">Rollback</th><th data-inx-action-column data-i18n="common.actions">Actions</th></tr></thead><tbody id="connector-governance-policies"></tbody></table></div><p id="connector-governance-page" class="small text-body-secondary mb-0" aria-live="polite"></p></section>`;
 }
 
 function notificationSection() {
@@ -50,8 +58,8 @@ function notificationSection() {
 
 function providerSection(id,titleKey,federatedKey){return `<section class="mb-4"><div class="mb-2"><h3 class="h5 mb-1" data-i18n="${titleKey}">${id}</h3><p class="small text-body-secondary mb-0" data-i18n="${federatedKey}">Federated read · external authority · no implicit import</p></div><div class="table-responsive"><table class="table table-hover align-middle"><thead><tr><th data-i18n="integrations.connector">Connector</th><th data-i18n="integrations.provider">Provider</th><th data-i18n="integrations.direction">Direction</th><th data-i18n="integrations.authority">Authority</th><th data-i18n="common.status">Status</th><th data-inx-action-column data-i18n="common.actions">Actions</th></tr></thead><tbody id="${id}-connectors"></tbody></table></div></section>`;}
 
-function wire(doc,jira,sn,notifications){
-  doc.getElementById('integrations-refresh')?.addEventListener('click',async()=>{try{await Promise.all([refreshProvider(doc,jira,'jira-assets'),refreshProvider(doc,sn,'service-now'),refreshNotifications(doc,notifications)]);setStatus(doc,'integrations.status.ready','success');}catch(e){setStatus(doc,'integrations.status.unavailable','danger',e?.message);}});
+function wire(doc,jira,sn,notifications,governance){
+  doc.getElementById('integrations-refresh')?.addEventListener('click',async()=>{try{await Promise.all([refreshProvider(doc,jira,'jira-assets'),refreshProvider(doc,sn,'service-now'),refreshGovernance(doc,governance),refreshNotifications(doc,notifications)]);setStatus(doc,'integrations.status.ready','success');}catch(e){setStatus(doc,'integrations.status.unavailable','danger',e?.message);}});
   doc.getElementById('jira-assets-search')?.addEventListener('submit',async e=>{e.preventDefault();try{setStatus(doc,'integrations.status.searching','info');const r=await jira.search(doc.getElementById('jira-assets-connector')?.value,doc.getElementById('jira-assets-aql')?.value,{limit:50});renderJira(doc,r.payload,r.pagination);setStatus(doc,'integrations.status.ready','success');}catch(x){setStatus(doc,'integrations.status.searchFailed','danger',x?.message);}});
   doc.getElementById('service-now-search')?.addEventListener('submit',async e=>{e.preventDefault();try{setStatus(doc,'integrations.servicenow.searching','info');const r=await sn.search(doc.getElementById('service-now-connector')?.value,doc.getElementById('service-now-query')?.value,{limit:50});renderServiceNow(doc,r.payload,r.pagination);setStatus(doc,'integrations.status.ready','success');}catch(x){setStatus(doc,'integrations.servicenow.searchFailed','danger',x?.message);}});
   doc.getElementById('notification-publish')?.addEventListener('submit',async e=>{e.preventDefault();try{const raw=doc.getElementById('notification-payload')?.value??'';const payload=JSON.parse(raw);await notifications.publish(doc.getElementById('notification-event-id')?.value,doc.getElementById('notification-event-type')?.value,[doc.getElementById('notification-endpoint')?.value],payload);setStatus(doc,'integrations.notifications.published','success');await refreshNotifications(doc,notifications);}catch(x){setStatus(doc,'integrations.notifications.publishFailed','danger',x?.message);}});
@@ -60,6 +68,31 @@ function wire(doc,jira,sn,notifications){
 
 async function refreshProvider(doc,client,id){const r=await client.connectors();const items=Array.isArray(r.payload)?r.payload:[];const tbody=doc.getElementById(`${id}-connectors`);tbody?.replaceChildren(...items.map(item=>connectorRow(doc,client,item,id)));if(tbody?.closest)refreshEnterpriseDataTable(tbody.closest('table'));const select=doc.getElementById(`${id}-connector`);if(select){select.replaceChildren(...items.filter(x=>x.enabled).map(x=>option(doc,x.connectorKey)));select.disabled=select.options.length===0;}}
 function connectorRow(doc,client,item,id){const row=doc.createElement('tr');for(const v of [item.connectorKey,item.provider,item.direction,item.authority])append(row,v);const status=doc.createElement('td');status.textContent=item.enabled?translate(localeFromDocument(doc),'common.enabled'):translate(localeFromDocument(doc),'common.disabled');row.appendChild(status);const actions=doc.createElement('td');const b=button(doc,'integrations.health','btn btn-sm btn-outline-primary');b.disabled=!item.enabled;b.addEventListener('click',async()=>{try{const r=await client.health(item.connectorKey);setStatus(doc,r.payload?.status==='UP'?(id==='service-now'?'integrations.servicenow.healthUp':'integrations.health.up'):'integrations.status.unavailable',r.payload?.status==='UP'?'success':'danger');}catch(e){setStatus(doc,id==='service-now'?'integrations.servicenow.healthDown':'integrations.health.down','danger',e?.message);}});actions.appendChild(b);row.appendChild(actions);return row;}
+
+async function refreshGovernance(doc,client){
+  const r=await client.policies({limit:200});
+  const items=Array.isArray(r.payload)?r.payload:[];
+  const tbody=doc.getElementById('connector-governance-policies');
+  tbody?.replaceChildren(...items.map(item=>governanceRow(doc,client,item)));
+  if(tbody?.closest)refreshEnterpriseDataTable(tbody.closest('table'));
+  page(doc,'connector-governance-page',items,r.pagination);
+}
+function governanceRow(doc,client,item){
+  const row=doc.createElement('tr');
+  for(const v of [item.connectorKey,item.provider,item.direction,item.authority,item.conflictStrategy,item.deletionPolicy,item.rollbackStrategy])append(row,v);
+  const actions=doc.createElement('td');
+  const plan=button(doc,'integrations.governance.dryRun','btn btn-sm btn-outline-primary');
+  plan.addEventListener('click',async()=>{
+    try{
+      const fields=Array.isArray(item.fields)?item.fields.map(field=>field.field).filter(Boolean):[];
+      const r=await client.plan(item.connectorKey,{direction:item.direction,fields,propagateDeletions:false});
+      const allowed=r.payload?.decision==='ALLOW';
+      const detail=allowed?`${item.connectorKey} · ${r.payload?.rollbackStrategy??item.rollbackStrategy}`:(Array.isArray(r.payload?.reasons)?r.payload.reasons.join(' · '):item.connectorKey);
+      setStatus(doc,allowed?'integrations.governance.allowed':'integrations.governance.denied',allowed?'success':'warning',detail);
+    }catch(e){setStatus(doc,'integrations.governance.failed','danger',e?.message);}
+  });
+  actions.appendChild(plan); row.appendChild(actions); return row;
+}
 
 async function refreshNotifications(doc,client){const r=await client.endpoints({limit:200});const items=Array.isArray(r.payload)?r.payload:[];const tbody=doc.getElementById('notification-endpoints');tbody?.replaceChildren(...items.map(item=>notificationEndpointRow(doc,client,item)));if(tbody?.closest)refreshEnterpriseDataTable(tbody.closest('table'));const select=doc.getElementById('notification-endpoint');if(select){select.replaceChildren(...items.filter(x=>x.enabled).map(x=>option(doc,x.endpointKey)));select.disabled=select.options.length===0;}await refreshNotificationDlq(doc,client);}
 function notificationEndpointRow(doc,client,item){const row=doc.createElement('tr');for(const v of [item.endpointKey,item.transport,item.direction,item.authority])append(row,v);const status=doc.createElement('td');status.textContent=item.enabled?translate(localeFromDocument(doc),'common.enabled'):translate(localeFromDocument(doc),'common.disabled');row.appendChild(status);const actions=doc.createElement('td');const runtime=button(doc,'integrations.notifications.runtime','btn btn-sm btn-outline-primary me-1');runtime.disabled=!item.enabled;runtime.addEventListener('click',async()=>{try{const r=await client.runtime(item.endpointKey);setStatus(doc,r.payload?.suspended?'integrations.notifications.suspended':'integrations.notifications.healthy',r.payload?.suspended?'warning':'success',`${translate(localeFromDocument(doc),'integrations.notifications.backlog')}: ${r.payload?.backlog??0}`);}catch(e){setStatus(doc,'integrations.status.unavailable','danger',e?.message);}});const resume=button(doc,'integrations.notifications.resume','btn btn-sm btn-outline-secondary');resume.disabled=!item.enabled;resume.addEventListener('click',async()=>{try{await client.resume(item.endpointKey,'operator recovery');setStatus(doc,'integrations.notifications.resumed','success');await refreshNotifications(doc,client);}catch(e){setStatus(doc,'integrations.notifications.resumeFailed','danger',e?.message);}});actions.append(runtime,resume);row.appendChild(actions);return row;}

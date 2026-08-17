@@ -48,6 +48,21 @@ record AuthorizationRequirement(
             return permission(PermissionCodes.PLATFORM_CAPABILITY_READ, AuthorizationScope.platform(), "platform", "quotas");
         }
 
+        if (normalized.equals("/api/v1/integrations/governance") && verb.equals("GET")) {
+            return permission(PermissionCodes.INTEGRATIONS_CONNECTOR_READ, AuthorizationScope.platform(), "integration-governance", "collection");
+        }
+        if (normalized.matches("^/api/v1/integrations/governance/[^/]+$") && verb.equals("GET")) {
+            String connectorKey = new io.infranexum.integrations.ConnectorKey(normalized.split("/")[5]).value();
+            return permission(PermissionCodes.INTEGRATIONS_CONNECTOR_READ, AuthorizationScope.platform(), "integration-governance", connectorKey);
+        }
+        if (normalized.matches("^/api/v1/integrations/governance/[^/]+/sync-plan$") && verb.equals("POST")) {
+            String connectorKey = new io.infranexum.integrations.ConnectorKey(normalized.split("/")[5]).value();
+            return permission(PermissionCodes.INTEGRATIONS_CONNECTOR_READ, AuthorizationScope.platform(), "integration-governance", connectorKey);
+        }
+        if (normalized.startsWith("/api/v1/integrations/governance/")) {
+            return unregistered(normalized);
+        }
+
         if (normalized.equals("/api/v1/integrations/providers/jira-assets") && verb.equals("GET")) {
             return permission(PermissionCodes.INTEGRATIONS_CONNECTOR_READ, AuthorizationScope.platform(), "integration-provider", "jira-assets");
         }
@@ -259,9 +274,10 @@ record AuthorizationRequirement(
             return permission(switch(verb){case "GET"->PermissionCodes.GROUP_READ;case "PATCH"->PermissionCodes.GROUP_UPDATE;case "DELETE"->PermissionCodes.GROUP_DELETE;default->"";},scope,"group",groupId);
         }
         Matcher members=GROUP_MEMBERS.matcher(tail);
-        if(members.matches() && verb.equals("POST")) {
+        if(members.matches()) {
             String groupId=DomainIdentifier.parse(members.group(1)).toString();
-            return permission(PermissionCodes.GROUP_ADD_MEMBER,scope,"group",groupId);
+            if(verb.equals("GET")) return permission(PermissionCodes.GROUP_READ,scope,"group",groupId);
+            if(verb.equals("POST")) return permission(PermissionCodes.GROUP_ADD_MEMBER,scope,"group",groupId);
         }
         Matcher member=GROUP_MEMBER.matcher(tail);
         if(member.matches() && verb.equals("DELETE")) {

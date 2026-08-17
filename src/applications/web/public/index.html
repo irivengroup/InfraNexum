@@ -392,9 +392,11 @@
           <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="users:settings" id="iam-users-workflow-settings" role="tabpanel">
           <form class="row g-3" id="iam-user-update-form">
           <h3 class="col-12 h6" data-i18n="iam.userUpdate">Update user</h3>
-          <div class="col-12"><select class="form-select" data-i18n-aria-label="iam.userId" data-i18n-placeholder="iam.userId" data-inx-entity="user" name="userId" required=""><option disabled="" selected="" value="">—</option></select></div>
+          <div class="col-12"><label class="form-label" data-i18n="common.identifier">Identifier</label><input class="form-control font-monospace" data-i18n-aria-label="common.identifier" data-inx-technical-id="" name="userId" readonly="" required=""/></div>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.email" data-i18n-placeholder="iam.email" maxlength="320" name="email" placeholder="Email" required="" type="email"/></div>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.displayName" data-i18n-placeholder="iam.displayName" maxlength="200" name="displayName" placeholder="Display name" required=""/></div>
+          <div class="col-md-6"><label class="form-label" data-i18n="iam.status">Status</label><select class="form-select" data-i18n-aria-label="iam.status" name="status" required=""><option value="pending" disabled data-i18n="iam.status.pending">Pending</option><option value="active" data-i18n="iam.status.active">Active</option><option value="suspended" data-i18n="iam.status.suspended">Suspended</option></select></div>
+          <div class="col-md-6 d-flex align-items-end"><p class="small text-body-secondary mb-2" data-i18n="iam.userStatusHint">Status changes are audited and applied with the user update.</p></div>
           <div class="col-12"><input class="form-control" data-i18n-aria-label="iam.reason" data-i18n-placeholder="iam.reason" maxlength="1024" name="reason" placeholder="Audit reason"/></div>
           <div class="col-12"><button class="btn btn-outline-primary" data-i18n="iam.update" type="submit">Update</button></div>
           </form>
@@ -402,7 +404,7 @@
           <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="users:memberships" id="iam-users-workflow-memberships" role="tabpanel">
           <form class="row g-3" id="iam-membership-form">
           <h3 class="col-12 h6" data-i18n="iam.membershipAdd">Add temporal membership</h3>
-          <div class="col-12"><label class="form-label" data-i18n="iam.userId" for="iam-membership-user">User</label><select class="form-select" data-inx-entity="user" id="iam-membership-user" name="userId" required=""><option disabled="" selected="" value="">—</option></select></div>
+          <div class="col-12"><label class="form-label" data-i18n="common.identifier" for="iam-membership-user">Identifier</label><input class="form-control font-monospace" data-i18n-aria-label="common.identifier" data-inx-technical-id="" id="iam-membership-user" name="userId" readonly="" required=""/></div>
           <div class="col-12"><label class="form-label" data-i18n="iam.subdivisionOptional" for="iam-membership-subdivision">Subdivision</label><select class="form-select" data-inx-entity="subdivision" id="iam-membership-subdivision" name="subdivisionId"><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-md-6"><label class="form-label" data-i18n="iam.effectiveFrom" for="iam-membership-from">Effective from</label><input class="form-control" data-inx-temporal="datetime" id="iam-membership-from" name="effectiveFrom" step="60" type="datetime-local"/></div>
           <div class="col-md-6"><label class="form-label" data-i18n="iam.effectiveTo" for="iam-membership-to">Effective to</label><input class="form-control" data-inx-temporal="datetime" id="iam-membership-to" name="effectiveTo" step="60" type="datetime-local"/></div>
@@ -414,8 +416,8 @@
           <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="users:roles" id="iam-users-workflow-roles" role="tabpanel">
           <form class="row g-3" id="iam-user-role-form">
           <h3 class="col-12 h6" data-i18n="iam.userRoleAssign">Assign role to user</h3>
-          <div class="col-12"><select class="form-select" data-i18n-aria-label="iam.userId" data-i18n-placeholder="iam.userId" data-inx-entity="user" name="userId" required=""><option disabled="" selected="" value="">—</option></select></div>
-          <div class="col-12"><select class="form-select" data-i18n-aria-label="iam.roleId" data-i18n-placeholder="iam.roleId" data-inx-entity="role" name="roleId" required=""><option disabled="" selected="" value="">—</option></select></div>
+          <div class="col-12"><label class="form-label" data-i18n="common.identifier">Identifier</label><input class="form-control font-monospace" data-i18n-aria-label="common.identifier" data-inx-technical-id="" name="userId" readonly="" required=""/></div>
+          <div class="col-12"><label class="form-label" data-i18n="iam.roleId">Role</label><select class="form-select" data-i18n-aria-label="iam.roleId" data-inx-entity="role" name="roleId" required=""><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-md-6"><select class="form-select" data-i18n-aria-label="iam.scope" id="iam-user-role-scope" name="scopeKind"><option value="ORGANIZATION">ORGANIZATION</option><option value="SUBDIVISION">SUBDIVISION</option><option value="PLATFORM">PLATFORM</option></select></div>
           <div class="col-md-6"><select class="form-select" data-i18n-aria-label="iam.subdivisionOptional" data-i18n-placeholder="iam.subdivisionOptional" data-inx-entity="subdivision" data-inx-scope-source="iam-user-role-scope" name="subdivisionId"><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.effectiveFrom" data-inx-temporal="datetime" name="effectiveFrom" step="60" type="datetime-local"/></div>
@@ -440,8 +442,8 @@
           <div aria-label="Object action views" class="nav nav-underline gap-3 mb-4 border-bottom" data-i18n-aria-label="iam.workflowViews" role="tablist">
           <button aria-controls="iam-groups-workflow-create" aria-selected="true" class="nav-link active" data-i18n="iam.groupCreate" data-iam-workflow="groups:create" role="tab" tabindex="0" type="button">Add group</button>
           <button aria-controls="iam-groups-workflow-settings" aria-selected="false" class="nav-link" data-i18n="iam.workflow.settings" data-iam-workflow="groups:settings" role="tab" tabindex="-1" type="button">Settings</button>
+          <button aria-controls="iam-groups-workflow-direct-members" aria-selected="false" class="nav-link" data-i18n="iam.members" data-iam-workflow="groups:direct-members" role="tab" tabindex="-1" type="button">Members</button>
           <button aria-controls="iam-groups-workflow-members" aria-selected="false" class="nav-link" data-i18n="iam.groupMemberAdd" data-iam-workflow="groups:members" role="tab" tabindex="-1" type="button">Add member</button>
-          <button aria-controls="iam-groups-workflow-remove-member" aria-selected="false" class="nav-link" data-i18n="iam.groupMemberRemove" data-iam-workflow="groups:remove-member" role="tab" tabindex="-1" type="button">Remove member</button>
           <button aria-controls="iam-groups-workflow-roles" aria-selected="false" class="nav-link" data-i18n="iam.workflow.roleAssignments" data-iam-workflow="groups:roles" role="tab" tabindex="-1" type="button">Role assignments</button>
           <button aria-controls="iam-groups-workflow-effective" aria-selected="false" class="nav-link" data-i18n="iam.effectiveMembers" data-iam-workflow="groups:effective" role="tab" tabindex="-1" type="button">Effective members</button>
           </div>
@@ -458,37 +460,31 @@
           <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="groups:settings" id="iam-groups-workflow-settings" role="tabpanel">
           <form class="row g-3" id="iam-group-update-form">
           <h3 class="col-12 h6" data-i18n="iam.groupUpdate">Update group</h3>
-          <div class="col-md-6"><select class="form-select" data-i18n-aria-label="iam.groupId" data-i18n-placeholder="iam.groupId" data-inx-entity="group" name="groupId" required=""><option disabled="" selected="" value="">—</option></select></div>
+          <div class="col-md-6"><label class="form-label" data-i18n="common.identifier">Identifier</label><input class="form-control font-monospace" data-i18n-aria-label="common.identifier" data-inx-technical-id="" name="groupId" readonly="" required=""/></div>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.displayName" data-i18n-placeholder="iam.displayName" maxlength="200" name="displayName" placeholder="Display name" required=""/></div>
           <div class="col-12"><input class="form-control" data-i18n-aria-label="iam.reason" data-i18n-placeholder="iam.reason" maxlength="1024" name="reason" placeholder="Audit reason"/></div>
           <div class="col-12"><button class="btn btn-outline-primary" data-i18n="iam.update" type="submit">Update</button></div>
           </form>
           </div>
+          <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="groups:direct-members" id="iam-groups-workflow-direct-members" role="tabpanel">
+          <div class="d-flex justify-content-between align-items-center gap-2 mb-3"><h3 class="h6 mb-0" data-i18n="iam.members">Members</h3><button class="btn btn-sm btn-outline-secondary" data-iam-action="refresh-group-members" data-i18n="iam.refresh" type="button">Refresh</button></div>
+          <div class="table-responsive border rounded-3"><table class="table table-hover align-middle mb-0"><thead><tr><th data-i18n="iam.type">Type</th><th data-i18n="iam.members">Member</th><th data-i18n="iam.actions">Actions</th></tr></thead><tbody aria-live="polite" id="iam-direct-group-members"><tr><td colspan="3">—</td></tr></tbody></table></div>
+          </div>
           <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="groups:members" id="iam-groups-workflow-members" role="tabpanel">
           <form class="row g-3" id="iam-group-member-form">
           <h3 class="col-12 h6" data-i18n="iam.groupMemberAdd">Add group member</h3>
-          <div class="col-12"><select class="form-select" data-i18n-aria-label="iam.groupId" data-i18n-placeholder="iam.groupId" data-inx-entity="group" name="groupId" required=""><option disabled="" selected="" value="">—</option></select></div>
+          <div class="col-12"><label class="form-label" data-i18n="common.identifier">Identifier</label><input class="form-control font-monospace" data-i18n-aria-label="common.identifier" data-inx-technical-id="" name="groupId" readonly="" required=""/></div>
           <div class="col-md-5"><select class="form-select" data-i18n-aria-label="iam.memberType" id="iam-group-member-type" name="memberType"><option value="USER">USER</option><option value="GROUP">GROUP</option></select></div>
           <div class="col-md-7"><select class="form-select" data-i18n-aria-label="iam.memberId" data-i18n-placeholder="iam.memberId" data-inx-entity="actor" data-inx-type-source="iam-group-member-type" name="memberId" required=""><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-12"><input class="form-control" data-i18n-aria-label="iam.reason" data-i18n-placeholder="iam.reason" maxlength="1024" name="reason" placeholder="Audit reason"/></div>
           <div class="col-12"><button class="btn btn-outline-primary" data-i18n="iam.add" type="submit">Add</button></div>
           </form>
           </div>
-          <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="groups:remove-member" id="iam-groups-workflow-remove-member" role="tabpanel">
-          <form class="row g-3" id="iam-group-member-remove-form">
-          <h3 class="col-12 h6" data-i18n="iam.groupMemberRemove">Remove group member</h3>
-          <div class="col-12"><select class="form-select" data-i18n-aria-label="iam.groupId" data-i18n-placeholder="iam.groupId" data-inx-entity="group" name="groupId" required=""><option disabled="" selected="" value="">—</option></select></div>
-          <div class="col-md-5"><select class="form-select" data-i18n-aria-label="iam.memberType" id="iam-group-member-remove-type" name="memberType"><option value="USER">USER</option><option value="GROUP">GROUP</option></select></div>
-          <div class="col-md-7"><select class="form-select" data-i18n-aria-label="iam.memberId" data-i18n-placeholder="iam.memberId" data-inx-entity="actor" data-inx-type-source="iam-group-member-remove-type" name="memberId" required=""><option disabled="" selected="" value="">—</option></select></div>
-          <div class="col-12"><input class="form-control" data-i18n-aria-label="iam.reason" data-i18n-placeholder="iam.reason" maxlength="1024" name="reason" placeholder="Audit reason"/></div>
-          <div class="col-12"><button class="btn btn-outline-danger" data-i18n="iam.remove" type="submit">Remove</button></div>
-          </form>
-          </div>
           <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="groups:roles" id="iam-groups-workflow-roles" role="tabpanel">
           <form class="row g-3" id="iam-group-role-form">
           <h3 class="col-12 h6" data-i18n="iam.groupRoleAssign">Assign role to group</h3>
-          <div class="col-12"><select class="form-select" data-i18n-aria-label="iam.groupId" data-i18n-placeholder="iam.groupId" data-inx-entity="group" name="groupId" required=""><option disabled="" selected="" value="">—</option></select></div>
-          <div class="col-12"><select class="form-select" data-i18n-aria-label="iam.roleId" data-i18n-placeholder="iam.roleId" data-inx-entity="role" name="roleId" required=""><option disabled="" selected="" value="">—</option></select></div>
+          <div class="col-12"><label class="form-label" data-i18n="common.identifier">Identifier</label><input class="form-control font-monospace" data-i18n-aria-label="common.identifier" data-inx-technical-id="" name="groupId" readonly="" required=""/></div>
+          <div class="col-12"><label class="form-label" data-i18n="iam.roleId">Role</label><select class="form-select" data-i18n-aria-label="iam.roleId" data-inx-entity="role" name="roleId" required=""><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-md-6"><select class="form-select" data-i18n-aria-label="iam.scope" id="iam-group-role-scope" name="scopeKind"><option value="ORGANIZATION">ORGANIZATION</option><option value="SUBDIVISION">SUBDIVISION</option></select></div>
           <div class="col-md-6"><select class="form-select" data-i18n-aria-label="iam.subdivisionOptional" data-i18n-placeholder="iam.subdivisionOptional" data-inx-entity="subdivision" data-inx-scope-source="iam-group-role-scope" name="subdivisionId"><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.effectiveFrom" data-inx-temporal="datetime" name="effectiveFrom" step="60" type="datetime-local"/></div>
@@ -499,7 +495,7 @@
           </form>
           </div>
           <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="groups:effective" id="iam-groups-workflow-effective" role="tabpanel">
-          <p class="small text-body-secondary" data-i18n="iam.effectiveMembersHint">Effective group membership resolved through nested groups.</p><pre aria-live="polite" class="p-3 rounded border bg-body-tertiary mb-0" id="iam-effective-group-members">—</pre>
+          <p class="small text-body-secondary" data-i18n="iam.effectiveMembersHint">Effective group membership resolved through nested groups.</p><div class="table-responsive border rounded-3"><table class="table table-hover align-middle mb-0"><thead><tr><th data-i18n="iam.members">Members</th></tr></thead><tbody aria-live="polite" id="iam-effective-group-members"><tr><td>—</td></tr></tbody></table></div>
           </div>
           </div>
           </section>
@@ -534,7 +530,7 @@
           <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="roles:settings" id="iam-roles-workflow-settings" role="tabpanel">
           <form class="row g-3" id="iam-role-update-form">
           <h3 class="col-12 h6" data-i18n="iam.roleUpdate">Update role</h3>
-          <div class="col-12"><select class="form-select" data-i18n-aria-label="iam.roleId" data-i18n-placeholder="iam.roleId" data-inx-entity="role" name="roleId" required=""><option disabled="" selected="" value="">—</option></select></div>
+          <div class="col-12"><label class="form-label" data-i18n="common.identifier">Identifier</label><input class="form-control font-monospace" data-i18n-aria-label="common.identifier" data-inx-technical-id="" name="roleId" readonly="" required=""/></div>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.code" data-i18n-placeholder="iam.code" maxlength="160" name="code" placeholder="Code" required=""/></div>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.displayName" data-i18n-placeholder="iam.displayName" maxlength="200" name="displayName" placeholder="Display name" required=""/></div>
           <div class="col-12"><input class="form-control" data-i18n-aria-label="iam.permissionCodesOptional" data-i18n-placeholder="iam.permissionCodesOptional" name="permissionCodes" placeholder="Permission codes (optional)"/></div>
@@ -545,7 +541,7 @@
           <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="roles:assignments" id="iam-roles-workflow-assignments" role="tabpanel">
           <form class="row g-3" id="iam-role-assignment-form">
           <h3 class="col-12 h6" data-i18n="iam.roleAssign">Assign role</h3>
-          <div class="col-12"><select class="form-select" data-i18n-aria-label="iam.roleId" data-i18n-placeholder="iam.roleId" data-inx-entity="role" name="roleId" required=""><option disabled="" selected="" value="">—</option></select></div>
+          <div class="col-12"><label class="form-label" data-i18n="common.identifier">Identifier</label><input class="form-control font-monospace" data-i18n-aria-label="common.identifier" data-inx-technical-id="" name="roleId" readonly="" required=""/></div>
           <div class="col-md-5"><select class="form-select" data-i18n-aria-label="iam.actorType" id="iam-role-assignment-actor-type" name="actorType"><option value="USER">USER</option><option value="GROUP">GROUP</option></select></div>
           <div class="col-md-7"><select class="form-select" data-i18n-aria-label="iam.actorId" data-i18n-placeholder="iam.actorId" data-inx-entity="actor" data-inx-type-source="iam-role-assignment-actor-type" name="actorId" required=""><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-md-6"><select class="form-select" data-i18n-aria-label="iam.scope" id="iam-role-assignment-scope" name="scopeKind"><option value="ORGANIZATION">ORGANIZATION</option><option value="SUBDIVISION">SUBDIVISION</option></select></div>
@@ -560,7 +556,7 @@
           <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="roles:revoke" id="iam-roles-workflow-revoke" role="tabpanel">
           <form class="row g-3" id="iam-role-revoke-form">
           <h3 class="col-12 h6" data-i18n="iam.roleRevoke">Revoke assignment</h3>
-          <div class="col-md-6"><select class="form-select" data-i18n-aria-label="iam.roleId" data-i18n-placeholder="iam.roleId" data-inx-entity="role" id="iam-role-revoke-role" name="roleId" required=""><option disabled="" selected="" value="">—</option></select></div>
+          <div class="col-md-6"><label class="form-label" data-i18n="common.identifier">Identifier</label><input class="form-control font-monospace" data-i18n-aria-label="common.identifier" data-inx-technical-id="" id="iam-role-revoke-role" name="roleId" readonly="" required=""/></div>
           <div class="col-md-6"><select class="form-select" data-i18n-aria-label="iam.assignmentId" data-i18n-placeholder="iam.assignmentId" data-inx-entity="assignment" data-inx-role-source="iam-role-revoke-role" name="assignmentId" required=""><option disabled="" selected="" value="">—</option></select></div>
           <div class="col-12"><input class="form-control" data-i18n-aria-label="iam.reason" data-i18n-placeholder="iam.reason" maxlength="1024" name="reason" placeholder="Audit reason"/></div>
           <div class="col-12"><button class="btn btn-outline-danger" data-i18n="iam.revoke" type="submit">Revoke</button></div>
@@ -599,7 +595,7 @@
           <div aria-hidden="true" class="tab-pane" data-iam-workflow-panel="permissions:settings" id="iam-permissions-workflow-settings" role="tabpanel">
           <form class="row g-3" id="iam-permission-update-form">
           <h3 class="col-12 h6" data-i18n="iam.permissionUpdate">Update permission</h3>
-          <div class="col-12"><select class="form-select" data-i18n-aria-label="iam.permissionId" data-i18n-placeholder="iam.permissionId" data-inx-entity="permission" name="permissionId" required=""><option disabled="" selected="" value="">—</option></select></div>
+          <div class="col-12"><label class="form-label" data-i18n="common.identifier">Identifier</label><input class="form-control font-monospace" data-i18n-aria-label="common.identifier" data-inx-technical-id="" name="permissionId" readonly="" required=""/></div>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.resource" data-i18n-placeholder="iam.resource" maxlength="64" name="resourceType" placeholder="Resource" required=""/></div>
           <div class="col-md-6"><input class="form-control" data-i18n-aria-label="iam.action" data-i18n-placeholder="iam.action" maxlength="64" name="action" placeholder="Action" required=""/></div>
           <div class="col-md-4"><select class="form-select" data-i18n-aria-label="iam.sensitivity" name="sensitivity"><option value="normal">NORMAL</option><option value="elevated">ELEVATED</option><option value="critical">CRITICAL</option></select></div>

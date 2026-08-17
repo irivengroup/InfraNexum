@@ -5,6 +5,7 @@ import io.infranexum.identity.access.domain.AssignmentActorType;
 import io.infranexum.identity.access.domain.AuthorizationScope;
 import io.infranexum.identity.access.domain.IdentityAccessException;
 import io.infranexum.identity.access.domain.IdentityGroup;
+import io.infranexum.identity.access.domain.GroupMember;
 import io.infranexum.identity.access.domain.IdentityUser;
 import io.infranexum.identity.access.domain.IdentityUserStatus;
 import io.infranexum.identity.access.domain.Permission;
@@ -309,6 +310,28 @@ public final class JdbcIdentityAccessRepository implements IdentityAccessReposit
                 }
             }
         }, "count IAM group members");
+    }
+
+    @Override
+    public List<GroupMember> groupMembers(DomainIdentifier organizationId, DomainIdentifier groupId, int offset, int limit) {
+        Objects.requireNonNull(organizationId, "organizationId"); Objects.requireNonNull(groupId, "groupId");
+        return withRead(connection -> {
+            String sql = "SELECT member_type,member_id FROM ("
+                    + "SELECT 'USER' member_type,user_id member_id FROM " + groupUserTable() + " WHERE organization_id=? AND group_id=? "
+                    + "UNION ALL "
+                    + "SELECT 'GROUP' member_type,child_group_id member_id FROM " + groupGroupTable() + " WHERE organization_id=? AND parent_group_id=?"
+                    + ") member_rows ORDER BY member_type,member_id " + pagination();
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                dialect.bindIdentifier(statement,1,organizationId); dialect.bindIdentifier(statement,2,groupId);
+                dialect.bindIdentifier(statement,3,organizationId); dialect.bindIdentifier(statement,4,groupId);
+                bindPage(statement,offset,limit,5);
+                try (ResultSet rows = statement.executeQuery()) {
+                    List<GroupMember> result = new ArrayList<>();
+                    while (rows.next()) result.add(new GroupMember(AssignmentActorType.valueOf(rows.getString("member_type")), dialect.readIdentifier(rows,"member_id")));
+                    return List.copyOf(result);
+                }
+            }
+        }, "list direct IAM group members");
     }
 
     @Override

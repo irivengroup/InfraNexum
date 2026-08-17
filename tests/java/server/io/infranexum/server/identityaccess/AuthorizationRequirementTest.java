@@ -49,6 +49,7 @@ class AuthorizationRequirementTest {
     void groupRoleAndPermissionRoutesResolveOrganizationScope() {
         assertPermission("GET", "/api/v1/organizations/" + ORG + "/groups", PermissionCodes.GROUP_SEARCH, ScopeKind.ORGANIZATION);
         assertPermission("POST", "/api/v1/organizations/" + ORG + "/groups", PermissionCodes.GROUP_CREATE, ScopeKind.ORGANIZATION);
+        assertPermission("GET", "/api/v1/organizations/" + ORG + "/groups/" + GROUP + "/members", PermissionCodes.GROUP_READ, ScopeKind.ORGANIZATION);
         assertPermission("POST", "/api/v1/organizations/" + ORG + "/groups/" + GROUP + "/members", PermissionCodes.GROUP_ADD_MEMBER, ScopeKind.ORGANIZATION);
         assertPermission("DELETE", "/api/v1/organizations/" + ORG + "/groups/" + GROUP + "/members/" + USER, PermissionCodes.GROUP_REMOVE_MEMBER, ScopeKind.ORGANIZATION);
         assertEquals(AuthorizationRequirement.Type.GROUP_PERMISSION,
@@ -78,6 +79,22 @@ class AuthorizationRequirementTest {
                 AuthorizationRequirement.resolve("DELETE", "/api/v1/integrations/providers/jira-assets/jira-assets.test/objects/search").type());
         assertThrows(IllegalArgumentException.class,
                 () -> AuthorizationRequirement.resolve("GET", "/api/v1/integrations/providers/jira-assets/unsafe%2Fkey/health"));
+    }
+
+    @Test
+    void connectorGovernanceRoutesUseReadPermissionAndFailClosedOnUnsupportedVerbs() {
+        assertPermission("GET", "/api/v1/integrations/governance",
+                PermissionCodes.INTEGRATIONS_CONNECTOR_READ, ScopeKind.PLATFORM);
+        assertPermission("GET", "/api/v1/integrations/governance/jira-prod",
+                PermissionCodes.INTEGRATIONS_CONNECTOR_READ, ScopeKind.PLATFORM);
+        assertPermission("POST", "/api/v1/integrations/governance/jira-prod/sync-plan",
+                PermissionCodes.INTEGRATIONS_CONNECTOR_READ, ScopeKind.PLATFORM);
+        assertEquals(AuthorizationRequirement.Type.UNREGISTERED,
+                AuthorizationRequirement.resolve("DELETE", "/api/v1/integrations/governance/jira-prod").type());
+        assertEquals(AuthorizationRequirement.Type.UNREGISTERED,
+                AuthorizationRequirement.resolve("PUT", "/api/v1/integrations/governance/jira-prod/sync-plan").type());
+        assertThrows(IllegalArgumentException.class,
+                () -> AuthorizationRequirement.resolve("GET", "/api/v1/integrations/governance/unsafe%2Fkey"));
     }
 
     @Test

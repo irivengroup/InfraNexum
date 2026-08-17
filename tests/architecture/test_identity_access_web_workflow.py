@@ -56,13 +56,15 @@ class IdentityAccessWebWorkflowTest(unittest.TestCase):
     def test_identity_workspace_preserves_all_existing_mutation_form_contracts(self) -> None:
         form_ids = (
             "iam-user-create-form", "iam-user-update-form", "iam-membership-form", "iam-user-role-form",
-            "iam-group-create-form", "iam-group-update-form", "iam-group-member-form", "iam-group-member-remove-form", "iam-group-role-form",
+            "iam-group-create-form", "iam-group-update-form", "iam-group-member-form", "iam-group-role-form",
             "iam-role-create-form", "iam-role-update-form", "iam-role-assignment-form", "iam-role-revoke-form",
             "iam-permission-create-form", "iam-permission-update-form", "iam-permission-evaluate-form",
             "iam-policy-create-form", "iam-policy-lifecycle-form", "iam-policy-decision-form",
         )
         for form_id in form_ids:
             self.assertEqual(self.html.count(f'id="{form_id}"'), 1, form_id)
+        self.assertIn('id="iam-direct-group-members"', self.html)
+        self.assertNotIn('id="iam-group-member-remove-form"', self.html)
 
     def test_iam_lists_expose_identifiers_and_selection_prefills_related_forms(self) -> None:
         self.assertGreaterEqual(self.html.count('data-i18n="iam.id"'), 4)
@@ -112,9 +114,18 @@ class IdentityAccessWebWorkflowTest(unittest.TestCase):
 
 
     def test_structured_iam_identifiers_are_entity_selectors_with_hierarchical_dependencies(self) -> None:
-        self.assertGreaterEqual(self.html.count('data-inx-entity='), 30)
-        for entity in ("organization", "subdivision", "user", "group", "role", "permission", "policy", "actor", "assignment"):
+        self.assertGreaterEqual(self.html.count('data-inx-entity='), 18)
+        self.assertIn('id="iam-direct-group-members"', self.html)
+        self.assertGreaterEqual(self.html.count('data-inx-technical-id'), 10)
+        self.assertIn('name="userId" readonly=""', self.html)
+        self.assertIn('name="groupId" readonly=""', self.html)
+        self.assertIn('name="roleId" readonly=""', self.html)
+        for entity in ("organization", "subdivision", "user", "role", "policy", "actor", "assignment"):
             self.assertIn(f'data-inx-entity="{entity}"', self.html)
+        # The current entity itself is never re-selected by UUID inside its own detail editor.
+        # User/group/role/permission technical identifiers are immutable read-only context.
+        for field in ("userId", "groupId", "roleId", "permissionId"):
+            self.assertRegex(self.html, rf'data-inx-technical-id=""[^>]*name="{field}"|name="{field}"[^>]*data-inx-technical-id=""')
         self.assertNotIn('placeholder="Organization UUID"', self.html)
         self.assertNotIn('placeholder="Subdivision UUID"', self.html)
         self.assertNotIn('placeholder="Actor UUID"', self.html)

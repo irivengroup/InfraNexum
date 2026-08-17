@@ -58,6 +58,31 @@ test('enterprise CRUD remains list-first, opens exactly one requested form and r
   assert.equal(editor.hidden, true);
 });
 
+
+test('enterprise CRUD delegates dynamically injected + New controls after initial wiring', () => {
+  const list = new Node({ 'data-inx-crud-list': '' });
+  const editor = new Node({ 'data-inx-crud-editor': '' });
+  const create = new Node({ 'data-inx-crud-form': 'create' });
+  const initialButton = new Node({ 'data-inx-crud-new': 'create', 'data-inx-crud-editor-mode': 'create' });
+  const dynamicButton = new Node({ 'data-inx-crud-new': 'create', 'data-inx-crud-editor-mode': 'create' });
+  dynamicButton.closest = (selector) => selector.includes('[data-inx-crud-new]') ? dynamicButton : null;
+  editor.querySelectorAll = (selector) => selector === '[data-inx-crud-form]' ? [create] : [];
+  const panel = new Node({ 'data-inx-crud-panel': 'dynamic-example' });
+  panel.querySelector = (selector) => selector === '[data-inx-crud-list]' ? list : selector === '[data-inx-crud-editor]' ? editor : selector.includes('[data-inx-crud-new]') ? initialButton : null;
+  panel.querySelectorAll = (selector) => selector.includes('[data-inx-crud-new]') ? [initialButton] : [];
+  const documentObject = { documentElement: { lang: 'en' } };
+
+  const controller = wireCrudPanel(documentObject, panel);
+  assert.ok(controller);
+  assert.equal(panel.getAttribute('data-inx-crud-mode'), 'list');
+  // The control did not exist in querySelectorAll() when the panel was wired.
+  panel.emit('click', { target: dynamicButton });
+  assert.equal(panel.getAttribute('data-inx-crud-mode'), 'form');
+  assert.equal(panel.getAttribute('data-inx-crud-editor-mode'), 'create');
+  assert.equal(create.hidden, false);
+  assert.equal(list.hidden, true);
+});
+
 test('enterprise DataTable sorting is stable, toggles direction and keeps action headers inert', () => {
   const name = new Node(); const actions = new Node({ 'data-inx-actions-column': 'true' });
   name.setAttribute('data-inx-sortable', 'true'); name.setAttribute('aria-sort', 'none');

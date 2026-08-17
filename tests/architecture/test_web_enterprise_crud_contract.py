@@ -70,8 +70,11 @@ class WebEnterpriseCrudContractTests(unittest.TestCase):
         css = (ASSETS / "infranexum-theme.css").read_text(encoding="utf-8")
         self.assertIn("Object.freeze([20, 50, 100, 200])", controller)
         self.assertIn("inx-datatable-pagination", controller)
-        self.assertIn("overflow: visible !important", css)
-        self.assertIn("table-layout: fixed", css)
+        self.assertIn("overflow-x: auto !important", css)
+        self.assertIn("max-width: 100%", css)
+        self.assertIn("table-layout: auto", css)
+        self.assertIn("overscroll-behavior-inline: contain", css)
+        self.assertNotIn("table-layout: fixed", css)
         self.assertIn(".inx-datatable-page-button.btn-primary", css)
 
 

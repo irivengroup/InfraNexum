@@ -39,6 +39,9 @@ final class IdentityAccessApiModels {
     record PermissionValidationResponse(String actorId,String permissionCode,String scopeKind,String organizationId,String subdivisionId,boolean allowed,String decisionCode,String explanation) {}
     record EffectivePermissionsResponse(String actorId,String scopeKind,String organizationId,String subdivisionId,Set<String> permissionCodes) {}
     record EffectiveMembersResponse(String groupId,Set<String> userIds) {}
+    record GroupMemberResponse(String memberType,String memberId) {
+        static GroupMemberResponse from(GroupMember member){return new GroupMemberResponse(member.memberType().name(),member.memberId().toString());}
+    }
 
     record UserResponse(String id,String login,String email,String displayName,String status,Instant createdAt,Instant updatedAt,Instant deletedAt) {
         static UserResponse from(IdentityUser u){return new UserResponse(u.id().toString(),u.login(),u.email(),u.displayName(),u.status().name().toLowerCase(java.util.Locale.ROOT),u.createdAt(),u.updatedAt(),u.deletedAt());}

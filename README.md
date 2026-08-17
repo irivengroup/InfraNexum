@@ -1,3 +1,25 @@
+# InfraNexum 2.0.0-alpha.0.114 — PGM-10-E06 connector governance
+
+`alpha.0.114` advances PGM-10-E06 with a provider-neutral **Connector Governance** runtime over the existing Jira Assets and ServiceNow providers. Authority, synchronization direction, conflict strategy, deletion policy, field-level authority and rollback strategy are now executable Server policy rather than documentation-only metadata.
+
+The current Jira Assets and ServiceNow connectors remain deliberately `FEDERATED_READ / EXTERNAL / REJECT / IGNORE / NONE_REQUIRED`. A fail-closed dry-run planner therefore allows their existing non-mutating federated-read behavior and denies import, write-back, deletion propagation or bidirectional plans. No provider or InfraNexum object is mutated by this increment, and no database migration is introduced.
+
+Three capability/RBAC-gated operations expose the governance catalogue, policy detail and sync-plan dry-run. The Integrations workspace displays direction, authority, conflict/deletion/rollback policy and the dry-run result without exposing provider credentials. The contract now contains **15 OpenAPI fragments / 195 operations with debt 0/0/0/0**.
+
+This phase establishes the admission model required by the roadmap gate `Authority mapping + sync direction + rollback de connecteur`; it does **not** claim executable mutating synchronization or compensation. Actual durable sync checkpoints, mutation execution, compensation/rollback verification and controlled deletion propagation remain later PGM-10-E06 work. OpenService also remains unimplemented until an authoritative provider/API/authentication/data contract is supplied. See `docs/integrations-connector-governance.md`.
+
+---
+
+# InfraNexum 2.0.0-alpha.0.113 — enterprise Web/UX consistency corrective
+
+`alpha.0.113` is a transverse Web/UX corrective over `alpha.0.112`; it does not advance the roadmap. The shared enterprise DataTable/CRUD layer now owns bounded geometry, content-aware column sizing, technical-ID presentation and dynamically injected create/edit controls, so IAM, DCIM, ITAM, RSOT, DDI and Integrations receive the same behavior instead of per-screen fixes. One additive read-only IAM operation is introduced to support correct group-member administration: direct membership edges are listed separately from recursively effective users; no persistence migration, new permission or capability is introduced.
+
+Primary ID/UUID columns are no longer part of list presentation; the selected technical identifier is surfaced read-only in the detail/editor view. IAM action density is reduced by moving related operations into contextual editor facets: User Modify includes parameters, memberships, roles and ACTIVE/SUSPENDED status; Group Modify includes parameters and roles while Members owns the paginated direct-member list, add/remove operations and the separate effective-members projection; Role Modify includes parameters, assignments and revocation. The account dropdown is visually integrated with the InfraNexum light/dark theme, and editor facets provide keyboard focus traversal.
+
+The table container is always bounded to the workspace width. Columns keep natural compact widths when their content is short, long-content columns absorb the remaining space, and horizontal scrolling is contained inside the responsive table wrapper only when the viewport cannot physically accommodate the minimum readable widths.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.112 — explicit Spring constructor binding corrective
 
 `alpha.0.112` is a startup corrective over `alpha.0.111`. The previous corrective removed ambiguous empty YAML maps, but the Docker PRO runtime then exposed the next binding defect: `IntegrationRuntimeProperties` is an immutable record with both its canonical constructor and a compatibility constructor. Spring Boot 4.1 therefore cannot implicitly select constructor binding and falls back to JavaBean instantiation, which fails because the record intentionally has no default constructor.

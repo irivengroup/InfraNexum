@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum Integrations Connectors API
-  version: 2.0.0-alpha.0.112
+  version: 2.0.0-alpha.0.114
 tags:
 - name: Integrations / Connectors / Webhooks
   description: Authenticated connector webhook admission into the durable inbox.
@@ -9,6 +9,8 @@ tags:
   description: Operational dead-letter inspection and controlled replay.
 - name: Integrations / Connectors / Runtime
   description: Connector runtime health, suspension state and operator recovery.
+- name: Integrations / Connectors / Governance
+  description: Connector authority, sync direction, field ownership and rollback policy with fail-closed dry-run planning.
 - name: Integrations / Jira Assets / Catalogue
   description: Configured Jira Assets Cloud connector instances and provider health.
 - name: Integrations / Jira Assets / Federated Read
@@ -29,6 +31,7 @@ x-tagGroups:
   - Integrations / Connectors / Webhooks
   - Integrations / Connectors / Dead Letter Queue
   - Integrations / Connectors / Runtime
+  - Integrations / Connectors / Governance
   - Integrations / Jira Assets / Catalogue
   - Integrations / Jira Assets / Federated Read
   - Integrations / ServiceNow / Catalogue
@@ -808,6 +811,132 @@ paths:
         mode: permission
         code: integrations.notification.resume
       x-infranexum-idempotency: required
+  /api/v1/integrations/governance:
+    get:
+      tags:
+      - Integrations / Connectors / Governance
+      operationId: listConnectorGovernancePolicies
+      summary: List configured connector governance policies
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/Offset'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Bounded policy catalogue without credentials or provider secrets.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            X-Page-Limit:
+              $ref: '#/components/headers/PageLimit'
+            X-Next-Offset:
+              $ref: '#/components/headers/NextOffset'
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 200
+                items:
+                  $ref: '#/components/schemas/ConnectorGovernancePolicy'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.connector.read
+      x-infranexum-pagination: offset
+  /api/v1/integrations/governance/{connectorKey}:
+    get:
+      tags:
+      - Integrations / Connectors / Governance
+      operationId: getConnectorGovernancePolicy
+      summary: Read authority, sync direction and rollback policy for one connector
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/ConnectorKey'
+      responses:
+        '200':
+          description: Connector governance policy.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectorGovernancePolicy'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.connector.read
+  /api/v1/integrations/governance/{connectorKey}/sync-plan:
+    post:
+      tags:
+      - Integrations / Connectors / Governance
+      operationId: planConnectorSynchronization
+      summary: Dry-run a synchronization intent against connector authority and rollback policy
+      description: This operation never mutates local or provider data. DENY is returned in the response whenever the requested direction, field set, deletion semantics or rollback contract is not allowed by the configured connector policy.
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/ConnectorKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectorSyncPlanRequest'
+      responses:
+        '200':
+          description: Deterministic dry-run decision. A policy denial is represented by decision DENY, not by executing a partial mutation.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectorSyncPlan'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.connector.read
+      x-infranexum-idempotency: repeatable
 components:
   securitySchemes:
     LocalSessionCookie:
@@ -1346,6 +1475,156 @@ components:
         deadLetters:
           type: integer
           minimum: 0
+    ConnectorFieldAuthority:
+      type: object
+      additionalProperties: false
+      required:
+      - field
+      - authority
+      properties:
+        field:
+          type: string
+          minLength: 1
+          maxLength: 128
+          pattern: ^[a-z][a-z0-9_.-]{0,127}$
+        authority:
+          type: string
+          enum:
+          - EXTERNAL
+          - INFRANEXUM
+          - MANUAL
+    ConnectorGovernancePolicy:
+      type: object
+      additionalProperties: false
+      required:
+      - connectorKey
+      - provider
+      - direction
+      - authority
+      - conflictStrategy
+      - deletionPolicy
+      - rollbackStrategy
+      - mutating
+      - fields
+      properties:
+        connectorKey:
+          $ref: '#/components/schemas/ConnectorKey'
+        provider:
+          type: string
+          pattern: ^[a-z][a-z0-9-]{0,79}$
+        direction:
+          $ref: '#/components/schemas/ConnectorSyncDirection'
+        authority:
+          type: string
+          enum:
+          - EXTERNAL
+          - INFRANEXUM
+          - MANUAL
+        conflictStrategy:
+          type: string
+          enum:
+          - REJECT
+          - MANUAL
+          - PREFER_AUTHORITY
+        deletionPolicy:
+          type: string
+          enum:
+          - IGNORE
+          - TOMBSTONE
+          - MANUAL
+        rollbackStrategy:
+          $ref: '#/components/schemas/ConnectorRollbackStrategy'
+        mutating:
+          type: boolean
+        fields:
+          type: array
+          maxItems: 512
+          items:
+            $ref: '#/components/schemas/ConnectorFieldAuthority'
+    ConnectorSyncDirection:
+      type: string
+      enum:
+      - FEDERATED_READ
+      - INBOUND
+      - OUTBOUND
+      - BIDIRECTIONAL
+    ConnectorRollbackStrategy:
+      type: string
+      enum:
+      - NONE_REQUIRED
+      - LOCAL_CHECKPOINT
+      - REMOTE_COMPENSATION
+      - DUAL_COMPENSATION
+      - MANUAL
+    ConnectorSyncPlanRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - direction
+      - fields
+      - propagateDeletions
+      properties:
+        direction:
+          $ref: '#/components/schemas/ConnectorSyncDirection'
+        fields:
+          type: array
+          maxItems: 512
+          uniqueItems: true
+          items:
+            type: string
+            minLength: 1
+            maxLength: 128
+            pattern: ^[a-z][a-z0-9_.-]{0,127}$
+        propagateDeletions:
+          type: boolean
+    ConnectorSyncPlan:
+      type: object
+      additionalProperties: false
+      required:
+      - connectorKey
+      - provider
+      - configuredDirection
+      - requestedDirection
+      - decision
+      - mutating
+      - rollbackStrategy
+      - fields
+      - reasons
+      properties:
+        connectorKey:
+          $ref: '#/components/schemas/ConnectorKey'
+        provider:
+          type: string
+          pattern: ^[a-z][a-z0-9-]{0,79}$
+        configuredDirection:
+          $ref: '#/components/schemas/ConnectorSyncDirection'
+        requestedDirection:
+          $ref: '#/components/schemas/ConnectorSyncDirection'
+        decision:
+          type: string
+          enum:
+          - ALLOW
+          - DENY
+        mutating:
+          type: boolean
+        rollbackStrategy:
+          $ref: '#/components/schemas/ConnectorRollbackStrategy'
+        fields:
+          type: array
+          maxItems: 512
+          uniqueItems: true
+          items:
+            type: string
+            minLength: 1
+            maxLength: 128
+            pattern: ^[a-z][a-z0-9_.-]{0,127}$
+        reasons:
+          type: array
+          maxItems: 520
+          items:
+            type: string
+            minLength: 1
+            maxLength: 512
     WebhookAdmission:
       type: object
       additionalProperties: false

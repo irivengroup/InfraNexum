@@ -38,6 +38,7 @@ public interface IdentityAccessRepository {
     void removeGroupFromGroup(DomainIdentifier organizationId, DomainIdentifier parentGroupId, DomainIdentifier childGroupId);
     boolean wouldCreateGroupCycle(DomainIdentifier organizationId, DomainIdentifier parentGroupId, DomainIdentifier childGroupId);
     long groupMemberCount(DomainIdentifier organizationId, DomainIdentifier groupId);
+    List<GroupMember> groupMembers(DomainIdentifier organizationId, DomainIdentifier groupId, int offset, int limit);
     Set<DomainIdentifier> effectiveGroupMembers(DomainIdentifier groupId);
 
     List<Role> listRoles(DomainIdentifier organizationId, int offset, int limit);

@@ -168,7 +168,7 @@ test('IAM section navigation exposes one active workspace and supports keyboard 
 });
 
 
-test('IAM workflow metadata keeps one contextual editor pane visible without exposing a second keyboard tab strip', () => {
+test('IAM detail facets keep one contextual editor pane visible and support keyboard traversal inside the selected entity', () => {
   class ClassList {
     constructor() { this.values = new Set(); }
     toggle(name, enabled) { if (enabled) this.values.add(name); else this.values.delete(name); }
@@ -203,10 +203,13 @@ test('IAM workflow metadata keeps one contextual editor pane visible without exp
   assert.equal(settingsPanel.hidden, false);
   assert.equal(createPanel.hidden, true);
 
-  assert.equal(settings.keydown('ArrowRight'), false, 'legacy workflow buttons are metadata, not a second tab navigation surface');
-  assert.equal(settings.classList.contains('active'), true);
-  assert.equal(memberships.classList.contains('active'), false);
-  assert.equal(memberships.focused, false);
+  assert.equal(settings.keydown('ArrowRight'), true, 'detail facets must provide keyboard navigation inside the selected entity');
+  assert.equal(settings.classList.contains('active'), false);
+  assert.equal(memberships.classList.contains('active'), true);
+  assert.equal(membershipsPanel.classList.contains('active'), true);
+  assert.equal(membershipsPanel.hidden, false);
+  assert.equal(settingsPanel.hidden, true);
+  assert.equal(memberships.focused, true);
   assert.equal(controller.activate('unknown:settings'), false);
 });
 

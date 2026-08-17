@@ -3,6 +3,7 @@ import { localeFromDocument, translate } from './i18n.mjs';
 const CONTROLLERS = new WeakMap();
 const DATA_TABLES = new WeakMap();
 const DATA_TABLE_PAGE_SIZES = Object.freeze([20, 50, 100, 200]);
+const CRUD_HANDLED_EVENTS = new WeakSet();
 
 /**
  * Converts InfraNexum tab panels into a list-first enterprise CRUD workflow.
@@ -38,6 +39,7 @@ export function wireCrudPanel(documentObject, panel) {
   const open = (key, { focus = true, mode = 'edit' } = {}) => {
     const target = forms.find((candidate) => candidate.getAttribute('data-inx-crud-form') === String(key));
     if (!target) return false;
+    if (mode !== 'create') ensureTechnicalIdentifierField(documentObject, target, panel.getAttribute?.('data-inx-selected-id'));
     list.hidden = true;
     list.setAttribute?.('aria-hidden', 'true');
     editor.hidden = false;
@@ -56,14 +58,27 @@ export function wireCrudPanel(documentObject, panel) {
     return true;
   };
 
+  const handleOpenButton = (button, event) => {
+    if (!button || (event && CRUD_HANDLED_EVENTS.has(event))) return false;
+    if (event && typeof event === 'object') CRUD_HANDLED_EVENTS.add(event);
+    event?.preventDefault?.();
+    const key = button.getAttribute('data-inx-crud-new') || button.getAttribute('data-inx-crud-open');
+    const mode = button.getAttribute('data-inx-crud-editor-mode') || (button.hasAttribute?.('data-inx-crud-new') ? 'create' : 'edit');
+    return open(key, { mode });
+  };
+  // Direct listeners preserve compatibility with simple/non-bubbling DOM runtimes.
   for (const button of panel.querySelectorAll?.('[data-inx-crud-new], [data-inx-crud-open]') ?? []) {
-    button.addEventListener?.('click', (event) => {
-      event?.preventDefault?.();
-      const key = button.getAttribute('data-inx-crud-new') || button.getAttribute('data-inx-crud-open');
-      const mode = button.getAttribute('data-inx-crud-editor-mode') || (button.hasAttribute?.('data-inx-crud-new') ? 'create' : 'edit');
-      open(key, { mode });
-    });
+    button.addEventListener?.('click', (event) => handleOpenButton(button, event));
   }
+  // Delegation is authoritative for buttons injected after initial wiring.
+  panel.addEventListener?.('click', (event) => {
+    const button = event?.target?.closest?.('[data-inx-crud-new], [data-inx-crud-open]');
+    if (button && panel.contains?.(button) !== false) handleOpenButton(button, event);
+  });
+  panel.addEventListener?.('infranexum:row-selected', (event) => {
+    const id = String(event?.detail?.row?.id ?? '').trim();
+    if (id) setCrudTechnicalIdentifier(panel, id);
+  });
   for (const button of panel.querySelectorAll?.('[data-inx-crud-back]') ?? []) {
     button.addEventListener?.('click', (event) => { event?.preventDefault?.(); showList(); });
   }
@@ -75,6 +90,41 @@ export function wireCrudPanel(documentObject, panel) {
   CONTROLLERS.set(panel, controller);
   showList({ focus: false });
   return controller;
+}
+
+export function setCrudTechnicalIdentifier(panel, value) {
+  if (!panel) return false;
+  const normalized = String(value ?? '').trim();
+  if (!normalized) return false;
+  panel.setAttribute?.('data-inx-selected-id', normalized);
+  for (const field of panel.querySelectorAll?.('[data-inx-technical-id]') ?? []) field.value = normalized;
+  return true;
+}
+
+function ensureTechnicalIdentifierField(documentObject, target, value) {
+  const normalized = String(value ?? '').trim();
+  if (!normalized || !documentObject?.createElement || !target?.querySelector) return null;
+  const form = target.matches?.('form') ? target : target.querySelector('form');
+  if (!form) return null;
+  let input = form.querySelector?.('[data-inx-technical-id]');
+  if (!input) {
+    const wrapper = documentObject.createElement('div');
+    wrapper.className = 'col-12 inx-technical-id-field';
+    const label = documentObject.createElement('label');
+    label.className = 'form-label small text-body-secondary';
+    label.textContent = translate(localeFromDocument(documentObject), 'common.identifier');
+    input = documentObject.createElement('input');
+    input.type = 'text';
+    input.className = 'form-control font-monospace';
+    input.readOnly = true;
+    input.setAttribute('readonly', '');
+    input.setAttribute('data-inx-technical-id', '');
+    input.setAttribute('aria-label', translate(localeFromDocument(documentObject), 'common.identifier'));
+    wrapper.append(label, input);
+    form.insertBefore?.(wrapper, form.firstChild ?? null);
+  }
+  input.value = normalized;
+  return input;
 }
 
 export function openCrudEditor(panel, key, options = {}) {
@@ -128,6 +178,8 @@ export function initializeEnterpriseDataTables(root = document) {
       table.setAttribute?.('data-inx-datatable-wired', 'true');
       wired += 1;
     }
+    concealTechnicalIdentifierColumns(table);
+    classifyDataTableColumns(table);
     refreshDataTable(table);
   }
   return wired;
@@ -172,6 +224,55 @@ export function sortTableByColumn(table, columnIndex, header = null) {
   });
   for (const item of indexed) tbody.appendChild?.(item.row);
   return true;
+}
+
+function concealTechnicalIdentifierColumns(table) {
+  const headerRow = table?.querySelector?.('thead tr');
+  const tbody = table?.querySelector?.('tbody');
+  if (!headerRow || !tbody) return 0;
+  const headers = [...(headerRow.children ?? [])];
+  let hidden = 0;
+  headers.forEach((header, index) => {
+    const key = String(header.getAttribute?.('data-i18n') ?? '').trim().toLowerCase();
+    const text = String(header.textContent ?? '').trim().toLowerCase();
+    const technical = text === 'id' || text === 'uuid' || /(?:^|\.)(?:id|uuid)$/.test(key);
+    if (!technical) return;
+    header.hidden = true;
+    header.setAttribute?.('aria-hidden', 'true');
+    header.setAttribute?.('data-inx-technical-id-column', 'true');
+    header.setAttribute?.('data-inx-sortable', 'false');
+    for (const row of tbody.children ?? []) {
+      const cell = row.children?.[index];
+      if (!cell) continue;
+      cell.hidden = true;
+      cell.setAttribute?.('aria-hidden', 'true');
+      cell.setAttribute?.('data-inx-technical-id-cell', 'true');
+    }
+    hidden += 1;
+  });
+  return hidden;
+}
+
+function classifyDataTableColumns(table) {
+  const headerRow = table?.querySelector?.('thead tr');
+  const tbody = table?.querySelector?.('tbody');
+  if (!headerRow || !tbody) return;
+  const headers = [...(headerRow.children ?? [])];
+  headers.forEach((header, index) => {
+    if (header.hidden) return;
+    if (isActionHeader(header)) {
+      header.setAttribute?.('data-inx-column-size', 'actions');
+      for (const row of tbody.children ?? []) row.children?.[index]?.setAttribute?.('data-inx-column-size', 'actions');
+      return;
+    }
+    const values = [...(tbody.children ?? [])]
+      .map((row) => String(row.children?.[index]?.textContent ?? '').trim())
+      .filter(Boolean);
+    const longest = Math.max(String(header.textContent ?? '').trim().length, ...values.map((value) => value.length), 0);
+    const size = longest <= 12 ? 'compact' : longest <= 32 ? 'content' : 'flex';
+    header.setAttribute?.('data-inx-column-size', size);
+    for (const row of tbody.children ?? []) row.children?.[index]?.setAttribute?.('data-inx-column-size', size);
+  });
 }
 
 function createDataTableState(documentObject, table) {
@@ -243,6 +344,8 @@ function pagerButton(doc, text, labelKey, action) {
 }
 
 function refreshDataTable(table) {
+  concealTechnicalIdentifierColumns(table);
+  classifyDataTableColumns(table);
   const state = DATA_TABLES.get(table);
   const tbody = table?.querySelector?.('tbody');
   if (!state || !tbody) return false;

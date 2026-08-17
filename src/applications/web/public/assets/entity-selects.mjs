@@ -222,6 +222,13 @@ export function createIamEntityDirectory(documentObject, api, workspaceOrganizat
     else if (type === 'subdivision') select.required = scope === 'SUBDIVISION';
   };
 
+  const labelFor = (type, id) => {
+    if (!ENTITY_TYPES.includes(type)) return null;
+    const normalized = normalizedUuidOrEmpty(id);
+    if (!normalized) return null;
+    return (catalogs.get(type) ?? []).find((item) => item.id === normalized)?.label ?? null;
+  };
+
   const bindDependencies = () => {
     const sources = new Set();
     for (const select of allEntitySelects()) {
@@ -254,6 +261,7 @@ export function createIamEntityDirectory(documentObject, api, workspaceOrganizat
     ensureSubdivisions,
     ensureAssignments,
     loadPolicies,
+    labelFor,
     sync: () => allEntitySelects().forEach(syncSelect),
     snapshot: () => Object.freeze({
       organizationId: currentOrganization,

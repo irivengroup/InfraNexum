@@ -28,9 +28,9 @@ class ApiPaginationRuntimeContractTests(unittest.TestCase):
                 for operation in item.values():
                     if isinstance(operation, dict) and operation.get("x-infranexum-pagination"):
                         modes[operation["operationId"]] = operation["x-infranexum-pagination"]
-        self.assertEqual(22, len(modes))
+        self.assertEqual(24, len(modes))
         self.assertEqual(8, sum(mode == "cursor" for mode in modes.values()))
-        self.assertEqual(14, sum(mode == "offset" for mode in modes.values()))
+        self.assertEqual(16, sum(mode == "offset" for mode in modes.values()))
 
     def test_cursor_collections_use_keyset_queries_and_next_cursor_headers(self) -> None:
         dcim_controller = (SERVER / "dcim/DcimPhysicalController.java").read_text(encoding="utf-8")

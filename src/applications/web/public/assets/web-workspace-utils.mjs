@@ -1,3 +1,5 @@
+import { setCrudTechnicalIdentifier } from './enterprise-crud.mjs';
+
 import { localeFromDocument, translate } from './i18n.mjs';
 
 /** Creates a non-secret idempotency token suitable for browser mutation headers. */
@@ -143,6 +145,7 @@ export function replaceRows(documentObject, tbody, rows, cellValues, onSelect, {
       tr.classList?.add?.('table-active');
       tr.setAttribute?.('aria-selected', 'true');
       onSelect?.(row, tr);
+      setCrudTechnicalIdentifier(tbody.closest?.('[data-inx-crud-panel]'), row.id);
       dispatchRowSelection(documentObject, tbody, row, tr);
     };
     tr.addEventListener?.('click', choose);
