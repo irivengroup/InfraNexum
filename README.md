@@ -1,10 +1,10 @@
-# InfraNexum 2.0.0-alpha.0.111 — integration configuration binding corrective
+# InfraNexum 2.0.0-alpha.0.112 — explicit Spring constructor binding corrective
 
-`alpha.0.111` is a startup corrective over `alpha.0.110`. It fixes the Docker PRO Server crash observed when Integrations is enabled with no connector endpoint configured: empty YAML maps are no longer emitted for `infranexum.integrations` because Spring Boot ConfigData can surface those empty mappings as scalar empty values that cannot bind to the corresponding `Map` properties. Missing maps are normalized by the validated Java configuration records to immutable empty maps.
+`alpha.0.112` is a startup corrective over `alpha.0.111`. The previous corrective removed ambiguous empty YAML maps, but the Docker PRO runtime then exposed the next binding defect: `IntegrationRuntimeProperties` is an immutable record with both its canonical constructor and a compatibility constructor. Spring Boot 4.1 therefore cannot implicitly select constructor binding and falls back to JavaBean instantiation, which fails because the record intentionally has no default constructor.
 
-The correction covers generic connector webhook endpoints, Jira Assets connectors, ServiceNow connectors and outbound notification endpoints. Jira Assets federated read, ServiceNow CMDB federated read and durable signed outbound notifications from `alpha.0.110` are preserved unchanged. No API operation, migration, permission, capability or business-domain contract is added or removed.
+The canonical compact constructor is now explicitly annotated with Spring Boot `@ConstructorBinding`. The compatibility constructor is preserved, no mutable no-args constructor is introduced, and all validated normalization/default behavior remains unchanged. The real ConfigData `ApplicationContextRunner` regression test plus an architecture gate protect this boundary.
 
-PGM-10-E05 remains formally pending its exact hosted Temurin 25/JaCoCo and PostgreSQL 17/18 promotion gates. PGM-10-E06 remains in progress with the OpenService provider contract still unspecified in `draft.21`. See `docs/implementation-status.md` for validation status and remaining gates.
+Jira Assets federated read, ServiceNow CMDB federated read and durable signed outbound notifications remain unchanged. No API operation, migration, permission, capability or business-domain contract is added or removed. PGM-10-E05 remains formally pending its exact hosted JDK25/JaCoCo and PostgreSQL 17/18 promotion gates; PGM-10-E06 remains in progress.
 
 ---
 

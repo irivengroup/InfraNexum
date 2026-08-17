@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.111",
-  "profile": "alpha111-integration-config-binding-corrective-pro-enterprise",
+  "version": "2.0.0-alpha.0.112",
+  "profile": "alpha112-integration-constructor-binding-corrective-pro-enterprise",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -14,7 +14,7 @@
     },
     {
       "id": "infranexum-server",
-      "status": "alpha111-fixes-empty-integration-map-configdata-binding-startup-regression-with-absent-map-defaults-and-regression-gates; alpha110-notification-runtime-and-jira-assets-servicenow-federated-read-preserved; target-jdk25-jacoco-and-live-postgresql-revalidation-pending"
+      "status": "alpha112-explicitly-selects-the-canonical-IntegrationRuntimeProperties-constructor-with-Spring-ConstructorBinding-while-preserving-the-compatibility-constructor-and-alpha111-absent-map-normalization; alpha110-notification-runtime-and-jira-assets-servicenow-federated-read-preserved; target-jdk25-jacoco-and-live-postgresql-revalidation-pending"
     },
     {
       "id": "infranexum-agent",
@@ -22,7 +22,7 @@
     },
     {
       "id": "infranexum-web",
-      "status": "source-behavior-unchanged-this-corrective-version-aligned-to-alpha111; alpha110-notifications-and-alpha109-provider-workspaces-preserved; alpha107-account-dropdown-corrective-preserved"
+      "status": "source-behavior-unchanged-this-corrective-version-aligned-to-alpha112; alpha110-notifications-and-alpha109-provider-workspaces-preserved; alpha107-account-dropdown-corrective-preserved"
     },
     {
       "id": "connector-sdk-v1",
@@ -627,8 +627,8 @@
     "browser_render_alpha102": "NON_EXECUTED_RUNNER_POLICY_BLOCKS_LOOPBACK_AND_FILE_NAVIGATION",
     "api_contract_tests": 48,
     "api_contract_operations": 191,
-    "architecture_split_tests": 218,
-    "architecture_functional_split_tests": 189,
+    "architecture_split_tests": 220,
+    "architecture_functional_split_tests": 191,
     "architecture_meta_tests": 29,
     "jdbc_deterministic_tests_executed_alpha105": 129,
     "jdbc_auxiliary_conditions_both_alpha105": 407,
@@ -636,8 +636,8 @@
     "jdbc_auxiliary_condition_side_percent_alpha105": 99.4,
     "maven_temurin25_alpha105": "NON_EXECUTED_LOCAL_TARGET_REQUIRED",
     "postgresql17_18_live_alpha105": "NON_EXECUTED_LOCAL_TARGET_REQUIRED",
-    "packaging_tracked_files": 1385,
-    "git_blob_checksums": 1384,
+    "packaging_tracked_files": 1480,
+    "git_blob_checksums": 1479,
     "architecture_alpha107": "EXECUTED_171_OF_171_FUNCTIONAL_PLUS_ARCHITECTURE_AS_CODE_PASS_META_CHECKER_NON_EXECUTED_CURRENT_CORRECTIVE",
     "api_alpha107": "EXECUTED_CLI_15_FRAGMENTS_179_OPERATIONS_ZERO_VIOLATIONS_DEBT_0_0_0_0_TARGETED_REGRESSIONS_FULL_MONOLITHIC_TIMEOUT",
     "migration_alpha107": "EXECUTED_117_OF_117_ZERO_VIOLATIONS",
@@ -648,23 +648,23 @@
   "source_layout": "All production solution spaces are contained below src/; Java, Go and Web tests are repository-level under tests/; canonical relative paths are limited to 120 characters and path components to 80 characters.",
   "source_integrity": {
     "canonical_inventory": "source-inventory.json",
-    "git_blob_checksums": 1478,
-    "tracked_files": 1479,
-    "source_recorded_files": 1477,
+    "git_blob_checksums": 1479,
+    "tracked_files": 1480,
+    "source_recorded_files": 1478,
     "staged_snapshot_required": true,
     "pre_commit_hook": ".githooks/pre-commit",
-    "inventory_paths": 1477
+    "inventory_paths": 1478
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.111",
-    "archive_entries": 1479,
+    "prefix": "infranexum-2.0.0-alpha.0.112",
+    "archive_entries": 1480,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
-    "source_recorded_files": 1478,
+    "source_recorded_files": 1479,
     "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
-    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.111-validation-evidence.zip"
+    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.112-validation-evidence.zip"
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.111-validation-evidence.zip",
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.112-validation-evidence.zip",
   "runtime_validation": {
     "web_local_runtime_alpha058": "EXECUTED_38_OF_38_LINE_99_67_BRANCH_98_33_FUNCTION_100_PROCESS_SMOKE_PASS_LOCAL_NODE22_BOOTSTRAP5_3_6_PROFESSIONAL_ADMIN_DASHBOARD_THEME_TOGGLE_TRUTHFUL_KPI_SAME_ORIGIN_ORGANIZATION_UI",
     "architecture_functional_alpha058": "EXECUTED_57_OF_57",
@@ -1077,7 +1077,26 @@
     "toolchains_alpha111": "EXECUTED_25_OF_25_COVERAGE99_ZERO_VIOLATIONS",
     "connector_sdk_alpha111": "EXECUTED_19_OF_19_COVERAGE99_ZERO_VIOLATIONS",
     "java_dependency_free_alpha111": "EXECUTED_LOCAL_JAVA21_JDBC_JDBC_AUDIT_INTEGRATIONS_OUTBOUND_NOTIFICATION_POLICY_API_CAPABILITY_191_OPERATIONS_PASS",
-    "source_integrity_tests_alpha111": "EXECUTED_45_OF_45_COVERAGE100_ZERO_VIOLATIONS"
+    "source_integrity_tests_alpha111": "EXECUTED_45_OF_45_COVERAGE100_ZERO_VIOLATIONS",
+    "corrective_alpha112": "IMPLEMENTED_EXPLICIT_CONSTRUCTOR_BINDING_ON_CANONICAL_INTEGRATION_RUNTIME_PROPERTIES_RECORD_CONSTRUCTOR_COMPATIBILITY_CONSTRUCTOR_PRESERVED_NO_DEFAULT_CONSTRUCTOR_ADDED",
+    "integration_constructor_binding_architecture_alpha112": "EXECUTED_2_OF_2",
+    "integration_config_binding_junit_alpha112": "NON_EXECUTED_LOCAL_JAVA21_TARGET_JDK25_REQUIRED_EXISTING_CONFIGDATA_APPLICATION_CONTEXT_RUNNER_TEST_PRESERVED",
+    "maven_target_jdk25_alpha112": "NON_EXECUTED_LOCAL_JAVA21_WRAPPER_REQUIRES_JDK25",
+    "docker_runtime_alpha112": "NON_EXECUTED_LOCAL_DOCKER_UNAVAILABLE_OPERATOR_PRO_UP_SMOKE_HA_SMOKE_REQUIRED; USER_LOGS_REPRODUCED_ALPHA111_NO_DEFAULT_CONSTRUCTOR_FAILURE",
+    "roadmap_next_alpha112": "NO_EPIC_ADVANCE_CORRECTIVE_ONLY_KEEP_PGM10E05_FORMALLY_OPEN_AND_PGM10E06_IN_PROGRESS",
+    "api_contracts_alpha112": "EXECUTED_48_OF_48_15_FRAGMENTS_191_OPERATIONS_ZERO_DEBT",
+    "architecture_alpha112": "EXECUTED_191_OF_191_FUNCTIONAL_SPLIT_PLUS_29_OF_29_META_PLUS_ARCHITECTURE_AS_CODE_PASS",
+    "web_alpha112": "EXECUTED_LOCAL_NODE_205_OF_205_LINE99_73_BRANCH98_54_FUNCTION100_PROCESS_SMOKE_PASS",
+    "migration_alpha112": "EXECUTED_117_OF_117_ZERO_VIOLATIONS_NO_MIGRATION_CHANGE",
+    "eventing_alpha112": "EXECUTED_10_OF_10_ZERO_VIOLATIONS",
+    "persistence_alpha112": "EXECUTED_12_OF_12_ZERO_VIOLATIONS",
+    "capabilities_alpha112": "EXECUTED_10_OF_10_ZERO_VIOLATIONS",
+    "entitlements_alpha112": "EXECUTED_10_OF_10_ZERO_VIOLATIONS",
+    "audit_alpha112": "EXECUTED_8_OF_8_ZERO_VIOLATIONS",
+    "toolchains_alpha112": "EXECUTED_25_OF_25_ZERO_VIOLATIONS",
+    "connector_sdk_alpha112": "EXECUTED_19_OF_19_COVERAGE99_REPRODUCIBLE_WHEEL",
+    "java_dependency_free_alpha112": "EXECUTED_LOCAL_JAVA21_JDBC_JDBC_AUDIT_INTEGRATIONS_OUTBOUND_NOTIFICATION_POLICY_API_CAPABILITY_191_OPERATIONS_PASS",
+    "source_integrity_tests_alpha112": "EXECUTED_45_OF_45_COVERAGE100_ZERO_VIOLATIONS"
   },
   "runtime_validation_note": "alpha.0.110 advances PGM-10-E06 with durable signed outbound notifications. Local Web/API/architecture/migration and Java21 dependency-free smokes execute without lowering gates. Exact Temurin25 Maven/JUnit/JaCoCo and live PostgreSQL17/18 remain required before formal PGM-10-E05 closure; Docker PRO, PowerShell, exact target Node/pnpm/Go and a real authorized webhook receiver are unavailable locally.",
   "pgm08e01_ddi_ipam_alpha083": "EXECUTED_DOMAIN_JDBC_API_CLI_WEB_MIGRATION_ARCHITECTURE_AND_OFFLINE_SMOKE_TARGET_JDK25_MAVEN_AND_LIVE_DATABASES_PENDING",

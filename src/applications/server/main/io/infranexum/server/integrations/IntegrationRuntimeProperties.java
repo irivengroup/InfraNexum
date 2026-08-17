@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.ConstructorBinding;
 import org.springframework.validation.annotation.Validated;
 
 /** Validated Server settings for the PGM-10-E05 runtime and governed PGM-10-E06 providers. */
@@ -58,6 +59,7 @@ public record IntegrationRuntimeProperties(
                 endpoints, jiraAssets, serviceNow, new NotificationsProperties(1_048_576, Map.of()));
     }
 
+    @ConstructorBinding
     public IntegrationRuntimeProperties {
         if (webhookMaxPayloadBytes < 1 || webhookMaxPayloadBytes > 1_048_576) throw new ConfigurationException("integrations.webhookMaxPayloadBytes must be between 1 and 1048576");
         if (claimBatchSize < 1 || claimBatchSize > 1_000) throw new ConfigurationException("integrations.claimBatchSize must be between 1 and 1000");

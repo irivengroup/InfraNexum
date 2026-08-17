@@ -1133,6 +1133,7 @@
     "tests/architecture/test_identity_access_advanced_authorization.py",
     "tests/architecture/test_identity_access_rbac.py",
     "tests/architecture/test_identity_access_web_workflow.py",
+    "tests/architecture/test_integration_configuration_binding.py",
     "tests/architecture/test_itam_asset_lifecycle.py",
     "tests/architecture/test_itam_compliance.py",
     "tests/architecture/test_itam_partner_catalogue.py",
