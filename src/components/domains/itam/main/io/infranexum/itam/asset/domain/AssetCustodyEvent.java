@@ -40,9 +40,10 @@ public record AssetCustodyEvent(
             if (required) throw new NullPointerException(field);
             return null;
         }
+        if (value.chars().anyMatch(Character::isISOControl)) throw new IllegalArgumentException("invalid " + field);
         String normalized = value.strip();
         if ((!required && normalized.isEmpty())) return null;
-        if (normalized.length() < min || normalized.length() > max || normalized.chars().anyMatch(Character::isISOControl)) {
+        if (normalized.length() < min || normalized.length() > max) {
             throw new IllegalArgumentException("invalid " + field);
         }
         return normalized;

@@ -1,3 +1,17 @@
+# InfraNexum 2.0.0-alpha.0.105 — fermeture de couverture hébergée et corrective Web
+
+**Nature : corrective, aucun nouvel epic.** Cette version traite les déficits JaCoCo encore exposés par `alpha.0.104` sans réduire le seuil **98 % lignes + branches**, sans exclusion de classes de production et sans désactivation de tests. Les batteries couvrent les branches métier/résilience réelles ; les anciennes classes `*Smoke` JDBC/Organization sont intégrées au cycle Surefire via wrappers JUnit afin que leurs assertions existantes contribuent enfin à la couverture Maven.
+
+**JDBC :** le préflight déterministe Java 21 exécute **129 tests** sans échec. L'instrumentation auxiliaire de conditions couvre les deux côtés de **407/411 conditions** et environ **99,4 % des côtés de condition** ; les quatre reliquats sont des garde-fous de dépassement de graphe IAM >512 et de retour batch JDBC atypique. Ce diagnostic n'est pas JaCoCo et ne remplace pas le gate Temurin 25.
+
+**Web/Documentation :** les DataTables n'utilisent plus de scroll interne horizontal/vertical, restent dans la largeur disponible et proposent les tailles **20/50/100/200** avec pagination thémée. ReDoc charge la projection OpenAPI JSON same-origin certifiée, valide l'objet avant `Redoc.init()` et détecte l'écran fatal du renderer. Web est **EXÉCUTÉ 194/194**, couverture **99,73 % lignes / 98,53 % branches / 100 % fonctions**, smoke process réussi.
+
+**Contrats/Architecture :** API Contracts est **EXÉCUTÉ 48/48**, **15 fragments / 179 opérations**, dette **0/0/0/0**. Architecture est **EXÉCUTÉ 200/200 en mode split** (171 fonctionnels + 29 méta-checker) et Architecture-as-Code ne remonte aucune violation. La tentative de suite Architecture instrumentée monolithique dépasse encore la fenêtre locale ; elle n'est donc pas revendiquée comme exécutée à terme.
+
+**Qualification cible : NON EXÉCUTÉ localement** — Temurin **25.0.4+7** avec `./mvnw --batch-mode --no-transfer-progress --fail-at-end verify`, et PostgreSQL **17/18 live**. Ces gates restent obligatoires avant de déclarer PGM-10-E05 livré.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.104 — qualification JDK25 corrective
 
 **Nature : corrective, aucun nouvel epic.** Cette version traite l'ensemble des échecs révélés par `--fail-at-end`, `java-module-verify` et la matrice PostgreSQL sur `alpha.0.103`, sans réduction du seuil JaCoCo 98 %, exclusion de classes ni désactivation de tests.

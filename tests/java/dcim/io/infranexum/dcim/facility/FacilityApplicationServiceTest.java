@@ -179,6 +179,65 @@ final class FacilityApplicationServiceTest {
         assertThrows(IllegalArgumentException.class, () -> new FacilityCommandContext(ACTOR, CORR, "dcim-valid-100", "reason\n"));
     }
 
+
+    @Test
+    void activationParentScopeAndCrossOperationReplayBranchesRemainFailClosed() {
+        FacilityNode site = service.create(site("PAR20"), context("dcim-site-create-200", "Register site"));
+        FacilityNode activeSite = service.changeStatus(site.id(), 1, FacilityStatus.ACTIVE,
+                context("dcim-site-active-200", "Activate site"));
+        FacilityNode building = service.create(building(activeSite.id(), "BLD20"),
+                context("dcim-building-create-200", "Register building"));
+
+        // Make the parent inactive after the child exists to exercise activation-time parent validation.
+        FacilityNode suspendedSite = service.changeStatus(activeSite.id(), 2, FacilityStatus.SUSPENDED,
+                context("dcim-site-suspend-200", "Suspend parent"));
+        assertEquals(FacilityStatus.SUSPENDED, suspendedSite.status());
+        assertCode("DCIM_PARENT_INACTIVE", () -> service.changeStatus(building.id(), 1, FacilityStatus.ACTIVE,
+                context("dcim-building-active-201", "Reject child activation")));
+
+        // A reused mutation key across operation classes must fail even if the target aggregate is identical.
+        FacilityCommandContext reused = context("dcim-cross-op-200", "Cross operation replay");
+        FacilityNode fresh = service.create(site("PAR21"), reused);
+        assertCode("IDEMPOTENCY_CONFLICT", () -> service.changeStatus(fresh.id(), 1, FacilityStatus.ACTIVE, reused));
+
+        DomainIdentifier otherOrg = DomainIdentifier.parse("01900000-0000-7000-8000-000000000210");
+        DomainIdentifier otherSub = DomainIdentifier.parse("01900000-0000-7000-8000-000000000211");
+        FacilityNode foreignOrgParent = FacilityNode.draft(
+                DomainIdentifier.parse("01900000-0000-7000-8000-000000000212"), FacilityKind.BUILDING,
+                otherOrg, SUB, activeSite.id(), activeSite.id(), new FacilityCode("FORG"), "Foreign org building",
+                null, null, null, null, null, null, null, null, 1, null, BigDecimal.ONE, null, null,
+                null, null, null, ACTOR, "create", NOW).changeStatus(FacilityStatus.ACTIVE, ACTOR, "activate", NOW.plusSeconds(1));
+        repository.insert(foreignOrgParent);
+        CreateFacilityCommand floorWithForeignOrgParent = new CreateFacilityCommand(FacilityKind.FLOOR, ORG, SUB,
+                foreignOrgParent.id(), "F20", "Floor", null, null, null, null, null, null, null, null,
+                null, 1, BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE, null, null, null);
+        assertCode("DCIM_SCOPE_MISMATCH", () -> service.create(floorWithForeignOrgParent,
+                context("dcim-floor-create-200", "Foreign org parent")));
+
+        FacilityNode foreignSubParent = FacilityNode.draft(
+                DomainIdentifier.parse("01900000-0000-7000-8000-000000000213"), FacilityKind.BUILDING,
+                ORG, otherSub, activeSite.id(), activeSite.id(), new FacilityCode("FSUB"), "Foreign subdivision building",
+                null, null, null, null, null, null, null, null, 1, null, BigDecimal.ONE, null, null,
+                null, null, null, ACTOR, "create", NOW).changeStatus(FacilityStatus.ACTIVE, ACTOR, "activate", NOW.plusSeconds(1));
+        repository.insert(foreignSubParent);
+        CreateFacilityCommand floorWithForeignSubParent = new CreateFacilityCommand(FacilityKind.FLOOR, ORG, SUB,
+                foreignSubParent.id(), "F21", "Floor", null, null, null, null, null, null, null, null,
+                null, 1, BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE, null, null, null);
+        assertCode("DCIM_SCOPE_MISMATCH", () -> service.create(floorWithForeignSubParent,
+                context("dcim-floor-create-201", "Foreign subdivision parent")));
+
+        // Zones may attach below site/building/floor/room, but never below another zone.
+        FacilityNode zoneParent = FacilityNode.draft(
+                DomainIdentifier.parse("01900000-0000-7000-8000-000000000214"), FacilityKind.ZONE,
+                ORG, SUB, activeSite.id(), activeSite.id(), new FacilityCode("ZPAR"), "Parent zone",
+                null, null, null, null, null, null, null, null, null, null, null, null, null,
+                null, "cooling", "Zone parent", ACTOR, "create", NOW)
+                .changeStatus(FacilityStatus.ACTIVE, ACTOR, "activate", NOW.plusSeconds(1));
+        repository.insert(zoneParent);
+        assertCode("DCIM_ZONE_PARENT_INVALID", () -> service.create(zone(zoneParent.id(), "ZCHD"),
+                context("dcim-zone-create-202", "Reject nested zone")));
+    }
+
     private static FacilityNode active(FacilityNode node, String prefix, FacilityApplicationService app) {
         return app.changeStatus(node.id(), node.version(), FacilityStatus.ACTIVE, context("dcim-" + prefix + "-activate-999", "Activate node"));
     }

@@ -62,9 +62,6 @@ public record AttributeAuthorityPolicy(
         if (wildcards > 1 || (wildcards == 1 && (!normalized.endsWith(".*") || normalized.length() <= 2))) {
             throw new IllegalArgumentException(field + " wildcard must be a single bounded terminal .* pattern");
         }
-        if (normalized.equals("*") || normalized.equals(".*")) {
-            throw new IllegalArgumentException(field + " cannot grant implicit global authority");
-        }
         return normalized;
     }
 

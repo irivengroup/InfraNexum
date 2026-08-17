@@ -1,6 +1,7 @@
 import { localeFromDocument, translate } from './i18n.mjs';
 
 export const OPENAPI_SPEC_URL = '/assets/generated/infranexum-openapi.yaml';
+export const OPENAPI_RENDER_SPEC_URL = '/assets/generated/infranexum-openapi.json';
 export const SWAGGER_UI_VERSION = '5.32.13';
 export const REDOC_VERSION = '2.5.3';
 const SWAGGER_SCRIPT = `https://cdn.jsdelivr.net/npm/swagger-ui-dist@${SWAGGER_UI_VERSION}/swagger-ui-bundle.js`;
@@ -52,19 +53,21 @@ export async function renderSwagger(documentObject, windowObject, assetLoader = 
   }
 }
 
-export async function renderRedoc(documentObject, windowObject, assetLoader = loadExternalAsset) {
+export async function renderRedoc(documentObject, windowObject, assetLoader = loadExternalAsset, specLoader = loadCertifiedOpenApi) {
   const host = documentObject?.getElementById?.('redoc-ui');
   if (!host || initialized.has('redoc')) return Boolean(host);
   setLoading(documentObject, 'redoc');
   try {
+    const specification = await specLoader(windowObject, OPENAPI_RENDER_SPEC_URL);
     await assetLoader(documentObject, windowObject, REDOC_SCRIPT, 'script');
     const redoc = windowObject?.Redoc ?? globalThis.Redoc;
     if (!redoc || typeof redoc.init !== 'function') throw new Error('ReDoc bundle did not expose Redoc.init');
     host.replaceChildren?.();
     await new Promise((resolve, reject) => {
-      try { redoc.init(OPENAPI_SPEC_URL, redocConfiguration(documentObject), host, resolve); }
+      try { redoc.init(specification, redocConfiguration(documentObject), host, resolve); }
       catch (error) { reject(error); }
     });
+    if (containsRedocFatalError(host)) throw new Error('ReDoc reported an embedded rendering failure');
     initialized.add('redoc');
     setReady(documentObject, 'redoc');
     return true;
@@ -72,6 +75,38 @@ export async function renderRedoc(documentObject, windowObject, assetLoader = lo
     setUnavailable(documentObject, 'redoc', error);
     return false;
   }
+}
+
+export async function loadCertifiedOpenApi(windowObject = globalThis.window, url = OPENAPI_RENDER_SPEC_URL) {
+  const fetchFunction = windowObject?.fetch ?? globalThis.fetch;
+  if (typeof fetchFunction !== 'function') throw new Error('OpenAPI fetch is unavailable');
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  const timer = windowObject?.setTimeout?.(() => controller?.abort?.(), ASSET_TIMEOUT_MS);
+  try {
+    const response = await fetchFunction(url, { credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' }, signal: controller?.signal });
+    if (!response?.ok) throw new Error(`OpenAPI contract unavailable (HTTP ${response?.status ?? 'unknown'})`);
+    const specification = await response.json();
+    validateCertifiedOpenApi(specification);
+    return specification;
+  } catch (error) {
+    if (error?.name === 'AbortError') throw new Error('OpenAPI contract loading timed out');
+    throw error;
+  } finally {
+    if (timer !== undefined) windowObject?.clearTimeout?.(timer);
+  }
+}
+
+export function validateCertifiedOpenApi(specification) {
+  if (!specification || typeof specification !== 'object' || Array.isArray(specification)) throw new TypeError('OpenAPI contract must be an object');
+  if (specification.openapi !== '3.1.0') throw new TypeError('OpenAPI contract must use version 3.1.0');
+  if (!specification.info || typeof specification.info !== 'object' || typeof specification.info.version !== 'string') throw new TypeError('OpenAPI contract metadata is incomplete');
+  if (!specification.paths || typeof specification.paths !== 'object' || Array.isArray(specification.paths)) throw new TypeError('OpenAPI contract paths are invalid');
+  return true;
+}
+
+function containsRedocFatalError(host) {
+  const text = String(host?.textContent ?? '');
+  return /Something went wrong|ReDoc Version:|Stack trace/i.test(text);
 }
 
 export function swaggerConfiguration(domId = '#swagger-ui') {

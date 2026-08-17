@@ -135,9 +135,13 @@ public final class FacilityApplicationService {
         if(command.kind()==FacilityKind.SITE) return new Parent(command.subdivisionId());
         FacilityNode parent=requireFacility(Objects.requireNonNull(command.parentId(),"parentId"));
         FacilityKind expected=switch(command.kind()){case BUILDING->FacilityKind.SITE; case FLOOR->FacilityKind.BUILDING; case ROOM->FacilityKind.FLOOR; case ZONE->null; case SITE->throw new IllegalStateException();};
-        if(command.kind()==FacilityKind.ZONE){
-            if(!(parent.kind()==FacilityKind.SITE||parent.kind()==FacilityKind.BUILDING||parent.kind()==FacilityKind.FLOOR||parent.kind()==FacilityKind.ROOM)) throw new FacilityConflictException("DCIM_ZONE_PARENT_INVALID","technical zone parent must be site, building, floor or room");
-        } else if(parent.kind()!=expected) throw new FacilityConflictException("DCIM_PARENT_KIND_INVALID","facility parent kind is invalid");
+        if (command.kind() == FacilityKind.ZONE) {
+            if (parent.kind() == FacilityKind.ZONE) {
+                throw new FacilityConflictException("DCIM_ZONE_PARENT_INVALID", "a zone cannot be nested under another zone");
+            }
+        } else if (parent.kind() != expected) {
+            throw new FacilityConflictException("DCIM_PARENT_KIND_INVALID", "facility parent kind is invalid");
+        }
         if(!parent.organizationId().equals(command.organizationId())||!parent.subdivisionId().equals(command.subdivisionId())) throw new FacilityConflictException("DCIM_SCOPE_MISMATCH","facility parent belongs to another governance scope");
         if(parent.status()!=FacilityStatus.ACTIVE) throw new FacilityConflictException("DCIM_PARENT_INACTIVE","parent facility must be active");
         DomainIdentifier scopeId=command.kind()==FacilityKind.ZONE?siteAncestor(parent).id():parent.id();

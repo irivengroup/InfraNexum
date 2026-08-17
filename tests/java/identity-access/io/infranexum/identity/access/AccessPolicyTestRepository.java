@@ -20,6 +20,7 @@ final class AccessPolicyTestRepository implements AccessPolicyRepository {
     final Map<DomainIdentifier, AccessPolicy> policies = new LinkedHashMap<>();
     final List<SeparationOfDutyConstraint> constraints = new ArrayList<>();
     boolean failActivePolicies;
+    boolean returnUnrelatedConstraints;
 
     @Override
     public long nextVersion(DomainIdentifier organizationId, String code) {
@@ -62,7 +63,8 @@ final class AccessPolicyTestRepository implements AccessPolicyRepository {
             DomainIdentifier organizationId, DomainIdentifier roleId, Instant at) {
         return constraints.stream()
                 .filter(constraint -> Objects.equals(constraint.organizationId(), organizationId))
-                .filter(constraint -> constraint.firstRoleId().equals(roleId) || constraint.secondRoleId().equals(roleId))
+                .filter(constraint -> returnUnrelatedConstraints
+                        || constraint.firstRoleId().equals(roleId) || constraint.secondRoleId().equals(roleId))
                 .filter(constraint -> policies.get(constraint.policyId()) != null && policies.get(constraint.policyId()).effectiveAt(at))
                 .toList();
     }

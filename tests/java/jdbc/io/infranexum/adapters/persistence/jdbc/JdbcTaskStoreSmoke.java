@@ -756,6 +756,13 @@ public final class JdbcTaskStoreSmoke {
         expect(TaskStoreUnavailableException.class, () -> new JdbcTaskStore(
                 adminShutdownSource, JdbcDatabaseDialect.POSTGRESQL).find(TASK_ID));
 
+        for (String shutdownState : List.of("57P02", "57P03")) {
+            ScriptedDataSource shutdownSource = new ScriptedDataSource()
+                    .failConnectionWith(new SQLException("server shutdown", shutdownState));
+            expect(TaskStoreUnavailableException.class, () -> new JdbcTaskStore(
+                    shutdownSource, JdbcDatabaseDialect.POSTGRESQL).find(TASK_ID));
+        }
+
         ScriptedDataSource transientConnectionSource = new ScriptedDataSource()
                 .failConnectionWith(new SQLTransientConnectionException("pool temporarily unavailable"));
         expect(TaskStoreUnavailableException.class, () -> new JdbcTaskStore(

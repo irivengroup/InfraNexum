@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum — Product API
-  version: 2.0.0-alpha.0.104
+  version: 2.0.0-alpha.0.105
   description: Generated complete product contract; installation availability remains capability-gated.
 servers:
 - url: /

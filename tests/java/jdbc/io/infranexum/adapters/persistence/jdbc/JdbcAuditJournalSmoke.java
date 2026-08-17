@@ -136,6 +136,27 @@ public final class JdbcAuditJournalSmoke {
                 .append(entry(34, AuditScope.organization("org-runtime-failure"), true)));
     }
 
+
+    static void provesTransactionParticipationBranches() {
+        AuditScope scope = AuditScope.organization("org-jdbc-shared");
+        SimulatedAuditDataSource sharedSource = new SimulatedAuditDataSource(JdbcDatabaseDialect.POSTGRESQL);
+        Connection shared = sharedSource.getConnection();
+        JdbcAuditJournal joined = new JdbcAuditJournal(
+                sharedSource, JdbcDatabaseDialect.POSTGRESQL, Connection.TRANSACTION_READ_COMMITTED, () -> shared);
+        require(joined.append(entry(35, scope, true)).sequence() == 1,
+                "shared audit transaction append failed");
+
+        sharedSource.failHeadUpdate = true;
+        expect(JdbcPersistenceException.class, () -> joined.append(entry(36, scope, true)));
+
+        SimulatedAuditDataSource fallbackSource = new SimulatedAuditDataSource(JdbcDatabaseDialect.POSTGRESQL);
+        JdbcAuditJournal fallback = new JdbcAuditJournal(
+                fallbackSource, JdbcDatabaseDialect.POSTGRESQL, Connection.TRANSACTION_READ_COMMITTED,
+                () -> { throw new IllegalStateException("no active transaction"); });
+        require(fallback.append(entry(37, AuditScope.organization("org-jdbc-fallback"), true)).sequence() == 1,
+                "audit transaction-access fallback did not open its own transaction");
+    }
+
     private static AuditEntry entry(int value, AuditScope scope, boolean correlation) {
         String suffix = "%012d".formatted(value);
         return new AuditEntry(

@@ -99,6 +99,46 @@ final class AssetApplicationServiceTest {
         assertCode("ITAM_ASSET_CAPABILITY_UNAVAILABLE", () -> service.get(created.id()));
     }
 
+
+    @Test
+    void optionalAcquisitionReferencesAndMutationReplayBoundariesRemainDeterministic() {
+        CreateAssetCommand minimal = new CreateAssetCommand(
+                id(13), "hardware", ORG, null, LocalDate.of(2026, 8, 1), BigDecimal.ONE, "EUR", null, PRODUCER);
+        Asset created = service.create(minimal, context("acquire-minimal-0013", "Minimal governed acquisition", null));
+        assertNull(created.owningSubdivisionId());
+        assertNull(created.acquiredFromPartnerId());
+        assertEquals(PRODUCER, created.producerPartnerId());
+        assertEquals(0, references.subdivisionChecks);
+        assertEquals(0, references.acquisitionPartnerChecks);
+        assertEquals(1, references.producerChecks);
+
+        assertThrows(IllegalArgumentException.class, () -> service.setProducer(created.id(), 0, PRODUCER,
+                context("producer-invalid-version", "Reject invalid producer version", null)));
+        Asset unchanged = service.setProducer(created.id(), created.version(), PRODUCER,
+                context("producer-noop", "Producer already canonical", null));
+        assertSame(created, unchanged);
+
+        Asset received = service.receive(created.id(), created.version(), AssetCustodian.organization(ORG),
+                context("receive-replay", "Receive asset", "receipt:13"));
+        assertEquals(received.id(), service.receive(created.id(), created.version(), AssetCustodian.organization(ORG),
+                context("receive-replay", "Receive asset", "receipt:13")).id());
+        assertCode("IDEMPOTENCY_CONFLICT", () -> service.receive(created.id(), created.version(), AssetCustodian.organization(ORG),
+                context("receive-replay", "Different receipt payload", "receipt:other")));
+        assertCode("IDEMPOTENCY_CONFLICT", () -> service.transfer(received.id(), received.version(), AssetCustodian.organization(ORG),
+                context("receive-replay", "Receive asset", "receipt:13")));
+
+        assertThrows(IllegalArgumentException.class, () -> service.retire(received.id(), 0,
+                context("retire-invalid-version", "Reject invalid version", "evidence:retire")));
+        assertCode("VERSION_CONFLICT", () -> service.retire(received.id(), received.version() - 1,
+                context("retire-stale-version", "Reject stale version", "evidence:retire")));
+        Asset retired = service.retire(received.id(), received.version(),
+                context("retire-replay", "Retire asset", "evidence:retire"));
+        assertEquals(retired.id(), service.retire(received.id(), received.version(),
+                context("retire-replay", "Retire asset", "evidence:retire")).id());
+        assertCode("IDEMPOTENCY_CONFLICT", () -> service.retire(received.id(), received.version(),
+                context("retire-replay", "Different retirement payload", "evidence:different")));
+    }
+
     @Test
     void producerCorrectionIsVersionedIdempotentAndValidatedWithoutBreakingLegacyAcquisition() {
         Asset legacy = service.create(command(id(18)), context("acquire-0018", "Legacy acquisition without producer", null));

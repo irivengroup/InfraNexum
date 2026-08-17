@@ -16,8 +16,8 @@ public record PartnerAccreditation(
         evidenceReference = text(evidenceReference, "evidence reference", 2, 240);
     }
     private static String text(String value, String field, int min, int max) {
-        Objects.requireNonNull(value, field); String result = value.strip();
-        if (result.length() < min || result.length() > max || result.chars().anyMatch(Character::isISOControl)) {
+        Objects.requireNonNull(value, field); if(value.chars().anyMatch(Character::isISOControl)) throw new IllegalArgumentException("invalid "+field); String result = value.strip();
+        if (result.length() < min || result.length() > max) {
             throw new IllegalArgumentException("invalid " + field);
         }
         return result;

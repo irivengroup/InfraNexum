@@ -5,10 +5,12 @@ import test from 'node:test';
 
 import {
   OPENAPI_SPEC_URL,
+  OPENAPI_RENDER_SPEC_URL,
   REDOC_VERSION,
   SWAGGER_UI_VERSION,
   redocConfiguration,
   renderRedoc,
+  validateCertifiedOpenApi,
   swaggerConfiguration,
 } from '../../src/applications/web/public/assets/api-documentation.mjs';
 
@@ -34,6 +36,7 @@ test('documentation renderers are version-pinned, read the local certified contr
   assert.equal(SWAGGER_UI_VERSION, '5.32.13');
   assert.equal(REDOC_VERSION, '2.5.3');
   assert.equal(OPENAPI_SPEC_URL, '/assets/generated/infranexum-openapi.yaml');
+  assert.equal(OPENAPI_RENDER_SPEC_URL, '/assets/generated/infranexum-openapi.json');
   const swagger = swaggerConfiguration();
   assert.equal(swagger.url, OPENAPI_SPEC_URL);
   assert.equal(swagger.deepLinking, true);
@@ -73,11 +76,11 @@ test('ReDoc renderer initializes the certified local specification and reaches t
     documentElement: { getAttribute: (name) => name === 'lang' ? 'en' : 'light' },
     getElementById: (id) => ({ 'redoc-ui': host, 'redoc-docs-status': status, 'redoc-raw-spec': raw }[id] ?? null),
   };
-  let initializedUrl = null;
+  let initializedSpec = null;
   const windowObject = {
     Redoc: {
-      init: (url, configuration, target, done) => {
-        initializedUrl = url;
+      init: (specification, configuration, target, done) => {
+        initializedSpec = specification;
         assert.equal(target, host);
         assert.equal(configuration.theme.colors.primary.main, '#003d8f');
         done();
@@ -89,9 +92,18 @@ test('ReDoc renderer initializes the certified local specification and reaches t
     assert.equal(kind, 'script');
   };
 
-  assert.equal(await renderRedoc(documentObject, windowObject, assetLoader), true);
-  assert.equal(initializedUrl, OPENAPI_SPEC_URL);
+  const specLoader = async () => ({ openapi: '3.1.0', info: { version: '2.0.0-alpha.0.105' }, paths: {} });
+  assert.equal(await renderRedoc(documentObject, windowObject, assetLoader, specLoader), true);
+  assert.equal(initializedSpec.openapi, '3.1.0');
   assert.equal(replaced, 1);
   assert.equal(attributes.get('data-state'), 'ready');
   assert.equal(status.hidden, true);
+});
+
+
+test('ReDoc rejects malformed embedded contracts before invoking the renderer', () => {
+  assert.throws(() => validateCertifiedOpenApi(null), /must be an object/);
+  assert.throws(() => validateCertifiedOpenApi({ openapi: '3.0.3', info: { version: 'x' }, paths: {} }), /3\.1\.0/);
+  assert.throws(() => validateCertifiedOpenApi({ openapi: '3.1.0', info: {}, paths: {} }), /metadata/);
+  assert.equal(validateCertifiedOpenApi({ openapi: '3.1.0', info: { version: 'x' }, paths: {} }), true);
 });

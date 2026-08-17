@@ -13,13 +13,13 @@ import tools.jackson.databind.ObjectMapper;
 @Configuration(proxyBeanMethods = false)
 public class HttpBoundaryConfiguration {
     @Bean
-    ApiProblemSupport apiProblemSupport(
+    public ApiProblemSupport apiProblemSupport(
             @Qualifier("platformClock") Clock clock, SensitiveDataRedactor redactor, ObjectMapper mapper) {
         return new ApiProblemSupport(clock, redactor, mapper);
     }
 
     @Bean
-    CorrelationIdFilter correlationIdFilter(
+    public CorrelationIdFilter correlationIdFilter(
             @Qualifier("correlationIdentifiers") UuidV7Generator identifiers,
             MeterRegistry registry,
             ApiProblemSupport problems) {

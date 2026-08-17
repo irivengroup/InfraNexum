@@ -96,6 +96,17 @@ class JdbcRsotRepositoryTest {
                 .listCanonicalObjects(7, 30).size());
         assertTrue(oracle.sql.getFirst().contains("OFFSET ? ROWS FETCH NEXT ? ROWS ONLY"));
         assertEquals(Map.of(1, 7, 2, 30), oracle.parameters.getFirst());
+
+        ScriptedDataSource scopedPg = dataSource(connection(query(List.of(validated))));
+        assertEquals(1, new JdbcRsotRepository(scopedPg, JdbcDatabaseDialect.POSTGRESQL)
+                .listCanonicalObjects(ORGANIZATION, 3, 11).size());
+        assertTrue(scopedPg.sql.getFirst().contains("organization_id=?"));
+        assertEquals(Map.of(1, ORGANIZATION.value(), 2, 11, 3, 3), scopedPg.parameters.getFirst());
+
+        ScriptedDataSource scopedOracle = dataSource(connection(query(List.of(oracleRow))));
+        assertEquals(1, new JdbcRsotRepository(scopedOracle, JdbcDatabaseDialect.ORACLE)
+                .listCanonicalObjects(ORGANIZATION, 4, 12).size());
+        assertEquals(Map.of(1, ORGANIZATION.toString(), 2, 4, 3, 12), scopedOracle.parameters.getFirst());
     }
 
     @Test

@@ -150,6 +150,15 @@ final class WorkerValueObjectsTest {
                 WorkerPoolState.NEW, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1));
         assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
                 WorkerPoolState.NEW, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0));
+
+        // Negative capacity counters are independently invalid; cover the lower bound of each guard,
+        // not only the upper concurrency bound exercised above.
+        assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
+                WorkerPoolState.NEW, 1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
+                WorkerPoolState.NEW, 1, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        assertThrows(IllegalArgumentException.class, () -> new WorkerPoolSnapshot(
+                WorkerPoolState.NEW, 1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0));
     }
 
     @Test

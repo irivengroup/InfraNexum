@@ -169,10 +169,15 @@ class OrganizationCoverageRegressionTest {
         assertThrows(OrganizationStateException.class, () -> fixture.service.resume(
                 resumed.id(), resumed.version(), fixture.context("resume-twice")));
 
+        Organization transitionSource = fixture.service.suspend(
+                resumed.id(), resumed.version(), fixture.context("transition-wrong-id"));
+        IdempotencyRepository.Record validTransition = fixture.dedup.values.get("transition-wrong-id");
         fixture.dedup.values.put("transition-wrong-id", new IdempotencyRepository.Record(
-                "transition-wrong-id", "irrelevant", "organization-transition", id(706), fixture.clock.instant()));
+                validTransition.key(), validTransition.payloadSha256(), validTransition.resourceType(), id(706),
+                validTransition.createdAt()));
         assertThrows(OrganizationConflictException.class, () -> fixture.service.suspend(
                 resumed.id(), resumed.version(), fixture.context("transition-wrong-id")));
+        assertEquals(OrganizationState.SUSPENDED, transitionSource.state());
     }
 
     @Test

@@ -175,6 +175,206 @@ class PolicyServicesTest {
                 .check(roleB, AssignmentActorType.USER, user, AuthorizationScope.organization(ORG), NOW));
     }
 
+
+    @Test
+    void papCoversPaginationGlobalScopeRuleBoundsSubdivisionAndSodRoleBranches() {
+        PolicyAdministrationService service = administration(advanced);
+        PolicyRuleDefinition rule = permitRule("asset.read", Set.of());
+        assertThrows(IllegalArgumentException.class, () -> service.listPolicies(ORG, 0, 0));
+        assertThrows(IllegalArgumentException.class, () -> service.listPolicies(ORG, 0, 201));
+        assertThrows(IllegalArgumentException.class, () -> service.createPolicy(
+                ORG, "asset.past", "Past", 1, AuthorizationScope.organization(ORG), NOW.minusSeconds(1),
+                List.of(rule), List.of(), context(OWNER)));
+        assertThrows(IllegalArgumentException.class, () -> service.createPolicy(
+                ORG, "asset.empty", "Empty", 1, AuthorizationScope.organization(ORG), NOW,
+                List.of(), List.of(), context(OWNER)));
+        assertThrows(IllegalArgumentException.class, () -> service.createPolicy(
+                ORG, "asset.many", "Many", 1, AuthorizationScope.organization(ORG), NOW,
+                java.util.Collections.nCopies(257, rule), List.of(), context(OWNER)));
+        SeparationOfDutyDefinition repeated = new SeparationOfDutyDefinition(
+                IdentityAccessDomainTest.id(870), IdentityAccessDomainTest.id(871), "four eyes");
+        assertThrows(IllegalArgumentException.class, () -> service.createPolicy(
+                ORG, "asset.sod-many", "Many SoD", 1, AuthorizationScope.organization(ORG), NOW,
+                List.of(rule), java.util.Collections.nCopies(129, repeated), context(OWNER)));
+
+        AccessPolicy global = service.createPolicy(null, "global.audit", "Global", 1,
+                AuthorizationScope.platform(), NOW, List.of(rule), List.of(), context(OWNER));
+        assertNull(global.organizationId());
+        DomainIdentifier subdivision = IdentityAccessDomainTest.id(872);
+        assertCode("IAM_SUBDIVISION_NOT_FOUND", () -> service.createPolicy(
+                ORG, "asset.bad-subdivision", "Bad subdivision", 1,
+                AuthorizationScope.subdivision(ORG, subdivision), NOW, List.of(rule), List.of(), context(OWNER)));
+
+        DomainIdentifier roleA = IdentityAccessDomainTest.id(873);
+        DomainIdentifier roleB = IdentityAccessDomainTest.id(874);
+        identities.insertRole(new Role(roleA, ORG, "ops.inactive-a", "Inactive A", ScopeKind.ORGANIZATION,
+                false, false, NOW, NOW, null), Set.of());
+        identities.insertRole(new Role(roleB, ORG, "ops.active-b", "Active B", ScopeKind.ORGANIZATION,
+                false, true, NOW, NOW, null), Set.of());
+        assertCode("IAM_SOD_ROLE_INACTIVE", () -> service.createPolicy(
+                ORG, "asset.sod-inactive-a", "SoD", 1, AuthorizationScope.organization(ORG), NOW, List.of(rule),
+                List.of(new SeparationOfDutyDefinition(roleA, roleB, "four eyes")), context(OWNER)));
+
+        identities.insertRole(new Role(roleA, ORG, "ops.active-a", "Active A", ScopeKind.ORGANIZATION,
+                false, true, NOW, NOW, null), Set.of());
+        identities.insertRole(new Role(roleB, ORG, "ops.inactive-b", "Inactive B", ScopeKind.ORGANIZATION,
+                false, false, NOW, NOW, null), Set.of());
+        assertCode("IAM_SOD_ROLE_INACTIVE", () -> service.createPolicy(
+                ORG, "asset.sod-inactive-b", "SoD", 1, AuthorizationScope.organization(ORG), NOW, List.of(rule),
+                List.of(new SeparationOfDutyDefinition(roleA, roleB, "four eyes")), context(OWNER)));
+
+        identities.insertRole(new Role(roleB, IdentityAccessDomainTest.id(875), "ops.other", "Other", ScopeKind.ORGANIZATION,
+                false, true, NOW, NOW, null), Set.of());
+        assertCode("IAM_SOD_SCOPE_MISMATCH", () -> service.createPolicy(
+                ORG, "asset.sod-scope", "SoD", 1, AuthorizationScope.organization(ORG), NOW, List.of(rule),
+                List.of(new SeparationOfDutyDefinition(roleA, roleB, "four eyes")), context(OWNER)));
+    }
+
+    @Test
+    void pdpCoversRbacEmptyPolicyExistsSelectorsSafeTargetAndVersionInvalidation() {
+        PolicyInformationPort emptyAttributes = (request, at) -> PolicyAttributeBag.builder().build();
+        PolicyDecisionService emptyService = decision(emptyAttributes, advanced, (r, d, c) -> {});
+        assertEquals(PolicyDecision.DENY,
+                emptyService.decide(request(Map.of(), false, null), CORRELATION, "TEST").decision());
+        assertEquals(PolicyDecision.NOT_APPLICABLE,
+                emptyService.decide(request(Map.of(), true, null), CORRELATION, "TEST").decision());
+        assertEquals("unavailable", decision(emptyAttributes, new Features(false), (r,d,c)->{})
+                .activePolicyVersion(AuthorizationScope.organization(ORG)));
+
+        PolicyCondition existsFalse = new PolicyCondition(PolicyAttributeSource.SUBJECT, "flag", PolicyOperator.EXISTS, "false");
+        PolicyRule emptyAdviceRule = new PolicyRule(ids.next(), 1, PolicyEffect.PERMIT, "asset.read", "asset",
+                List.of(existsFalse), Set.of(), "");
+        AccessPolicy existsPolicy = new AccessPolicy(ids.next(), ORG, "asset.exists", 1, OWNER, "exists", 10,
+                AuthorizationScope.organization(ORG), PolicyState.ACTIVE, NOW, APPROVER, NOW, NOW, null, null,
+                NOW, NOW, List.of(emptyAdviceRule));
+        policies.insertPolicy(existsPolicy);
+        PolicyEvaluationRequest unsafeTarget = new PolicyEvaluationRequest(OWNER, "asset.read", "asset", "unsafe target",
+                AuthorizationScope.organization(ORG), Map.of(), "LOCAL_SESSION", "cap-v1", null, true);
+        PolicyEvaluationResult existsPermit = emptyService.decide(unsafeTarget, CORRELATION, "TEST");
+        assertEquals(PolicyDecision.PERMIT, existsPermit.decision());
+
+        PolicyDecisionService presentExists = decision((request, at) -> PolicyAttributeBag.builder()
+                .put(PolicyAttributeSource.SUBJECT, "flag", "present").build(), advanced, (r,d,c)->{});
+        assertEquals(PolicyDecision.NOT_APPLICABLE,
+                presentExists.decide(request(Map.of(), true, null), CORRELATION, "TEST").decision());
+
+        PolicyCondition neq = new PolicyCondition(PolicyAttributeSource.SUBJECT, "department", PolicyOperator.NOT_EQUALS, "blocked");
+        PolicyCondition contains = new PolicyCondition(PolicyAttributeSource.SUBJECT, "roles", PolicyOperator.CONTAINS, "operator");
+        PolicyRule selectorMiss = new PolicyRule(ids.next(), 1, PolicyEffect.PERMIT, "asset.write", "asset",
+                List.of(neq), Set.of(), "not targeted");
+        PolicyRule selectorHit = new PolicyRule(ids.next(), 2, PolicyEffect.PERMIT, "asset.read", "asset",
+                List.of(neq, contains), Set.of(), "matched advice");
+        AccessPolicy selectors = new AccessPolicy(ids.next(), ORG, "asset.selectors", 1, OWNER, "selectors", 20,
+                AuthorizationScope.organization(ORG), PolicyState.ACTIVE, NOW, APPROVER, NOW, NOW, null, null,
+                NOW, NOW, List.of(selectorMiss, selectorHit));
+        policies.insertPolicy(selectors);
+        PolicyDecisionService selectorService = decision((request, at) -> PolicyAttributeBag.builder()
+                .put(PolicyAttributeSource.SUBJECT, "department", "ops")
+                .put(PolicyAttributeSource.SUBJECT, "roles", "operator").build(), advanced, (r,d,c)->{});
+        assertEquals(PolicyDecision.PERMIT, selectorService.decide(request(Map.of(), true, null), CORRELATION, "TEST").decision());
+
+        String before = selectorService.activePolicyVersion(AuthorizationScope.organization(ORG));
+        policies.insertPolicy(activePolicy("asset.version-change", 30, PolicyEffect.PERMIT,
+                new PolicyCondition(PolicyAttributeSource.RBAC, "permitted", PolicyOperator.EQUALS, "true"), Set.of()));
+        String after = selectorService.activePolicyVersion(AuthorizationScope.organization(ORG));
+        assertNotEquals(before, after);
+        assertEquals(PolicyDecision.INDETERMINATE,
+                selectorService.decide(request(Map.of(), true, null), CORRELATION, "TEST").decision());
+    }
+
+
+    @Test
+    void pdpCoversMatchingRequestedVersionCacheCapacityAndLongAuditTarget() {
+        AccessPolicy bridge = activePolicy("asset.cache", 1, PolicyEffect.PERMIT,
+                new PolicyCondition(PolicyAttributeSource.SUBJECT, "tenant", PolicyOperator.EQUALS, "ops"), Set.of());
+        policies.insertPolicy(bridge);
+        PolicyDecisionService service = decision((request, at) -> PolicyAttributeBag.builder()
+                .put(PolicyAttributeSource.SUBJECT, "tenant", "ops")
+                .put(PolicyAttributeSource.ENVIRONMENT, "nonce", request.environment().getOrDefault("nonce", "0"))
+                .build(), advanced, (r,d,c)->{});
+        String version = service.activePolicyVersion(AuthorizationScope.organization(ORG));
+        PolicyEvaluationRequest matching = request(Map.of(), true, version);
+        assertEquals(PolicyDecision.PERMIT, service.decide(matching, CORRELATION, "TEST").decision());
+        PolicyEvaluationRequest longTarget = new PolicyEvaluationRequest(OWNER, "asset.read", "asset", "x".repeat(201),
+                AuthorizationScope.organization(ORG), Map.of(), "LOCAL_SESSION", "cap-v1", null, true);
+        assertEquals(PolicyDecision.PERMIT, service.decide(longTarget, CORRELATION, "TEST").decision());
+        for (int index = 0; index <= 4096; index++) {
+            PolicyEvaluationRequest unique = request(Map.of("nonce", Integer.toString(index)), true, null);
+            assertEquals(PolicyDecision.PERMIT, service.decide(unique, CORRELATION, "TEST").decision());
+        }
+    }
+
+    @Test
+    void papCoversDeletedAndValidSodRoleCombinationsIncludingSubdivisionSuccess() {
+        PolicyRuleDefinition rule = permitRule("asset.read", Set.of());
+        DomainIdentifier subdivision = IdentityAccessDomainTest.id(890);
+        OrganizationScopeReferencePort scopes = new OrganizationScopeReferencePort() {
+            @Override public boolean organizationExists(DomainIdentifier organizationId) { return ORG.equals(organizationId); }
+            @Override public boolean subdivisionExists(DomainIdentifier organizationId, DomainIdentifier subdivisionId) {
+                return ORG.equals(organizationId) && subdivision.equals(subdivisionId);
+            }
+        };
+        PolicyAdministrationService service = new PolicyAdministrationService(
+                policies, identities, advanced, scopes, new InMemoryEventStore(), audit, ids, clock);
+        AccessPolicy subdivisionPolicy = service.createPolicy(ORG, "asset.subdivision", "Subdivision", 1,
+                AuthorizationScope.subdivision(ORG, subdivision), NOW, List.of(rule), List.of(), context(OWNER));
+        assertEquals(subdivision, subdivisionPolicy.scope().subdivisionId());
+
+        DomainIdentifier firstId = IdentityAccessDomainTest.id(891);
+        DomainIdentifier secondId = IdentityAccessDomainTest.id(892);
+        Role firstDeleted = new Role(firstId, ORG, "ops.deleted-first", "Deleted First", ScopeKind.ORGANIZATION,
+                false, false, NOW, NOW, NOW);
+        Role secondActive = new Role(secondId, ORG, "ops.active-second", "Active Second", ScopeKind.ORGANIZATION,
+                false, true, NOW, NOW, null);
+        identities.insertRole(firstDeleted, Set.of()); identities.insertRole(secondActive, Set.of());
+        assertCode("IAM_SOD_ROLE_INACTIVE", () -> service.createPolicy(ORG, "asset.sod-deleted-first", "SoD", 1,
+                AuthorizationScope.organization(ORG), NOW, List.of(rule),
+                List.of(new SeparationOfDutyDefinition(firstId, secondId, "four eyes")), context(OWNER)));
+
+        Role firstActive = new Role(firstId, ORG, "ops.active-first", "Active First", ScopeKind.ORGANIZATION,
+                false, true, NOW, NOW, null);
+        Role secondDeleted = new Role(secondId, ORG, "ops.deleted-second", "Deleted Second", ScopeKind.ORGANIZATION,
+                false, false, NOW, NOW, NOW);
+        identities.insertRole(firstActive, Set.of()); identities.insertRole(secondDeleted, Set.of());
+        assertCode("IAM_SOD_ROLE_INACTIVE", () -> service.createPolicy(ORG, "asset.sod-deleted-second", "SoD", 1,
+                AuthorizationScope.organization(ORG), NOW, List.of(rule),
+                List.of(new SeparationOfDutyDefinition(firstId, secondId, "four eyes")), context(OWNER)));
+
+        identities.insertRole(firstActive, Set.of()); identities.insertRole(secondActive, Set.of());
+        AccessPolicy validSod = service.createPolicy(ORG, "asset.sod-valid", "SoD", 1,
+                AuthorizationScope.organization(ORG), NOW, List.of(rule),
+                List.of(new SeparationOfDutyDefinition(firstId, secondId, "four eyes")), context(OWNER));
+        assertEquals("asset.sod-valid", validSod.code());
+
+        DomainIdentifier otherOrg = IdentityAccessDomainTest.id(893);
+        identities.insertRole(new Role(firstId, otherOrg, "ops.other-first", "Other First", ScopeKind.ORGANIZATION,
+                false, true, NOW, NOW, null), Set.of());
+        assertCode("IAM_SOD_SCOPE_MISMATCH", () -> service.createPolicy(ORG, "asset.sod-first-scope", "SoD", 1,
+                AuthorizationScope.organization(ORG), NOW, List.of(rule),
+                List.of(new SeparationOfDutyDefinition(firstId, secondId, "four eyes")), context(OWNER)));
+    }
+
+    @Test
+    void sodGuardCoversNoConstraintNoConflictAndNullConflictPaths() {
+        DomainIdentifier roleA = IdentityAccessDomainTest.id(876);
+        DomainIdentifier roleB = IdentityAccessDomainTest.id(877);
+        DomainIdentifier user = IdentityAccessDomainTest.id(878);
+        identities.insertUser(activeUser(user, "sod.no-conflict"));
+        SeparationOfDutyService guard = new SeparationOfDutyService(policies, identities, advanced);
+        assertDoesNotThrow(() -> guard.check(roleA, AssignmentActorType.USER, user, AuthorizationScope.organization(ORG), NOW));
+
+        AccessPolicy active = activePolicy("sod.no-conflict-policy", 100, PolicyEffect.PERMIT,
+                new PolicyCondition(PolicyAttributeSource.RBAC, "permitted", PolicyOperator.EQUALS, "true"), Set.of());
+        policies.insertPolicy(active);
+        policies.insertSeparationOfDutyConstraint(new SeparationOfDutyConstraint(ids.next(), active.id(), ORG,
+                roleA, roleB, "four eyes", NOW, OWNER));
+        assertDoesNotThrow(() -> guard.check(roleA, AssignmentActorType.USER, user, AuthorizationScope.organization(ORG), NOW));
+        policies.returnUnrelatedConstraints = true;
+        assertDoesNotThrow(() -> guard.check(IdentityAccessDomainTest.id(879), AssignmentActorType.USER, user,
+                AuthorizationScope.organization(ORG), NOW));
+        policies.returnUnrelatedConstraints = false;
+    }
+
     private PolicyAdministrationService administration(IdentityAccessFeaturePolicy features) {
         OrganizationScopeReferencePort scopes = new OrganizationScopeReferencePort() {
             @Override public boolean organizationExists(DomainIdentifier organizationId) { return ORG.equals(organizationId); }

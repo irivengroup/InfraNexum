@@ -150,6 +150,8 @@ class RbacAuthorizationServiceTest {
         AuthorizationDecision unknown = service.denyUnregisteredRoute(USER, CORRELATION, "/api/v1/not-registered", "HTTP");
         assertFalse(unknown.allowed());
         assertEquals("RBAC_ROUTE_UNREGISTERED", unknown.code());
+        AuthorizationDecision longRoute = service.denyUnregisteredRoute(USER, CORRELATION, "/" + "x".repeat(2048), "HTTP");
+        assertFalse(longRoute.allowed());
     }
 
     private void seedMembership(DomainIdentifier userId) {

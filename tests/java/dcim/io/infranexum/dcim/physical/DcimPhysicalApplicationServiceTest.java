@@ -65,6 +65,80 @@ final class DcimPhysicalApplicationServiceTest {
   var quotaSvc=new DcimPhysicalApplicationService(new Repo(),new Idem(),rackQuota,refs,new InMemoryEventStore(),ids,CLOCK);
   expect("DCIM_RACK_QUOTA",()->quotaSvc.createRack(new CreateRackCommand(org,sub,room,"Q","Quota",4,600,1000),"rack-quota-0001",ctx));
  }
+
+ @Test void saturatesReplayQuotaScopeStatusAndPaginationBranches(){
+  var repo=new Repo();var idem=new Idem();var events=new InMemoryEventStore();var ids=new UuidV7Generator(CLOCK,new SecureRandom(new byte[]{7,5,1,0}));
+  var org=ids.next();var sub=ids.next();var room=ids.next();var manufacturer=ids.next();var rsot=ids.next();var asset=ids.next();var actor=ids.next();var corr=ids.next();
+  var refs=new Refs(org,sub,room,manufacturer,rsot,asset);var ctx=new PhysicalCommandContext(actor,corr,"saturate physical application branches");
+  var svc=new DcimPhysicalApplicationService(repo,idem,new Features(true),refs,events,ids,CLOCK);
+  var template=new PortTemplate("eth",2,PortKind.NETWORK,"copper","rj45");
+  var modelCmd=new CreateEquipmentModelCommand(org,manufacturer,"SAT-2U","Saturation model","rack",2,482,700,new BigDecimal("15"),List.of(template),null);
+  var model=svc.createModel(modelCmd,"sat-model-create-01",ctx); final var draftModel=model;
+  expect("IDEMPOTENCY_CONFLICT",()->svc.changeModelStatus(draftModel.id(),1,PhysicalStatus.ACTIVE,"sat-model-create-01",ctx));
+  model=svc.changeModelStatus(model.id(),1,PhysicalStatus.ACTIVE,"sat-model-status-01",ctx); final var activeModel=model;
+  require(svc.changeModelStatus(activeModel.id(),1,PhysicalStatus.ACTIVE,"sat-model-status-01",ctx).id().equals(activeModel.id()),"model status replay");
+
+  var rack=svc.createRack(new CreateRackCommand(org,sub,room,"SAT-R1","Saturation rack",8,600,1000),"sat-rack-create-01",ctx);
+  rack=svc.changeRackStatus(rack.id(),1,PhysicalStatus.ACTIVE,"sat-rack-status-01",ctx); final var activeRack=rack;
+  require(svc.changeRackStatus(activeRack.id(),1,PhysicalStatus.ACTIVE,"sat-rack-status-01",ctx).status()==PhysicalStatus.ACTIVE,"rack status replay");
+  expect("IDEMPOTENCY_CONFLICT",()->svc.changeRackStatus(activeRack.id(),2,PhysicalStatus.ARCHIVED,"sat-rack-status-01",ctx));
+  var emptyRack=svc.createRack(new CreateRackCommand(org,sub,room,"SAT-R2","Empty rack",8,600,1000),"sat-rack-create-02",ctx);
+  emptyRack=svc.changeRackStatus(emptyRack.id(),1,PhysicalStatus.ACTIVE,"sat-rack-status-02",ctx); final var emptyActive=emptyRack;
+  require(svc.changeRackStatus(emptyActive.id(),2,PhysicalStatus.ARCHIVED,"sat-rack-status-03",ctx).status()==PhysicalStatus.ARCHIVED,"empty rack archive");
+
+  var depthOnly=EquipmentModel.draft(ids.next(),org,manufacturer,"DEPTH","Depth only","rack",1,500,1200,BigDecimal.ONE,List.of(new PortTemplate("d",1,PortKind.NETWORK,"copper","rj45")),null,actor,"create",CLOCK.instant()).changeStatus(PhysicalStatus.ACTIVE,actor,"activate",CLOCK.instant());repo.insertModel(depthOnly);
+  expect("DCIM_FOOTPRINT_INCOMPATIBLE",()->svc.install(new InstallEquipmentCommand(org,sub,activeRack.id(),depthOnly.id(),rsot,null,null,null,1,"front"),"sat-install-depth",ctx));
+  var otherSub=ids.next();var foreignRack=Rack.draft(ids.next(),org,otherSub,room,"FOREIGN","Foreign rack",8,600,1000,actor,"create",CLOCK.instant()).changeStatus(PhysicalStatus.ACTIVE,actor,"activate",CLOCK.instant());repo.insertRack(foreignRack);
+  expect("DCIM_SCOPE_MISMATCH",()->svc.install(new InstallEquipmentCommand(org,sub,foreignRack.id(),activeModel.id(),rsot,null,null,null,1,"front"),"sat-install-scope",ctx));
+  var otherOrg=ids.next();var foreignOrgRack=Rack.draft(ids.next(),otherOrg,sub,room,"FORG","Foreign org rack",8,600,1000,actor,"create",CLOCK.instant()).changeStatus(PhysicalStatus.ACTIVE,actor,"activate",CLOCK.instant());repo.insertRack(foreignOrgRack);
+  expect("DCIM_SCOPE_MISMATCH",()->svc.install(new InstallEquipmentCommand(org,sub,foreignOrgRack.id(),activeModel.id(),rsot,null,null,null,1,"front"),"sat-install-org-scope",ctx));
+
+  var installed=svc.install(new InstallEquipmentCommand(org,sub,activeRack.id(),activeModel.id(),rsot,asset,null,null,1,"front"),"sat-install-01",ctx);
+  expect("IDEMPOTENCY_CONFLICT",()->svc.install(new InstallEquipmentCommand(org,sub,activeRack.id(),activeModel.id(),rsot,asset,null,null,4,"front"),"sat-install-01",ctx));
+  var blankSerial=svc.install(new InstallEquipmentCommand(org,sub,activeRack.id(),activeModel.id(),ids.next(),null," ",null,4,"front"),"sat-install-blank",ctx);
+  expect("DCIM_RACK_U_OUT_OF_RANGE",()->svc.moveEquipment(installed.id(),1,activeRack.id(),8,"front","sat-move-range",ctx));
+  expect("DCIM_SCOPE_MISMATCH",()->svc.moveEquipment(installed.id(),1,foreignRack.id(),6,"front","sat-move-scope",ctx));
+  var moved=svc.moveEquipment(installed.id(),1,activeRack.id(),6,"rear","sat-move-01",ctx);
+  require(svc.moveEquipment(installed.id(),1,activeRack.id(),6,"rear","sat-move-01",ctx).id().equals(moved.id()),"move replay");
+  expect("IDEMPOTENCY_CONFLICT",()->svc.moveEquipment(installed.id(),2,activeRack.id(),5,"front","sat-move-01",ctx));
+  require(svc.changeEquipmentStatus(blankSerial.id(),1,PhysicalStatus.MAINTENANCE,"sat-eq-maint",ctx).status()==PhysicalStatus.MAINTENANCE,"maintenance status");
+  require(svc.changeEquipmentStatus(blankSerial.id(),2,PhysicalStatus.ARCHIVED,"sat-eq-archive",ctx).status()==PhysicalStatus.ARCHIVED,"archive status");
+  require(svc.changeEquipmentStatus(blankSerial.id(),1,PhysicalStatus.MAINTENANCE,"sat-eq-maint",ctx).id().equals(blankSerial.id()),"status replay");
+  expect("IDEMPOTENCY_CONFLICT",()->svc.changeEquipmentStatus(blankSerial.id(),2,PhysicalStatus.DECOMMISSIONED,"sat-eq-maint",ctx));
+
+  DcimPhysicalFeaturePolicy portQuota=new DcimPhysicalFeaturePolicy(){public boolean physicalEnabled(){return true;}public long rackLimit(){return 100;}public long portLimit(){return 0;}public long connectionLimit(){return 100;}};
+  var qr=new Repo();var qsvc=new DcimPhysicalApplicationService(qr,new Idem(),portQuota,refs,new InMemoryEventStore(),ids,CLOCK);qr.insertModel(activeModel);qr.insertRack(activeRack);
+  expect("DCIM_PORT_QUOTA",()->qsvc.install(new InstallEquipmentCommand(org,sub,activeRack.id(),activeModel.id(),rsot,null,null,null,1,"front"),"sat-port-quota",ctx));
+
+  var e3=svc.install(new InstallEquipmentCommand(org,sub,activeRack.id(),activeModel.id(),ids.next(),null,"SAT-3",null,2,"front"),"sat-install-03",ctx);
+  var pA=svc.ports(moved.id()).get(0);var pB=svc.ports(e3.id()).get(0);var cable=svc.connect(new ConnectPortsCommand(org,sub,pA.id(),pB.id(),"SAT-C"),"sat-cable-01",ctx);
+  require(svc.connect(new ConnectPortsCommand(org,sub,pA.id(),pB.id(),"SAT-C"),"sat-cable-01",ctx).id().equals(cable.id()),"cable replay");
+  expect("IDEMPOTENCY_CONFLICT",()->svc.connect(new ConnectPortsCommand(org,sub,pA.id(),svc.ports(e3.id()).get(1).id(),"SAT-X"),"sat-cable-01",ctx));
+  var pFree=svc.ports(e3.id()).get(1);var e4=svc.install(new InstallEquipmentCommand(org,sub,activeRack.id(),activeModel.id(),ids.next(),null,"SAT-4",null,4,"front"),"sat-install-04",ctx);var pConnected=svc.ports(moved.id()).get(0);
+  expect("DCIM_PORT_ALREADY_CONNECTED",()->svc.connect(new ConnectPortsCommand(org,sub,pFree.id(),pConnected.id(),"SAT-C2"),"sat-cable-connected-second",ctx));
+  var wrongOrg=ids.next();var badA=new PhysicalPort(ids.next(),wrongOrg,e4.id(),"badA",PortKind.NETWORK,"copper","rj45",false);var goodB=svc.ports(e4.id()).get(0);repo.ports.put(badA.id(),badA);
+  expect("DCIM_SCOPE_MISMATCH",()->svc.connect(new ConnectPortsCommand(org,sub,badA.id(),goodB.id(),"SAT-SCOPE-A"),"sat-cable-scope-a",ctx));
+  var goodA=svc.ports(e4.id()).get(1);var badB=new PhysicalPort(ids.next(),wrongOrg,e3.id(),"badB",PortKind.NETWORK,"copper","rj45",false);repo.ports.put(badB.id(),badB);
+  expect("DCIM_SCOPE_MISMATCH",()->svc.connect(new ConnectPortsCommand(org,sub,goodA.id(),badB.id(),"SAT-SCOPE-B"),"sat-cable-scope-b",ctx));
+  var connectorMismatch=new PhysicalPort(ids.next(),org,e3.id(),"badConn",PortKind.NETWORK,"copper","lc",false);repo.ports.put(connectorMismatch.id(),connectorMismatch);
+  expect("DCIM_PORT_MEDIA_MISMATCH",()->svc.connect(new ConnectPortsCommand(org,sub,goodA.id(),connectorMismatch.id(),"SAT-CONN"),"sat-cable-conn",ctx));
+
+  DcimPhysicalFeaturePolicy connectionQuota=new DcimPhysicalFeaturePolicy(){public boolean physicalEnabled(){return true;}public long rackLimit(){return 100;}public long portLimit(){return 1000;}public long connectionLimit(){return 0;}};
+  var cqSvc=new DcimPhysicalApplicationService(repo,new Idem(),connectionQuota,refs,new InMemoryEventStore(),ids,CLOCK);
+  expect("DCIM_CONNECTION_QUOTA",()->cqSvc.connect(new ConnectPortsCommand(org,sub,goodA.id(),connectorMismatch.id(),"Q"),"sat-connection-quota",ctx));
+  expectNotFound(()->svc.connect(new ConnectPortsCommand(org,sub,ids.next(),goodA.id(),"NF"),"sat-cable-nf",ctx));
+  var disconnected=svc.disconnect(cable.id(),1,"sat-disconnect-01",ctx);
+  require(svc.disconnect(cable.id(),1,"sat-disconnect-01",ctx).id().equals(disconnected.id()),"disconnect replay");
+  expect("IDEMPOTENCY_CONFLICT",()->svc.disconnect(cable.id(),2,"sat-disconnect-01",ctx));
+
+  require(svc.models(org,0,1).items().size()==1,"models offset page");
+  require(svc.racks(org,room,null,1).nextCursor()!=null,"rack cursor page");
+  require(svc.cables(org,null,1).items().size()==1,"cable cursor page");
+  expectIllegal(()->svc.models(org,0,501));expectIllegal(()->svc.cables(org,null,0));expectNotFound(()->svc.ports(ids.next(),0,1));
+  expectIllegal(()->svc.createRack(new CreateRackCommand(org,sub,room,"KEY","Key rack",4,600,1000),"short",ctx));
+  expectIllegal(()->svc.createRack(new CreateRackCommand(org,sub,room,"KEY2","Key rack",4,600,1000),"x".repeat(201),ctx));
+  expectIllegal(()->svc.createRack(new CreateRackCommand(org,sub,room,"KEY3","Key rack",4,600,1000),"invalid key",ctx));
+ }
  private record Features(boolean enabled) implements DcimPhysicalFeaturePolicy {public boolean physicalEnabled(){return enabled;}public long rackLimit(){return 100;}public long portLimit(){return 1000;}public long connectionLimit(){return 1000;}}
  private record Refs(DomainIdentifier org,DomainIdentifier sub,DomainIdentifier room,DomainIdentifier manufacturer,DomainIdentifier rsot,DomainIdentifier asset) implements DcimPhysicalReferencePolicy {public void requireScope(DomainIdentifier o,DomainIdentifier s){if(!org.equals(o)||!sub.equals(s))throw new DcimPhysicalConflictException("DCIM_SCOPE_MISMATCH","scope");}public void requireActiveRoom(DomainIdentifier r,DomainIdentifier o,DomainIdentifier s){requireScope(o,s);if(!room.equals(r))throw new DcimPhysicalConflictException("DCIM_ROOM_INVALID","room");}public void requireManufacturer(DomainIdentifier p,DomainIdentifier o){if(!org.equals(o)||!manufacturer.equals(p))throw new DcimPhysicalConflictException("DCIM_MANUFACTURER_INVALID","manufacturer");}public void requireRsotObject(DomainIdentifier r,DomainIdentifier o){if(!org.equals(o))throw new DcimPhysicalConflictException("DCIM_RSOT_INVALID","rsot");}public void requireItamAssetIfPresent(DomainIdentifier a,DomainIdentifier o){if(a!=null&&!org.equals(o))throw new DcimPhysicalConflictException("DCIM_ITAM_INVALID","asset");}}
  private static final class Idem implements DcimPhysicalIdempotencyRepository{final Map<String,Record> m=new HashMap<>();public Optional<Record> find(String k){return Optional.ofNullable(m.get(k));}public void insert(Record r){if(m.putIfAbsent(r.key(),r)!=null)throw new IllegalStateException("duplicate idem");}}

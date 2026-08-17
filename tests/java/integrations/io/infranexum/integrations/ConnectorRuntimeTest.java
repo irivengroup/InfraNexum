@@ -181,6 +181,16 @@ final class ConnectorRuntimeTest {
         assertEquals(1, observer.deadLettered.get());
         assertEquals(1, observer.suspended.get());
 
+        InMemoryConnectorInboxRepository notSuspendedInbox = new InMemoryConnectorInboxRepository();
+        RecordingObserver notSuspendedObserver = new RecordingObserver();
+        ConnectorWebhookService notSuspendedService = service(notSuspendedInbox, endpoint(true), notSuspendedObserver, 1024);
+        admit(notSuspendedService, "delivery-missing-not-suspended", "{}");
+        ConnectorInboxDispatcher notSuspendedDispatcher = new ConnectorInboxDispatcher(
+                notSuspendedInbox, none, ignored -> { throw new AssertionError(); }, notSuspendedObserver,
+                policy(1), CLOCK, "worker", 1, Duration.ofSeconds(1), 2, Duration.ofSeconds(1));
+        assertEquals(1, notSuspendedDispatcher.dispatchOnce().deadLettered());
+        assertEquals(0, notSuspendedObserver.suspended.get());
+
         assertThrows(IllegalArgumentException.class, () -> new ConnectorInboxDispatcher(inbox, none, ignored -> null, observer,
                 policy(1), CLOCK, " ", 1, Duration.ofSeconds(1), 1, Duration.ofSeconds(1)));
         assertThrows(IllegalArgumentException.class, () -> new ConnectorInboxDispatcher(inbox, none, ignored -> null, observer,

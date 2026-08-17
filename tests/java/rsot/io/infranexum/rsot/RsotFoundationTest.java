@@ -72,6 +72,9 @@ class RsotFoundationTest {
                 () -> new CanonicalLifecycle(CanonicalObjectStatus.VALIDATED, null, NOW, NOW, null, null));
         assertThrows(IllegalArgumentException.class,
                 () -> new CanonicalLifecycle(CanonicalObjectStatus.VALIDATED, null, NOW, null, NOW, null));
+        assertThrows(IllegalArgumentException.class,
+                () -> new CanonicalLifecycle(CanonicalObjectStatus.VALIDATED, null, NOW, null,
+                        NOW.minusSeconds(1), id(778)));
     }
 
     @Test
@@ -139,9 +142,15 @@ class RsotFoundationTest {
         assertThrows(IllegalArgumentException.class,
                 () -> new CanonicalLifecycle(CanonicalObjectStatus.VALIDATED, null, NOW, null, NOW, null));
         assertThrows(IllegalArgumentException.class,
+                () -> new CanonicalLifecycle(CanonicalObjectStatus.VALIDATED, null, NOW, null,
+                        NOW.minusSeconds(1), id(778)));
+        assertThrows(IllegalArgumentException.class,
                 () -> new CanonicalLifecycle(CanonicalObjectStatus.ARCHIVED, null, NOW, null, null, null));
         assertThrows(IllegalArgumentException.class,
                 () -> new CanonicalLifecycle(CanonicalObjectStatus.ARCHIVED, null, NOW, null, NOW.minusSeconds(1), id(2)));
+        CanonicalLifecycle validArchived = new CanonicalLifecycle(
+                CanonicalObjectStatus.ARCHIVED, "retired", NOW, null, NOW.plusSeconds(1), id(2));
+        assertEquals(NOW.plusSeconds(1), validArchived.archivedAt());
         assertThrows(IllegalArgumentException.class,
                 () -> new CanonicalLifecycle(CanonicalObjectStatus.VALIDATED, "x".repeat(501), NOW, null, null, null));
         assertThrows(IllegalArgumentException.class,
@@ -205,6 +214,10 @@ class RsotFoundationTest {
                 () -> new AttributeAuthorityPolicy(id(1), "rsot.asset", "location.site", AuthorityContext.DCIM, dcim, NOW, NOW, "1", "approval"));
         assertThrows(IllegalArgumentException.class,
                 () -> new AttributeAuthorityPolicy(id(1), "rsot.*.*", "location.site", AuthorityContext.DCIM, dcim, NOW, null, "1", "approval"));
+        assertThrows(IllegalArgumentException.class,
+                () -> new AttributeAuthorityPolicy(id(1), "*", "location.site", AuthorityContext.DCIM, dcim, NOW, null, "1", "approval"));
+        assertThrows(IllegalArgumentException.class,
+                () -> new AttributeAuthorityPolicy(id(1), ".*", "location.site", AuthorityContext.DCIM, dcim, NOW, null, "1", "approval"));
         assertThrows(IllegalArgumentException.class,
                 () -> new AttributeAuthorityPolicy(id(1), "rsot*", "location.site", AuthorityContext.DCIM, dcim, NOW, null, "1", "approval"));
         assertThrows(IllegalArgumentException.class,

@@ -12,6 +12,7 @@ def parser() -> argparse.ArgumentParser:
     value.add_argument("--root", type=Path, default=Path("."))
     value.add_argument("--json-report", type=Path)
     value.add_argument("--product-spec", type=Path)
+    value.add_argument("--product-spec-json", type=Path)
     value.add_argument("--effective-spec", type=Path)
     value.add_argument("--effective-capability", action="append", default=[])
     return value
@@ -30,6 +31,8 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     if args.product_spec:
         checker.write_product_spec(args.product_spec)
+    if args.product_spec_json:
+        checker.write_product_spec_json(args.product_spec_json)
     if args.effective_spec:
         if not args.effective_capability:
             print("CHECK-API-035 effective specification requires at least one --effective-capability")

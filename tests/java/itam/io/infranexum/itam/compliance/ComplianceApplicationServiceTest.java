@@ -202,6 +202,236 @@ final class ComplianceApplicationServiceTest {
 
     }
 
+
+    @Test
+    void coverageRegressionExercisesMutationReplayPagingReadinessAndAlertBoundaries() {
+        UuidV7Generator ids = new UuidV7Generator(CLOCK, new SecureRandom(new byte[] {1, 2, 3, 4}));
+        DomainIdentifier organization = ids.next();
+        DomainIdentifier subdivision = ids.next();
+        DomainIdentifier actor = ids.next();
+        DomainIdentifier correlation = ids.next();
+        DomainIdentifier manufacturer = ids.next();
+        DomainIdentifier publisher = ids.next();
+        DomainIdentifier supportProvider = ids.next();
+        DomainIdentifier supplier = ids.next();
+
+        Assets assets = new Assets();
+        Asset hardware = asset(ids.next(), ids.next(), AssetType.HARDWARE, organization, subdivision, supplier, manufacturer, actor);
+        Asset hardwareWithoutProducer = asset(ids.next(), ids.next(), AssetType.HARDWARE, organization, subdivision, supplier, null, actor);
+        Asset otherHardware = asset(ids.next(), ids.next(), AssetType.HARDWARE, organization, subdivision, supplier, manufacturer, actor);
+        Asset software = asset(ids.next(), ids.next(), AssetType.SOFTWARE, organization, subdivision, supplier, publisher, actor);
+        Asset otherSoftware = asset(ids.next(), ids.next(), AssetType.SOFTWARE, organization, subdivision, supplier, publisher, actor);
+        assets.values.put(hardware.id(), hardware);
+        assets.values.put(hardwareWithoutProducer.id(), hardwareWithoutProducer);
+        assets.values.put(otherHardware.id(), otherHardware);
+        assets.values.put(software.id(), software);
+        assets.values.put(otherSoftware.id(), otherSoftware);
+
+        Repository repository = new Repository();
+        Idempotency idempotency = new Idempotency();
+        InMemoryEventStore events = new InMemoryEventStore();
+        References references = new References(manufacturer, publisher, supportProvider, organization, subdivision, repository);
+        ComplianceApplicationService service = service(assets, repository, idempotency, references, events, ids, true, 20);
+
+        WarrantyType type = service.createWarrantyType("manufacturer_standard", "Manufacturer standard warranty",
+                context(actor, correlation, "edge-type-0001", "Create warranty type"));
+        CreateWarrantyCommand warrantyCommand = new CreateWarrantyCommand(
+                hardware.id(), manufacturer, type.id(), "standard", TODAY.minusMonths(1), TODAY.plusDays(15),
+                TODAY.plusDays(30), "W-EDGE-1", "evidence:warranty:edge", "manual");
+        Warranty warranty = service.createWarranty(warrantyCommand,
+                context(actor, correlation, "edge-warranty-0001", "Create warranty"));
+        Warranty replayWarranty = service.createWarranty(warrantyCommand,
+                context(actor, correlation, "edge-warranty-0001", "Create warranty"));
+        require(replayWarranty.id().equals(warranty.id()), "warranty replay must return original record");
+        CreateWarrantyCommand otherWarrantyAsset = new CreateWarrantyCommand(
+                otherHardware.id(), manufacturer, type.id(), "standard", TODAY.minusMonths(1), TODAY.plusDays(15),
+                TODAY.plusDays(30), "W-EDGE-2", "evidence:warranty:edge2", "manual");
+        expectCode("ITAM_WARRANTY_ASSET_IMMUTABLE", () -> service.reviseWarranty(
+                warranty.id(), warranty.version(), otherWarrantyAsset,
+                context(actor, correlation, "edge-warranty-revise-immutable", "Reject immutable asset")));
+        Warranty revisedWarranty = service.reviseWarranty(warranty.id(), warranty.version(), warrantyCommand,
+                context(actor, correlation, "edge-warranty-revise", "Revise warranty"));
+        ComplianceCommandContext warrantyActivateContext = context(actor, correlation, "edge-warranty-activate", "Activate warranty");
+        long warrantyVersionBeforeActivation = revisedWarranty.version();
+        Warranty activeWarranty = service.activateWarranty(revisedWarranty.id(), warrantyVersionBeforeActivation, warrantyActivateContext);
+        require(service.activateWarranty(revisedWarranty.id(), warrantyVersionBeforeActivation, warrantyActivateContext).id().equals(activeWarranty.id()),
+                "warranty activation replay must return original record");
+        expectIllegal(() -> service.expireWarranty(activeWarranty.id(), 0,
+                context(actor, correlation, "edge-warranty-expire-invalid-version", "Invalid version")));
+
+        CreateLicenseCommand licenseCommand = new CreateLicenseCommand(
+                software.id(), publisher, "LIC-EDGE-1", "subscription", "production", 1,
+                TODAY.minusDays(1), TODAY.plusDays(30), TODAY.plusDays(60), "evidence:license:edge", "manual");
+        ComplianceCommandContext licenseContext = context(actor, correlation, "edge-license-0001", "Create license");
+        SoftwareLicenseContract license = service.createLicense(licenseCommand, licenseContext);
+        require(service.createLicense(licenseCommand, licenseContext).id().equals(license.id()), "license replay must return original record");
+        CreateLicenseCommand otherLicenseAsset = new CreateLicenseCommand(
+                otherSoftware.id(), publisher, "LIC-EDGE-2", "subscription", "production", 1,
+                TODAY.minusDays(1), TODAY.plusDays(30), TODAY.plusDays(60), "evidence:license:edge2", "manual");
+        expectCode("ITAM_LICENSE_ASSET_IMMUTABLE", () -> service.reviseLicense(license.id(), license.version(), otherLicenseAsset,
+                context(actor, correlation, "edge-license-revise-immutable", "Reject immutable asset")));
+        SoftwareLicenseContract revisedLicense = service.reviseLicense(license.id(), license.version(), licenseCommand,
+                context(actor, correlation, "edge-license-revise", "Revise license"));
+        ComplianceCommandContext licenseActivateContext = context(actor, correlation, "edge-license-activate", "Activate license");
+        long licenseVersionBeforeActivation = revisedLicense.version();
+        SoftwareLicenseContract activeLicense = service.activateLicense(revisedLicense.id(), licenseVersionBeforeActivation, licenseActivateContext);
+        require(service.activateLicense(revisedLicense.id(), licenseVersionBeforeActivation, licenseActivateContext).id().equals(activeLicense.id()),
+                "license activation replay must return original record");
+        expectCode("IDEMPOTENCY_CONFLICT", () -> service.activateLicense(revisedLicense.id(), licenseVersionBeforeActivation, licenseContext));
+        CreateLicenseCommand changedLicensePayload = new CreateLicenseCommand(
+                software.id(), publisher, "LIC-EDGE-CHANGED", "subscription", "production", 1,
+                TODAY.minusDays(1), TODAY.plusDays(30), TODAY.plusDays(60), "evidence:license:edge", "manual");
+        expectCode("IDEMPOTENCY_CONFLICT", () -> service.createLicense(changedLicensePayload, licenseContext));
+        ComplianceIdempotencyRepository.Record originalLicenseRecord = idempotency.values.get(licenseContext.idempotencyKey());
+        idempotency.values.put("edge-license-wrong-type", new ComplianceIdempotencyRepository.Record(
+                "edge-license-wrong-type", originalLicenseRecord.payloadSha256(), originalLicenseRecord.operation(),
+                "warranty", originalLicenseRecord.recordId(), originalLicenseRecord.createdAt()));
+        expectCode("IDEMPOTENCY_CONFLICT", () -> service.createLicense(licenseCommand,
+                context(actor, correlation, "edge-license-wrong-type", "Create license")));
+
+        CreateSupportAuthorizationCommand authCommand = new CreateSupportAuthorizationCommand(
+                supportProvider, organization, Set.of(manufacturer), Set.of("server"), Set.of(subdivision),
+                "24x7", "UTC", Set.of("gold"), Set.of("support"), TODAY.minusMonths(1), TODAY.plusYears(1));
+        ComplianceCommandContext authContext = context(actor, correlation, "edge-auth-0001", "Create authorization");
+        SupportProviderAuthorization authorization = service.createSupportAuthorization(authCommand, authContext);
+        require(service.createSupportAuthorization(authCommand, authContext).id().equals(authorization.id()),
+                "authorization replay must return original record");
+        ComplianceCommandContext authActivateContext = context(actor, correlation, "edge-auth-activate", "Activate authorization");
+        long authVersionBeforeActivation = authorization.version();
+        authorization = service.activateSupportAuthorization(authorization.id(), authVersionBeforeActivation, authActivateContext);
+        require(service.activateSupportAuthorization(authorization.id(), authVersionBeforeActivation, authActivateContext).id().equals(authorization.id()),
+                "authorization activation replay must return original record");
+
+        CreateSupportCoverageCommand coverageCommand = new CreateSupportCoverageCommand(
+                hardware.id(), supportProvider, authorization.id(), "SUP-EDGE-1", "hardware_maintenance", "gold",
+                TODAY, TODAY.plusYears(1), "evidence:support:edge");
+        ComplianceCommandContext coverageContext = context(actor, correlation, "edge-coverage-0001", "Create coverage");
+        SupportCoverage coverage = service.createSupportCoverage(coverageCommand, coverageContext);
+        require(service.createSupportCoverage(coverageCommand, coverageContext).id().equals(coverage.id()),
+                "coverage replay must return original record");
+        CreateSupportCoverageCommand providerMismatch = new CreateSupportCoverageCommand(
+                hardware.id(), publisher, authorization.id(), "SUP-EDGE-X", "hardware_maintenance", "gold",
+                TODAY, TODAY.plusYears(1), "evidence:support:mismatch");
+        expectCode("ITAM_SUPPORT_AUTH_PROVIDER_MISMATCH", () -> service.createSupportCoverage(providerMismatch,
+                context(actor, correlation, "edge-coverage-provider-mismatch", "Reject provider mismatch")));
+        CreateSupportCoverageCommand missingProducer = new CreateSupportCoverageCommand(
+                hardwareWithoutProducer.id(), supportProvider, authorization.id(), "SUP-EDGE-NP", "hardware_maintenance", "gold",
+                TODAY, TODAY.plusYears(1), "evidence:support:no-producer");
+        expectCode("ITAM_ASSET_PRODUCER_REQUIRED", () -> service.createSupportCoverage(missingProducer,
+                context(actor, correlation, "edge-coverage-no-producer", "Reject missing producer")));
+
+        CreateSupportCoverageCommand changedAsset = new CreateSupportCoverageCommand(
+                otherHardware.id(), supportProvider, authorization.id(), "SUP-EDGE-1", "hardware_maintenance", "gold",
+                TODAY, TODAY.plusYears(1), "evidence:support:edge");
+        expectCode("ITAM_SUPPORT_COVERAGE_IDENTITY_IMMUTABLE", () -> service.reviseSupportCoverage(
+                coverage.id(), coverage.version(), changedAsset,
+                context(actor, correlation, "edge-coverage-change-asset", "Reject changed asset")));
+        CreateSupportCoverageCommand changedProvider = new CreateSupportCoverageCommand(
+                hardware.id(), publisher, authorization.id(), "SUP-EDGE-1", "hardware_maintenance", "gold",
+                TODAY, TODAY.plusYears(1), "evidence:support:edge");
+        expectCode("ITAM_SUPPORT_COVERAGE_IDENTITY_IMMUTABLE", () -> service.reviseSupportCoverage(
+                coverage.id(), coverage.version(), changedProvider,
+                context(actor, correlation, "edge-coverage-change-provider", "Reject changed provider")));
+        DomainIdentifier otherAuthorizationId = ids.next();
+        CreateSupportCoverageCommand changedAuthorization = new CreateSupportCoverageCommand(
+                hardware.id(), supportProvider, otherAuthorizationId, "SUP-EDGE-1", "hardware_maintenance", "gold",
+                TODAY, TODAY.plusYears(1), "evidence:support:edge");
+        expectCode("ITAM_SUPPORT_COVERAGE_IDENTITY_IMMUTABLE", () -> service.reviseSupportCoverage(
+                coverage.id(), coverage.version(), changedAuthorization,
+                context(actor, correlation, "edge-coverage-change-auth", "Reject changed authorization")));
+        SupportCoverage revisedCoverage = service.reviseSupportCoverage(coverage.id(), coverage.version(), coverageCommand,
+                context(actor, correlation, "edge-coverage-revise", "Revise coverage"));
+        ComplianceCommandContext coverageActivateContext = context(actor, correlation, "edge-coverage-activate", "Activate coverage");
+        long coverageVersionBeforeActivation = revisedCoverage.version();
+        SupportCoverage activeCoverage = service.activateSupportCoverage(revisedCoverage.id(), coverageVersionBeforeActivation, coverageActivateContext);
+        require(service.activateSupportCoverage(revisedCoverage.id(), coverageVersionBeforeActivation, coverageActivateContext).id().equals(activeCoverage.id()),
+                "coverage activation replay must return original record");
+        service.suspendSupportAuthorization(authorization.id(), authorization.version(),
+                context(actor, correlation, "edge-auth-suspend", "Suspend authorization"));
+        require(service.getSupportCoverage(activeCoverage.id()).status() == ComplianceStatus.REVIEW_REQUIRED,
+                "active coverage must become review-required after authorization suspension");
+
+        // A linked DRAFT coverage exercises the non-ACTIVE propagation branch on authorization suspension.
+        SupportProviderAuthorization unreferenced = service.createSupportAuthorization(authCommand,
+                context(actor, correlation, "edge-auth-unreferenced", "Create unreferenced authorization"));
+        unreferenced = service.activateSupportAuthorization(unreferenced.id(), unreferenced.version(),
+                context(actor, correlation, "edge-auth-unreferenced-activate", "Activate unreferenced authorization"));
+        SupportCoverage draftCoverage = service.createSupportCoverage(new CreateSupportCoverageCommand(
+                        hardware.id(), supportProvider, unreferenced.id(), "SUP-DRAFT", "hardware_maintenance", "gold",
+                        TODAY, TODAY.plusYears(1), "evidence:support:draft"),
+                context(actor, correlation, "edge-coverage-draft", "Create draft coverage"));
+        require(draftCoverage.status() == ComplianceStatus.DRAFT, "draft coverage expected");
+        ComplianceCommandContext suspendContext = context(actor, correlation, "edge-auth-unreferenced-suspend", "Suspend with draft coverage");
+        long suspendVersion = unreferenced.version();
+        SupportProviderAuthorization suspendedUnreferenced = service.suspendSupportAuthorization(unreferenced.id(), suspendVersion, suspendContext);
+        require(service.suspendSupportAuthorization(unreferenced.id(), suspendVersion, suspendContext).id().equals(suspendedUnreferenced.id()),
+                "authorization suspension replay must return original record");
+
+        CreateWarrantyCommand softwareWarranty = new CreateWarrantyCommand(
+                software.id(), manufacturer, type.id(), "standard", TODAY, TODAY.plusDays(30), TODAY.plusDays(60),
+                "W-SOFTWARE", "evidence:warranty:software", "manual");
+        expectCode("ITAM_COMPLIANCE_ASSET_TYPE_INVALID", () -> service.createWarranty(softwareWarranty,
+                context(actor, correlation, "edge-warranty-software", "Reject warranty on software")));
+        CreateWarrantyCommand producerlessWarranty = new CreateWarrantyCommand(
+                hardwareWithoutProducer.id(), manufacturer, type.id(), "standard", TODAY, TODAY.plusDays(30), TODAY.plusDays(60),
+                "W-NOPROD", "evidence:warranty:no-producer", "manual");
+        expectCode("ITAM_ASSET_PRODUCER_REQUIRED", () -> service.createWarranty(producerlessWarranty,
+                context(actor, correlation, "edge-warranty-no-producer", "Reject producerless warranty")));
+
+        Warranty pastWarranty = Warranty.draft(ids.next(), hardware.id(), manufacturer, type.id(), "standard",
+                TODAY.minusYears(1), TODAY.minusDays(1), TODAY.plusDays(4000), "W-PAST", "evidence:past",
+                io.infranexum.itam.compliance.domain.EvidenceSource.MANUAL, actor, "Past warranty", NOW);
+        repository.insertWarranty(pastWarranty);
+        SoftwareLicenseContract alertLicense = SoftwareLicenseContract.draft(ids.next(), software.id(), publisher, "LIC-ALERT",
+                "subscription", "production", 1, TODAY.minusDays(1), TODAY.plusDays(30), TODAY.plusDays(60),
+                "evidence:license:alert", io.infranexum.itam.compliance.domain.EvidenceSource.MANUAL, actor, "Alert license", NOW);
+        repository.insertLicense(alertLicense);
+        SoftwareLicenseContract openEndedAlertLicense = SoftwareLicenseContract.draft(ids.next(), software.id(), publisher, "LIC-OPEN",
+                "perpetual", "production", 1, TODAY.minusDays(1), null, TODAY.plusDays(30),
+                "evidence:license:open", io.infranexum.itam.compliance.domain.EvidenceSource.MANUAL, actor, "Open license", NOW);
+        repository.insertLicense(openEndedAlertLicense);
+        require(!service.upcomingAlerts(software.id(), TODAY, 180).isEmpty(), "software alert path must be exercised");
+        service.publishDueAlerts(TODAY, correlation);
+
+        require(service.supportAuthorizationPage(organization, 0, 1).items().size() == 1, "support authorization page size");
+        require(service.supportAuthorizationPage(organization, 0, 1).nextOffset() != null, "support authorization page next offset");
+        expectIllegal(() -> service.supportAuthorizationPage(organization, 0, 0));
+        expectIllegal(() -> service.supportAuthorizationPage(organization, 0, 201));
+        expectIllegal(() -> service.history("warranty", warranty.id(), -1, 20));
+        expectIllegal(() -> service.history("warranty", warranty.id(), 0, 0));
+        expectIllegal(() -> service.history("warranty", warranty.id(), 0, 201));
+        expectIllegal(() -> service.upcomingAlerts(hardware.id(), TODAY, 0));
+        expectIllegal(() -> service.upcomingAlerts(hardware.id(), TODAY, 3651));
+        require(service.upcomingAlertPage(hardware.id(), TODAY, 3650, 0, 20) != null, "upcoming alert page");
+        require(!service.hardwareReady(software, TODAY), "software asset cannot be hardware-ready");
+        require(!service.hardwareReady(hardwareWithoutProducer, TODAY), "producerless hardware cannot be ready");
+        require(!service.softwareReady(hardware, TODAY), "hardware asset cannot be software-ready");
+        require(!service.softwareReady(hardwareWithoutProducer, TODAY), "producerless hardware cannot be software-ready");
+        Asset producerlessSoftware = asset(ids.next(), ids.next(), AssetType.SOFTWARE, organization, subdivision, supplier, null, actor);
+        assets.values.put(producerlessSoftware.id(), producerlessSoftware);
+        require(!service.softwareReady(producerlessSoftware, TODAY), "producerless software cannot be ready");
+        ComplianceApplicationService disabled = service(assets, repository, idempotency, references, events, ids, false, 20);
+        require(!disabled.softwareReady(software, TODAY), "disabled compliance must fail software readiness closed");
+        expectIllegal(() -> service.warrantyPage(hardware.id(), null, 0));
+        expectIllegal(() -> service.warrantyPage(hardware.id(), null, 201));
+
+        // Warranty-type replay conflict and missing replay record remain fail-closed.
+        expectCode("IDEMPOTENCY_CONFLICT", () -> service.createWarrantyType("manufacturer_standard", "Different display",
+                context(actor, correlation, "edge-type-0001", "Create warranty type")));
+        expectCode("IDEMPOTENCY_CONFLICT", () -> service.createWarrantyType("CROSS_OPERATION", "Cross operation", licenseContext));
+
+        expectIllegal(() -> new ComplianceApplicationService(
+                assets, repository, idempotency, references, new Features(true, 20), events, ids, CLOCK, new int[] {}));
+        expectIllegal(() -> new ComplianceApplicationService(
+                assets, repository, idempotency, references, new Features(true, 20), events, ids, CLOCK, new int[] {30, 30}));
+        expectIllegal(() -> new ComplianceApplicationService(
+                assets, repository, idempotency, references, new Features(true, 20), events, ids, CLOCK, new int[] {0}));
+        expectIllegal(() -> new ComplianceApplicationService(
+                assets, repository, idempotency, references, new Features(true, 20), events, ids, CLOCK, new int[] {3651}));
+        expectIllegal(() -> new ComplianceApplicationService(
+                assets, repository, idempotency, references, new Features(true, 20), events, ids, CLOCK, new int[33]));
+    }
+
     private static ComplianceApplicationService service(
             AssetRepository assets, ComplianceRepository repository, ComplianceIdempotencyRepository idempotency,
             ComplianceReferencePolicy references, InMemoryEventStore events, UuidV7Generator ids, boolean enabled, long limit) {

@@ -1,3 +1,15 @@
+# InfraNexum 2.0.0-alpha.0.105 — hosted coverage, DataTable and ReDoc corrective
+
+`alpha.0.105` is a qualification/Web corrective over `alpha.0.104`; it does **not** advance the roadmap. It preserves the JaCoCo policy at **98 % lines and branches** with no production-class exclusion, disabled test or lowered threshold. The corrective expands executable branch regressions across Workers, Compatibility, Organization, Identity, RSOT, ITAM, DCIM, DDI and Integrations, and makes previously existing JDBC smoke contracts visible to Surefire/JaCoCo through JUnit wrappers rather than duplicating their assertions.
+
+JDBC deterministic coverage is extended repository-by-repository across idempotency, IAM, Organization, local identity/session, RSOT, audit, workers, ITAM, DCIM, DDI, schema registry and the connector inbox. The auxiliary Java 21 condition probe executes **129 deterministic JDBC tests** with zero failures and observes both sides of **407/411** source conditions (about **99.4 % of condition sides**); this is a preflight diagnostic only, not a substitute for the mandatory hosted Temurin 25 JaCoCo result.
+
+The Web DataTable contract now consumes the available content width without internal horizontal or vertical scrolling and exposes themed page sizes **20 / 50 / 100 / 200**. ReDoc receives the same-origin certified OpenAPI projection as parsed JSON, validates it before renderer initialization and converts a renderer fatal screen into a controlled documentation error. Web verification executes **194/194** tests at **99.73 % lines / 98.53 % branches / 100 % functions**. The i18n version regression no longer hard-codes a release number and instead follows the canonical Web package version.
+
+Architecture invariants were updated only where stricter production validation legitimately replaced older implementation-shape assertions (required positive DCIM building floor counts and the bounded terminal `.*` RSOT authority wildcard guard). Split Architecture execution is **200/200** with Architecture-as-Code free of violations. Exact Temurin 25 Maven/JUnit/JaCoCo and live PostgreSQL 17/18 remain the formal PGM-10-E05 promotion gates.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.104 — hosted JDK25 qualification corrective
 
 `alpha.0.104` is a qualification corrective over `alpha.0.103`; it does **not** advance the roadmap. It consumes the complete hosted JDK 25/PostgreSQL diagnostics from the previous candidate and keeps the JaCoCo policy at **98 % lines and branches** with no class exclusions or disabled tests.

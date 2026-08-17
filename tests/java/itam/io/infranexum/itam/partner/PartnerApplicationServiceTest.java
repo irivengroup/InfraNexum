@@ -136,9 +136,32 @@ final class PartnerApplicationServiceTest {
         PartnerPage page = service.search(criteria);
         assertEquals(1, page.items().size());
         assertSame(criteria, repository.lastSearch);
+        PartnerSearchCriteria global = new PartnerSearchCriteria(null, null, null, null, null, null, null, 20);
+        assertEquals(1, service.search(global).items().size());
         governance.organizationExists = false;
         assertThrows(PartnerNotFoundException.class, () -> service.search(criteria));
         assertThrows(NullPointerException.class, () -> service.search(null));
+    }
+
+
+    @Test
+    void optionalSubdivisionEmptyRolesAndCrossOperationReplayAreFailClosed() {
+        CreatePartnerCommand global = new CreatePartnerCommand(
+                ORG, null, "GLO-001", "Global Vendor SAS", "Global Vendor", "FR", Set.of("supplier"),
+                LocalDate.of(2026, 1, 1), null, null, null, List.of(), List.of(), List.of(), List.of());
+        Partner created = service.create(global, context("global-create-01", "Global registration"));
+        assertNull(created.governingSubdivisionId());
+
+        CreatePartnerCommand emptyRoles = new CreatePartnerCommand(
+                ORG, null, "BAD-001", "No Role Vendor SAS", "No Role Vendor", "FR", Set.of(),
+                LocalDate.of(2026, 1, 1), null, null, null, List.of(), List.of(), List.of(), List.of());
+        assertThrows(IllegalArgumentException.class, () -> service.create(emptyRoles,
+                context("empty-role-001", "Reject empty roles")));
+
+        Partner pending = service.submitApproval(created.id(), created.version(),
+                context("cross-replay-key", "Submit global vendor"));
+        assertCode("IDEMPOTENCY_CONFLICT", () -> service.authorize(pending.id(), pending.version(),
+                context("cross-replay-key", "Submit global vendor")));
     }
 
     @Test

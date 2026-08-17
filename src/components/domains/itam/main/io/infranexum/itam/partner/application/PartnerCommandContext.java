@@ -14,8 +14,7 @@ public record PartnerCommandContext(
             throw new IllegalArgumentException("invalid idempotency key");
         }
         idempotencyKey = idempotencyKey.strip();
-        if (idempotencyKey.length() < 8 || idempotencyKey.length() > 200
-                || idempotencyKey.chars().anyMatch(Character::isISOControl)) {
+        if (idempotencyKey.length() < 8 || idempotencyKey.length() > 200) {
             throw new IllegalArgumentException("invalid idempotency key");
         }
         Objects.requireNonNull(reason, "reason");
@@ -23,7 +22,7 @@ public record PartnerCommandContext(
             throw new IllegalArgumentException("invalid partner mutation reason");
         }
         reason = reason.strip();
-        if (reason.length() < 2 || reason.length() > 1024 || reason.chars().anyMatch(Character::isISOControl)) {
+        if (reason.length() < 2 || reason.length() > 1024) {
             throw new IllegalArgumentException("invalid partner mutation reason");
         }
     }

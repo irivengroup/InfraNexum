@@ -124,6 +124,11 @@ class JdbcLocalIdentityRepositoriesTest {
         assertEquals(1, concurrent.rollbacks);
         assertThrows(NullPointerException.class, () -> new JdbcLocalIdentityRepository(changeData, JdbcDatabaseDialect.POSTGRESQL)
                 .changePassword(id(1), 0, null, false, NOW));
+
+        ScriptedDataSource missing = dataSource(connection(query(List.of())));
+        assertThrows(JdbcPersistenceException.class, () -> new JdbcLocalIdentityRepository(missing, JdbcDatabaseDialect.POSTGRESQL)
+                .recordFailedAuthentication(id(1), 0, 3, Duration.ofMinutes(5), NOW));
+        assertEquals(1, missing.rollbacks);
     }
 
     @Test
@@ -155,6 +160,8 @@ class JdbcLocalIdentityRepositoriesTest {
                 dataSource(connection(update(0))), JdbcDatabaseDialect.POSTGRESQL).touch(session.id(), NOW, NOW.plusSeconds(1)));
         assertThrows(JdbcPersistenceException.class, () -> new JdbcLocalSessionRepository(
                 dataSource(connection(failingUpdate(new SQLException("offline", "08006")))), JdbcDatabaseDialect.POSTGRESQL).insert(session));
+        assertThrows(JdbcPersistenceException.class, () -> new JdbcLocalSessionRepository(
+                dataSource(connection(update(0))), JdbcDatabaseDialect.POSTGRESQL).insert(session));
         assertThrows(NullPointerException.class, () -> new JdbcLocalSessionRepository(null, JdbcDatabaseDialect.POSTGRESQL));
         assertThrows(NullPointerException.class, () -> new JdbcLocalSessionRepository(insert, null));
     }

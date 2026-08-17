@@ -62,9 +62,9 @@ class RsotAuthorityFoundationArchitectureTest(unittest.TestCase):
             "String approvalRef",
         ):
             self.assertIn(field, source)
-        self.assertIn('normalized.equals("*")', source)
-        self.assertIn('normalized.equals(".*")', source)
-        self.assertIn('normalized.endsWith(".*")', source)
+        self.assertIn('wildcards > 1', source)
+        self.assertIn('!normalized.endsWith(".*")', source)
+        self.assertIn('normalized.length() <= 2', source)
 
     def test_authority_resolution_fails_closed_on_missing_or_ambiguous_policy(self) -> None:
         source = (self.RSOT / "main/io/infranexum/rsot/application/RsotAuthorityService.java").read_text(encoding="utf-8")

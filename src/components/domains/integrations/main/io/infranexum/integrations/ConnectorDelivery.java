@@ -54,7 +54,7 @@ public record ConnectorDelivery(
         Objects.requireNonNull(value, field);
         if (value.chars().anyMatch(Character::isISOControl)) throw new IllegalArgumentException("invalid " + field);
         String normalized = value.strip();
-        if (normalized.isEmpty() || normalized.length() > max || normalized.chars().anyMatch(Character::isISOControl)) throw new IllegalArgumentException("invalid " + field);
+        if (normalized.isEmpty() || normalized.length() > max) throw new IllegalArgumentException("invalid " + field);
         return normalized;
     }
 }

@@ -55,7 +55,7 @@ public record IdentityUser(
         if (value == null || value.isBlank()) return null;
         rejectIsoControls(value, "email");
         String normalized = value.strip().toLowerCase(Locale.ROOT);
-        if (normalized.length() > 320 || !normalized.contains("@") || normalized.chars().anyMatch(Character::isISOControl)) {
+        if (normalized.length() > 320 || !normalized.contains("@")) {
             throw new IllegalArgumentException("invalid email");
         }
         return normalized;
@@ -65,7 +65,7 @@ public record IdentityUser(
         Objects.requireNonNull(value, field);
         rejectIsoControls(value, field);
         String normalized = value.strip();
-        if (normalized.isEmpty() || normalized.length() > max || normalized.chars().anyMatch(Character::isISOControl)) {
+        if (normalized.isEmpty() || normalized.length() > max) {
             throw new IllegalArgumentException("invalid " + field);
         }
         return normalized;

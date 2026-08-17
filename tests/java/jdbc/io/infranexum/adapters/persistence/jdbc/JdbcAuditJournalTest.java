@@ -7,4 +7,5 @@ class JdbcAuditJournalTest {
     @Test void postgresqlAppendReadAndVerification() { JdbcAuditJournalSmoke.provesPostgreSqlAppendReadAndVerification(); }
     @Test void oracleMappingAndFailureGuards() { JdbcAuditJournalSmoke.provesOracleMappingAndFailureGuards(); }
     @Test void tamperAndConfigurationGuards() { JdbcAuditJournalSmoke.provesTamperAndConfigurationGuards(); }
+    @Test void transactionParticipationBranches() { JdbcAuditJournalSmoke.provesTransactionParticipationBranches(); }
 }

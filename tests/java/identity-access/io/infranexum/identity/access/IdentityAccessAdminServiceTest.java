@@ -113,6 +113,15 @@ class IdentityAccessAdminServiceTest {
         assertCode("IAM_MULTI_MEMBERSHIP_UNAVAILABLE",
                 () -> service.addMembership(user.id(), OTHER_ORG, null, NOW.plusSeconds(1), null, context));
         assertNotNull(service.addMembership(user.id(), ORG, null, NOW.plusSeconds(1), null, context));
+
+        IdentityUser historyOnly = service.createUser("lite.history", null, "Lite History", true, context);
+        service.addMembership(historyOnly.id(), ORG, null, NOW.minusSeconds(20), NOW.minusSeconds(10), context);
+        assertNotNull(service.addMembership(historyOnly.id(), OTHER_ORG, null, NOW, null, context));
+
+        IdentityUser subdivisionConflict = service.createUser("lite.subdivision", null, "Lite Subdivision", true, context);
+        service.addMembership(subdivisionConflict.id(), ORG, null, NOW, null, context);
+        assertCode("IAM_MULTI_MEMBERSHIP_UNAVAILABLE",
+                () -> service.addMembership(subdivisionConflict.id(), ORG, SUBDIVISION, NOW.plusSeconds(1), null, context));
     }
 
     @Test
@@ -269,6 +278,50 @@ class IdentityAccessAdminServiceTest {
                 () -> service.createPermission(missingOrg, "asset.missing", "asset", "read", "normal", ScopeKind.ORGANIZATION, context));
         assertCode("IAM_ORGANIZATION_NOT_FOUND",
                 () -> service.createRole(missingOrg, "dangling.role", "Dangling", ScopeKind.ORGANIZATION, Set.of("iam.user.read"), context));
+    }
+
+
+    @Test
+    void remainingAdministrationGuardsCoverEmptyPaginationUnassignedRolesAndScopeShapes() {
+        assertThrows(IllegalArgumentException.class, () -> service.listUsers(0, 0));
+        assertCode("IAM_ROLE_EMPTY", () -> service.createRole(ORG, "ops.null", "Null", ScopeKind.ORGANIZATION, null, context));
+
+        Permission permission = seedPermission("asset.guard", ScopeKind.ORGANIZATION);
+        Role unassigned = service.createRole(ORG, "ops.unassigned", "Unassigned", ScopeKind.ORGANIZATION,
+                Set.of(permission.code()), context);
+        assertTrue(service.deleteRole(unassigned.id(), false, context).deleted());
+
+        IdentityUser scoped = service.createUser("scope.guard", null, "Scope Guard", true, context);
+        assertCode("IAM_SCOPE_REFERENCE_INVALID",
+                () -> service.addMembership(scoped.id(), null, SUBDIVISION, NOW, null, context));
+
+        Role platformNonSystem = new Role(IdentityAccessDomainTest.id(410), null, "ops.platform", "Platform",
+                ScopeKind.PLATFORM, false, true, NOW, NOW, null);
+        repository.insertRole(platformNonSystem, Set.of(permission.code()));
+        IdentityGroup group = service.createGroup(ORG, "ops.platform-group", "Platform Group", context);
+        assertCode("IAM_ASSIGNMENT_SCOPE_MISMATCH", () -> service.assignRole(platformNonSystem.id(), AssignmentActorType.GROUP,
+                group.id(), AuthorizationScope.platform(), NOW, null, context));
+
+        Role globalOrganizationRole = new Role(IdentityAccessDomainTest.id(411), null, "ops.global-org", "Global Org",
+                ScopeKind.ORGANIZATION, false, true, NOW, NOW, null);
+        repository.insertRole(globalOrganizationRole, Set.of(permission.code()));
+        assertCode("IAM_ASSIGNMENT_SCOPE_MISMATCH", () -> service.assignRole(globalOrganizationRole.id(), AssignmentActorType.USER,
+                scoped.id(), AuthorizationScope.platform(), NOW, null, context));
+
+        Role system = seedSystemPlatformAdminRole();
+        assertCode("IAM_ASSIGNMENT_SCOPE_MISMATCH", () -> service.assignRole(system.id(), AssignmentActorType.USER,
+                scoped.id(), AuthorizationScope.organization(ORG), NOW, null, context));
+
+        Role subdivision = service.createRole(ORG, "ops.sub-ok", "Subdivision", ScopeKind.SUBDIVISION,
+                Set.of(permission.code()), context);
+        service.addMembership(scoped.id(), ORG, SUBDIVISION, NOW, null, context);
+        RoleAssignment subAssignment = service.assignRole(subdivision.id(), AssignmentActorType.USER, scoped.id(),
+                AuthorizationScope.subdivision(ORG, SUBDIVISION), NOW, null, context);
+        assertEquals(ScopeKind.SUBDIVISION, subAssignment.scope().kind());
+
+        IdentityUser history = service.createUser("history.guard", null, "History", true, context);
+        service.addMembership(history.id(), ORG, null, NOW.minusSeconds(20), NOW.minusSeconds(10), context);
+        assertNotNull(service.addMembership(history.id(), OTHER_ORG, null, NOW, null, context));
     }
 
     private IdentityAccessAdminService service(IdentityAccessFeaturePolicy features) {

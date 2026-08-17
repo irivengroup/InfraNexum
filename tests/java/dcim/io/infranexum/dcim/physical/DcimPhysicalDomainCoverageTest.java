@@ -165,6 +165,48 @@ final class DcimPhysicalDomainCoverageTest {
         assertEquals("rack not found", new DcimPhysicalNotFoundException("rack").getMessage());
     }
 
+
+    @Test
+    void scalarValidationSaturatesIndependentMinimumMaximumAndControlCharacterBranches() {
+        PortTemplate one = new PortTemplate("p", 1, PortKind.NETWORK, "copper", "rj45");
+        assertThrows(IllegalArgumentException.class, () -> new PortTemplate("p", 1, PortKind.NETWORK, "_bad", "rj45"));
+        assertThrows(IllegalArgumentException.class, () -> new PortTemplate("p", 1, PortKind.NETWORK, "copper", "bad connector"));
+        assertThrows(IllegalArgumentException.class, () -> new PortTemplate("x".repeat(25), 1, PortKind.NETWORK, "copper", "rj45"));
+        assertThrows(IllegalArgumentException.class, () -> new PortTemplate("p\n", 1, PortKind.NETWORK, "copper", "rj45"));
+
+        assertThrows(IllegalArgumentException.class, () -> new PhysicalPort(ID, ORG, MODEL, "x".repeat(65), PortKind.NETWORK, "copper", "rj45", false));
+        assertThrows(IllegalArgumentException.class, () -> new PhysicalPort(ID, ORG, MODEL, "eth0", PortKind.NETWORK, "x".repeat(33), "rj45", false));
+        assertThrows(IllegalArgumentException.class, () -> new PhysicalPort(ID, ORG, MODEL, "eth0", PortKind.NETWORK, "copper", "x".repeat(33), false));
+
+        assertThrows(IllegalArgumentException.class, () -> model(1, 5001, 800, BigDecimal.ONE, List.of(one), null));
+        assertThrows(IllegalArgumentException.class, () -> model(1, 482, 0, BigDecimal.ONE, List.of(one), null));
+        assertThrows(IllegalArgumentException.class, () -> EquipmentModel.draft(ID, ORG, ACTOR, "_bad", "Model one", "rack", 1, 482, 800, BigDecimal.ONE, List.of(one), null, ACTOR, "reason", NOW));
+        assertThrows(IllegalArgumentException.class, () -> EquipmentModel.draft(ID, ORG, ACTOR, "X", "Model one", "rack", 1, 482, 800, BigDecimal.ONE, List.of(one), null, ACTOR, "reason", NOW));
+        assertThrows(IllegalArgumentException.class, () -> EquipmentModel.draft(ID, ORG, ACTOR, "MOD", "x".repeat(129), "rack", 1, 482, 800, BigDecimal.ONE, List.of(one), null, ACTOR, "reason", NOW));
+        assertThrows(IllegalArgumentException.class, () -> EquipmentModel.draft(ID, ORG, ACTOR, "MOD", "Model", "r\n", 1, 482, 800, BigDecimal.ONE, List.of(one), null, ACTOR, "reason", NOW));
+
+        assertThrows(IllegalArgumentException.class, () -> Rack.draft(ID, ORG, SUB, ROOM, "R01", "Rack", 101, 600, 1000, ACTOR, "reason", NOW));
+        assertThrows(IllegalArgumentException.class, () -> Rack.draft(ID, ORG, SUB, ROOM, "R01", "Rack", 42, 5001, 1000, ACTOR, "reason", NOW));
+        assertThrows(IllegalArgumentException.class, () -> Rack.draft(ID, ORG, SUB, ROOM, "R01", "Rack", 42, 600, 0, ACTOR, "reason", NOW));
+        assertThrows(IllegalArgumentException.class, () -> Rack.draft(ID, ORG, SUB, ROOM, "R01", "Rack", 42, 600, 5001, ACTOR, "reason", NOW));
+        assertThrows(IllegalArgumentException.class, () -> Rack.draft(ID, ORG, SUB, ROOM, "X", "Rack", 42, 600, 1000, ACTOR, "reason", NOW));
+        assertThrows(IllegalArgumentException.class, () -> Rack.draft(ID, ORG, SUB, ROOM, "R01", "x".repeat(129), 42, 600, 1000, ACTOR, "reason", NOW));
+        assertThrows(IllegalArgumentException.class, () -> Rack.draft(ID, ORG, SUB, ROOM, "R\n", "Rack", 42, 600, 1000, ACTOR, "reason", NOW));
+
+        assertThrows(IllegalArgumentException.class, () -> Equipment.installed(ID, ORG, SUB, ROOM, MODEL, RSOT, null, "x".repeat(129), null, 1, "front", ACTOR, "reason", NOW));
+        assertThrows(IllegalArgumentException.class, () -> Equipment.installed(ID, ORG, SUB, ROOM, MODEL, RSOT, null, null, "x".repeat(129), 1, "front", ACTOR, "reason", NOW));
+        assertThrows(IllegalArgumentException.class, () -> Equipment.installed(ID, ORG, SUB, ROOM, MODEL, RSOT, null, "SN\n", null, 1, "front", ACTOR, "reason", NOW));
+        assertThrows(IllegalArgumentException.class, () -> Equipment.installed(ID, ORG, SUB, ROOM, MODEL, RSOT, null, null, null, 1, "x", ACTOR, "reason", NOW));
+        assertNull(Equipment.installed(ID, ORG, SUB, ROOM, MODEL, RSOT, null, " ", " ", 1, "front", ACTOR, "reason", NOW).serialNumber());
+
+        DomainIdentifier a=id(30), b=id(31);
+        assertThrows(IllegalArgumentException.class, () -> CableConnection.active(ID, ORG, SUB, a, b, "x".repeat(129), "copper", "rj45", ACTOR, "reason", NOW));
+        assertThrows(IllegalArgumentException.class, () -> CableConnection.active(ID, ORG, SUB, a, b, "C", "x".repeat(33), "rj45", ACTOR, "reason", NOW));
+        assertThrows(IllegalArgumentException.class, () -> CableConnection.active(ID, ORG, SUB, a, b, "C", "copper", "x".repeat(33), ACTOR, "reason", NOW));
+        assertThrows(IllegalArgumentException.class, () -> CableConnection.active(ID, ORG, SUB, a, b, "C\n", "copper", "rj45", ACTOR, "reason", NOW));
+        assertThrows(IllegalArgumentException.class, () -> CableConnection.active(ID, ORG, SUB, a, b, " ", "copper", "rj45", ACTOR, "reason", NOW));
+    }
+
     private static EquipmentModel model(int rackUnits, int width, int depth, BigDecimal weight, List<PortTemplate> templates, String description) {
         return EquipmentModel.draft(ID, ORG, ACTOR, "MODEL1", "Model one", "rack", rackUnits, width, depth,
                 weight, templates, description, ACTOR, "create", NOW);

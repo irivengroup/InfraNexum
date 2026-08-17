@@ -13,5 +13,5 @@ public record PortTemplate(String namePrefix, int count, PortKind kind, String m
     }
     public String portName(int index){ if(index<1||index>count)throw new IllegalArgumentException("port index outside template"); return namePrefix+index; }
     private static String token(String value,String field){String v=text(value,field,1,32).toLowerCase(Locale.ROOT);if(!v.matches("[a-z0-9][a-z0-9._-]{0,31}"))throw new IllegalArgumentException(field+" is invalid");return v;}
-    private static String text(String value,String field,int min,int max){String v=Objects.requireNonNull(value,field).strip();if(v.length()<min||v.length()>max||v.chars().anyMatch(Character::isISOControl))throw new IllegalArgumentException(field+" length/content is invalid");return v;}
+    private static String text(String value,String field,int min,int max){Objects.requireNonNull(value,field);if(value.chars().anyMatch(Character::isISOControl))throw new IllegalArgumentException(field+" invalid");String v=value.strip();if(v.length()<min||v.length()>max)throw new IllegalArgumentException(field+" length/content is invalid");return v;}
 }

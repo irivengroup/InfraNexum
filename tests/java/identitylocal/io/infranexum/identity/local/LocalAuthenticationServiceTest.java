@@ -166,6 +166,7 @@ class LocalAuthenticationServiceTest {
         assertEquals(authenticated.account().id(), first.account().id());
         service.verifyCsrf(first, authenticated.csrfToken());
         assertThrows(LocalSessionException.class, () -> service.verifyCsrf(first, null));
+        assertThrows(LocalSessionException.class, () -> service.verifyCsrf(first, "   "));
         assertThrows(LocalSessionException.class, () -> service.verifyCsrf(first, "wrong"));
 
         Instant originalSeen = first.session().lastSeenAt();

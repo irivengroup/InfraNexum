@@ -351,6 +351,34 @@ class JdbcAccessPolicyRepositoryTest {
         assertInstanceOf(SQLException.class, failure.getCause());
     }
 
+
+    @Test
+    void emptyVersionRuleObligationsAndConditionsAreMappedFailClosed() {
+        ScriptedConnection noVersion = connection(query(List.of()));
+        JdbcAccessPolicyRepository versionRepository = new JdbcAccessPolicyRepository(
+                dataSource(noVersion.connection()), noTransaction(), JdbcDatabaseDialect.POSTGRESQL);
+        assertThrows(JdbcPersistenceException.class, () -> versionRepository.nextVersion(null, "security.access"));
+
+        Map<String, Object> policy = policyRow(JdbcDatabaseDialect.POSTGRESQL, POLICY, ORGANIZATION,
+                AuthorizationScope.organization(ORGANIZATION), PolicyState.DRAFT);
+        ScriptedConnection source = connection(
+                query(List.of(policy)),
+                query(List.of(ruleRow(JdbcDatabaseDialect.POSTGRESQL, RULE, 1, "PERMIT", "iam.role.read",
+                        "iam.role", null, null, true))));
+        AccessPolicy observed = new JdbcAccessPolicyRepository(
+                dataSource(source.connection()), noTransaction(), JdbcDatabaseDialect.POSTGRESQL)
+                .findPolicy(POLICY).orElseThrow();
+        assertTrue(observed.rules().getFirst().obligations().isEmpty());
+
+        ScriptedConnection corrupt = connection(
+                query(List.of(policy)),
+                query(List.of(ruleRow(JdbcDatabaseDialect.POSTGRESQL, RULE, 1, "PERMIT", "iam.role.read",
+                        "iam.role", "", null, false))));
+        assertThrows(IllegalArgumentException.class, () -> new JdbcAccessPolicyRepository(
+                dataSource(corrupt.connection()), noTransaction(), JdbcDatabaseDialect.POSTGRESQL)
+                .findPolicy(POLICY));
+    }
+
     private static AccessPolicy draftPolicy() {
         return new AccessPolicy(POLICY, ORGANIZATION, "security.access", 1, OWNER, "protect role assignments", 100,
                 AuthorizationScope.organization(ORGANIZATION), PolicyState.DRAFT, NOW, null, null, null, null, null,

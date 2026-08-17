@@ -33,7 +33,7 @@ class DcimFacilityHierarchyArchitectureTest(unittest.TestCase):
         for field in ("addressLine1", "addressLine2", "postalCode", "city", "countryCode", "timezone"):
             self.assertIn(field, node)
         self.assertIn('siteText(kind, addressLine1', node)
-        self.assertIn('kind == FacilityKind.BUILDING ? positive(floorCount', node)
+        self.assertIn('kind == FacilityKind.BUILDING ? requiredPositive(floorCount', node)
         self.assertIn('kind == FacilityKind.FLOOR ? Objects.requireNonNull(levelNumber', node)
         self.assertIn('kind == FacilityKind.ROOM', node)
         self.assertIn('zoneType is only valid for zone', node)

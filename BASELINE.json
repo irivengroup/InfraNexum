@@ -1,7 +1,7 @@
 {
   "schema": "infranexum.source-baseline/v1",
   "product": "InfraNexum — Infrastructure Control & Governance Platform",
-  "implementation_version": "2.0.0-alpha.0.104",
+  "implementation_version": "2.0.0-alpha.0.105",
   "architecture_baseline": "2.0.0-draft.21",
   "roadmap_baseline": "2.0.0-draft.21",
   "architecture_archive_sha256": "372cf19929f8ea3b7586c3af3e7c5004e590cf746ff2d6d59d4d0b88912aea64",
@@ -102,7 +102,7 @@
   ],
   "roadmap_archive_sha256": "11db7d27bbc79f688cd1fda31a24aaf31b56a56db36b6487b64154c148ab54d3",
   "engineering_governance_sha256": "f24357051a5401f598c3d77bbe5814d3759a176095537659243658ba3ff109c7",
-  "runtime_validation_note": "alpha.0.103 is a qualification corrective over alpha.0.102. Auxiliary Java21 JUnit-compatible regression execution covers 228 JDK-only Core/domain tests across Workers, Capabilities, Compatibility, Organization, Identity, RSOT, ITAM, DCIM, DDI and Integrations plus 56 non-PostgreSQL JDBC tests, including JdbcInfrastructureCoverageTest 8/8; exact Temurin25 Maven/JUnit/JaCoCo and live PostgreSQL17/18 remain required for formal PGM-10-E05 promotion. Local Python/Web/architecture/source-integrity gates are recorded in the external validation evidence.",
+  "runtime_validation_note": "alpha.0.105 is a qualification/Web corrective over alpha.0.104. Local split Architecture executes 200/200, Web executes 194/194 at 99.73% lines / 98.53% branches / 100% functions, API contracts execute 48/48 with 15 fragments / 179 operations and zero debt, and an auxiliary Java21 deterministic JDBC preflight executes 129 tests with 407/411 conditions observed both ways. Exact Temurin25 Maven/JUnit/JaCoCo and live PostgreSQL17/18 remain mandatory before formal PGM-10-E05 promotion.",
   "server_contract_stabilization_alpha085": "EXECUTED_15_OF_15_TARGETED_DCIM_DDI_TEXT_BLOCK_AND_REPOSITORY_COMPOSITION_REGRESSIONS_PASS_JDBC_REPOSITORY_CONSTRUCTOR_ARITY_SCAN_ZERO_MISMATCHES",
   "maven_target_jdk25_alpha085": "NON_EXECUTED_LOCAL_JDK21_0_11_TARGET_TEMURIN25_0_4_DOWNLOAD_FAILED_DNS_GITHUB_COM_OPERATOR_DOCKER_REVALIDATION_REQUIRED",
   "docker_runtime_alpha085": "NON_EXECUTED_LOCAL_DOCKER_AND_PWSH_UNAVAILABLE_OPERATOR_PRO_UP_SMOKE_HA_SMOKE_REQUIRED",
@@ -137,7 +137,8 @@
   "implemented_features": [
     "alpha.0.87 premium admin UX corrective: end-to-end Bootstrap 5.3.6 administration template from login through all published workspaces; IONOS-inspired midnight/blue/cyan/orange visual hierarchy; responsive mobile navigation drawer; governed select cascades auto-populate and authorized empty selects remain operable; shared async mutation/filter form controller adds native/Bootstrap validation, duplicate-submit protection, busy semantics and deterministic error feedback; no new business epic, migration, public API or authorization contract change.",
     "alpha.0.100 PGM-10-E05 phase 1: Python connector SDK v1, strict versioned manifest and offline certification, HMAC-SHA256 webhook primitives, dedicated >=98% coverage/package CI; runtime webhook inbox/DLQ/replay/metrics deliberately remain the next phase of the same epic.",
-    "alpha.0.101 PGM-10-E05 phase 2: durable provider-neutral webhook/inbox/DLQ runtime, controlled audited replay/resume, bounded retries/suspension, connector metrics, PostgreSQL/Oracle migrations and zero-debt OpenAPI integration; exact target JDK25/live PostgreSQL promotion gates remain pending."
+    "alpha.0.101 PGM-10-E05 phase 2: durable provider-neutral webhook/inbox/DLQ runtime, controlled audited replay/resume, bounded retries/suspension, connector metrics, PostgreSQL/Oracle migrations and zero-debt OpenAPI integration; exact target JDK25/live PostgreSQL promotion gates remain pending.",
+    "alpha.0.105 hosted coverage/Web corrective: branch-oriented tests and Surefire-visible JDBC smoke wrappers strengthen the unchanged 98% JaCoCo gate; deterministic JDBC preflight runs 129 tests with 407/411 conditions bi-covered; DataTables avoid internal scrolling with 20/50/100/200 page sizes; ReDoc consumes validated same-origin OpenAPI JSON; no roadmap epic advances until hosted Temurin25 and PostgreSQL17/18 are green."
   ],
   "source_integrity_prepack_alpha088": "EXECUTED_45_OF_45_100_PERCENT_ZERO_VIOLATIONS_CANONICAL_INVENTORY_1217_PATHS",
   "packaging_tracked_files_alpha088": 1219,
@@ -278,5 +279,28 @@
   "source_integrity_prepack_alpha104": "EXECUTED_45_OF_45_100_PERCENT_ZERO_VIOLATIONS_CANONICAL_INVENTORY_1358_PATHS",
   "source_integrity_alpha104": "EXECUTED_45_OF_45_100_PERCENT_STAGED_SNAPSHOT_1360_TRACKED_PATHS_1359_GIT_BLOB_CHECKSUMS_1358_CANONICAL_INVENTORY_ZERO_VIOLATIONS",
   "archive_compatibility_unit_alpha104": "EXECUTED_12_OF_12_100_PERCENT",
-  "archive_compatibility_alpha104": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS_AND_POST_EXTRACTION_SOURCE_INTEGRITY_ZERO_VIOLATIONS"
+  "archive_compatibility_alpha104": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS_AND_POST_EXTRACTION_SOURCE_INTEGRITY_ZERO_VIOLATIONS",
+  "corrective_alpha105": "IMPLEMENTED_HOSTED_JACOCO_BRANCH_CLOSURE_DATATABLE_REDOC_NO_ROADMAP_ADVANCE",
+  "api_contracts_alpha105": "EXECUTED_48_OF_48_98_PERCENT_15_FRAGMENTS_179_OPERATIONS_ZERO_VIOLATIONS_DEBT_0_0_0_0",
+  "architecture_alpha105": "EXECUTED_200_OF_200_SPLIT_171_FUNCTIONAL_PLUS_29_META_AND_ARCHITECTURE_AS_CODE_PASS_MONOLITHIC_COVERAGE_TIMEOUT_AFTER_43_TESTS",
+  "migration_alpha105": "EXECUTED_117_OF_117_99_PERCENT_ZERO_VIOLATIONS_MIGRATION0035_PRESERVED",
+  "eventing_alpha105": "EXECUTED_10_OF_10_100_PERCENT_ZERO_VIOLATIONS",
+  "persistence_alpha105": "EXECUTED_12_OF_12_98_PERCENT_ZERO_VIOLATIONS",
+  "capabilities_alpha105": "EXECUTED_10_OF_10_99_PERCENT_ZERO_VIOLATIONS_32_CAPABILITIES_119_QUOTAS",
+  "entitlements_alpha105": "EXECUTED_10_OF_10_100_PERCENT_ZERO_VIOLATIONS",
+  "audit_alpha105": "EXECUTED_8_OF_8_100_PERCENT_ZERO_VIOLATIONS",
+  "compose_contract_alpha105": "EXECUTED_64_OF_64",
+  "web_local_runtime_alpha105": "EXECUTED_LOCAL_NODE22_16_0_194_OF_194_LINE99_73_BRANCH98_53_FUNCTION100_PROCESS_SMOKE_PASS_TARGET_NODE24_18_1_PNPM11_17_0_PENDING",
+  "connector_sdk_alpha105": "EXECUTED_19_OF_19_99_PERCENT_REPRODUCIBLE_PACKAGE_GATE_SDK1_0_0_PRESERVED",
+  "jdbc_auxiliary_alpha105": "EXECUTED_JAVA21_129_DETERMINISTIC_TESTS_ZERO_FAILURES_BRANCH_PROBE_407_OF_411_CONDITIONS_BOTH_SIDES_APPROX_99_4_PERCENT_CONDITION_SIDES_NOT_JACOCO",
+  "java_offline_smokes_alpha105": "EXECUTED_CONTRACT_EVENTING_AUDIT_JDBC_WORKERS_CAPABILITIES_API_CAPABILITY_ENTITLEMENTS_RSOT_SCHEMA_ITAM_DCIM_DDI_INTEGRATIONS_POLICY_EXIT_ZERO_LOCAL_JAVA21",
+  "maven_target_jdk25_alpha105": "NON_EXECUTED_LOCAL_JAVA21_TARGET_TEMURIN25_0_4_PLUS_7_REQUIRED_HOSTED_RERUN",
+  "postgresql_live_alpha105": "NON_EXECUTED_LOCAL_TARGET_POSTGRESQL17_18_HOSTED_MATRIX_REQUIRED",
+  "roadmap_next_alpha105": "CLOSE_PGM10E05_ONLY_AFTER_HOSTED_JDK25_JACOCO_AND_POSTGRESQL17_18_THEN_START_NEXT_DEPENDENCY_ELIGIBLE_INCREMENT",
+  "source_inventory_paths_alpha105": 1383,
+  "packaging_tracked_files_alpha105": 1385,
+  "git_blob_checksums_alpha105": 1384,
+  "source_integrity_prepack_alpha105": "EXECUTED_45_OF_45_100_PERCENT_ZERO_VIOLATIONS_CANONICAL_INVENTORY_1383_PATHS",
+  "source_integrity_alpha105": "EXECUTED_45_OF_45_100_PERCENT_STAGED_SNAPSHOT_1385_TRACKED_PATHS_1384_GIT_BLOB_CHECKSUMS_1383_CANONICAL_INVENTORY_ZERO_VIOLATIONS",
+  "archive_compatibility_unit_alpha105": "EXECUTED_12_OF_12_100_PERCENT"
 }

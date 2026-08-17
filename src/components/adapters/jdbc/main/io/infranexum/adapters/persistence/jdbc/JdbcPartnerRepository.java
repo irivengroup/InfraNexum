@@ -166,11 +166,11 @@ public final class JdbcPartnerRepository implements PartnerRepository {
             sql.append(" AND p.authorization_status=?");
             binders.add((statement, index) -> statement.setString(index, criteria.authorizationStatus().name()));
         }
-        if (criteria.countryCode() != null && !criteria.countryCode().isBlank()) {
+        if (criteria.countryCode() != null) {
             sql.append(" AND p.country_code=?");
             binders.add((statement, index) -> statement.setString(index, criteria.countryCode()));
         }
-        if (criteria.accreditation() != null && !criteria.accreditation().isBlank()) {
+        if (criteria.accreditation() != null) {
             sql.append(" AND EXISTS (SELECT 1 FROM ").append(accreditationTable())
                     .append(" a WHERE a.partner_id=p.id AND UPPER(a.accreditation_code)=UPPER(?))");
             binders.add((statement, index) -> statement.setString(index, criteria.accreditation()));

@@ -26,7 +26,7 @@ public record ConnectorWebhookEndpoint(
             throw new IllegalArgumentException(field + " is invalid");
         }
         String normalized = value.strip();
-        if (normalized.isEmpty() || normalized.length() > 160 || normalized.chars().anyMatch(Character::isISOControl)) {
+        if (normalized.isEmpty() || normalized.length() > 160) {
             throw new IllegalArgumentException(field + " is invalid");
         }
         return normalized;

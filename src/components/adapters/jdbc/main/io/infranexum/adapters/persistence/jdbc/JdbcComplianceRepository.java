@@ -123,7 +123,7 @@ public final class JdbcComplianceRepository implements ComplianceRepository {
 
     private Connection currentConnectionOrNull(){try{return transaction.requireCurrentConnection();}catch(IllegalStateException e){return null;}}
     private Connection currentOrNew(){Connection c=currentConnectionOrNull();if(c!=null)return c;try{return dataSource.getConnection();}catch(SQLException e){throw fail("open compliance connection",e);}}
-    private static void close(Connection c,boolean close){if(close&&c!=null)try{c.close();}catch(SQLException e){throw fail("close compliance connection",e);}}
+    private static void close(Connection c,boolean close){if(close)try{c.close();}catch(SQLException e){throw fail("close compliance connection",e);}}
     private static void requireInserted(PreparedStatement s,String name)throws SQLException{if(s.executeUpdate()!=1)throw new SQLException(name+" insert affected unexpected rows");}
     private static void requireUpdated(PreparedStatement s,String name)throws SQLException{if(s.executeUpdate()!=1)throw new ComplianceConflictException("VERSION_CONFLICT",name+" version changed");}
     private DomainIdentifier nullableIdentifier(ResultSet r,String c)throws SQLException{return r.getObject(c)==null?null:dialect.readIdentifier(r,c);}

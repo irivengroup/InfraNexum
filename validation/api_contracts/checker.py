@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import csv
 import json
 import re
@@ -250,6 +251,15 @@ class ApiContractChecker:
         payload = self.build_product_spec()
         destination.write_text(
             yaml.safe_dump(payload, sort_keys=False, allow_unicode=True, width=120),
+            encoding="utf-8",
+        )
+
+    def write_product_spec_json(self, destination: Path) -> None:
+        """Write the certified product contract as deterministic JSON for browser renderers."""
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        payload = self.build_product_spec()
+        destination.write_text(
+            json.dumps(payload, ensure_ascii=False, separators=(",", ":"), sort_keys=False) + "\n",
             encoding="utf-8",
         )
 

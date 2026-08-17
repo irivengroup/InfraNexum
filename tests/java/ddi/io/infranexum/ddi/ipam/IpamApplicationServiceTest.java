@@ -75,6 +75,90 @@ final class IpamApplicationServiceTest{private static final Clock CLOCK=Clock.fi
   var q1=new IpamApplicationService(new Repo(),new Idem(),zero,refs,new InMemoryEventStore(),ids,CLOCK);expect("DDI_VRF_QUOTA",()->q1.createVrf(new CreateVrfCommand(org,"Q","Quota",null),new IpamCommandContext(actor,corr,"quota vrf","ipam-quota-0001")));
   var qrepo=new Repo();var qidem=new Idem();IpamFeaturePolicy vlanZero=new IpamFeaturePolicy(){public boolean ipamEnabled(){return true;}public long vrfLimit(){return 10;}public long vlanLimit(){return 0;}public long prefixLimit(){return 10;}public long addressLimit(){return 10;}};var q2=new IpamApplicationService(qrepo,qidem,vlanZero,refs,new InMemoryEventStore(),ids,CLOCK);expect("DDI_VLAN_QUOTA",()->q2.createVlan(new CreateVlanCommand(org,site,10,null,"q"),new IpamCommandContext(actor,corr,"quota vlan","ipam-quota-0002")));
  }
+
+ @Test void saturatesScopePoolAllocationRetirementAndConflictBranches(){
+  var repo=new Repo();var idem=new Idem();var events=new InMemoryEventStore();var ids=new UuidV7Generator(CLOCK,new SecureRandom(new byte[]{1,0,5,9}));
+  var org=ids.next();var sub=ids.next();var site=ids.next();var rsot=ids.next();var equipment=ids.next();var actor=ids.next();var corr=ids.next();
+  var refs=new Refs(org,sub,site,rsot,equipment);var svc=new IpamApplicationService(repo,idem,new Features(true),refs,events,ids,CLOCK);
+  var ctx=new IpamCommandContext(actor,corr,"saturate DDI branches","ipam-saturation-0001");
+  var vrf=svc.createVrf(new CreateVrfCommand(org,"SAT","Saturation","65000:50"),ctx); final var draftVrf=vrf;
+  require(svc.createVrf(new CreateVrfCommand(org,"SAT","Saturation","65000:50"),ctx).id().equals(vrf.id()),"vrf replay");
+  expect("DDI_VRF_DUPLICATE",()->svc.createVrf(new CreateVrfCommand(org,"SAT","Duplicate",null),new IpamCommandContext(actor,corr,"duplicate vrf","ipam-saturation-0002")));
+  expect("IDEMPOTENCY_CONFLICT",()->svc.createVlan(new CreateVlanCommand(org,site,200,null,"Cross op"),ctx));
+  expect("VERSION_CONFLICT",()->svc.changeVrfStatus(draftVrf.id(),2,IpamStatus.ACTIVE,new IpamCommandContext(actor,corr,"stale vrf","ipam-saturation-0003")));
+  vrf=svc.changeVrfStatus(vrf.id(),1,IpamStatus.ACTIVE,new IpamCommandContext(actor,corr,"activate vrf","ipam-saturation-0004")); final var activeVrf=vrf;
+  var vlan=svc.createVlan(new CreateVlanCommand(org,site,200,null,"SAT-VLAN"),new IpamCommandContext(actor,corr,"create vlan","ipam-saturation-0005"));
+  vlan=svc.changeVlanStatus(vlan.id(),1,IpamStatus.ACTIVE,new IpamCommandContext(actor,corr,"activate vlan","ipam-saturation-0006")); final var activeVlan=vlan;
+
+  var otherOrg=ids.next();
+  var foreignVrf=IpamVrf.draft(ids.next(),otherOrg,"FOREIGN","Foreign",null,CLOCK.instant()).status(IpamStatus.ACTIVE,CLOCK.instant());repo.insertVrf(foreignVrf);
+  expect("DDI_SCOPE_MISMATCH",()->svc.createNetwork(new CreateNetworkCommand(org,sub,site,foreignVrf.id(),null,null,NetworkKind.SUBNET,"10.10.0.0/24",null,null),new IpamCommandContext(actor,corr,"foreign vrf","ipam-saturation-0007")));
+  var foreignVlan=IpamVlan.draft(ids.next(),otherOrg,null,300,null,"Foreign",CLOCK.instant()).status(IpamStatus.ACTIVE,CLOCK.instant());repo.insertVlan(foreignVlan);
+  expect("DDI_SCOPE_MISMATCH",()->svc.createNetwork(new CreateNetworkCommand(org,sub,site,activeVrf.id(),foreignVlan.id(),null,NetworkKind.SUBNET,"10.11.0.0/24",null,null),new IpamCommandContext(actor,corr,"foreign vlan","ipam-saturation-0008")));
+
+  var parent=svc.createNetwork(new CreateNetworkCommand(org,sub,site,activeVrf.id(),activeVlan.id(),null,NetworkKind.BLOCK,"10.20.0.0/16",null,null),new IpamCommandContext(actor,corr,"create parent","ipam-saturation-0009"));
+  parent=svc.changeNetworkStatus(parent.id(),1,IpamStatus.ACTIVE,new IpamCommandContext(actor,corr,"activate parent","ipam-saturation-0010")); final var activeParent=parent;
+  var otherSameOrgVrf=IpamVrf.draft(ids.next(),org,"ALT","Alternate",null,CLOCK.instant()).status(IpamStatus.ACTIVE,CLOCK.instant());repo.insertVrf(otherSameOrgVrf);
+  expect("DDI_PARENT_CONTAINMENT",()->svc.createNetwork(new CreateNetworkCommand(org,sub,site,otherSameOrgVrf.id(),null,activeParent.id(),NetworkKind.SUBNET,"10.20.1.0/24",null,null),new IpamCommandContext(actor,corr,"parent wrong vrf","ipam-saturation-0011")));
+  expect("DDI_PARENT_CONTAINMENT",()->svc.createNetwork(new CreateNetworkCommand(org,sub,site,activeVrf.id(),null,activeParent.id(),NetworkKind.SUBNET,"10.21.0.0/24",null,null),new IpamCommandContext(actor,corr,"parent outside","ipam-saturation-0012")));
+  var net=svc.createNetwork(new CreateNetworkCommand(org,sub,site,activeVrf.id(),activeVlan.id(),activeParent.id(),NetworkKind.SUBNET,"10.20.1.0/24","app","trusted"),new IpamCommandContext(actor,corr,"create subnet","ipam-saturation-0013"));
+  net=svc.changeNetworkStatus(net.id(),1,IpamStatus.ACTIVE,new IpamCommandContext(actor,corr,"activate subnet","ipam-saturation-0014")); final var activeNet=net;
+  expect("DDI_CIDR_OVERLAP",()->svc.createNetwork(new CreateNetworkCommand(org,sub,site,activeVrf.id(),null,activeParent.id(),NetworkKind.SUBNET,"10.20.1.128/25",null,null),new IpamCommandContext(actor,corr,"overlap subnet","ipam-saturation-0015")));
+
+  var otherNet=IpamNetwork.draft(ids.next(),otherOrg,null,null,activeVrf.id(),null,null,NetworkKind.SUBNET,new IpCidr("10.30.0.0/24"),null,null,CLOCK.instant()).status(IpamStatus.ACTIVE,CLOCK.instant());repo.insertNetwork(otherNet);
+  expect("DDI_POOL_NETWORK_INVALID",()->svc.createPool(new CreatePoolCommand(org,otherNet.id(),"10.30.0.1","10.30.0.2","wrong org"),new IpamCommandContext(actor,corr,"pool wrong org","ipam-saturation-0016")));
+  var superNet=IpamNetwork.draft(ids.next(),org,sub,site,activeVrf.id(),null,null,NetworkKind.BLOCK,new IpCidr("10.40.0.0/16"),null,null,CLOCK.instant()).status(IpamStatus.ACTIVE,CLOCK.instant());repo.insertNetwork(superNet);
+  expect("DDI_POOL_NETWORK_INVALID",()->svc.createPool(new CreatePoolCommand(org,superNet.id(),"10.40.0.1","10.40.0.2","supernet"),new IpamCommandContext(actor,corr,"pool supernet","ipam-saturation-0017")));
+  var draftNet=IpamNetwork.draft(ids.next(),org,sub,site,activeVrf.id(),null,null,NetworkKind.SUBNET,new IpCidr("10.50.0.0/24"),null,null,CLOCK.instant());repo.insertNetwork(draftNet);
+  expect("DDI_POOL_NETWORK_INVALID",()->svc.createPool(new CreatePoolCommand(org,draftNet.id(),"10.50.0.1","10.50.0.2","draft"),new IpamCommandContext(actor,corr,"pool draft","ipam-saturation-0018")));
+  expect("DDI_POOL_RANGE_INVALID",()->svc.createPool(new CreatePoolCommand(org,activeNet.id(),"10.20.2.1","10.20.1.5","outside start"),new IpamCommandContext(actor,corr,"pool outside start","ipam-saturation-0019")));
+  expect("DDI_POOL_RANGE_INVALID",()->svc.createPool(new CreatePoolCommand(org,activeNet.id(),"10.20.1.1","10.20.2.5","outside end"),new IpamCommandContext(actor,corr,"pool outside end","ipam-saturation-0020")));
+  expect("DDI_POOL_RANGE_INVALID",()->svc.createPool(new CreatePoolCommand(org,activeNet.id(),"10.20.1.20","10.20.1.10","reverse"),new IpamCommandContext(actor,corr,"pool reverse","ipam-saturation-0021")));
+  var pool=svc.createPool(new CreatePoolCommand(org,activeNet.id(),"10.20.1.10","10.20.1.20","primary"),new IpamCommandContext(actor,corr,"create pool","ipam-saturation-0022"));
+  expect("DDI_POOL_OVERLAP",()->svc.createPool(new CreatePoolCommand(org,activeNet.id(),"10.20.1.15","10.20.1.25","overlap"),new IpamCommandContext(actor,corr,"pool overlap","ipam-saturation-0023")));
+
+  expect("DDI_POOL_REQUIRED",()->svc.allocate(new AllocateAddressCommand(org,activeVrf.id(),activeNet.id(),null,null,false,null,null,null,null),new IpamCommandContext(actor,corr,"auto no pool","ipam-saturation-0024")));
+  expect("DDI_POOL_REQUIRED",()->svc.allocate(new AllocateAddressCommand(org,activeVrf.id(),activeNet.id(),null," ",false,null,null,null,null),new IpamCommandContext(actor,corr,"blank no pool","ipam-saturation-0025")));
+  expect("DDI_ADDRESS_OUTSIDE_RANGE",()->svc.allocate(new AllocateAddressCommand(org,activeVrf.id(),activeNet.id(),null,"10.20.2.1",false,null,null,null,null),new IpamCommandContext(actor,corr,"outside subnet","ipam-saturation-0026")));
+  expect("DDI_ADDRESS_OUTSIDE_RANGE",()->svc.allocate(new AllocateAddressCommand(org,activeVrf.id(),activeNet.id(),pool.id(),"10.20.1.30",false,null,null,null,null),new IpamCommandContext(actor,corr,"outside pool","ipam-saturation-0027")));
+  var explicit=svc.allocate(new AllocateAddressCommand(org,activeVrf.id(),activeNet.id(),pool.id(),"10.20.1.10",false,"host",rsot,equipment,"purpose"),new IpamCommandContext(actor,corr,"explicit allocation","ipam-saturation-0028"));
+  var noPoolExplicit=svc.allocate(new AllocateAddressCommand(org,activeVrf.id(),activeNet.id(),null,"10.20.1.9",false,null,null,null,null),new IpamCommandContext(actor,corr,"explicit without pool","ipam-saturation-0028a"));require(noPoolExplicit.poolId()==null,"explicit no pool");
+  expect("DDI_ADDRESS_CONFLICT",()->svc.allocate(new AllocateAddressCommand(org,activeVrf.id(),activeNet.id(),pool.id(),"10.20.1.10",true,null,null,null,null),new IpamCommandContext(actor,corr,"duplicate address","ipam-saturation-0029")));
+  var automatic=svc.allocate(new AllocateAddressCommand(org,activeVrf.id(),activeNet.id(),pool.id(),null,true,null,null,null,null),new IpamCommandContext(actor,corr,"automatic allocation","ipam-saturation-0030"));
+  require(automatic.status()==AddressStatus.RESERVED,"automatic reservation");
+  var blankAutomatic=svc.allocate(new AllocateAddressCommand(org,activeVrf.id(),activeNet.id(),pool.id()," ",false,null,null,null,null),new IpamCommandContext(actor,corr,"blank automatic allocation","ipam-saturation-0030a"));require(blankAutomatic.status()==AddressStatus.ALLOCATED,"blank automatic allocation");
+  var wrongVrfNetwork=IpamNetwork.draft(ids.next(),org,sub,site,otherSameOrgVrf.id(),null,null,NetworkKind.SUBNET,new IpCidr("10.70.0.0/24"),null,null,CLOCK.instant()).status(IpamStatus.ACTIVE,CLOCK.instant());repo.insertNetwork(wrongVrfNetwork);
+  expect("DDI_ADDRESS_NETWORK_INVALID",()->svc.allocate(new AllocateAddressCommand(org,activeVrf.id(),wrongVrfNetwork.id(),null,"10.70.0.1",false,null,null,null,null),new IpamCommandContext(actor,corr,"wrong vrf network","ipam-saturation-0030b")));
+  expect("DDI_ADDRESS_NETWORK_INVALID",()->svc.allocate(new AllocateAddressCommand(org,activeVrf.id(),otherNet.id(),null,"10.30.0.1",false,null,null,null,null),new IpamCommandContext(actor,corr,"foreign org network","ipam-saturation-0030c")));
+  expect("DDI_ADDRESS_NETWORK_INVALID",()->svc.allocate(new AllocateAddressCommand(org,activeVrf.id(),superNet.id(),null,"10.40.0.1",false,null,null,null,null),new IpamCommandContext(actor,corr,"block network","ipam-saturation-0030d")));
+  expect("DDI_ADDRESS_NETWORK_INVALID",()->svc.allocate(new AllocateAddressCommand(org,activeVrf.id(),draftNet.id(),null,"10.50.0.1",false,null,null,null,null),new IpamCommandContext(actor,corr,"draft network","ipam-saturation-0030e")));
+  var foreignPool=IpamPool.active(ids.next(),org,draftNet.id(),"10.50.0.1","10.50.0.2","foreign",CLOCK.instant());repo.insertPool(foreignPool);
+  expect("DDI_POOL_SCOPE_MISMATCH",()->svc.allocate(new AllocateAddressCommand(org,activeVrf.id(),activeNet.id(),foreignPool.id(),"10.20.1.11",false,null,null,null,null),new IpamCommandContext(actor,corr,"pool scope mismatch","ipam-saturation-0031")));
+
+  expect("VERSION_CONFLICT",()->svc.changeVlanStatus(activeVlan.id(),99,IpamStatus.RETIRED,new IpamCommandContext(actor,corr,"stale vlan","ipam-saturation-0032")));
+  expect("DDI_VLAN_IN_USE",()->svc.changeVlanStatus(activeVlan.id(),2,IpamStatus.RETIRED,new IpamCommandContext(actor,corr,"retire used vlan","ipam-saturation-0033")));
+  expect("VERSION_CONFLICT",()->svc.updateNetwork(activeNet.id(),99,new UpdateNetworkCommand(null,null,null),new IpamCommandContext(actor,corr,"stale network","ipam-saturation-0034")));
+  var inactiveVlan=IpamVlan.draft(ids.next(),org,site,400,null,"inactive",CLOCK.instant());repo.insertVlan(inactiveVlan);
+  expect("DDI_VLAN_SCOPE_INVALID",()->svc.updateNetwork(activeNet.id(),2,new UpdateNetworkCommand(inactiveVlan.id(),null,null),new IpamCommandContext(actor,corr,"inactive vlan","ipam-saturation-0035")));
+  var foreignActiveVlan=IpamVlan.draft(ids.next(),otherOrg,null,401,null,"foreign active",CLOCK.instant()).status(IpamStatus.ACTIVE,CLOCK.instant());repo.insertVlan(foreignActiveVlan);
+  expect("DDI_VLAN_SCOPE_INVALID",()->svc.updateNetwork(activeNet.id(),2,new UpdateNetworkCommand(foreignActiveVlan.id(),null,null),new IpamCommandContext(actor,corr,"foreign active vlan","ipam-saturation-0036")));
+  expect("VERSION_CONFLICT",()->svc.changeNetworkStatus(activeNet.id(),99,IpamStatus.RETIRED,new IpamCommandContext(actor,corr,"stale network status","ipam-saturation-0037")));
+  expect("DDI_NETWORK_IN_USE",()->svc.changeNetworkStatus(activeNet.id(),2,IpamStatus.RETIRED,new IpamCommandContext(actor,corr,"retire allocated network","ipam-saturation-0038")));
+  expect("DDI_VRF_IN_USE",()->svc.changeVrfStatus(activeVrf.id(),2,IpamStatus.RETIRED,new IpamCommandContext(actor,corr,"retire used vrf","ipam-saturation-0039")));
+  var unusedVlan=svc.createVlan(new CreateVlanCommand(org,site,500,null,"Unused"),new IpamCommandContext(actor,corr,"create unused vlan","ipam-saturation-0039a"));unusedVlan=svc.changeVlanStatus(unusedVlan.id(),1,IpamStatus.ACTIVE,new IpamCommandContext(actor,corr,"activate unused vlan","ipam-saturation-0039b"));final var unusedVlanActive=unusedVlan;
+  var retireVlanCtx=new IpamCommandContext(actor,corr,"retire unused vlan","ipam-saturation-0039c");var retiredVlan=svc.changeVlanStatus(unusedVlanActive.id(),2,IpamStatus.RETIRED,retireVlanCtx);require(svc.changeVlanStatus(unusedVlanActive.id(),2,IpamStatus.RETIRED,retireVlanCtx).id().equals(retiredVlan.id()),"vlan status replay");
+  var metadataCtx=new IpamCommandContext(actor,corr,"clear vlan metadata","ipam-saturation-0039d");var metadataUpdated=svc.updateNetwork(activeNet.id(),2,new UpdateNetworkCommand(null,"updated","trusted"),metadataCtx);require(metadataUpdated.vlanId()==null,"network vlan cleared");
+  var unusedNetwork=IpamNetwork.draft(ids.next(),org,sub,site,activeVrf.id(),null,null,NetworkKind.SUBNET,new IpCidr("10.80.0.0/24"),null,null,CLOCK.instant()).status(IpamStatus.ACTIVE,CLOCK.instant());repo.insertNetwork(unusedNetwork);
+  var retireNetCtx=new IpamCommandContext(actor,corr,"retire unused network","ipam-saturation-0039e");var retiredNet=svc.changeNetworkStatus(unusedNetwork.id(),2,IpamStatus.RETIRED,retireNetCtx);require(svc.changeNetworkStatus(unusedNetwork.id(),2,IpamStatus.RETIRED,retireNetCtx).id().equals(retiredNet.id()),"network status replay");
+  var unusedVrf=IpamVrf.draft(ids.next(),org,"UNUSED","Unused",null,CLOCK.instant()).status(IpamStatus.ACTIVE,CLOCK.instant());repo.insertVrf(unusedVrf);require(svc.changeVrfStatus(unusedVrf.id(),2,IpamStatus.RETIRED,new IpamCommandContext(actor,corr,"retire unused vrf","ipam-saturation-0039f")).status()==IpamStatus.RETIRED,"unused vrf retired");
+
+  IpamFeaturePolicy prefixZero=new IpamFeaturePolicy(){public boolean ipamEnabled(){return true;}public long vrfLimit(){return 10;}public long vlanLimit(){return 10;}public long prefixLimit(){return 0;}public long addressLimit(){return 10;}};
+  var prefixSvc=new IpamApplicationService(repo,new Idem(),prefixZero,refs,new InMemoryEventStore(),ids,CLOCK);
+  expect("DDI_PREFIX_QUOTA",()->prefixSvc.createNetwork(new CreateNetworkCommand(org,sub,site,activeVrf.id(),null,null,NetworkKind.SUBNET,"10.60.0.0/24",null,null),new IpamCommandContext(actor,corr,"prefix quota","ipam-saturation-0040")));
+  IpamFeaturePolicy addressZero=new IpamFeaturePolicy(){public boolean ipamEnabled(){return true;}public long vrfLimit(){return 10;}public long vlanLimit(){return 10;}public long prefixLimit(){return 100;}public long addressLimit(){return 0;}};
+  var addressSvc=new IpamApplicationService(repo,new Idem(),addressZero,refs,new InMemoryEventStore(),ids,CLOCK);
+  expect("DDI_ADDRESS_QUOTA",()->addressSvc.allocate(new AllocateAddressCommand(org,activeVrf.id(),activeNet.id(),null,"10.20.1.50",false,null,null,null,null),new IpamCommandContext(actor,corr,"address quota","ipam-saturation-0041")));
+ }
  private record Features(boolean enabled) implements IpamFeaturePolicy{public boolean ipamEnabled(){return enabled;}public long vrfLimit(){return 50;}public long vlanLimit(){return 50;}public long prefixLimit(){return 100;}public long addressLimit(){return 1000;}}
  private record Refs(DomainIdentifier org,DomainIdentifier sub,DomainIdentifier site,DomainIdentifier rsot,DomainIdentifier equipment) implements IpamReferencePolicy{public void requireOrganization(DomainIdentifier o){if(!org.equals(o))throw new IpamConflictException("DDI_SCOPE_MISMATCH","org");}public void requireSubdivisionIfPresent(DomainIdentifier o,DomainIdentifier s){requireOrganization(o);if(s!=null&&!sub.equals(s))throw new IpamConflictException("DDI_SCOPE_MISMATCH","sub");}public void requireSiteIfPresent(DomainIdentifier o,DomainIdentifier s,DomainIdentifier x){requireSubdivisionIfPresent(o,s);if(x!=null&&!site.equals(x))throw new IpamConflictException("DDI_SITE_INVALID","site");}public void requireRsotIfPresent(DomainIdentifier o,DomainIdentifier x){requireOrganization(o);if(x!=null&&!rsot.equals(x))throw new IpamConflictException("DDI_RSOT_INVALID","rsot");}public void requireDcimEquipmentIfPresent(DomainIdentifier o,DomainIdentifier x){requireOrganization(o);if(x!=null&&!equipment.equals(x))throw new IpamConflictException("DDI_DCIM_INVALID","equipment");}}
  private static final class Idem implements IpamIdempotencyRepository{final Map<String,Record> m=new HashMap<>();public Optional<Record> find(String k){return Optional.ofNullable(m.get(k));}public void insert(Record r){if(m.putIfAbsent(r.key(),r)!=null)throw new IllegalStateException("duplicate idem");}}

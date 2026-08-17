@@ -90,6 +90,8 @@ final class CompatibilityCoverageRegressionTest {
         assertThrows(NullPointerException.class, () -> schemaWith("abc", "team.rsot", null, HASH));
         assertThrows(IllegalArgumentException.class, () -> schemaWith("abc", "team.rsot", "{", HASH));
         assertThrows(IllegalArgumentException.class, () -> schemaWith("abc", "team.rsot", "[]", HASH));
+        assertThrows(IllegalArgumentException.class, () -> schemaWith("abc", "team.rsot", "x}", HASH));
+        assertThrows(IllegalArgumentException.class, () -> schemaWith("abc", "team.rsot", "{x", HASH));
         assertThrows(IllegalArgumentException.class, () -> schemaWith("abc", "team.rsot", "{" + "x".repeat(1_048_576) + "}", HASH));
         assertThrows(NullPointerException.class, () -> schemaWith("abc", "team.rsot", "{}", null));
         assertThrows(IllegalArgumentException.class, () -> schemaWith("abc", "team.rsot", "{}", "g".repeat(64)));
@@ -99,7 +101,10 @@ final class CompatibilityCoverageRegressionTest {
         assertThrows(IllegalArgumentException.class, () -> new RegisteredSchema(ID, "abc", SchemaKind.API, "abc", ContractVersion.parse("1.0.0"), RegistryStatus.DRAFT, "{}", HASH, 0, T, T, T, null, null, null, null, null, null));
         assertThrows(NullPointerException.class, () -> new RegisteredSchema(ID, "abc", SchemaKind.API, "abc", ContractVersion.parse("1.0.0"), RegistryStatus.DRAFT, "{}", HASH, 1, null, T, T, null, null, null, null, null, null));
         assertThrows(IllegalArgumentException.class, () -> schema(RegistryStatus.DRAFT, T, null, null, null, null, null));
+        assertThrows(IllegalArgumentException.class, () -> schema(RegistryStatus.DRAFT, null, T, null, null, null, null));
+        assertThrows(IllegalArgumentException.class, () -> schema(RegistryStatus.DRAFT, null, null, T, null, null, null));
         assertThrows(IllegalArgumentException.class, () -> schema(RegistryStatus.PUBLISHED, null, null, null, null, null, null));
+        assertThrows(IllegalArgumentException.class, () -> schema(RegistryStatus.DEPRECATED, null, T.plusSeconds(1), T.plusSeconds(2), "x", null, null));
         assertThrows(IllegalArgumentException.class, () -> schema(RegistryStatus.DEPRECATED, T, null, T.plusSeconds(1), "x", null, null));
         assertThrows(IllegalArgumentException.class, () -> schema(RegistryStatus.DEPRECATED, T, T.plusSeconds(1), null, "x", null, null));
         assertThrows(IllegalArgumentException.class, () -> schema(RegistryStatus.DEPRECATED, T, T.plusSeconds(1), T.plusSeconds(2), null, null, null));
@@ -130,6 +135,8 @@ final class CompatibilityCoverageRegressionTest {
         assertThrows(NullPointerException.class, () -> published.deprecate(T, null, "x"));
         assertThrows(IllegalArgumentException.class, () -> published.deprecate(T, T.plusSeconds(1), " "));
         assertThrows(IllegalArgumentException.class, () -> published.deprecate(T, T, "x"));
+        assertThrows(IllegalArgumentException.class, () -> published.deprecate(T, T.plusSeconds(1), "bad\nreason"));
+        assertThrows(IllegalArgumentException.class, () -> published.deprecate(T, T.plusSeconds(1), "x".repeat(501)));
         assertEquals(RegistryStatus.DEPRECATED, published.deprecate(T, T.plusSeconds(1), "done").status());
 
         assertThrows(NullPointerException.class, () -> profile(null, RegistryStatus.DRAFT, null, null, null, null));
@@ -140,13 +147,19 @@ final class CompatibilityCoverageRegressionTest {
         assertThrows(IllegalArgumentException.class, () -> profile(List.of(new SchemaProfileMember(2, ID, true)), RegistryStatus.DRAFT, null, null, null, null));
         assertThrows(IllegalArgumentException.class, () -> profile(List.of(first, new SchemaProfileMember(2, ID, false)), RegistryStatus.DRAFT, null, null, null, null));
         assertThrows(IllegalArgumentException.class, () -> profileWithCode("ab", List.of(first)));
+        assertThrows(IllegalArgumentException.class, () -> profileWithCode("   ", List.of(first)));
         assertThrows(IllegalArgumentException.class, () -> profileWithCode("abc\n", List.of(first)));
         assertThrows(IllegalArgumentException.class, () -> profileWithOwner("xy", List.of(first)));
+        assertThrows(IllegalArgumentException.class, () -> profileWithOwner("   ", List.of(first)));
         assertThrows(IllegalArgumentException.class, () -> profileWithOwner("abc\n", List.of(first)));
         assertThrows(IllegalArgumentException.class, () -> profileWithHash("g".repeat(64), List.of(first)));
+        assertThrows(IllegalArgumentException.class, () -> profileWithHash("   ", List.of(first)));
         assertThrows(IllegalArgumentException.class, () -> profileWithHash("a".repeat(65), List.of(first)));
         assertThrows(IllegalArgumentException.class, () -> profile(List.of(first), RegistryStatus.DRAFT, T, null, null, null));
+        assertThrows(IllegalArgumentException.class, () -> profile(List.of(first), RegistryStatus.DRAFT, null, T, null, null));
+        assertThrows(IllegalArgumentException.class, () -> profile(List.of(first), RegistryStatus.DRAFT, null, null, T, null));
         assertThrows(IllegalArgumentException.class, () -> profile(List.of(first), RegistryStatus.PUBLISHED, null, null, null, null));
+        assertThrows(IllegalArgumentException.class, () -> profile(List.of(first), RegistryStatus.DEPRECATED, null, T.plusSeconds(1), T.plusSeconds(2), "x"));
         assertThrows(IllegalArgumentException.class, () -> profile(List.of(first), RegistryStatus.DEPRECATED, T, null, T.plusSeconds(2), "x"));
         assertThrows(IllegalArgumentException.class, () -> profile(List.of(first), RegistryStatus.DEPRECATED, T, T.plusSeconds(1), null, "x"));
         assertThrows(IllegalArgumentException.class, () -> profile(List.of(first), RegistryStatus.DEPRECATED, T, T.plusSeconds(1), T.plusSeconds(2), null));

@@ -65,6 +65,15 @@ class WebEnterpriseCrudContractTests(unittest.TestCase):
             self.assertNotIn('<pre id="dcim-${resource}-detail"', text)
             self.assertNotIn('id="ddi-${name}-detail" class="p-3 rounded border', text)
 
+    def test_datatables_use_bounded_pagination_without_nested_scroll_regions(self) -> None:
+        controller = (ASSETS / "enterprise-crud.mjs").read_text(encoding="utf-8")
+        css = (ASSETS / "infranexum-theme.css").read_text(encoding="utf-8")
+        self.assertIn("Object.freeze([20, 50, 100, 200])", controller)
+        self.assertIn("inx-datatable-pagination", controller)
+        self.assertIn("overflow: visible !important", css)
+        self.assertIn("table-layout: fixed", css)
+        self.assertIn(".inx-datatable-page-button.btn-primary", css)
+
 
 if __name__ == "__main__":
     unittest.main()

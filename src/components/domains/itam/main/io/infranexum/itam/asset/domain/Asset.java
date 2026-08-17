@@ -212,8 +212,9 @@ public final class Asset {
 
     private static String text(String value, String field, int min, int max) {
         Objects.requireNonNull(value, field);
+        if (value.chars().anyMatch(Character::isISOControl)) throw new IllegalArgumentException("invalid " + field);
         String normalized = value.strip();
-        if (normalized.length() < min || normalized.length() > max || normalized.chars().anyMatch(Character::isISOControl)) {
+        if (normalized.length() < min || normalized.length() > max) {
             throw new IllegalArgumentException("invalid " + field);
         }
         return normalized;

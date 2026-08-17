@@ -1,6 +1,8 @@
 import { localeFromDocument, translate } from './i18n.mjs';
 
 const CONTROLLERS = new WeakMap();
+const DATA_TABLES = new WeakMap();
+const DATA_TABLE_PAGE_SIZES = Object.freeze([20, 50, 100, 200]);
 
 /**
  * Converts InfraNexum tab panels into a list-first enterprise CRUD workflow.
@@ -83,37 +85,70 @@ export function showCrudList(panel, options = {}) {
   return CONTROLLERS.get(panel)?.showList?.(options) ?? false;
 }
 
-/** Enhances every current table as a keyboard-accessible, client-side sortable data table. */
+/**
+ * Enhances every current table as a keyboard-accessible sortable and paginated
+ * data table. Pagination is client-side over the bounded result sets returned by
+ * InfraNexum list APIs (maximum 200 rows), so the table never needs a nested
+ * vertical or horizontal scrolling region.
+ */
 export function initializeEnterpriseDataTables(root = document) {
   const tables = [...(root?.querySelectorAll?.('table') ?? [])];
   let wired = 0;
   for (const table of tables) {
-    if (table.getAttribute?.('data-inx-datatable-wired') === 'true') continue;
     const headerRow = table.querySelector?.('thead tr');
     const tbody = table.querySelector?.('tbody');
     if (!headerRow || !tbody) continue;
+
     table.classList?.add?.('inx-data-table');
-    const headers = [...(headerRow.children ?? [])];
-    headers.forEach((header, index) => {
-      if (isActionHeader(header)) {
-        header.setAttribute?.('data-inx-sortable', 'false');
-        return;
-      }
-      header.setAttribute?.('data-inx-sortable', 'true');
-      header.setAttribute?.('aria-sort', 'none');
-      header.tabIndex = 0;
-      const sort = () => sortTableByColumn(table, index, header);
-      header.addEventListener?.('click', sort);
-      header.addEventListener?.('keydown', (event) => {
-        if (event.key !== 'Enter' && event.key !== ' ') return;
-        event.preventDefault?.();
-        sort();
+    let state = DATA_TABLES.get(table);
+    if (!state) {
+      state = createDataTableState(root, table);
+      DATA_TABLES.set(table, state);
+      const headers = [...(headerRow.children ?? [])];
+      headers.forEach((header, index) => {
+        if (isActionHeader(header)) {
+          header.setAttribute?.('data-inx-sortable', 'false');
+          return;
+        }
+        header.setAttribute?.('data-inx-sortable', 'true');
+        header.setAttribute?.('aria-sort', 'none');
+        header.tabIndex = 0;
+        const sort = () => {
+          sortTableByColumn(table, index, header);
+          state.page = 0;
+          refreshDataTable(table);
+        };
+        header.addEventListener?.('click', sort);
+        header.addEventListener?.('keydown', (event) => {
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault?.();
+          sort();
+        });
       });
-    });
-    table.setAttribute?.('data-inx-datatable-wired', 'true');
-    wired += 1;
+      table.setAttribute?.('data-inx-datatable-wired', 'true');
+      wired += 1;
+    }
+    refreshDataTable(table);
   }
   return wired;
+}
+
+/** Re-applies row visibility and pagination metadata after a table render. */
+export function refreshEnterpriseDataTable(table) {
+  return refreshDataTable(table);
+}
+
+export function dataTablePageSizes() {
+  return DATA_TABLE_PAGE_SIZES;
+}
+
+export function pageWindow(totalRows, pageSize, requestedPage) {
+  const total = Math.max(0, Number.isSafeInteger(totalRows) ? totalRows : 0);
+  const size = DATA_TABLE_PAGE_SIZES.includes(pageSize) ? pageSize : DATA_TABLE_PAGE_SIZES[0];
+  const pageCount = Math.max(1, Math.ceil(total / size));
+  const page = Math.min(Math.max(0, Number.isSafeInteger(requestedPage) ? requestedPage : 0), pageCount - 1);
+  const start = page * size;
+  return Object.freeze({ total, size, page, pageCount, start, end: Math.min(total, start + size) });
 }
 
 export function sortTableByColumn(table, columnIndex, header = null) {
@@ -128,7 +163,7 @@ export function sortTableByColumn(table, columnIndex, header = null) {
   for (const candidate of headers) {
     if (candidate.getAttribute?.('data-inx-sortable') === 'true') candidate.setAttribute?.('aria-sort', candidate === target ? direction : 'none');
   }
-  const rows = [...(tbody.children ?? [])].filter((row) => !row.hidden && (row.children?.length ?? 0) > columnIndex && !(row.children?.[0]?.colSpan > 1));
+  const rows = dataRows(tbody).filter((row) => (row.children?.length ?? 0) > columnIndex);
   const indexed = rows.map((row, index) => ({ row, index, value: sortableValue(row.children[columnIndex]?.textContent) }));
   indexed.sort((left, right) => {
     const comparison = compareSortable(left.value, right.value);
@@ -137,6 +172,145 @@ export function sortTableByColumn(table, columnIndex, header = null) {
   });
   for (const item of indexed) tbody.appendChild?.(item.row);
   return true;
+}
+
+function createDataTableState(documentObject, table) {
+  const state = { page: 0, pageSize: DATA_TABLE_PAGE_SIZES[0], pager: null, summary: null, previous: null, next: null, pageButtons: null, sizeSelect: null };
+  const doc = table?.ownerDocument ?? documentObject;
+  if (!doc?.createElement) return state;
+
+  const pager = doc.createElement('div');
+  pager.className = 'inx-datatable-pagination';
+  pager.setAttribute('role', 'navigation');
+  pager.setAttribute('aria-label', translate(localeFromDocument(doc), 'datatable.pagination'));
+
+  const summary = doc.createElement('span');
+  summary.className = 'inx-datatable-summary';
+  summary.setAttribute('aria-live', 'polite');
+
+  const controls = doc.createElement('div');
+  controls.className = 'inx-datatable-controls';
+  const sizeLabel = doc.createElement('label');
+  sizeLabel.className = 'inx-datatable-size';
+  const sizeText = doc.createElement('span');
+  sizeText.textContent = translate(localeFromDocument(doc), 'datatable.rowsPerPage');
+  const sizeSelect = doc.createElement('select');
+  sizeSelect.className = 'form-select form-select-sm';
+  sizeSelect.setAttribute('aria-label', translate(localeFromDocument(doc), 'datatable.rowsPerPage'));
+  for (const size of DATA_TABLE_PAGE_SIZES) {
+    const option = doc.createElement('option');
+    option.value = String(size);
+    option.textContent = String(size);
+    sizeSelect.appendChild(option);
+  }
+  sizeSelect.value = String(state.pageSize);
+  sizeSelect.addEventListener('change', () => {
+    const requested = Number(sizeSelect.value);
+    state.pageSize = DATA_TABLE_PAGE_SIZES.includes(requested) ? requested : DATA_TABLE_PAGE_SIZES[0];
+    state.page = 0;
+    refreshDataTable(table);
+  });
+  sizeLabel.append(sizeText, sizeSelect);
+
+  const nav = doc.createElement('div');
+  nav.className = 'btn-group btn-group-sm inx-datatable-pages';
+  nav.setAttribute('role', 'group');
+  const previous = pagerButton(doc, '‹', 'datatable.previous', () => { state.page -= 1; refreshDataTable(table); });
+  const pageButtons = doc.createElement('span');
+  pageButtons.className = 'inx-datatable-page-buttons';
+  const next = pagerButton(doc, '›', 'datatable.next', () => { state.page += 1; refreshDataTable(table); });
+  nav.append(previous, pageButtons, next);
+  controls.append(sizeLabel, nav);
+  pager.append(summary, controls);
+
+  const container = table.closest?.('.table-responsive') ?? table;
+  const parent = container?.parentElement;
+  if (parent?.insertBefore) parent.insertBefore(pager, container.nextSibling ?? null);
+  else if (container?.insertAdjacentElement) container.insertAdjacentElement('afterend', pager);
+
+  Object.assign(state, { pager, summary, previous, next, pageButtons, sizeSelect });
+  return state;
+}
+
+function pagerButton(doc, text, labelKey, action) {
+  const button = doc.createElement('button');
+  button.type = 'button';
+  button.className = 'btn btn-outline-primary inx-datatable-page-button';
+  button.textContent = text;
+  button.setAttribute('aria-label', translate(localeFromDocument(doc), labelKey));
+  button.addEventListener('click', action);
+  return button;
+}
+
+function refreshDataTable(table) {
+  const state = DATA_TABLES.get(table);
+  const tbody = table?.querySelector?.('tbody');
+  if (!state || !tbody) return false;
+  const rows = dataRows(tbody);
+  const window = pageWindow(rows.length, state.pageSize, state.page);
+  state.page = window.page;
+  rows.forEach((row, index) => {
+    const visible = index >= window.start && index < window.end;
+    row.hidden = !visible;
+    row.setAttribute?.('data-inx-page-hidden', visible ? 'false' : 'true');
+  });
+  if (!state.pager) return true;
+  state.pager.hidden = rows.length <= window.size;
+  state.summary.textContent = formatSummary(table.ownerDocument, window);
+  state.previous.disabled = window.page === 0;
+  state.next.disabled = window.page >= window.pageCount - 1;
+  renderPageButtons(table.ownerDocument, table, state, window);
+  return true;
+}
+
+function renderPageButtons(doc, table, state, window) {
+  if (!state.pageButtons?.replaceChildren || !doc?.createElement) return;
+  const fragment = [];
+  const indexes = compactPageIndexes(window.pageCount, window.page);
+  for (const index of indexes) {
+    if (index === null) {
+      const ellipsis = doc.createElement('span');
+      ellipsis.className = 'btn inx-datatable-ellipsis disabled';
+      ellipsis.textContent = '…';
+      ellipsis.setAttribute('aria-hidden', 'true');
+      fragment.push(ellipsis);
+      continue;
+    }
+    const button = doc.createElement('button');
+    button.type = 'button';
+    button.className = `btn ${index === window.page ? 'btn-primary' : 'btn-outline-primary'} inx-datatable-page-button`;
+    button.textContent = String(index + 1);
+    button.setAttribute('aria-label', `${translate(localeFromDocument(doc), 'datatable.page')} ${index + 1}`);
+    if (index === window.page) button.setAttribute('aria-current', 'page');
+    button.addEventListener('click', () => { state.page = index; refreshDataTable(table); });
+    fragment.push(button);
+  }
+  state.pageButtons.replaceChildren(...fragment);
+}
+
+function compactPageIndexes(pageCount, current) {
+  if (pageCount <= 7) return Array.from({ length: pageCount }, (_, index) => index);
+  const values = new Set([0, pageCount - 1, current - 1, current, current + 1].filter((value) => value >= 0 && value < pageCount));
+  const ordered = [...values].sort((a, b) => a - b);
+  const result = [];
+  for (let index = 0; index < ordered.length; index += 1) {
+    if (index > 0 && ordered[index] - ordered[index - 1] > 1) result.push(null);
+    result.push(ordered[index]);
+  }
+  return result;
+}
+
+function formatSummary(doc, window) {
+  if (window.total === 0) return translate(localeFromDocument(doc), 'datatable.empty');
+  return `${window.start + 1}–${window.end} / ${window.total}`;
+}
+
+function dataRows(tbody) {
+  return [...(tbody?.children ?? [])].filter((row) => !isStructuralRow(row));
+}
+
+function isStructuralRow(row) {
+  return (row?.children?.length ?? 0) === 1 && Number(row.children?.[0]?.colSpan ?? 1) > 1;
 }
 
 export function sortableValue(value) {

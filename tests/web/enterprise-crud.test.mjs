@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { sortTableByColumn, sortableValue, wireCrudPanel } from '../../src/applications/web/public/assets/enterprise-crud.mjs';
+import { dataTablePageSizes, pageWindow, sortTableByColumn, sortableValue, wireCrudPanel } from '../../src/applications/web/public/assets/enterprise-crud.mjs';
 
 class Classes {
   constructor(...names) { this.values = new Set(names); }
@@ -81,4 +81,12 @@ test('sortable values normalize numbers, ISO dates, accents and empty cells dete
   assert.equal(sortableValue('2026-08-16').kind, 'date');
   assert.deepEqual(sortableValue('Équipement'), { kind: 'text', value: 'equipement' });
   assert.deepEqual(sortableValue('—'), { kind: 'empty', value: '' });
+});
+
+
+test('enterprise DataTable pagination is bounded to 20/50/100/200 rows and clamps pages deterministically', () => {
+  assert.deepEqual([...dataTablePageSizes()], [20, 50, 100, 200]);
+  assert.deepEqual(pageWindow(201, 20, 0), { total: 201, size: 20, page: 0, pageCount: 11, start: 0, end: 20 });
+  assert.deepEqual(pageWindow(201, 50, 99), { total: 201, size: 50, page: 4, pageCount: 5, start: 200, end: 201 });
+  assert.deepEqual(pageWindow(15, 999, -2), { total: 15, size: 20, page: 0, pageCount: 1, start: 0, end: 15 });
 });

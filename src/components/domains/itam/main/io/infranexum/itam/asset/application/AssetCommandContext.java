@@ -13,18 +13,22 @@ public record AssetCommandContext(
     public AssetCommandContext {
         Objects.requireNonNull(actorId, "actorId"); Objects.requireNonNull(correlationId, "correlationId");
         Objects.requireNonNull(idempotencyKey, "idempotencyKey");
+        if (idempotencyKey.chars().anyMatch(Character::isISOControl)) throw new IllegalArgumentException("invalid idempotency key");
         idempotencyKey = idempotencyKey.strip();
-        if (idempotencyKey.length() < 8 || idempotencyKey.length() > 200 || idempotencyKey.chars().anyMatch(Character::isISOControl)) {
+        if (idempotencyKey.length() < 8 || idempotencyKey.length() > 200) {
             throw new IllegalArgumentException("invalid idempotency key");
         }
-        Objects.requireNonNull(reason, "reason"); reason = reason.strip();
-        if (reason.length() < 2 || reason.length() > 1024 || reason.chars().anyMatch(Character::isISOControl)) {
+        Objects.requireNonNull(reason, "reason");
+        if (reason.chars().anyMatch(Character::isISOControl)) throw new IllegalArgumentException("invalid asset mutation reason");
+        reason = reason.strip();
+        if (reason.length() < 2 || reason.length() > 1024) {
             throw new IllegalArgumentException("invalid asset mutation reason");
         }
         if (evidenceReference != null) {
+            if (evidenceReference.chars().anyMatch(Character::isISOControl)) throw new IllegalArgumentException("invalid evidenceReference");
             evidenceReference = evidenceReference.strip();
             if (evidenceReference.isEmpty()) evidenceReference = null;
-            else if (evidenceReference.length() > 240 || evidenceReference.chars().anyMatch(Character::isISOControl)) {
+            else if (evidenceReference.length() > 240) {
                 throw new IllegalArgumentException("invalid evidenceReference");
             }
         }

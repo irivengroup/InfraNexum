@@ -76,7 +76,7 @@ public final class FacilityNode {
         this.timezone = kind == FacilityKind.SITE ? timezone(timezone) : absentOutsideSite(timezone, "timezone");
         this.latitude = geo(kind, latitude, "latitude", new BigDecimal("-90"), new BigDecimal("90"));
         this.longitude = geo(kind, longitude, "longitude", new BigDecimal("-180"), new BigDecimal("180"));
-        this.floorCount = kind == FacilityKind.BUILDING ? positive(floorCount, "floorCount", true) : absentInteger(floorCount, "floorCount");
+        this.floorCount = kind == FacilityKind.BUILDING ? requiredPositive(floorCount, "floorCount") : absentInteger(floorCount, "floorCount");
         this.levelNumber = kind == FacilityKind.FLOOR ? Objects.requireNonNull(levelNumber, "levelNumber") : absentInteger(levelNumber, "levelNumber");
         this.areaM2 = area(kind, areaM2);
         this.levelHeightM = kind == FacilityKind.FLOOR ? positive(levelHeightM, "levelHeightM", false) : absentDecimal(levelHeightM, "levelHeightM");
@@ -217,8 +217,10 @@ public final class FacilityNode {
     }
 
     private static String text(String value, String field, int min, int max) {
-        Objects.requireNonNull(value, field); String result = value.strip();
-        if (result.length() < min || result.length() > max || result.chars().anyMatch(Character::isISOControl)) throw new IllegalArgumentException("invalid " + field);
+        Objects.requireNonNull(value, field);
+        if (value.chars().anyMatch(Character::isISOControl)) throw new IllegalArgumentException("invalid " + field);
+        String result = value.strip();
+        if (result.length() < min || result.length() > max) throw new IllegalArgumentException("invalid " + field);
         return result;
     }
     private static String nullableText(String value, String field, int min, int max) { return value == null || value.isBlank() ? null : text(value, field, min, max); }
@@ -265,9 +267,10 @@ public final class FacilityNode {
         if (value == null) { if (required) throw new IllegalArgumentException(field + " is required"); return null; }
         if (value.signum() <= 0) throw new IllegalArgumentException(field + " must be positive"); return value;
     }
-    private static Integer positive(Integer value, String field, boolean required) {
-        if (value == null) { if (required) throw new IllegalArgumentException(field + " is required"); return null; }
-        if (value <= 0) throw new IllegalArgumentException(field + " must be positive"); return value;
+    private static Integer requiredPositive(Integer value, String field) {
+        if (value == null) throw new IllegalArgumentException(field + " is required");
+        if (value <= 0) throw new IllegalArgumentException(field + " must be positive");
+        return value;
     }
 
     public DomainIdentifier id() { return id; }

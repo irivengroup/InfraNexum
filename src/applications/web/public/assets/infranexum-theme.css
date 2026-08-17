@@ -1511,3 +1511,82 @@ input[data-inx-temporal].inx-temporal-native::-webkit-calendar-picker-indicator 
 .inx-workspace:not(.inx-api-docs) > header:first-child .badge { margin-top: .15rem; }
 .inx-workspace .inx-filter-bar { border-radius: .72rem; }
 .inx-workspace .table-responsive { border-radius: .72rem; }
+
+/* alpha.0.105 — bounded DataTables without nested scroll regions. */
+.inx-workspace .table-responsive,
+.inx-crud-list-view .table-responsive {
+  overflow: visible !important;
+  max-height: none !important;
+  scrollbar-width: none;
+}
+.inx-workspace .table-responsive::-webkit-scrollbar,
+.inx-crud-list-view .table-responsive::-webkit-scrollbar { display: none; }
+.inx-data-table {
+  width: 100% !important;
+  table-layout: fixed;
+}
+.inx-data-table > :not(caption) > * > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  white-space: normal;
+}
+.inx-data-table .inx-crud-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+.inx-datatable-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .9rem;
+  padding: .75rem .85rem;
+  border-top: 1px solid var(--inx-border);
+  background: var(--inx-surface-soft);
+  color: var(--inx-muted);
+  font-size: .84rem;
+}
+.inx-datatable-controls,
+.inx-datatable-size,
+.inx-datatable-pages,
+.inx-datatable-page-buttons {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+}
+.inx-datatable-size .form-select {
+  width: auto;
+  min-width: 4.7rem;
+  color: var(--inx-ink);
+  border-color: color-mix(in srgb, var(--inx-blue) 28%, var(--inx-border));
+  background-color: var(--inx-surface);
+}
+.inx-datatable-page-button {
+  min-width: 2rem;
+  border-color: color-mix(in srgb, var(--inx-blue) 34%, var(--inx-border));
+}
+.inx-datatable-page-button.btn-primary {
+  color: #fff;
+  background: linear-gradient(135deg, var(--inx-midnight), var(--inx-blue));
+  border-color: var(--inx-blue);
+}
+.inx-datatable-page-button:focus-visible,
+.inx-datatable-size .form-select:focus-visible {
+  outline: .15rem solid var(--inx-turquoise);
+  outline-offset: .12rem;
+  box-shadow: none;
+}
+.inx-datatable-ellipsis {
+  min-width: 1.6rem;
+  padding-inline: .2rem;
+  color: var(--inx-muted);
+  border: 0;
+}
+@media (max-width: 767.98px) {
+  .inx-datatable-pagination,
+  .inx-datatable-controls { align-items: stretch; flex-direction: column; }
+  .inx-datatable-pagination { justify-content: flex-start; }
+  .inx-datatable-size { justify-content: space-between; }
+  .inx-datatable-pages { flex-wrap: wrap; }
+}

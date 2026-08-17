@@ -14,8 +14,7 @@ public record PartnerExternalId(String authority, String value) {
         }
         authority = authority.strip().toLowerCase(Locale.ROOT);
         value = value.strip();
-        if (!AUTHORITY.matcher(authority).matches() || value.isEmpty() || value.length() > 240
-                || value.chars().anyMatch(Character::isISOControl)) {
+        if (!AUTHORITY.matcher(authority).matches() || value.isEmpty() || value.length() > 240) {
             throw new IllegalArgumentException("invalid external identifier");
         }
     }

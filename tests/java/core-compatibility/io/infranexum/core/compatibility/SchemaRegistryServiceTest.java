@@ -121,6 +121,7 @@ class SchemaRegistryServiceTest {
         assertThrows(SchemaRegistryException.class,
                 () -> service.createProfile(new CreateProfileCommand("rsot.network", "team.rsot", "1.0.0", List.of(publishedSchema.id())), context));
         assertThrows(SchemaRegistryException.class, () -> service.publishProfile(profile.id(), 2, context));
+        assertThrows(IllegalArgumentException.class, () -> service.publishProfile(profile.id(), 0, context));
 
         SchemaProfile published = service.publishProfile(profile.id(), 1, context);
         assertEquals(RegistryStatus.PUBLISHED, published.status());
@@ -130,6 +131,18 @@ class SchemaRegistryServiceTest {
         assertEquals(RegistryStatus.DEPRECATED, deprecated.status());
         assertThrows(SchemaRegistryException.class,
                 () -> service.deprecateProfile(deprecated.id(), 3, NOW.plusSeconds(9000), "again", context));
+    }
+
+    @Test
+    void profileActivationFailsIfAMemberStopsBeingPublishedAfterDraftCreation() {
+        RegisteredSchema schema = service.createSchema(command("rsot.member", "1.0.0", "{}"), context);
+        RegisteredSchema publishedSchema = service.publish(schema.id(), 1, null, context);
+        SchemaProfile profile = service.createProfile(
+                new CreateProfileCommand("rsot.member-profile", "team.rsot", "1.0.0", List.of(publishedSchema.id())), context);
+        service.deprecate(publishedSchema.id(), publishedSchema.revision(), NOW.plusSeconds(3600), "retired", context);
+        SchemaRegistryException error = assertThrows(SchemaRegistryException.class,
+                () -> service.publishProfile(profile.id(), profile.revision(), context));
+        assertEquals("SCHEMA_PROFILE_MEMBER_NOT_PUBLISHED", error.code());
     }
 
     @Test
