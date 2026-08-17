@@ -1,3 +1,7 @@
+## 2.0.0-alpha.0.106
+
+Corrective de qualification et d’administration : filtrage IAM par statut et réactivation visible des comptes suspendus, prévention de l’auto-verrouillage par suspension/suppression, menu utilisateur topbar, navigation DCIM verticale Location/Infrastructure, correction d’affichage avancé IAM, durcissement ReDoc/DataTables, correction du bootstrap Organization Server et renforcement des tests JaCoCo/JDBC/Security sans réduction du seuil 98 %. PGM-10-E05 reste formellement non terminé jusqu’aux gates hébergés JDK 25 et PostgreSQL 17/18.
+
 # InfraNexum 2.0.0-alpha.0.105 — hosted coverage, DataTable and ReDoc corrective
 
 `alpha.0.105` is a qualification/Web corrective over `alpha.0.104`; it does **not** advance the roadmap. It preserves the JaCoCo policy at **98 % lines and branches** with no production-class exclusion, disabled test or lowered threshold. The corrective expands executable branch regressions across Workers, Compatibility, Organization, Identity, RSOT, ITAM, DCIM, DDI and Integrations, and makes previously existing JDBC smoke contracts visible to Surefire/JaCoCo through JUnit wrappers rather than duplicating their assertions.

@@ -134,6 +134,19 @@ class RbacAuthorizationServiceTest {
     }
 
     @Test
+    void evaluationAndPermissionSetCoverPlatformScopeAndDeniedDecisionAudit() {
+        AuthorizationScope platform = AuthorizationScope.platform();
+        AuthorizationDecision denied = service.evaluatePermission(USER, "asset.missing", platform, EVALUATOR, CORRELATION, "CLI");
+        assertFalse(denied.allowed());
+        assertEquals("RBAC_PERMISSION_DENIED", denied.code());
+        assertEquals(Set.of(), service.effectivePermissions(USER, platform, EVALUATOR, CORRELATION, "CLI"));
+        List<AuditRecord> records = audit.readRange(AuditScope.platform(), 1, 100, 100);
+        assertEquals(2, records.size());
+        assertEquals("DENIED", records.get(0).entry().result());
+        assertEquals("SUCCESS", records.get(1).entry().result());
+    }
+
+    @Test
     void effectivePermissionsPlatformAdministratorAndUnregisteredRouteAreExplicit() {
         seedMembership(USER);
         Role role = seedRole("ops.multi", "asset.read", ScopeKind.ORGANIZATION);

@@ -11,6 +11,7 @@ import io.infranexum.identity.access.domain.AssignmentActorType;
 import io.infranexum.identity.access.domain.AuthorizationScope;
 import io.infranexum.identity.access.domain.IdentityGroup;
 import io.infranexum.identity.access.domain.IdentityUser;
+import io.infranexum.identity.access.domain.IdentityUserStatus;
 import io.infranexum.identity.access.domain.Permission;
 import io.infranexum.identity.access.domain.PermissionCodes;
 import io.infranexum.identity.access.domain.PolicyEvaluationRequest;
@@ -156,10 +157,10 @@ public final class IdentityAccessCli {
             case "list" -> {
                 require(args, actor, PermissionCodes.USER_SEARCH, AuthorizationScope.platform(), correlation, "user", "collection");
                 DomainIdentifier org = args.optionalId("org");
-                String status = args.optional("status", "").toUpperCase(Locale.ROOT);
+                String requestedStatus = args.optional("status", "").trim();
+                IdentityUserStatus status = requestedStatus.isEmpty() ? null : IdentityUserStatus.valueOf(requestedStatus.toUpperCase(Locale.ROOT));
                 String filter = args.optional("filter", "").toLowerCase(Locale.ROOT);
-                List<IdentityUser> users = administration.listUsers(args.offset(), args.limit()).stream()
-                        .filter(user -> status.isEmpty() || user.status().name().equals(status))
+                List<IdentityUser> users = administration.listUsers(status, args.offset(), args.limit()).stream()
                         .filter(user -> filter.isEmpty() || user.login().contains(filter) || user.displayName().toLowerCase(Locale.ROOT).contains(filter))
                         .filter(user -> org == null || administration.memberships(user.id()).stream().anyMatch(m -> m.organizationId().equals(org)))
                         .toList();

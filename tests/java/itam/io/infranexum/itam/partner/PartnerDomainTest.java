@@ -50,6 +50,20 @@ final class PartnerDomainTest {
         assertTrue(PartnerAuthorizationStatus.SUSPENDED.canTransitionTo(PartnerAuthorizationStatus.ACTIVE));
         assertTrue(PartnerAuthorizationStatus.SUSPENDED.canTransitionTo(PartnerAuthorizationStatus.RETIRED));
         assertFalse(PartnerAuthorizationStatus.RETIRED.canTransitionTo(PartnerAuthorizationStatus.ACTIVE));
+
+        for (PartnerAuthorizationStatus source : PartnerAuthorizationStatus.values()) {
+            for (PartnerAuthorizationStatus target : PartnerAuthorizationStatus.values()) {
+                boolean expected = switch (source) {
+                    case DRAFT -> target == PartnerAuthorizationStatus.PENDING_APPROVAL;
+                    case PENDING_APPROVAL -> target == PartnerAuthorizationStatus.ACTIVE || target == PartnerAuthorizationStatus.DRAFT;
+                    case ACTIVE -> target == PartnerAuthorizationStatus.SUSPENDED || target == PartnerAuthorizationStatus.RETIRED;
+                    case SUSPENDED -> target == PartnerAuthorizationStatus.ACTIVE || target == PartnerAuthorizationStatus.RETIRED;
+                    case RETIRED -> false;
+                };
+                assertEquals(expected, source.canTransitionTo(target));
+            }
+            assertFalse(source.canTransitionTo(null));
+        }
     }
 
     @Test
@@ -92,10 +106,20 @@ final class PartnerDomainTest {
         assertEquals("+33123456789", new PartnerContact("phone", "Hotline", null, "+33123456789", null).phone());
         assertThrows(IllegalArgumentException.class, () -> new PartnerContact("!", "Help", "help@example.test", null, null));
         assertThrows(IllegalArgumentException.class, () -> new PartnerContact("support", "Help", "invalid", null, null));
+        assertThrows(IllegalArgumentException.class,
+                () -> new PartnerContact("support", "Support Team", null, null, "/relative-support"));
         assertThrows(IllegalArgumentException.class, () -> new PartnerContact("support", "Help", null, null, null));
         assertThrows(IllegalArgumentException.class, () -> new PartnerContact("support", "Help", null, null, "ftp://example.test"));
         assertThrows(IllegalArgumentException.class, () -> new PartnerContact("support", "Help", null, null, "https://user:pass@example.test"));
         assertThrows(IllegalArgumentException.class, () -> new PartnerContact("support", "\nHelp", "help@example.test", null, null));
+    }
+
+    @Test
+    void partnerWebsiteRejectsRelativeUrisWithoutAnHttpScheme() {
+        assertThrows(IllegalArgumentException.class, () -> Partner.restore(ID, ORG, SUB, new PartnerCode("ABC"),
+                "Legal Name", "Display Name", "FR", Set.of(PartnerRole.MANUFACTURER), PartnerAuthorizationStatus.DRAFT,
+                LocalDate.of(2026, 1, 1), null, "/relative", null, List.of(), List.of(), List.of(), List.of(),
+                1, NOW, NOW, ACTOR, ACTOR, "reason"));
     }
 
     @Test

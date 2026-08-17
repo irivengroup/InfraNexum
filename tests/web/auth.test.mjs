@@ -42,6 +42,7 @@ function authenticatedDocument(cookie = 'INX_XSRF=csrf-value') {
     ['auth-login-view', new Element()], ['auth-password-view', new Element()], ['auth-login-submit', new Element()], ['auth-password-submit', new Element()],
     ['auth-username', new Element()], ['auth-password', new Element()], ['auth-message', new Element()],
     ['auth-service-state', new Element()], ['auth-service-state-text', new Element()],
+    ['session-menu', new Element()], ['session-menu-trigger', new Element()], ['session-menu-dropdown', new Element()],
     ['session-identity', new Element()], ['session-avatar', new Element()], ['session-logout', new Element()], ['auth-copyright', new Element()],
   ]);
   return { body, cookie, getElementById: (id) => elements.get(id) ?? null, elements };

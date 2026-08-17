@@ -109,7 +109,7 @@ export async function initializeIdentityAccess(documentObject, configuration, fe
   await entityDirectory.setOrganization(organizationSelect.value);
   bindForms(documentObject, organizationSelect, api, status, entityDirectory, confirmFunction);
   bindDelegatedActions(documentObject, organizationSelect, api, status, confirmFunction, workflowNavigation, entityDirectory);
-  bindWorkspaceChrome(documentObject, organizationSelect, api, status, workflowNavigation);
+  bindWorkspaceChrome(documentObject, organizationSelect, api, status, workflowNavigation, entityDirectory);
 
   const refresh = async () => refreshWorkspace(documentObject, organizationSelect.value, api, status, entityDirectory);
   organizationSelect.addEventListener('change', () => {
@@ -451,7 +451,7 @@ export async function refreshIamSectionSafely(documentObject, org, api, section,
 async function refreshSection(documentObject, org, api, section, entityDirectory = null) {
   let items;
   switch (section) {
-    case 'users': items = requireArray(await api('/v1/iam/users?limit=200')); renderRows(documentObject, 'iam-user-rows', items, userCells); entityDirectory?.setCatalog?.('user', items); break;
+    case 'users': { const statusFilter=documentObject.getElementById('iam-user-status-filter')?.value?.trim(); const suffix=statusFilter?`&status=${encodeURIComponent(statusFilter)}`:''; items = requireArray(await api(`/v1/iam/users?limit=200${suffix}`)); renderRows(documentObject, 'iam-user-rows', items, userCells); entityDirectory?.setCatalog?.('user', items.filter((item)=>String(item.status??'').toLowerCase()!=='deleted')); break; }
     case 'groups': items = requireArray(await api(`/v1/organizations/${org}/groups?limit=200`)); renderRows(documentObject, 'iam-group-rows', items, groupCells); entityDirectory?.setCatalog?.('group', items); break;
     case 'roles': items = requireArray(await api(`/v1/organizations/${org}/roles?limit=200`)); renderRows(documentObject, 'iam-role-rows', items, roleCells); entityDirectory?.setCatalog?.('role', items); break;
     case 'permissions': items = requireArray(await api(`/v1/organizations/${org}/permissions?limit=200`)); renderRows(documentObject, 'iam-permission-rows', items, permissionCells); entityDirectory?.setCatalog?.('permission', items); break;
@@ -551,15 +551,15 @@ function selectAction(kind, item, workflow = null, labelKey = 'common.edit') {
 }
 function userCells(item) {
   requiredUuid(item.id, 'user.id');
-  const active = item.status === 'ACTIVE' || item.status === 'active';
-  return [idCell(item.id), item.login, item.email, item.displayName, item.status,
-    { actions: [
-      selectAction('user', item, 'users:settings'),
-      selectAction('user', item, 'users:memberships', 'iam.memberships'),
-      selectAction('user', item, 'users:roles', 'iam.workflow.roleAssignments'),
-      { action: active ? 'suspend-user' : 'activate-user', labelKey: active ? 'iam.suspend' : 'iam.activate' },
-      { action: 'delete-user', labelKey: 'iam.delete', danger: true },
-    ] }];
+  const status = String(item.status ?? '').toLowerCase();
+  const actions = [selectAction('user', item, 'users:settings')];
+  if (status !== 'deleted') {
+    actions.push(selectAction('user', item, 'users:memberships', 'iam.memberships'));
+    actions.push(selectAction('user', item, 'users:roles', 'iam.workflow.roleAssignments'));
+    actions.push({ action: status === 'active' ? 'suspend-user' : 'activate-user', labelKey: status === 'active' ? 'iam.suspend' : 'iam.activate' });
+    actions.push({ action: 'delete-user', labelKey: 'iam.delete', danger: true });
+  }
+  return [idCell(item.id), item.login, item.email, item.displayName, item.status, { actions }];
 }
 function groupCells(item) {
   requiredUuid(item.id, 'group.id');
@@ -725,10 +725,17 @@ function prepareIamCrudPanels(documentObject, sections, buttons, workflowPanels)
   }
 }
 
-function bindWorkspaceChrome(documentObject, organizationSelect, api, status, workflowNavigation) {
+function bindWorkspaceChrome(documentObject, organizationSelect, api, status, workflowNavigation, entityDirectory = null) {
   for (const input of documentObject?.querySelectorAll?.('[data-iam-filter]') ?? []) {
     input.addEventListener?.('input', () => applyTableFilter(documentObject, input.getAttribute('data-iam-filter'), input.value));
   }
+  const userStatusFilter = documentObject?.getElementById?.('iam-user-status-filter');
+  userStatusFilter?.addEventListener?.('change', () => {
+    if (!organizationSelect.value) return;
+    setStatus(documentObject, status, 'iam.loading', false);
+    void refreshIamSectionSafely(documentObject, requiredOrganization(organizationSelect), api, 'users', entityDirectory)
+      .then((result) => setStatus(documentObject, status, result === 'loaded' ? 'iam.ready' : result === 'restricted' ? 'iam.partialAccess' : 'iam.partialFailure', result === 'failed'));
+  });
   for (const button of documentObject?.querySelectorAll?.('[data-iam-refresh]') ?? []) {
     button.addEventListener?.('click', () => {
       const section = button.getAttribute('data-iam-refresh');

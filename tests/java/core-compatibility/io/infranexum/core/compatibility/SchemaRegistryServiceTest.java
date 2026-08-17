@@ -7,8 +7,15 @@ import io.infranexum.core.audit.InMemoryAppendOnlyAuditJournal;
 import io.infranexum.core.contracts.DomainIdentifier;
 import io.infranexum.core.contracts.UuidV7Generator;
 import io.infranexum.core.events.InMemoryEventStore;
+import io.infranexum.core.events.OutboxRecord;
+import io.infranexum.core.events.OutboxStatus;
+import io.infranexum.core.events.RetryPolicy;
+import io.infranexum.core.events.TransactionExecutionException;
+import io.infranexum.core.events.TransactionalEventStore;
+import io.infranexum.core.events.TransactionalWork;
 import java.security.SecureRandom;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Comparator;
@@ -146,6 +153,34 @@ class SchemaRegistryServiceTest {
     }
 
     @Test
+    void effectiveTimePreviousCandidateGuardAndTransactionalCauseTranslationAreCovered() {
+        Instant effectiveAt = NOW.minusSeconds(60);
+        RegisteredSchema draft = service.createSchema(
+                new CreateSchemaCommand("rsot.effective", SchemaKind.RSOT_CANONICAL, "team.rsot", "1.0.0", "{}", effectiveAt),
+                context);
+        assertEquals(effectiveAt, draft.effectiveAt());
+
+        repository.forcedLatestPublished = draft;
+        assertEquals(CompatibilityVerdict.COMPATIBLE, service.previewCompatibility(draft.id()).verdict());
+        repository.forcedLatestPublished = null;
+
+        SchemaRegistryException domain = new SchemaRegistryException("SCHEMA_FORCED", "forced");
+        SchemaRegistryService domainFailing = failingService(domain);
+        assertEquals(domain, assertThrows(SchemaRegistryException.class,
+                () -> domainFailing.updateDraft(draft.id(), draft.revision(), "{\"a\":1}", context)));
+
+        IllegalArgumentException invalid = new IllegalArgumentException("forced invalid");
+        SchemaRegistryService invalidFailing = failingService(invalid);
+        assertEquals(invalid, assertThrows(IllegalArgumentException.class,
+                () -> invalidFailing.updateDraft(draft.id(), draft.revision(), "{\"a\":2}", context)));
+
+        IllegalStateException unknown = new IllegalStateException("forced storage failure");
+        TransactionExecutionException wrapped = assertThrows(TransactionExecutionException.class,
+                () -> failingService(unknown).updateDraft(draft.id(), draft.revision(), "{\"a\":3}", context));
+        assertEquals(unknown, wrapped.getCause());
+    }
+
+    @Test
     void readsAreBoundedAndCapabilityGateAppliesToEverySurface() {
         RegisteredSchema a = service.createSchema(command("rsot.alpha", "1.0.0", "{}"), context);
         RegisteredSchema b = service.createSchema(command("rsot.beta", "1.0.0", "{}"), context);
@@ -172,6 +207,12 @@ class SchemaRegistryServiceTest {
         assertThrows(IllegalStateException.class, () -> service.listProfiles(null, null, 0, 10));
     }
 
+    private SchemaRegistryService failingService(RuntimeException cause) {
+        UuidV7Generator ids = new UuidV7Generator(Clock.fixed(NOW, ZoneOffset.UTC), new SecureRandom(new byte[] {5, 6, 7, 8}));
+        return new SchemaRegistryService(repository, inspector, new FailingEventStore(cause), audit, ids,
+                Clock.fixed(NOW, ZoneOffset.UTC), () -> { });
+    }
+
     private static CreateSchemaCommand command(String key, String version, String json) {
         return new CreateSchemaCommand(key, SchemaKind.RSOT_CANONICAL, "team.rsot", version, json, null);
     }
@@ -192,11 +233,13 @@ class SchemaRegistryServiceTest {
     private static final class InMemoryRepository implements SchemaRegistryRepository {
         private final Map<DomainIdentifier, RegisteredSchema> schemas = new LinkedHashMap<>();
         private final Map<DomainIdentifier, SchemaProfile> profiles = new LinkedHashMap<>();
+        private RegisteredSchema forcedLatestPublished;
         @Override public Optional<RegisteredSchema> findSchema(DomainIdentifier id) { return Optional.ofNullable(schemas.get(id)); }
         @Override public Optional<RegisteredSchema> findSchemaVersion(String schemaKey, String version) {
             return schemas.values().stream().filter(s -> s.schemaKey().equals(schemaKey) && s.version().toString().equals(version)).findFirst();
         }
         @Override public Optional<RegisteredSchema> latestPublishedSchema(String schemaKey) {
+            if (forcedLatestPublished != null) return Optional.of(forcedLatestPublished);
             return schemas.values().stream().filter(s -> s.schemaKey().equals(schemaKey) && s.status() != RegistryStatus.DRAFT)
                     .max(Comparator.comparing(RegisteredSchema::publishedAt));
         }
@@ -222,4 +265,24 @@ class SchemaRegistryServiceTest {
         @Override public void publishProfile(SchemaProfile profile) { profiles.put(profile.id(), profile); }
         @Override public void deprecateProfile(SchemaProfile profile) { profiles.put(profile.id(), profile); }
     }
+    private static final class FailingEventStore implements TransactionalEventStore {
+        private final RuntimeException cause;
+
+        FailingEventStore(RuntimeException cause) { this.cause = cause; }
+
+        @Override public <T> io.infranexum.core.events.TransactionOutcome<T> execute(TransactionalWork<T> work) {
+            throw new TransactionExecutionException("forced schema-registry test failure", cause);
+        }
+        @Override public List<OutboxRecord> claimBatch(String workerId, int limit, Instant now, Duration leaseDuration) {
+            throw new UnsupportedOperationException("not used");
+        }
+        @Override public void markPublished(DomainIdentifier eventId, String workerId, Instant publishedAt) {
+            throw new UnsupportedOperationException("not used");
+        }
+        @Override public OutboxStatus markFailed(
+                DomainIdentifier eventId, String workerId, Instant failedAt, RetryPolicy retryPolicy, Throwable failure) {
+            throw new UnsupportedOperationException("not used");
+        }
+    }
+
 }

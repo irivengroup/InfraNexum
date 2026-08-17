@@ -5,6 +5,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import io.infranexum.core.contracts.DomainIdentifier;
 import io.infranexum.core.contracts.UuidV7Generator;
 import io.infranexum.core.events.InMemoryEventStore;
+import io.infranexum.core.events.OutboxRecord;
+import io.infranexum.core.events.OutboxStatus;
+import io.infranexum.core.events.RetryPolicy;
+import io.infranexum.core.events.TransactionExecutionException;
+import io.infranexum.core.events.TransactionalEventStore;
+import io.infranexum.core.events.TransactionalWork;
 import io.infranexum.dcim.facility.application.CreateFacilityCommand;
 import io.infranexum.dcim.facility.application.FacilityApplicationService;
 import io.infranexum.dcim.facility.application.FacilityCommandContext;
@@ -24,6 +30,7 @@ import io.infranexum.dcim.facility.ports.FacilityScopePolicy;
 import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -147,6 +154,23 @@ final class FacilityApplicationServiceTest {
     }
 
     @Test
+    void updatingNonSitePreservesSiteOnlyMetadataAndCoversAlternateProjectionPath() {
+        FacilityNode site = active(service.create(site("PAR30"), context("dcim-site-create-300", "Register site")), "site", service);
+        FacilityNode building = active(service.create(building(site.id(), "BLD30"), context("dcim-building-create-300", "Register building")), "building", service);
+        FacilityNode floor = active(service.create(floor(building.id(), "F30"), context("dcim-floor-create-300", "Register floor")), "floor", service);
+        FacilityNode room = active(service.create(room(floor.id(), "ROOM30"), context("dcim-room-create-300", "Register room")), "room", service);
+        UpdateFacilityCommand update = new UpdateFacilityCommand(
+                "Room updated", "must-not-replace", "must-not-replace", "99999", "Elsewhere", "US", "UTC",
+                null, null, null, null, BigDecimal.TEN, null, null, "secure", null, "room update");
+        FacilityNode changed = service.update(room.id(), room.version(), update,
+                context("dcim-room-update-300", "Update non-site metadata"));
+        assertEquals("Room updated", changed.displayName());
+        assertNull(changed.addressLine1());
+        assertNull(changed.countryCode());
+        assertNull(changed.timezone());
+    }
+
+    @Test
     void updateIdempotencyPaginationAndLifecycleEdgeBranchesRemainGoverned() {
         FacilityNode site = service.create(site("PAR01"), context("dcim-site-create-100", "Register site"));
         UpdateFacilityCommand first = new UpdateFacilityCommand(
@@ -238,11 +262,35 @@ final class FacilityApplicationServiceTest {
                 context("dcim-zone-create-202", "Reject nested zone")));
     }
 
+    @Test
+    void transactionBoundaryPreservesEveryFacilityCauseAndUnknownWrapper() {
+        Repository repo = new Repository();
+        Idempotency idem = new Idempotency();
+        Limits featureLimits = new Limits(true, 10);
+        List<RuntimeException> causes = List.of(
+                new FacilityConflictException("DCIM_FORCED", "forced"),
+                new io.infranexum.dcim.facility.domain.FacilityNotFoundException(),
+                new FacilityQuotaException(FacilityKind.SITE),
+                new IllegalArgumentException("forced invalid"));
+        for (RuntimeException cause : causes) {
+            FacilityApplicationService failing = service(repo, idem, featureLimits, new FailingEventStore(cause));
+            RuntimeException observed = assertThrows(cause.getClass(), () ->
+                    failing.create(site("F" + causes.indexOf(cause) + "01"), context("forced-facility-" + causes.indexOf(cause), "Force transaction translation")));
+            assertSame(cause, observed);
+        }
+
+        Exception checked = new Exception("checked persistence failure");
+        FacilityApplicationService failing = service(repo, idem, featureLimits, new FailingEventStore(checked));
+        TransactionExecutionException wrapped = assertThrows(TransactionExecutionException.class, () ->
+                failing.create(site("F999"), context("forced-facility-checked", "Force checked transaction failure")));
+        assertSame(checked, wrapped.getCause());
+    }
+
     private static FacilityNode active(FacilityNode node, String prefix, FacilityApplicationService app) {
         return app.changeStatus(node.id(), node.version(), FacilityStatus.ACTIVE, context("dcim-" + prefix + "-activate-999", "Activate node"));
     }
 
-    private static FacilityApplicationService service(Repository repository, Idempotency idempotency, Limits limits, InMemoryEventStore events) {
+    private static FacilityApplicationService service(Repository repository, Idempotency idempotency, Limits limits, TransactionalEventStore events) {
         return new FacilityApplicationService(repository, idempotency, limits, new Scope(), events,
                 new UuidV7Generator(CLOCK, new SecureRandom(new byte[] {8, 1, 0, 4})), CLOCK);
     }
@@ -331,4 +379,22 @@ final class FacilityApplicationServiceTest {
             return new FacilityPage(filtered.size() > criteria.limit() ? new ArrayList<>(filtered.subList(0, criteria.limit())) : filtered, next);
         }
     }
+    private static final class FailingEventStore implements TransactionalEventStore {
+        private final Throwable cause;
+        FailingEventStore(Throwable cause) { this.cause = cause; }
+        @Override public <T> io.infranexum.core.events.TransactionOutcome<T> execute(TransactionalWork<T> work) {
+            throw new TransactionExecutionException("forced facility test failure", cause);
+        }
+        @Override public List<OutboxRecord> claimBatch(String workerId, int limit, Instant now, Duration leaseDuration) {
+            throw new UnsupportedOperationException("not used");
+        }
+        @Override public void markPublished(DomainIdentifier eventId, String workerId, Instant publishedAt) {
+            throw new UnsupportedOperationException("not used");
+        }
+        @Override public OutboxStatus markFailed(
+                DomainIdentifier eventId, String workerId, Instant failedAt, RetryPolicy retryPolicy, Throwable failure) {
+            throw new UnsupportedOperationException("not used");
+        }
+    }
+
 }

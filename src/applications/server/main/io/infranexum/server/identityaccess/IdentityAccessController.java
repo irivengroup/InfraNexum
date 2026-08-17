@@ -13,6 +13,7 @@ import io.infranexum.identity.access.application.IdentityAccessCommandContext;
 import io.infranexum.identity.access.application.RbacAuthorizationService;
 import io.infranexum.identity.access.domain.AssignmentActorType;
 import io.infranexum.identity.access.domain.AuthorizationScope;
+import io.infranexum.identity.access.domain.IdentityUserStatus;
 import io.infranexum.identity.access.domain.PermissionCodes;
 import io.infranexum.identity.access.domain.ScopeKind;
 import io.infranexum.server.configuration.ServerTemporalInputParser;
@@ -44,7 +45,10 @@ public final class IdentityAccessController {
     }
 
     @GetMapping("/api/v1/iam/users")
-    List<UserResponse> users(@RequestParam(defaultValue="0")int offset,@RequestParam(defaultValue="50")int limit){return service.listUsers(offset,limit).stream().map(UserResponse::from).toList();}
+    List<UserResponse> users(@RequestParam(required=false)String status,@RequestParam(defaultValue="0")int offset,@RequestParam(defaultValue="50")int limit){
+        IdentityUserStatus filter=status==null||status.isBlank()?null:IdentityUserStatus.valueOf(status.strip().toUpperCase(java.util.Locale.ROOT));
+        return service.listUsers(filter,offset,limit).stream().map(UserResponse::from).toList();
+    }
     @PostMapping("/api/v1/iam/users")
     ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest body,HttpServletRequest request){var result=service.createUser(body.login(),body.email(),body.displayName(),body.activate(),context(request,body.reason()));return ResponseEntity.status(HttpStatus.CREATED).body(UserResponse.from(result));}
     @GetMapping("/api/v1/iam/users/{userId}")

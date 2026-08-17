@@ -33,7 +33,9 @@ public final class IdentityAccessAdminService {
         this.ids=Objects.requireNonNull(ids,"ids"); this.clock=Objects.requireNonNull(clock,"clock");
     }
 
-    public List<IdentityUser> listUsers(int offset,int limit){ page(offset,limit); return repository.listUsers(offset,limit); }
+    public List<IdentityUser> listUsers(int offset,int limit){ return listUsers(null,offset,limit); }
+    /** Lists users by lifecycle status; null deliberately means all statuses for administrative recovery. */
+    public List<IdentityUser> listUsers(IdentityUserStatus status,int offset,int limit){ page(offset,limit); return repository.listUsers(status,offset,limit); }
     public IdentityUser getUser(DomainIdentifier id){ return repository.findUser(Objects.requireNonNull(id,"id")).orElseThrow(()->notFound("IAM_USER_NOT_FOUND","user not found")); }
     public List<UserMembership> memberships(DomainIdentifier userId){ getUser(userId); return repository.memberships(userId); }
     public OffsetPage<UserMembership> memberships(DomainIdentifier userId,int offset,int limit){getUser(userId);PaginationConstraints.requireOffset(offset);page(offset,limit);List<UserMembership> rows=repository.memberships(userId,offset,limit+1);boolean more=rows.size()>limit;List<UserMembership> items=List.copyOf(rows.subList(0,Math.min(limit,rows.size())));return new OffsetPage<>(items,more?Math.addExact(offset,limit):null);}
@@ -78,8 +80,14 @@ public final class IdentityAccessAdminService {
     }
 
     public IdentityUser activateUser(DomainIdentifier userId,IdentityAccessCommandContext context){ return userTransition(userId,context,"iam.user.activated.v1","iam.user.activate",IdentityUser::activate); }
-    public IdentityUser suspendUser(DomainIdentifier userId,IdentityAccessCommandContext context){ return userTransition(userId,context,"iam.user.suspended.v1","iam.user.suspend",IdentityUser::suspend); }
-    public IdentityUser deleteUser(DomainIdentifier userId,IdentityAccessCommandContext context){ return userTransition(userId,context,"iam.user.deleted.v1","iam.user.delete",IdentityUser::delete); }
+    public IdentityUser suspendUser(DomainIdentifier userId,IdentityAccessCommandContext context){
+        requireNotSelfLockout(userId,context,"suspend");
+        return userTransition(userId,context,"iam.user.suspended.v1","iam.user.suspend",IdentityUser::suspend);
+    }
+    public IdentityUser deleteUser(DomainIdentifier userId,IdentityAccessCommandContext context){
+        requireNotSelfLockout(userId,context,"delete");
+        return userTransition(userId,context,"iam.user.deleted.v1","iam.user.delete",IdentityUser::delete);
+    }
 
     public UserMembership addMembership(DomainIdentifier userId,DomainIdentifier orgId,DomainIdentifier subdivisionId,
             Instant effectiveFrom,Instant effectiveTo,IdentityAccessCommandContext context) {
@@ -216,6 +224,17 @@ public final class IdentityAccessAdminService {
         Instant now=clock.instant(); requireSystemRoleAdministrator(role, context.actorId(), now); execute(tx->{ repository.revokeAssignment(assignmentId,context.actorId(),now);
             tx.append(event("iam.role.unassigned.v1",roleId,context.correlationId(),now,"{\"role_id\":\""+roleId+"\",\"assignment_id\":\""+assignmentId+"\"}"));
             auditMutation(context,"iam.role.unassign","role",roleId.toString(),auditScope(assignment.scope()),"SUCCESS",Map.of("assignment_id",assignmentId.toString())); return null; });
+    }
+
+
+    /** Prevents an online administrator from invalidating the account backing the current session. */
+    private static void requireNotSelfLockout(DomainIdentifier userId, IdentityAccessCommandContext context, String action) {
+        Objects.requireNonNull(userId,"userId");
+        Objects.requireNonNull(context,"context");
+        if (userId.equals(context.actorId())) {
+            throw new IdentityAccessException("IAM_SELF_LOCKOUT_FORBIDDEN",
+                    "an authenticated administrator cannot " + action + " its own account");
+        }
     }
 
     private IdentityUser userTransition(DomainIdentifier userId,IdentityAccessCommandContext context,String eventName,String action,UserTransition transition){

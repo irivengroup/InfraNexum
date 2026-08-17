@@ -195,16 +195,12 @@ public final class PolicyDecisionService {
         for (PolicyCondition condition : rule.conditions()) {
             Set<String> actual = attributes.values(condition.source(), condition.attribute());
             boolean exists = !actual.isEmpty();
-            if (condition.operator() == PolicyOperator.EXISTS) {
-                if (exists != Boolean.parseBoolean(condition.expectedValue())) return RuleMatch.NOT_MATCHED;
-                continue;
-            }
-            if (!exists) return RuleMatch.INDETERMINATE;
+            if (!exists && condition.operator() != PolicyOperator.EXISTS) return RuleMatch.INDETERMINATE;
             boolean matched = switch (condition.operator()) {
                 case EQUALS -> actual.size() == 1 && actual.contains(condition.expectedValue());
                 case NOT_EQUALS -> actual.stream().noneMatch(condition.expectedValue()::equals);
                 case CONTAINS -> actual.contains(condition.expectedValue());
-                case EXISTS -> throw new IllegalStateException("EXISTS handled before value comparison");
+                case EXISTS -> exists == Boolean.parseBoolean(condition.expectedValue());
             };
             if (!matched) return RuleMatch.NOT_MATCHED;
         }

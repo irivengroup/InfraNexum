@@ -32,11 +32,12 @@ export async function initializeDcimWorkspace(documentObject = document, configu
   workspace.setAttribute('data-capability-enabled',String(enabled));
   if(!enabled) return Object.freeze({ enabled:false });
 
-  workspace.innerHTML=dcimWorkspaceTemplate();
+  workspace.innerHTML=dcimWorkspaceTemplate(configuration?.dcimPhysicalEnabled===true);
   applyTranslations(documentObject,localeFromDocument(documentObject));
   initializeCountrySelects(documentObject,localeFromDocument(documentObject));
   initializeStableSelects(documentObject);
   const client=new DcimFacilityClient(configuration,{fetchFunction});
+  const physicalPromise=initializeDcimPhysicalWorkspace(documentObject,configuration,fetchFunction);
   const state={ organizations:[], subdivisions:[], sites:[], buildings:[], floors:[], rooms:[], zones:[], selected:new Map(), activeResource:'sites' };
 
   bindTabSet(documentObject,'[data-dcim-tab]','[data-dcim-panel]','data-dcim-tab');
@@ -44,7 +45,6 @@ export async function initializeDcimWorkspace(documentObject = document, configu
   for(const resource of RESOURCES) bindResource(documentObject,client,state,resource,confirmFunction);
   documentObject.getElementById('dcim-refresh')?.addEventListener('click',()=>void refreshHierarchy(documentObject,client,state));
   documentObject.addEventListener?.('infranexum:locale-change',()=>{initializeCountrySelects(documentObject,localeFromDocument(documentObject));initializeStableSelects(documentObject).sync();renderAll(documentObject,state);});
-  const physicalPromise=initializeDcimPhysicalWorkspace(documentObject,configuration,fetchFunction);
 
   try {
     setWorkspaceStatus(documentObject,'dcim-status','workspace.loading');
@@ -64,7 +64,10 @@ export async function initializeDcimWorkspace(documentObject = document, configu
   return Object.freeze({ enabled:true, refresh:()=>refreshHierarchy(documentObject,client,state) });
 }
 
-export function dcimWorkspaceTemplate(){
+export function dcimWorkspaceTemplate(physicalEnabled=false){
+  const infrastructureTabs=physicalEnabled
+    ? `${tab('models','dcim.physical.models')}${tab('racks','dcim.physical.racks')}${tab('equipment','dcim.physical.equipment')}${tab('cables','dcim.physical.cables')}`
+    : '';
   return `
     <header class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
       <div><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="dcim.eyebrow">Physical infrastructure</p><h2 id="dcim-workspace-title" data-i18n="dcim.title">Facilities</h2><p data-i18n="dcim.description">Sites, buildings, floors, rooms and technical zones governed as one physical hierarchy.</p></div>
@@ -80,19 +83,28 @@ export function dcimWorkspaceTemplate(){
       <div class="inx-filter-field"><label class="form-label" for="dcim-floor-context" data-i18n="dcim.floor">Floor</label><select id="dcim-floor-context" class="form-select" disabled></select></div>
       <div class="inx-filter-field"><label class="form-label" for="dcim-room-context" data-i18n="dcim.room">Room</label><select id="dcim-room-context" class="form-select" disabled></select></div>
     </section>
-    <div class="nav nav-underline gap-3 mb-4 border-bottom" role="tablist" aria-label="DCIM facilities">
-      ${tab('sites','dcim.sites',true)}${tab('buildings','dcim.buildings')}${tab('floors','dcim.floors')}${tab('rooms','dcim.rooms')}${tab('zones','dcim.zones')}
+    <div class="row g-4">
+      <aside class="col-lg-3" aria-label="DCIM navigation" data-i18n-aria-label="dcim.navigation">
+        <nav class="nav nav-pills flex-column gap-1" role="tablist" aria-orientation="vertical">
+          <div class="mb-3" data-dcim-nav-group="location"><p class="small text-uppercase fw-bold text-body-secondary px-2 mb-1" data-i18n="dcim.nav.location">Location</p>
+            ${tab('sites','dcim.sites',true)}${tab('buildings','dcim.buildings')}${tab('floors','dcim.floors')}${tab('rooms','dcim.rooms')}${tab('zones','dcim.zones')}
+          </div>
+          ${physicalEnabled?`<div class="mb-3" data-dcim-nav-group="infrastructure"><p class="small text-uppercase fw-bold text-body-secondary px-2 mb-1" data-i18n="dcim.nav.infrastructure">Infrastructure</p>${infrastructureTabs}</div>`:''}
+        </nav>
+      </aside>
+      <div class="col-lg-9 inx-min-w-0">
+        ${panel('sites',siteFields())}
+        ${panel('buildings',buildingFields())}
+        ${panel('floors',floorFields())}
+        ${panel('rooms',roomFields())}
+        ${panel('zones',zoneFields())}
+        <div id="dcim-physical-extension"></div>
+      </div>
     </div>
-    ${panel('sites',siteFields())}
-    ${panel('buildings',buildingFields())}
-    ${panel('floors',floorFields())}
-    ${panel('rooms',roomFields())}
-    ${panel('zones',zoneFields())}
-    <div id="dcim-physical-extension" class="mt-4"></div>
   `;
 }
 
-function tab(resource,key,active=false){return `<button class="nav-link${active?' active':''}" type="button" role="tab" aria-selected="${active}" tabindex="${active?'0':'-1'}" data-dcim-tab="${resource}" data-i18n="${key}">${resource}</button>`;}
+function tab(resource,key,active=false){return `<button class="nav-link text-start${active?' active':''}" type="button" role="tab" aria-selected="${active}" tabindex="${active?'0':'-1'}" data-dcim-tab="${resource}" data-i18n="${key}">${resource}</button>`;}
 function panel(resource,fields){return `
   <section class="tab-pane inx-crud-panel" role="tabpanel" data-inx-crud-panel="dcim-${resource}" data-dcim-panel="${resource}"${resource==='sites'?'':' hidden aria-hidden="true"'}>
     <div class="inx-crud-list-view" data-inx-crud-list>

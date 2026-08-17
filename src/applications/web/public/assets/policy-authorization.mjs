@@ -106,12 +106,23 @@ export function buildDecisionPayload(values) {
 }
 
 /** Wires the Pro/Enterprise E04 PAP/PDP administration surface without duplicating policy evaluation in the browser. */
+/** Keeps the policy tab and panel synchronized without exposing an inactive workspace. */
+export function synchronizePolicyWorkspaceVisibility(tab, workspace, available) {
+  const enabled = available === true;
+  if (tab) tab.hidden = !enabled;
+  if (!workspace) return false;
+  const selected = enabled && tab?.getAttribute?.('aria-selected') === 'true';
+  workspace.hidden = !selected;
+  workspace.classList?.toggle?.('active', selected);
+  workspace.setAttribute?.('aria-hidden', selected ? 'false' : 'true');
+  return selected;
+}
+
 export async function initializePolicyAuthorization(documentObject, configuration, fetchFunction = fetch) {
   const workspace = documentObject?.getElementById?.('iam-policy-workspace');
   const tab = documentObject?.getElementById?.('iam-tab-policies');
   const available = configuration?.advancedAuthorizationEnabled === true;
-  if (workspace) workspace.hidden = !available;
-  if (tab) tab.hidden = !available;
+  synchronizePolicyWorkspaceVisibility(tab, workspace, available);
   if (!available) return Object.freeze({ enabled: false });
   if (!configuration.identityAccessEnabled) throw new Error('Advanced authorization requires identity-access Web capability');
 

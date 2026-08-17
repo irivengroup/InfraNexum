@@ -37,8 +37,13 @@ final class IdentityAccessTestRepository implements IdentityAccessRepository {
     final Map<DomainIdentifier, Set<String>> rolePermissions = new HashMap<>();
 
     @Override
-    public List<IdentityUser> listUsers(int offset, int limit) {
-        return users.values().stream().sorted(Comparator.comparing(IdentityUser::login)).skip(offset).limit(limit).toList();
+    public List<IdentityUser> listUsers(IdentityUserStatus status, int offset, int limit) {
+        return users.values().stream()
+                .filter(user -> status == null || user.status() == status)
+                .sorted(Comparator.comparing(IdentityUser::login))
+                .skip(offset)
+                .limit(limit)
+                .toList();
     }
 
     @Override public Optional<IdentityUser> findUser(DomainIdentifier id) { return Optional.ofNullable(users.get(id)); }

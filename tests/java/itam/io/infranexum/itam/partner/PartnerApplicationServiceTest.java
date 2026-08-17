@@ -201,6 +201,24 @@ final class PartnerApplicationServiceTest {
         };
         PartnerApplicationService unknown = new PartnerApplicationService(repository, idempotency, features, governance, wrapped, ids(), CLOCK);
         assertThrows(TransactionExecutionException.class, () -> unknown.create(command("VEN-001", "Vendor One SAS"), context("create-0002", "Initial registration")));
+
+        PartnerApplicationService notFound = new PartnerApplicationService(repository, idempotency, features, governance,
+                failingStore(new PartnerNotFoundException()), ids(), CLOCK);
+        assertThrows(PartnerNotFoundException.class, () -> notFound.create(command("VEN-002", "Vendor Two SAS"), context("create-0003", "Wrapped not found")));
+        PartnerApplicationService invalid = new PartnerApplicationService(repository, idempotency, features, governance,
+                failingStore(new IllegalArgumentException("invalid")), ids(), CLOCK);
+        assertThrows(IllegalArgumentException.class, () -> invalid.create(command("VEN-003", "Vendor Three SAS"), context("create-0004", "Wrapped invalid")));
+    }
+
+    private static TransactionalEventStore failingStore(Throwable cause) {
+        return new TransactionalEventStore() {
+            @Override public <T> io.infranexum.core.events.TransactionOutcome<T> execute(io.infranexum.core.events.TransactionalWork<T> work) {
+                throw new TransactionExecutionException("wrapped", cause);
+            }
+            @Override public List<io.infranexum.core.events.OutboxRecord> claimBatch(String workerId, int limit, Instant now, java.time.Duration lease) { return List.of(); }
+            @Override public void markPublished(DomainIdentifier eventId, String workerId, Instant at) {}
+            @Override public io.infranexum.core.events.OutboxStatus markFailed(DomainIdentifier eventId, String workerId, Instant at, io.infranexum.core.events.RetryPolicy retry, Throwable failure) { return io.infranexum.core.events.OutboxStatus.DEAD_LETTER; }
+        };
     }
 
     private static UuidV7Generator ids() { return new UuidV7Generator(CLOCK, new SecureRandom(new byte[] {9, 8, 7, 6})); }

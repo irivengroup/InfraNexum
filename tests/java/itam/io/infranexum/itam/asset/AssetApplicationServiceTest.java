@@ -244,6 +244,16 @@ final class AssetApplicationServiceTest {
                 repository, idempotency, features, references, readiness, wrappedConflict, ids(), CLOCK);
         assertCode("WRAPPED_CONFLICT", () -> conflictService.create(command(id(60)), context("wrapped-01", "Wrapped conflict validation", null)));
 
+        TransactionalEventStore wrappedNotFound = failingStore(new AssetNotFoundException());
+        AssetApplicationService notFoundService = new AssetApplicationService(
+                repository, idempotency, features, references, readiness, wrappedNotFound, ids(), CLOCK);
+        assertThrows(AssetNotFoundException.class, () -> notFoundService.create(command(id(63)), context("wrapped-04", "Wrapped not found", null)));
+
+        TransactionalEventStore wrappedQuota = failingStore(new AssetQuotaException());
+        AssetApplicationService quotaService = new AssetApplicationService(
+                repository, idempotency, features, references, readiness, wrappedQuota, ids(), CLOCK);
+        assertThrows(AssetQuotaException.class, () -> quotaService.create(command(id(64)), context("wrapped-05", "Wrapped quota", null)));
+
         TransactionalEventStore wrappedInvalid = failingStore(new IllegalArgumentException("invalid"));
         AssetApplicationService invalidService = new AssetApplicationService(
                 repository, idempotency, features, references, readiness, wrappedInvalid, ids(), CLOCK);

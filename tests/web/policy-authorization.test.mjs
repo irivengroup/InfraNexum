@@ -115,3 +115,26 @@ test('decision payload enforces scope ownership and bounded subject/resource val
   assert.throws(() => buildDecisionPayload(values({ subjectId: 'not-a-uuid', action: 'x', resourceType: 'x', resourceId: 'x', scopeKind: 'PLATFORM' })), /subjectId must be a UUID/);
   assert.throws(() => buildDecisionPayload(values({ subjectId: USER_ID, action: 'x', resourceType: 'x', resourceId: 'x', scopeKind: 'SUBDIVISION', organizationId: ORG_ID })), /subdivisionId/);
 });
+
+import { synchronizePolicyWorkspaceVisibility } from '../../src/applications/web/public/assets/policy-authorization.mjs';
+
+test('advanced policy workspace never renders beside the active users panel', () => {
+  const classes = new Set();
+  const workspace = { hidden: false, attrs: new Map(), classList: { toggle(name, active) { active ? classes.add(name) : classes.delete(name); } }, setAttribute(name, value) { this.attrs.set(name, value); } };
+  const tab = { hidden: false, selected: 'false', getAttribute(name) { return name === 'aria-selected' ? this.selected : null; } };
+
+  assert.equal(synchronizePolicyWorkspaceVisibility(tab, workspace, true), false);
+  assert.equal(workspace.hidden, true);
+  assert.equal(workspace.attrs.get('aria-hidden'), 'true');
+  assert.equal(classes.has('active'), false);
+
+  tab.selected = 'true';
+  assert.equal(synchronizePolicyWorkspaceVisibility(tab, workspace, true), true);
+  assert.equal(workspace.hidden, false);
+  assert.equal(workspace.attrs.get('aria-hidden'), 'false');
+  assert.equal(classes.has('active'), true);
+
+  assert.equal(synchronizePolicyWorkspaceVisibility(tab, workspace, false), false);
+  assert.equal(tab.hidden, true);
+  assert.equal(workspace.hidden, true);
+});

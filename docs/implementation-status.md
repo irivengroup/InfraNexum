@@ -1,3 +1,7 @@
+## 2.0.0-alpha.0.106 — corrective qualification / IAM / DCIM / Web
+
+**Statut : NON TERMINÉ.** La corrective traite les seuils JaCoCo encore rouges de `alpha.0.105`, le bootstrap Organization Server en mode sans runtime Organization, l’administration des utilisateurs suspendus, l’auto-verrouillage IAM, le menu compte topbar, l’organisation verticale DCIM et les régressions IAM/ReDoc/DataTable. Aucun seuil qualité n’est abaissé et PGM-10-E06 n’est pas engagé. La fermeture formelle reste conditionnée au `mvn verify` Temurin 25 et à PostgreSQL 17/18 hébergés.
+
 # InfraNexum 2.0.0-alpha.0.105 — fermeture de couverture hébergée et corrective Web
 
 **Nature : corrective, aucun nouvel epic.** Cette version traite les déficits JaCoCo encore exposés par `alpha.0.104` sans réduire le seuil **98 % lignes + branches**, sans exclusion de classes de production et sans désactivation de tests. Les batteries couvrent les branches métier/résilience réelles ; les anciennes classes `*Smoke` JDBC/Organization sont intégrées au cycle Surefire via wrappers JUnit afin que leurs assertions existantes contribuent enfin à la couverture Maven.

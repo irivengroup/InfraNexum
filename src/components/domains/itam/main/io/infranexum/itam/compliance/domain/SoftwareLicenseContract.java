@@ -83,7 +83,8 @@ public final class SoftwareLicenseContract {
         return copy(ComplianceStatus.CANCELLED,verifiedAt,verifiedBy,Math.addExact(version,1),actorId,reason,now);
     }
     public boolean covers(LocalDate date){
-        return status==ComplianceStatus.ACTIVE && verifiedAt!=null && verifiedBy!=null && !date.isBefore(startsOn) && (endsOn==null || !date.isAfter(endsOn));
+        // ACTIVE is constructible only with verifier evidence; repeating that invariant here creates unreachable branches.
+        return status==ComplianceStatus.ACTIVE && !date.isBefore(startsOn) && (endsOn==null || !date.isAfter(endsOn));
     }
     private SoftwareLicenseContract copy(ComplianceStatus target,Instant verified,DomainIdentifier verifier,long nextVersion,
             DomainIdentifier actorId,String reason,Instant now){

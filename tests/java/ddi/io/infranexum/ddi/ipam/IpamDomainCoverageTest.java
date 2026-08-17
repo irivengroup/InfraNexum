@@ -51,6 +51,9 @@ final class IpamDomainCoverageTest {
         assertFalse(subnet.overlaps(other));
         assertFalse(subnet.contains(ipv6));
         assertFalse(subnet.overlaps(ipv6));
+        assertFalse(ipv6.contains(subnet));
+        assertFalse(ipv6.overlaps(subnet));
+        assertFalse(subnet.equals("10.20.30.0/24"));
         assertTrue(subnet.containsAddress("10.20.30.1"));
         assertFalse(subnet.containsAddress("10.20.31.1"));
         assertEquals(subnet.firstSortKey(), IpCidr.sortKey("10.20.30.0"));

@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import io.infranexum.core.audit.InMemoryAppendOnlyAuditJournal;
 import io.infranexum.core.contracts.DomainIdentifier;
 import io.infranexum.core.contracts.UuidV7Generator;
-import io.infranexum.core.events.InMemoryEventStore;
+import io.infranexum.core.events.*;
 import io.infranexum.identity.access.application.*;
 import io.infranexum.identity.access.domain.*;
 import io.infranexum.identity.access.ports.*;
@@ -305,6 +305,50 @@ class PolicyServicesTest {
     }
 
     @Test
+    void papImplicitEffectiveTimeAndTransactionFailuresCoverBothExecutionBranches() {
+        PolicyRuleDefinition rule = permitRule("asset.read", Set.of());
+        AccessPolicy implicit = administration(advanced).createPolicy(ORG, "asset.implicit-time", "Implicit", 1,
+                AuthorizationScope.organization(ORG), null, List.of(rule), List.of(), context(OWNER));
+        assertEquals(NOW, implicit.effectiveFrom());
+
+        TransactionalEventStore runtimeFailure = new FailingEventStore(new IdentityAccessException("IAM_FORCED", "forced"));
+        PolicyAdministrationService runtimeService = administration(advanced, runtimeFailure);
+        IdentityAccessException domain = assertThrows(IdentityAccessException.class, () -> runtimeService.createPolicy(
+                ORG, "asset.runtime-failure", "Failure", 1, AuthorizationScope.organization(ORG), NOW,
+                List.of(rule), List.of(), context(OWNER)));
+        assertEquals("IAM_FORCED", domain.code());
+
+        Exception checked = new Exception("checked transaction failure");
+        TransactionExecutionException wrapped = assertThrows(TransactionExecutionException.class, () -> administration(advanced,
+                new FailingEventStore(checked)).createPolicy(ORG, "asset.checked-failure", "Failure", 1,
+                AuthorizationScope.organization(ORG), NOW, List.of(rule), List.of(), context(OWNER)));
+        assertEquals(checked, wrapped.getCause());
+    }
+
+    @Test
+    void pdpCoversPlatformAuditExistsAndMultiValuedEqualsBranches() {
+        PolicyRule exists = new PolicyRule(ids.next(), 1, PolicyEffect.PERMIT, "asset.read", "asset",
+                List.of(new PolicyCondition(PolicyAttributeSource.SUBJECT, "flag", PolicyOperator.EXISTS, "true")), Set.of(), "");
+        AccessPolicy global = new AccessPolicy(ids.next(), null, "global.exists", 1, OWNER, "global", 1,
+                AuthorizationScope.platform(), PolicyState.ACTIVE, NOW, APPROVER, NOW, NOW, null, null, NOW, NOW, List.of(exists));
+        policies.insertPolicy(global);
+        PolicyDecisionService existsService = decision((request, at) -> PolicyAttributeBag.builder()
+                .put(PolicyAttributeSource.SUBJECT, "flag", "yes").build(), advanced, (r,d,c)->{});
+        PolicyEvaluationRequest platform = new PolicyEvaluationRequest(OWNER, "asset.read", "asset", "node-1",
+                AuthorizationScope.platform(), Map.of(), "LOCAL_SESSION", "cap-v1", null, true);
+        assertEquals(PolicyDecision.PERMIT, existsService.decide(platform, CORRELATION, "TEST").decision());
+
+        PolicyRule equals = new PolicyRule(ids.next(), 1, PolicyEffect.PERMIT, "asset.read", "asset",
+                List.of(new PolicyCondition(PolicyAttributeSource.SUBJECT, "tenant", PolicyOperator.EQUALS, "ops")), Set.of(), "");
+        policies.insertPolicy(new AccessPolicy(ids.next(), ORG, "asset.multi", 1, OWNER, "multi", 50,
+                AuthorizationScope.organization(ORG), PolicyState.ACTIVE, NOW, APPROVER, NOW, NOW, null, null, NOW, NOW, List.of(equals)));
+        PolicyDecisionService multi = decision((request, at) -> PolicyAttributeBag.builder()
+                .put(PolicyAttributeSource.SUBJECT, "tenant", "ops")
+                .put(PolicyAttributeSource.SUBJECT, "tenant", "other").build(), advanced, (r,d,c)->{});
+        assertEquals(PolicyDecision.NOT_APPLICABLE, multi.decide(request(Map.of(), true, null), CORRELATION, "TEST").decision());
+    }
+
+    @Test
     void papCoversDeletedAndValidSodRoleCombinationsIncludingSubdivisionSuccess() {
         PolicyRuleDefinition rule = permitRule("asset.read", Set.of());
         DomainIdentifier subdivision = IdentityAccessDomainTest.id(890);
@@ -376,11 +420,15 @@ class PolicyServicesTest {
     }
 
     private PolicyAdministrationService administration(IdentityAccessFeaturePolicy features) {
+        return administration(features, new InMemoryEventStore());
+    }
+
+    private PolicyAdministrationService administration(IdentityAccessFeaturePolicy features, TransactionalEventStore eventStore) {
         OrganizationScopeReferencePort scopes = new OrganizationScopeReferencePort() {
             @Override public boolean organizationExists(DomainIdentifier organizationId) { return ORG.equals(organizationId); }
             @Override public boolean subdivisionExists(DomainIdentifier organizationId, DomainIdentifier subdivisionId) { return false; }
         };
-        return new PolicyAdministrationService(policies, identities, features, scopes, new InMemoryEventStore(), audit, ids, clock);
+        return new PolicyAdministrationService(policies, identities, features, scopes, eventStore, audit, ids, clock);
     }
 
     private PolicyDecisionService decision(PolicyInformationPort pip, IdentityAccessFeaturePolicy features, PolicyDecisionObserver observer) {
@@ -414,6 +462,24 @@ class PolicyServicesTest {
     private static void assertCode(String expected, Runnable operation) {
         IdentityAccessException error = assertThrows(IdentityAccessException.class, operation::run);
         assertEquals(expected, error.code());
+    }
+
+    private static final class FailingEventStore implements TransactionalEventStore {
+        private final Throwable cause;
+        FailingEventStore(Throwable cause) { this.cause = cause; }
+        @Override public <T> TransactionOutcome<T> execute(TransactionalWork<T> work) {
+            throw new TransactionExecutionException("forced policy test failure", cause);
+        }
+        @Override public List<OutboxRecord> claimBatch(String workerId, int limit, Instant now, Duration leaseDuration) {
+            throw new UnsupportedOperationException("not used");
+        }
+        @Override public void markPublished(DomainIdentifier eventId, String workerId, Instant publishedAt) {
+            throw new UnsupportedOperationException("not used");
+        }
+        @Override public OutboxStatus markFailed(DomainIdentifier eventId, String workerId, Instant failedAt,
+                RetryPolicy retryPolicy, Throwable failure) {
+            throw new UnsupportedOperationException("not used");
+        }
     }
 
     private record Features(boolean advanced) implements IdentityAccessFeaturePolicy {

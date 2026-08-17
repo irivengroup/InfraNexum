@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,6 +41,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** RBAC-protected HTTP adapter invoking the authoritative Organization application service. */
 @RestController
+@ConditionalOnProperty(name = "infranexum.organization.api-enabled", havingValue = "true")
 @RequestMapping("/api/v1/iam/organizations")
 public final class OrganizationController {
     private final OrganizationApplicationService service;

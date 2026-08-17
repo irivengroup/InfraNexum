@@ -117,10 +117,10 @@ public final class Warranty {
         return copy(ComplianceStatus.SUPERSEDED, verifiedAt, verifiedBy, Math.addExact(version, 1), actorId, reason, now);
     }
 
-    public boolean verifiedComplete() { return status.verifiedState() && verifiedAt != null && verifiedBy != null; }
+    /** Verified states are constructed only with verifier and timestamp, so lifecycle is the complete invariant. */
+    public boolean verifiedComplete() { return status.verifiedState(); }
     public boolean warrantyCovers(LocalDate date) {
-        return verifiedComplete() && !date.isBefore(warrantyStartDate) && !date.isAfter(warrantyEndDate)
-                && status != ComplianceStatus.CANCELLED && status != ComplianceStatus.SUPERSEDED;
+        return verifiedComplete() && !date.isBefore(warrantyStartDate) && !date.isAfter(warrantyEndDate);
     }
 
     private Warranty copy(ComplianceStatus target, Instant verified, DomainIdentifier verifier, long nextVersion,

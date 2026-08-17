@@ -9,7 +9,12 @@ import java.util.Set;
 
 /** Persistence port for the authoritative IAM RBAC foundation. */
 public interface IdentityAccessRepository {
-    List<IdentityUser> listUsers(int offset, int limit);
+    /** Lists users across all lifecycle states when {@code status} is null. */
+    List<IdentityUser> listUsers(IdentityUserStatus status, int offset, int limit);
+
+    default List<IdentityUser> listUsers(int offset, int limit) {
+        return listUsers(null, offset, limit);
+    }
     Optional<IdentityUser> findUser(DomainIdentifier id);
     Optional<IdentityUser> findUserByLogin(String canonicalLogin);
     void insertUser(IdentityUser user);

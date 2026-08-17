@@ -6,9 +6,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.infranexum.core.contracts.DomainIdentifier;
+import io.infranexum.core.events.OutboxRecord;
+import io.infranexum.core.events.OutboxStatus;
+import io.infranexum.core.events.RetryPolicy;
+import io.infranexum.core.events.TransactionExecutionException;
+import io.infranexum.core.events.TransactionalEventStore;
+import io.infranexum.core.events.TransactionalWork;
 import io.infranexum.organization.application.CreateOrganizationCommand;
 import io.infranexum.organization.application.CreateSubdivisionCommand;
 import io.infranexum.organization.application.CreateTemporalScopeCommand;
+import io.infranexum.organization.application.OrganizationApplicationService;
 import io.infranexum.organization.application.OrganizationCommandContext;
 import io.infranexum.organization.domain.Organization;
 import io.infranexum.organization.domain.OrganizationCode;
@@ -24,7 +31,9 @@ import io.infranexum.organization.domain.SubdivisionState;
 import io.infranexum.organization.domain.SubdivisionType;
 import io.infranexum.organization.domain.TemporalScope;
 import io.infranexum.organization.ports.IdempotencyRepository;
+import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -109,6 +118,15 @@ class OrganizationCoverageRegressionTest {
                 "sub-corrupt", "invalid", "subdivision", root.id(), fixture.clock.instant()));
         assertThrows(OrganizationConflictException.class, () -> fixture.service.createSubdivision(
                 subdivision(owner.id(), "SUB-006", null), fixture.context("sub-corrupt")));
+
+        Organization resumedOwner = fixture.service.resume(
+                suspended.id(), suspended.version(), fixture.context("resume-owner-for-replay"));
+        CreateSubdivisionCommand replayCommand = subdivision(resumedOwner.id(), "SUB-007", null);
+        OrganizationCommandContext replayContext = fixture.context("sub-replay-missing");
+        Subdivision replaySource = fixture.service.createSubdivision(replayCommand, replayContext);
+        fixture.subdivisions.values.remove(replaySource.id());
+        assertThrows(OrganizationNotFoundException.class,
+                () -> fixture.service.createSubdivision(replayCommand, replayContext));
     }
 
     @Test
@@ -181,6 +199,34 @@ class OrganizationCoverageRegressionTest {
     }
 
     @Test
+    void transactionFailureTranslationPreservesDomainCausesAndUnknownFailures() {
+        var fixture = new OrganizationApplicationServiceTest.ServiceFixture();
+        List<RuntimeException> translated = List.of(
+                new OrganizationConflictException("ORG_TEST_CONFLICT", "conflict"),
+                new OrganizationNotFoundException(),
+                new OrganizationQuotaException("organization.max"),
+                new OrganizationStateException(OrganizationState.ACTIVE, OrganizationState.ACTIVE),
+                new IllegalArgumentException("invalid"));
+
+        for (RuntimeException cause : translated) {
+            OrganizationApplicationService failing = new OrganizationApplicationService(
+                    fixture.organizations, fixture.subdivisions, fixture.scopes, fixture.dedup, fixture.features,
+                    new FailingEventStore(cause), fixture.ids, fixture.clock);
+            RuntimeException observed = assertThrows(cause.getClass(), () -> failing.createOrganization(
+                    org("FAIL-" + translated.indexOf(cause), null), fixture.context("failure-" + translated.indexOf(cause))));
+            assertEquals(cause, observed);
+        }
+
+        IllegalStateException unknown = new IllegalStateException("storage failure");
+        OrganizationApplicationService failing = new OrganizationApplicationService(
+                fixture.organizations, fixture.subdivisions, fixture.scopes, fixture.dedup, fixture.features,
+                new FailingEventStore(unknown), fixture.ids, fixture.clock);
+        TransactionExecutionException wrapped = assertThrows(TransactionExecutionException.class,
+                () -> failing.createOrganization(org("FAIL-UNKNOWN", null), fixture.context("fail-unknown")));
+        assertEquals(unknown, wrapped.getCause());
+    }
+
+    @Test
     void domainValueObjectsCoverNullBlankRangesParsingAndLifecycleAlternatives() {
         Instant now = Instant.parse("2026-08-16T12:00:00Z");
         assertThrows(NullPointerException.class, () -> new OrganizationCode(null));
@@ -191,9 +237,27 @@ class OrganizationCoverageRegressionTest {
         assertThrows(IllegalArgumentException.class, () -> ScopeType.parse("unknown"));
         assertThrows(NullPointerException.class, () -> ScopeType.parse(null));
 
+        OrganizationCode organizationCode = new OrganizationCode(" org-710 ");
+        OrganizationCode organizationCodeAfter = new OrganizationCode("ORG-711");
+        assertEquals("ORG-710", organizationCode.toString());
+        assertTrue(organizationCode.compareTo(organizationCodeAfter) < 0);
+        assertThrows(NullPointerException.class, () -> organizationCode.compareTo(null));
+
+        SubdivisionCode subdivisionCode = new SubdivisionCode(" sub-710 ");
+        SubdivisionCode subdivisionCodeAfter = new SubdivisionCode("SUB-711");
+        assertEquals("SUB-710", subdivisionCode.toString());
+        assertTrue(subdivisionCode.compareTo(subdivisionCodeAfter) < 0);
+        assertThrows(NullPointerException.class, () -> subdivisionCode.compareTo(null));
+
         Organization provisioning = Organization.provisioning(
-                id(710), new OrganizationCode("ORG-710"), "Display name", "Legal name", "FR", "en-US",
+                id(710), organizationCode, "Display name", "Legal name", "FR", "en-US",
                 "UTC", "USD", null, now);
+        assertEquals("Legal name", provisioning.legalName());
+        OrganizationStateException stateFailure = new OrganizationStateException(
+                OrganizationState.ACTIVE, OrganizationState.SUSPENDED);
+        assertEquals(OrganizationState.ACTIVE, stateFailure.source());
+        assertEquals(OrganizationState.SUSPENDED, stateFailure.target());
+
         Organization deletionPending = provisioning.requestDeletion(now.plusSeconds(1));
         Organization deleted = deletionPending.markDeleted(now.plusSeconds(2));
         assertEquals(OrganizationState.DELETED, deleted.state());
@@ -249,4 +313,34 @@ class OrganizationCoverageRegressionTest {
             throw new AssertionError(exception);
         }
     }
+    /** Deterministic event-store fault injector used to cover exception translation at the transaction boundary. */
+    private static final class FailingEventStore implements TransactionalEventStore {
+        private final RuntimeException cause;
+
+        FailingEventStore(RuntimeException cause) {
+            this.cause = cause;
+        }
+
+        @Override
+        public <T> io.infranexum.core.events.TransactionOutcome<T> execute(TransactionalWork<T> work) {
+            throw new TransactionExecutionException("forced test transaction failure", cause);
+        }
+
+        @Override
+        public List<OutboxRecord> claimBatch(String workerId, int limit, Instant now, Duration leaseDuration) {
+            throw new UnsupportedOperationException("not used by organization application tests");
+        }
+
+        @Override
+        public void markPublished(DomainIdentifier eventId, String workerId, Instant publishedAt) {
+            throw new UnsupportedOperationException("not used by organization application tests");
+        }
+
+        @Override
+        public OutboxStatus markFailed(
+                DomainIdentifier eventId, String workerId, Instant failedAt, RetryPolicy retryPolicy, Throwable failure) {
+            throw new UnsupportedOperationException("not used by organization application tests");
+        }
+    }
+
 }

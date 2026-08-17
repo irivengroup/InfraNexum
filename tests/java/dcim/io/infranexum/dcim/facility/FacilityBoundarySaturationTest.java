@@ -76,6 +76,28 @@ final class FacilityBoundarySaturationTest {
     }
 
     @Test
+    void lifecycleMatrixCoversEveryValidSourceTargetPairForEveryFacilityKind() {
+        for (FacilityKind kind : FacilityKind.values()) {
+            for (FacilityStatus source : FacilityStatus.values()) {
+                FacilityNode node;
+                try {
+                    node = restored(kind, source);
+                } catch (IllegalArgumentException invalidForKind) {
+                    continue;
+                }
+                for (FacilityStatus target : FacilityStatus.values()) {
+                    if (expectedTransition(kind, source, target)) {
+                        assertEquals(target, node.changeStatus(target, ACTOR, "matrix", NOW.plusSeconds(10)).status());
+                    } else {
+                        assertThrows(FacilityConflictException.class,
+                                () -> node.changeStatus(target, ACTOR, "matrix", NOW.plusSeconds(10)));
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
     void statusValidationRejectsStatusValuesIllegalForEachKind() {
         assertThrows(IllegalArgumentException.class, () -> restored(FacilityKind.SITE, FacilityStatus.MAINTENANCE));
         assertThrows(IllegalArgumentException.class, () -> restored(FacilityKind.SITE, FacilityStatus.LOCKED));
@@ -209,6 +231,30 @@ final class FacilityBoundarySaturationTest {
         assertThrows(IllegalArgumentException.class, () -> new io.infranexum.dcim.facility.application.FacilityCommandContext(ACTOR, ID, "x".repeat(201), "ok"));
         assertThrows(IllegalArgumentException.class, () -> new io.infranexum.dcim.facility.application.FacilityCommandContext(ACTOR, ID, "12345678", "x"));
         assertThrows(IllegalArgumentException.class, () -> new io.infranexum.dcim.facility.application.FacilityCommandContext(ACTOR, ID, "12345678", "x".repeat(1025)));
+    }
+
+    private static boolean expectedTransition(FacilityKind kind, FacilityStatus source, FacilityStatus target) {
+        if (source == target) return false;
+        return switch (kind) {
+            case SITE -> (source == FacilityStatus.DRAFT && target == FacilityStatus.ACTIVE)
+                    || (source == FacilityStatus.ACTIVE && (target == FacilityStatus.SUSPENDED || target == FacilityStatus.ARCHIVED))
+                    || (source == FacilityStatus.SUSPENDED && (target == FacilityStatus.ACTIVE || target == FacilityStatus.ARCHIVED))
+                    || (source == FacilityStatus.ARCHIVED && target == FacilityStatus.DELETED);
+            case BUILDING, FLOOR -> (source == FacilityStatus.DRAFT && target == FacilityStatus.ACTIVE)
+                    || (source == FacilityStatus.ACTIVE && (target == FacilityStatus.MAINTENANCE || target == FacilityStatus.ARCHIVED))
+                    || (source == FacilityStatus.MAINTENANCE && target == FacilityStatus.ACTIVE)
+                    || (source == FacilityStatus.ARCHIVED && target == FacilityStatus.DELETED);
+            case ROOM -> (source == FacilityStatus.DRAFT && target == FacilityStatus.ACTIVE)
+                    || (source == FacilityStatus.ACTIVE && (target == FacilityStatus.MAINTENANCE || target == FacilityStatus.LOCKED || target == FacilityStatus.ARCHIVED))
+                    || (source == FacilityStatus.MAINTENANCE && target == FacilityStatus.ACTIVE)
+                    || (source == FacilityStatus.LOCKED && target == FacilityStatus.ACTIVE)
+                    || (source == FacilityStatus.ARCHIVED && target == FacilityStatus.DELETED);
+            case ZONE -> (source == FacilityStatus.DRAFT && target == FacilityStatus.ACTIVE)
+                    || (source == FacilityStatus.ACTIVE && (target == FacilityStatus.MAINTENANCE || target == FacilityStatus.INACTIVE))
+                    || (source == FacilityStatus.MAINTENANCE && target == FacilityStatus.ACTIVE)
+                    || (source == FacilityStatus.INACTIVE && target == FacilityStatus.ARCHIVED)
+                    || (source == FacilityStatus.ARCHIVED && target == FacilityStatus.DELETED);
+        };
     }
 
     private static void assertInvalid(FacilityNode node, FacilityStatus target) {

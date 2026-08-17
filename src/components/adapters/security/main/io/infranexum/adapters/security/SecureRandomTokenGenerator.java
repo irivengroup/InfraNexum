@@ -2,12 +2,11 @@ package io.infranexum.adapters.security;
 
 import io.infranexum.identity.local.ports.SecureTokenGenerator;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.Objects;
+import org.bouncycastle.crypto.digests.SHA256Digest;
 
 /** Generates 256-bit opaque bearer/CSRF values and deterministic SHA-256 persistence fingerprints. */
 public final class SecureRandomTokenGenerator implements SecureTokenGenerator {
@@ -31,11 +30,16 @@ public final class SecureRandomTokenGenerator implements SecureTokenGenerator {
     @Override
     public String sha256(String token) {
         Objects.requireNonNull(token, "token");
+        byte[] input = token.getBytes(StandardCharsets.US_ASCII);
+        byte[] digest = new byte[32];
         try {
-            byte[] digest = MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.US_ASCII));
+            SHA256Digest sha256 = new SHA256Digest();
+            sha256.update(input, 0, input.length);
+            sha256.doFinal(digest, 0);
             return HexFormat.of().formatHex(digest);
-        } catch (NoSuchAlgorithmException impossible) {
-            throw new IllegalStateException("SHA-256 unavailable", impossible);
+        } finally {
+            java.util.Arrays.fill(input, (byte) 0);
+            java.util.Arrays.fill(digest, (byte) 0);
         }
     }
 }

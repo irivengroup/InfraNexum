@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.105",
-  "profile": "alpha105-hosted-coverage-datatable-redoc-corrective-pro-enterprise",
+  "version": "2.0.0-alpha.0.106",
+  "profile": "alpha106-hosted-coverage-administration-dcim-redoc-corrective-pro-enterprise",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -14,7 +14,7 @@
     },
     {
       "id": "infranexum-server",
-      "status": "alpha102-corrective-jdk25-compilation-clock-observability-and-idempotency-coverage-repairs-over-alpha101-connector-runtime-no-contract-removal-target-jdk25-live-postgresql-revalidation-pending"
+      "status": "alpha106-organization-controller-runtime-condition-aligned-iam-status-filter-self-lockout-guard-target-jdk25-jacoco-and-server-context-revalidation-pending"
     },
     {
       "id": "infranexum-agent",
@@ -22,7 +22,7 @@
     },
     {
       "id": "infranexum-web",
-      "status": "alpha102-solid-tab-headers-continuous-thead-midnight-blue-gradient-iam-context-hierarchy-overview-parity-login-copy-layout-auth-probe-correction-redoc-contract-repair-bootstrap5.3.6"
+      "status": "alpha106-account-dropdown-iam-suspended-user-filter-reactivation-advanced-tab-visibility-vertical-dcim-location-infrastructure-redoc-parsed-local-openapi-datatable-20-50-100-200-no-internal-scroll"
     },
     {
       "id": "connector-sdk-v1",
@@ -41,8 +41,8 @@
       "status": "postgresql-oracle-jdbc-workers-local-identity-session-persistence-security-epoch-transient-connectivity-classification-durable-nullable-uuidv7-correlation-entitlements-revocations-json-binding-and-contextual-domain-errors-hosted-jdk25-jacoco-proof-pending"
     },
     {
-      "id": "migration-catalogue-0001-0034",
-      "status": "paired-catalogue-postgresql-oracle-through-0034-including-0033-integrations-connector-inbox-and-0034-integration-iam-permissions"
+      "id": "migration-catalogue-0001-0035",
+      "status": "paired-catalogue-postgresql-oracle-through-0035-including-durable-connector-inbox-permissions-and-raw-authenticated-payload"
     },
     {
       "id": "ci-foundation",
@@ -119,7 +119,7 @@
   ],
   "validation_reports": [],
   "validation_summary": {
-    "source_inventory_paths": 1383,
+    "source_inventory_paths": 1385,
     "source_integrity_tests": 45,
     "source_integrity_coverage_percent": 100,
     "source_integrity_violations": 0,
@@ -153,7 +153,7 @@
     "jdbc_workers_junit_tests_defined": 11,
     "jdbc_workers_postgresql_live_tests_defined": 5,
     "agent_local_coverage_percent": 98.4,
-    "web_tests": 194,
+    "web_tests": 195,
     "web_line_coverage_percent": 99.73,
     "web_branch_coverage_percent": 98.53,
     "web_function_coverage_percent": 100,
@@ -625,25 +625,31 @@
     "maven_temurin25_alpha105": "NON_EXECUTED_LOCAL_TARGET_REQUIRED",
     "postgresql17_18_live_alpha105": "NON_EXECUTED_LOCAL_TARGET_REQUIRED",
     "packaging_tracked_files": 1385,
-    "git_blob_checksums": 1384
+    "git_blob_checksums": 1384,
+    "architecture_alpha106": "EXECUTED_171_OF_171_FUNCTIONAL_PLUS_ARCHITECTURE_AS_CODE_PASS_META_CHECKER_NON_EXECUTED_CURRENT_CORRECTIVE",
+    "api_alpha106": "EXECUTED_CLI_15_FRAGMENTS_179_OPERATIONS_ZERO_VIOLATIONS_DEBT_0_0_0_0_TARGETED_REGRESSIONS_FULL_MONOLITHIC_TIMEOUT",
+    "migration_alpha106": "EXECUTED_117_OF_117_ZERO_VIOLATIONS",
+    "java_auxiliary_alpha106": "216_DOMAIN_CORE_PLUS_6_SECURITY_PLUS_133_JDBC_DETERMINISTIC_ZERO_FAILURES_JAVA21_AUXILIARY",
+    "connector_sdk_alpha106": "19_OF_19_COVERAGE99_REPRODUCIBLE_TWO_BUILDS_BYTE_IDENTICAL_IMPORT_SCHEMA_PASS"
   },
   "source_layout": "All production solution spaces are contained below src/; Java, Go and Web tests are repository-level under tests/; canonical relative paths are limited to 120 characters and path components to 80 characters.",
   "source_integrity": {
     "canonical_inventory": "source-inventory.json",
-    "git_blob_checksums": "source-files.sha256",
-    "tracked_files": 1344,
+    "git_blob_checksums": 1386,
+    "tracked_files": 1387,
     "source_recorded_files": 1343,
     "staged_snapshot_required": true,
-    "pre_commit_hook": ".githooks/pre-commit"
+    "pre_commit_hook": ".githooks/pre-commit",
+    "inventory_paths": 1385
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.105",
-    "archive_entries": 1344,
+    "prefix": "infranexum-2.0.0-alpha.0.106",
+    "archive_entries": 1387,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
-    "source_recorded_files": 1343,
+    "source_recorded_files": 1386,
     "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
-    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.105-validation-evidence.zip"
+    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.106-validation-evidence.zip"
   },
   "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.105-validation-evidence.zip",
   "runtime_validation": {
@@ -1253,5 +1259,20 @@
   "packaging_tracked_files_alpha102": 1344,
   "git_blob_checksums_alpha102": 1343,
   "source_integrity_alpha102": "EXECUTED_45_OF_45_100_PERCENT_STAGED_SNAPSHOT_1344_TRACKED_PATHS_1343_GIT_BLOB_CHECKSUMS_1341_CANONICAL_INVENTORY_ZERO_VIOLATIONS",
-  "archive_compatibility_alpha102": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS_AND_POST_EXTRACTION_SOURCE_INTEGRITY_ZERO_VIOLATIONS"
+  "archive_compatibility_alpha102": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS_AND_POST_EXTRACTION_SOURCE_INTEGRITY_ZERO_VIOLATIONS",
+  "architecture_alpha106": "EXECUTED_171_OF_171_FUNCTIONAL_PLUS_ARCHITECTURE_AS_CODE_PASS_META_CHECKER_NON_EXECUTED_CURRENT_CORRECTIVE",
+  "migration_alpha106": "EXECUTED_117_OF_117_ZERO_VIOLATIONS_MIGRATION0035_PRESERVED",
+  "eventing_alpha106": "EXECUTED_10_OF_10_COVERAGE100_ZERO_VIOLATIONS",
+  "persistence_alpha106": "EXECUTED_12_OF_12_COVERAGE98_ZERO_VIOLATIONS",
+  "capabilities_alpha106": "EXECUTED_10_OF_10_COVERAGE99_ZERO_VIOLATIONS_32_CAPABILITIES_119_QUOTAS",
+  "entitlements_alpha106": "EXECUTED_10_OF_10_COVERAGE100_ZERO_VIOLATIONS",
+  "audit_alpha106": "EXECUTED_8_OF_8_COVERAGE100_ZERO_VIOLATIONS",
+  "compose_contract_alpha106": "EXECUTED_64_OF_64",
+  "toolchains_alpha106": "EXECUTED_25_OF_25_COVERAGE99_ZERO_VIOLATIONS",
+  "connector_sdk_alpha106": "EXECUTED_19_OF_19_COVERAGE99_REPRODUCIBLE_WHEEL_BYTE_IDENTICAL_TWO_BUILDS_IMPORT_AND_PACKAGED_SCHEMA_PASS_SHA256_D2E70F171C5E77ABD757F5881ECBA96771ABE3855B46B89FC033D62FFCDE51C5",
+  "web_local_runtime_alpha106": "EXECUTED_LOCAL_NODE22_16_0_195_OF_195_LINE99_73_BRANCH98_53_FUNCTION100_PROCESS_SMOKE_PASS_TARGET_NODE24_18_1_PNPM11_17_0_PENDING",
+  "api_contracts_alpha106": "EXECUTED_CLI_15_FRAGMENTS_179_OPERATIONS_ZERO_VIOLATIONS_DEBT_0_0_0_0_PLUS_TARGETED_CONTRACT_REGRESSIONS_AND_PROJECTION_TESTS;FULL_MONOLITHIC_TEST_RUNNER_TIMEOUT",
+  "source_inventory_paths_alpha106": 1385,
+  "packaging_tracked_files_alpha106": 1387,
+  "git_blob_checksums_alpha106": 1386
 }

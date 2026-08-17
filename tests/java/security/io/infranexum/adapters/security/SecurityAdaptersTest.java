@@ -65,4 +65,48 @@ class SecurityAdaptersTest {
         assertThrows(NullPointerException.class, () -> new SecureRandomTokenGenerator(null));
         assertThrows(NullPointerException.class, () -> new BouncyCastleArgon2idPasswordHasher(null));
     }
+    @Test
+    void argon2idRehashDecisionCoversEachIndependentWorkFactor() {
+        char[] password = "Long-Secure-Password!Aa1".toCharArray();
+        String encoded = hasher.hash(password);
+        assertFalse(hasher.needsRehash(encoded));
+        assertTrue(hasher.needsRehash(encoded.replace("m=65536", "m=32768")));
+        assertTrue(hasher.needsRehash(encoded.replace("t=3", "t=2")));
+        assertTrue(hasher.needsRehash(encoded.replace("p=1", "p=2")));
+    }
+
+    @Test
+    void argon2idParserRejectsNumericSyntaxAndEveryPayloadLengthBoundary() {
+        String validSalt = "MDEyMzQ1Njc4OWFiY2RlZg";
+        String validHash = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        String shortSalt = "MDEyMzQ1Njc4OWFiY2Rl";
+        String shortHash = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        String longHash = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        for (String invalid : new String[] {
+                "$argon2id$v=19$m=x,t=3,p=1$" + validSalt + "$" + validHash,
+                "$argon2id$v=19$m=65536,t=x,p=1$" + validSalt + "$" + validHash,
+                "$argon2id$v=19$m=65536,t=3,p=x$" + validSalt + "$" + validHash,
+                "$argon2id$v=19$m=65536,t=3,p=1$" + shortSalt + "$" + validHash,
+                "$argon2id$v=19$m=65536,t=3,p=1$" + validSalt + "$" + shortHash,
+                "$argon2id$v=19$m=65536,t=3,p=1$" + validSalt + "$" + longHash
+        }) {
+            assertThrows(IllegalArgumentException.class, () -> hasher.needsRehash(invalid), invalid);
+        }
+    }
+
+    @Test
+    void argon2idParserRejectsEachParameterPrefixAndWorkFactorBoundary() {
+        String salt = "MDEyMzQ1Njc4OWFiY2RlZg";
+        String hash = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        for (String parameters : new String[] {
+                "x=65536,t=3,p=1", "m=65536,x=3,p=1", "m=65536,t=3,x=1",
+                "m=-1,t=3,p=1", "m=262145,t=3,p=1",
+                "m=65536,t=0,p=1", "m=65536,t=11,p=1",
+                "m=65536,t=3,p=0", "m=65536,t=3,p=9"
+        }) {
+            String encoded = "$argon2id$v=19$" + parameters + "$" + salt + "$" + hash;
+            assertThrows(IllegalArgumentException.class, () -> hasher.needsRehash(encoded), parameters);
+        }
+    }
+
 }

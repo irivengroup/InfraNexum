@@ -101,8 +101,13 @@ public final class BouncyCastleArgon2idPasswordHasher implements PasswordHasher 
     private static byte[] utf8(char[] password) {
         ByteBuffer buffer = StandardCharsets.UTF_8.encode(CharBuffer.wrap(password));
         byte[] bytes = new byte[buffer.remaining()];
+        // bytes is sized from remaining(), so get(bytes) cannot underflow. Avoid a finally block here:
+        // javac duplicates its wipe loop into an exceptional path that is unreachable by construction.
         buffer.get(bytes);
-        if (buffer.hasArray()) Arrays.fill(buffer.array(), (byte) 0);
+        buffer.clear();
+        while (buffer.hasRemaining()) {
+            buffer.put((byte) 0);
+        }
         return bytes;
     }
 

@@ -124,6 +124,30 @@ final class JdbcComplianceRepositoryCoverageTest {
                 .insertWarrantyType(new WarrantyType(id(34),"ZERO","Zero",true,T,ACTOR)));
     }
 
+    @Test void sharedReadHelpersAndDueQueriesTranslateSqlFailuresDeterministically(){
+        SQLException offline=new SQLException("offline","08006");
+        var find=connection(queryFailure(offline));
+        assertThrows(JdbcPersistenceException.class,()->new JdbcComplianceRepository(dataSource(find.connection()),noTransaction(),JdbcDatabaseDialect.POSTGRESQL).findWarranty(ID));
+
+        var many=connection(queryFailure(offline));
+        assertThrows(JdbcPersistenceException.class,()->new JdbcComplianceRepository(dataSource(many.connection()),noTransaction(),JdbcDatabaseDialect.POSTGRESQL).warrantiesForAsset(ASSET));
+
+        var page=connection(queryFailure(offline));
+        assertThrows(JdbcPersistenceException.class,()->new JdbcComplianceRepository(dataSource(page.connection()),noTransaction(),JdbcDatabaseDialect.POSTGRESQL).warrantyPage(ASSET,ID,10));
+
+        var dueFour=connection(queryFailure(offline));
+        assertThrows(JdbcPersistenceException.class,()->new JdbcComplianceRepository(dataSource(dueFour.connection()),noTransaction(),JdbcDatabaseDialect.POSTGRESQL).warrantiesDueBetween(START,END));
+
+        var dueCoverage=connection(queryFailure(offline));
+        assertThrows(JdbcPersistenceException.class,()->new JdbcComplianceRepository(dataSource(dueCoverage.connection()),noTransaction(),JdbcDatabaseDialect.POSTGRESQL).supportCoveragesDueBetween(START,END));
+
+        var types=connection(queryFailure(offline));
+        assertThrows(JdbcPersistenceException.class,()->new JdbcComplianceRepository(dataSource(types.connection()),noTransaction(),JdbcDatabaseDialect.POSTGRESQL).warrantyTypes(false));
+
+        var revisions=connection(queryFailure(offline));
+        assertThrows(JdbcPersistenceException.class,()->new JdbcComplianceRepository(dataSource(revisions.connection()),noTransaction(),JdbcDatabaseDialect.POSTGRESQL).revisions("warranty",ID,0,10));
+    }
+
     private static LinkedHashMap<String,Object> common(DomainIdentifier id){var r=new LinkedHashMap<String,Object>();r.put("id",id.value());r.put("asset_id",ASSET.value());r.put("proof_reference","proof");r.put("status","DRAFT");r.put("verified_at",null);r.put("verified_by",null);r.put("version",1L);r.put("created_at",T);r.put("updated_at",T);r.put("created_by",ACTOR.value());r.put("updated_by",ACTOR.value());r.put("last_reason","create");return r;}
     private static Map<String,Object> warrantyRow(){var r=common(ID);r.put("manufacturer_partner_id",PARTNER.value());r.put("warranty_type_id",TYPE.value());r.put("coverage_level","standard");r.put("warranty_start_date",Date.valueOf(START));r.put("warranty_end_date",Date.valueOf(END));r.put("manufacturer_support_end_date",Date.valueOf(END));r.put("contract_certificate_number","CERT");r.put("source","MANUAL");return r;}
     private static Map<String,Object> licenseRow(){var r=common(ID);r.put("publisher_partner_id",PARTNER.value());r.put("contract_number","C-1");r.put("license_model","subscription");r.put("usage_rights","production");r.put("entitlement_quantity",10L);r.put("starts_on",Date.valueOf(START));r.put("ends_on",Date.valueOf(END));r.put("publisher_support_end_date",Date.valueOf(END));r.put("source","MANUAL");return r;}

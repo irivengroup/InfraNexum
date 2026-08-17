@@ -282,10 +282,30 @@ function setPasswordBusy(documentObject, button, busy) {
 }
 
 function wireLogout(documentObject, configuration, fetchFunction) {
+  const menu = documentObject.getElementById('session-menu');
+  const trigger = documentObject.getElementById('session-menu-trigger');
+  const dropdown = documentObject.getElementById('session-menu-dropdown');
   const button = documentObject.getElementById('session-logout');
-  if (!button || button.dataset.authWired === 'true') return;
+  if (!button || !menu || !trigger || !dropdown || button.dataset.authWired === 'true') return;
   button.dataset.authWired = 'true';
+  menu.hidden = false;
   button.hidden = false;
+
+  const close = (restoreFocus = false) => {
+    dropdown.hidden = true;
+    trigger.setAttribute('aria-expanded', 'false');
+    if (restoreFocus) trigger.focus?.();
+  };
+  const toggle = () => {
+    const open = dropdown.hidden;
+    dropdown.hidden = !open;
+    trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) button.focus?.();
+  };
+  trigger.addEventListener('click', (event) => { event.preventDefault?.(); event.stopPropagation?.(); toggle(); });
+  dropdown.addEventListener?.('keydown', (event) => { if (event.key === 'Escape') { event.preventDefault?.(); close(true); } });
+  documentObject.addEventListener?.('click', (event) => { if (!menu.contains?.(event.target)) close(false); });
+
   button.addEventListener('click', async () => {
     button.disabled = true;
     try { await logoutLocal(configuration, fetchFunction, documentObject.cookie); }

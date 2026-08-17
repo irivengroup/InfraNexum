@@ -13,6 +13,12 @@ import io.infranexum.core.contracts.OffsetPage;
 import io.infranexum.core.contracts.PaginationConstraints;
 import io.infranexum.core.contracts.UuidV7Generator;
 import io.infranexum.core.events.InMemoryEventStore;
+import io.infranexum.core.events.OutboxRecord;
+import io.infranexum.core.events.OutboxStatus;
+import io.infranexum.core.events.RetryPolicy;
+import io.infranexum.core.events.TransactionExecutionException;
+import io.infranexum.core.events.TransactionalEventStore;
+import io.infranexum.core.events.TransactionalWork;
 import io.infranexum.identity.access.application.IdentityAccessAdminService;
 import io.infranexum.identity.access.application.IdentityAccessCommandContext;
 import io.infranexum.identity.access.domain.AssignmentActorType;
@@ -31,8 +37,10 @@ import io.infranexum.identity.access.ports.OrganizationScopeReferencePort;
 import io.infranexum.identity.access.ports.RoleAssignmentPolicyGuard;
 import java.security.SecureRandom;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -103,6 +111,26 @@ class IdentityAccessAdminServiceTest {
         assertTrue(repository.hasEffectiveSystemRole(bootstrap, Role.PLATFORM_ADMIN_CODE, NOW));
         assertTrue(audit.verify(AuditScope.platform()).valid());
         assertTrue(events.outboxSnapshot().size() >= 6);
+    }
+
+    @Test
+    void statusFilteringKeepsSuspendedAccountsRecoverableAndBlocksSelfLockout() {
+        IdentityUser target = service.createUser("recoverable.user", null, "Recoverable User", true, context);
+        service.suspendUser(target.id(), context);
+
+        assertTrue(service.listUsers(IdentityUserStatus.SUSPENDED, 0, 200).stream()
+                .anyMatch(user -> user.id().equals(target.id())));
+        assertTrue(service.listUsers(IdentityUserStatus.ACTIVE, 0, 200).stream()
+                .noneMatch(user -> user.id().equals(target.id())));
+
+        IdentityUser reactivated = service.activateUser(target.id(), context);
+        assertEquals(IdentityUserStatus.ACTIVE, reactivated.status());
+        assertTrue(service.listUsers(IdentityUserStatus.ACTIVE, 0, 200).stream()
+                .anyMatch(user -> user.id().equals(target.id())));
+
+        assertCode("IAM_SELF_LOCKOUT_FORBIDDEN", () -> service.suspendUser(ACTOR, context));
+        assertCode("IAM_SELF_LOCKOUT_FORBIDDEN", () -> service.deleteUser(ACTOR, context));
+        assertEquals(IdentityUserStatus.ACTIVE, service.getUser(ACTOR).status());
     }
 
     @Test
@@ -324,7 +352,37 @@ class IdentityAccessAdminServiceTest {
         assertNotNull(service.addMembership(history.id(), OTHER_ORG, null, NOW, null, context));
     }
 
+    @Test
+    void implicitEffectiveFromUsesPlatformClockForMembershipAndRoleAssignment() {
+        IdentityUser user = service.createUser("implicit.time", "implicit@example.test", "Implicit Time", true, context);
+        UserMembership membership = service.addMembership(user.id(), ORG, null, null, null, context);
+        assertEquals(NOW, membership.effectiveFrom());
+        Permission permission = seedPermission("asset.implicit.read", ScopeKind.ORGANIZATION);
+        Role role = service.createRole(ORG, "ops.implicit", "Implicit", ScopeKind.ORGANIZATION, Set.of(permission.code()), context);
+        RoleAssignment assignment = service.assignRole(role.id(), AssignmentActorType.USER, user.id(),
+                AuthorizationScope.organization(ORG), null, null, context);
+        assertEquals(NOW, assignment.effectiveFrom());
+    }
+
+    @Test
+    void transactionBoundaryRethrowsDomainRuntimeCausesAndPreservesCheckedFailureWrapper() {
+        IdentityAccessException domain = new IdentityAccessException("IAM_FORCED", "forced");
+        IdentityAccessAdminService domainFailing = service(new Features(true, true), new FailingEventStore(domain));
+        assertEquals(domain, assertThrows(IdentityAccessException.class,
+                () -> domainFailing.createUser("forced.domain", null, "Forced", true, context)));
+
+        Exception checked = new Exception("checked persistence failure");
+        IdentityAccessAdminService checkedFailing = service(new Features(true, true), new FailingEventStore(checked));
+        TransactionExecutionException wrapped = assertThrows(TransactionExecutionException.class,
+                () -> checkedFailing.createUser("forced.checked", null, "Forced", true, context));
+        assertEquals(checked, wrapped.getCause());
+    }
+
     private IdentityAccessAdminService service(IdentityAccessFeaturePolicy features) {
+        return service(features, events);
+    }
+
+    private IdentityAccessAdminService service(IdentityAccessFeaturePolicy features, TransactionalEventStore eventStore) {
         Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
         OrganizationScopeReferencePort organizationScopes = new OrganizationScopeReferencePort() {
             @Override
@@ -337,7 +395,7 @@ class IdentityAccessAdminServiceTest {
                 return organizationId.equals(ORG) && subdivisionId.equals(SUBDIVISION);
             }
         };
-        return new IdentityAccessAdminService(repository, features, organizationScopes, RoleAssignmentPolicyGuard.allowAll(), events, audit,
+        return new IdentityAccessAdminService(repository, features, organizationScopes, RoleAssignmentPolicyGuard.allowAll(), eventStore, audit,
                 new UuidV7Generator(clock, new SecureRandom(new byte[] {7, 3, 1, 9})), clock);
     }
 
@@ -366,4 +424,22 @@ class IdentityAccessAdminServiceTest {
     }
 
     private record Features(boolean supportsNestedGroups, boolean supportsMultiMembership) implements IdentityAccessFeaturePolicy {}
+    private static final class FailingEventStore implements TransactionalEventStore {
+        private final Throwable cause;
+        FailingEventStore(Throwable cause) { this.cause = cause; }
+        @Override public <T> io.infranexum.core.events.TransactionOutcome<T> execute(TransactionalWork<T> work) {
+            throw new TransactionExecutionException("forced IAM test failure", cause);
+        }
+        @Override public List<OutboxRecord> claimBatch(String workerId, int limit, Instant now, Duration leaseDuration) {
+            throw new UnsupportedOperationException("not used");
+        }
+        @Override public void markPublished(DomainIdentifier eventId, String workerId, Instant publishedAt) {
+            throw new UnsupportedOperationException("not used");
+        }
+        @Override public OutboxStatus markFailed(
+                DomainIdentifier eventId, String workerId, Instant failedAt, RetryPolicy retryPolicy, Throwable failure) {
+            throw new UnsupportedOperationException("not used");
+        }
+    }
+
 }

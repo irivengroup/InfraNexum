@@ -91,6 +91,18 @@ final class IpamBoundarySaturationTest {
     }
 
     @Test
+    void cidrContainmentAndAddressChecksCoverSameFamilyPositiveAndNegativePaths() {
+        IpCidr subnet = new IpCidr("192.0.2.0/24");
+        IpCidr child = new IpCidr("192.0.2.128/25");
+        IpCidr disjoint = new IpCidr("198.51.100.0/24");
+        assertTrue(subnet.contains(child));
+        assertTrue(subnet.overlaps(child));
+        assertFalse(subnet.overlaps(disjoint));
+        assertTrue(subnet.containsAddress("192.0.2.42"));
+        assertFalse(subnet.containsAddress("192.0.3.1"));
+    }
+
+    @Test
     void releaseAndLifecycleHappyAndTerminalBranchesAreBothObservable() {
         IpamAddress active = IpamAddress.assigned(A, B, C, D, null, "192.0.2.10", false, null, null, null, null, NOW);
         IpamAddress released = active.release(NOW.plusSeconds(1));

@@ -1184,6 +1184,8 @@
     "tests/java/itam/io/infranexum/itam/compliance/ComplianceBoundarySaturationTest.java",
     "tests/java/itam/io/infranexum/itam/compliance/ComplianceBranchCoverageTest.java",
     "tests/java/itam/io/infranexum/itam/compliance/ComplianceDomainTest.java",
+    "tests/java/itam/io/infranexum/itam/compliance/application/CompliancePageTest.java",
+    "tests/java/itam/io/infranexum/itam/compliance/domain/ComplianceTextsTest.java",
     "tests/java/itam/io/infranexum/itam/partner/PartnerApplicationServiceTest.java",
     "tests/java/itam/io/infranexum/itam/partner/PartnerBoundarySaturationTest.java",
     "tests/java/itam/io/infranexum/itam/partner/PartnerDomainTest.java",

@@ -191,11 +191,18 @@
             <button id="theme-toggle" class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center" type="button" data-i18n-aria-label="theme.switch" aria-pressed="false">
               <span id="theme-toggle-icon" aria-hidden="true">◐</span>
             </button>
-            <div class="d-none d-xxl-flex align-items-center gap-2" data-i18n-aria-label="session.localAdmin" aria-label="Local administrator session">
-              <div id="session-avatar" class="badge text-bg-primary rounded-circle p-2" aria-hidden="true">AD</div>
-              <div class="d-flex flex-column"><span data-i18n="session.signedInAs">Signed in as</span><strong id="session-identity">Local Administrator</strong></div>
+            <div id="session-menu" class="dropdown inx-session-menu" hidden>
+              <button id="session-menu-trigger" class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center p-1 rounded-circle inx-session-trigger" type="button" aria-haspopup="menu" aria-controls="session-menu-dropdown" aria-expanded="false" data-i18n-aria-label="session.accountMenu" aria-label="Account menu">
+                <span id="session-avatar" class="inx-session-avatar" aria-hidden="true">AD</span>
+              </button>
+              <div id="session-menu-dropdown" class="dropdown-menu dropdown-menu-end shadow inx-session-dropdown" role="menu" hidden>
+                <div class="px-3 py-2 border-bottom">
+                  <span class="d-block small text-body-secondary" data-i18n="session.signedInAs">Signed in as</span>
+                  <strong id="session-identity" class="d-block text-truncate inx-session-identity">Local Administrator</strong>
+                </div>
+                <button id="session-logout" class="dropdown-item text-danger d-flex align-items-center gap-2" type="button" role="menuitem" data-i18n="session.logout" hidden>Sign out</button>
+              </div>
             </div>
-            <button id="session-logout" class="btn btn-sm btn-outline-danger" type="button" data-i18n="session.logout" hidden>Sign out</button>
           </div>
         </header>
 
@@ -353,6 +360,7 @@
           <header class="d-flex justify-content-between align-items-start gap-2 mb-3"><div class="d-flex flex-column"><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="iam.facetEyebrow">Identity &amp; Access</p><h3 class="h5 mb-1" data-i18n="iam.users">Users</h3><p class="small text-body-secondary" data-i18n="iam.usersDescription">Accounts, memberships and direct role assignments.</p></div></header>
           <div aria-label="List controls" class="inx-filter-bar inx-filter-bar-plain mb-3" data-i18n-aria-label="iam.listControls" role="group">
           <div class="inx-filter-field inx-filter-field-wide"><input aria-label="Filter current list" autocomplete="off" class="form-control form-control-sm" data-i18n-aria-label="iam.filterPlaceholder" data-i18n-placeholder="iam.filterPlaceholder" data-iam-filter="users" placeholder="Filter current list" type="search"/></div>
+          <div class="inx-filter-field"><label class="form-label small mb-1" for="iam-user-status-filter" data-i18n="iam.status">Status</label><select id="iam-user-status-filter" class="form-select form-select-sm"><option value="" data-i18n="common.all">All</option><option value="pending" data-i18n="iam.status.pending">Pending</option><option value="active" data-i18n="iam.status.active">Active</option><option value="suspended" data-i18n="iam.status.suspended">Suspended</option><option value="deleted" data-i18n="iam.status.deleted">Deleted</option></select></div>
           <div class="inx-filter-actions"><button class="btn btn-sm btn-outline-secondary" data-i18n="iam.refresh" data-iam-refresh="users" type="button">Refresh</button><button class="btn btn-sm btn-primary" data-i18n="iam.addNew" data-iam-open-workflow="users:create" type="button">Add</button></div>
           </div>
           <div class="table-responsive border rounded-3 mb-4"><table class="table table-hover align-middle mb-0"><caption class="visually-hidden" data-i18n="iam.users">Users</caption><thead><tr><th data-i18n="iam.id">ID</th><th data-i18n="iam.login">Login</th><th data-i18n="iam.email">Email</th><th data-i18n="iam.displayName">Display name</th><th data-i18n="iam.status">Status</th><th data-i18n="iam.actions">Actions</th></tr></thead><tbody id="iam-user-rows"></tbody></table></div>

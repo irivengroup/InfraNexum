@@ -31,8 +31,11 @@ class OrganizationFoundationArchitectureTest(unittest.TestCase):
         self.assertIn('ConfigurationProperties(prefix = "infranexum.organization")', properties)
         self.assertIn("Server RBAC protects its HTTP surface", configuration)
         self.assertNotIn("may only be enabled in local development", configuration)
+        controller = (self.SERVER / "OrganizationController.java").read_text(encoding="utf-8")
         self.assertIn("api-enabled: ${INFRANEXUM_ORGANIZATION_API_ENABLED:false}", application)
         self.assertIn("environment: ${INFRANEXUM_ENVIRONMENT:production}", application)
+        self.assertIn('@ConditionalOnProperty(name = "infranexum.organization.api-enabled", havingValue = "true")', controller)
+        self.assertIn('@ConditionalOnProperty(name = "infranexum.organization.api-enabled", havingValue = "true")', configuration)
 
     def test_event_types_obey_core_contract_and_are_versioned(self) -> None:
         service = (

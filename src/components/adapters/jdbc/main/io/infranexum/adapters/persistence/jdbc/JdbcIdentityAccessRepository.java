@@ -43,12 +43,15 @@ public final class JdbcIdentityAccessRepository implements IdentityAccessReposit
     }
 
     @Override
-    public List<IdentityUser> listUsers(int offset, int limit) {
+    public List<IdentityUser> listUsers(IdentityUserStatus status, int offset, int limit) {
         return withRead(connection -> {
+            String where = status == null ? "" : " WHERE status=?";
             String sql = "SELECT id,login,email,display_name,status,created_at,updated_at,deleted_at FROM "
-                    + userTable() + " ORDER BY login,id " + pagination();
+                    + userTable() + where + " ORDER BY login,id " + pagination();
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                bindPage(statement, offset, limit);
+                int first = 1;
+                if (status != null) statement.setString(first++, status.name());
+                bindPage(statement, offset, limit, first);
                 try (ResultSet rows = statement.executeQuery()) {
                     List<IdentityUser> result = new ArrayList<>();
                     while (rows.next()) result.add(readUser(rows));

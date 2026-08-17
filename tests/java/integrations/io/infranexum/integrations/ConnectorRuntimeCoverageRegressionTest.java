@@ -120,6 +120,27 @@ class ConnectorRuntimeCoverageRegressionTest {
     }
 
     @Test
+    void webhookShapeValidationTraversesObjectAndArrayShortCircuitOperandsThroughTheRealService() {
+        byte[] secret = "0123456789abcdef0123456789abcdef".getBytes(StandardCharsets.UTF_8);
+        ConnectorWebhookEndpoint endpoint = new ConnectorWebhookEndpoint(KEY, "handler", "secret-ref", Duration.ofMinutes(5), true);
+        InMemoryConnectorInboxRepository inbox = new InMemoryConnectorInboxRepository();
+        RecordingObserver observer = new RecordingObserver();
+        ConnectorWebhookService service = service(Map.of(KEY, endpoint), inbox, observer, secret, 128);
+
+        byte[] array = "[]".getBytes(StandardCharsets.UTF_8);
+        String arraySignature = HmacSha256WebhookAuthenticator.signature(secret.clone(), NOW.getEpochSecond(), array);
+        assertFalse(service.admit(KEY.value(), "evt-array", NOW.getEpochSecond(), arraySignature, array).duplicate());
+
+        for (String malformed : List.of("{", "[", "{]", "[}")) {
+            byte[] payload = malformed.getBytes(StandardCharsets.UTF_8);
+            String signature = HmacSha256WebhookAuthenticator.signature(secret.clone(), NOW.getEpochSecond(), payload);
+            assertThrows(IllegalArgumentException.class,
+                    () -> service.admit(KEY.value(), "evt-shape-" + malformed.charAt(0) + malformed.length(),
+                            NOW.getEpochSecond(), signature, payload));
+        }
+    }
+
+    @Test
     void dispatcherConstructorAndOutcomeBranchesRemainBounded() {
         InMemoryConnectorInboxRepository inbox = new InMemoryConnectorInboxRepository();
         ConnectorEndpointRegistry endpoints = registry(Map.of());

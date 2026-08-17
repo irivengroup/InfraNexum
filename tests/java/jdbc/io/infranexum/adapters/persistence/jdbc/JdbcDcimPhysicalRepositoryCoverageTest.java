@@ -105,6 +105,35 @@ final class JdbcDcimPhysicalRepositoryCoverageTest {
                 transaction(zero.connection()),JdbcDatabaseDialect.POSTGRESQL).insertModel(model));
     }
 
+    @Test void everyReadAndListBoundaryTranslatesSqlFailureWithoutLeakingDriverExceptions(){
+        SQLException offline=new SQLException("offline","08006");
+        assertThrows(JdbcPersistenceException.class,()->new JdbcDcimPhysicalRepository(dataSource(connection(queryFailure(offline)).connection()),noTransaction(),JdbcDatabaseDialect.POSTGRESQL).model(MODEL));
+        assertThrows(JdbcPersistenceException.class,()->new JdbcDcimPhysicalRepository(dataSource(connection(queryFailure(offline)).connection()),noTransaction(),JdbcDatabaseDialect.POSTGRESQL).rack(RACK));
+        assertThrows(JdbcPersistenceException.class,()->new JdbcDcimPhysicalRepository(dataSource(connection(queryFailure(offline)).connection()),noTransaction(),JdbcDatabaseDialect.POSTGRESQL).equipment(EQUIP));
+        assertThrows(JdbcPersistenceException.class,()->new JdbcDcimPhysicalRepository(dataSource(connection(queryFailure(offline)).connection()),noTransaction(),JdbcDatabaseDialect.POSTGRESQL).port(PORTA));
+        assertThrows(JdbcPersistenceException.class,()->new JdbcDcimPhysicalRepository(dataSource(connection(queryFailure(offline)).connection()),noTransaction(),JdbcDatabaseDialect.POSTGRESQL).cable(CABLE));
+        assertThrows(JdbcPersistenceException.class,()->new JdbcDcimPhysicalRepository(dataSource(connection(queryFailure(offline)).connection()),noTransaction(),JdbcDatabaseDialect.POSTGRESQL).models(ORG,0,10));
+        assertThrows(JdbcPersistenceException.class,()->new JdbcDcimPhysicalRepository(dataSource(connection(queryFailure(offline)).connection()),noTransaction(),JdbcDatabaseDialect.POSTGRESQL).racks(ORG,null,null,10));
+        assertThrows(JdbcPersistenceException.class,()->new JdbcDcimPhysicalRepository(dataSource(connection(queryFailure(offline)).connection()),noTransaction(),JdbcDatabaseDialect.POSTGRESQL).equipment(ORG,null,null,10));
+        assertThrows(JdbcPersistenceException.class,()->new JdbcDcimPhysicalRepository(dataSource(connection(queryFailure(offline)).connection()),noTransaction(),JdbcDatabaseDialect.POSTGRESQL).ports(EQUIP,0,10));
+        assertThrows(JdbcPersistenceException.class,()->new JdbcDcimPhysicalRepository(dataSource(connection(queryFailure(offline)).connection()),noTransaction(),JdbcDatabaseDialect.POSTGRESQL).cables(ORG,null,10));
+    }
+
+    @Test void everyVersionedAggregateMutationRejectsAffectedRowMismatch(){
+        EquipmentModel model=EquipmentModel.draft(MODEL,ORG,MFR,"MODEL1","Model","rack",2,482,700,BigDecimal.ONE,List.of(new PortTemplate("eth",1,PortKind.NETWORK,"copper","rj45")),null,ACTOR,"create",T);
+        Rack rack=Rack.draft(RACK,ORG,SUB,ROOM,"R01","Rack",42,600,1000,ACTOR,"create",T);
+        Equipment equipment=Equipment.installed(EQUIP,ORG,SUB,RACK,MODEL,RSOT,ASSET,"SN1","A1",1,"front",ACTOR,"install",T);
+        CableConnection cable=CableConnection.active(CABLE,ORG,SUB,PORTA,PORTB,"C1","copper","rj45",ACTOR,"connect",T);
+        var modelZero=connection(update(0));
+        assertEquals("VERSION_CONFLICT",assertThrows(DcimPhysicalConflictException.class,()->new JdbcDcimPhysicalRepository(dataSource(modelZero.connection()),transaction(modelZero.connection()),JdbcDatabaseDialect.POSTGRESQL).updateModel(model,1)).code());
+        var rackZero=connection(update(0));
+        assertEquals("VERSION_CONFLICT",assertThrows(DcimPhysicalConflictException.class,()->new JdbcDcimPhysicalRepository(dataSource(rackZero.connection()),transaction(rackZero.connection()),JdbcDatabaseDialect.POSTGRESQL).updateRack(rack,1)).code());
+        var equipmentZero=connection(update(0));
+        assertEquals("VERSION_CONFLICT",assertThrows(DcimPhysicalConflictException.class,()->new JdbcDcimPhysicalRepository(dataSource(equipmentZero.connection()),transaction(equipmentZero.connection()),JdbcDatabaseDialect.POSTGRESQL).updateEquipment(equipment,1)).code());
+        var cableZero=connection(update(0));
+        assertEquals("VERSION_CONFLICT",assertThrows(DcimPhysicalConflictException.class,()->new JdbcDcimPhysicalRepository(dataSource(cableZero.connection()),transaction(cableZero.connection()),JdbcDatabaseDialect.POSTGRESQL).updateCable(cable,1)).code());
+    }
+
     private static Map<String,Object> modelRow(){var r=base(MODEL);r.put("manufacturer_partner_id",MFR.value());r.put("code","MODEL1");r.put("display_name","Model");r.put("form_factor","rack");r.put("rack_units",2);r.put("width_mm",482);r.put("depth_mm",700);r.put("weight_kg",BigDecimal.ONE);r.put("description",null);return r;}
     private static Map<String,Object> templateRow(){return Map.of("name_prefix","eth","port_count",2,"port_kind","NETWORK","media","copper","connector","rj45");}
     private static Map<String,Object> rackRow(){var r=base(RACK);r.put("subdivision_id",SUB.value());r.put("room_id",ROOM.value());r.put("code","R01");r.put("display_name","Rack");r.put("height_u",42);r.put("width_mm",600);r.put("depth_mm",1000);return r;}

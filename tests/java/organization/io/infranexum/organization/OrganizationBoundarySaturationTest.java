@@ -147,6 +147,38 @@ final class OrganizationBoundarySaturationTest {
         assertThrows(IllegalArgumentException.class, () -> new OrganizationCommandContext("actor", ID, "idem-key-5", "bad\nreason"));
     }
 
+    @Test
+    void lifecycleTransitionMatricesExerciseEveryDeclaredSourceAndTargetState() {
+        for (OrganizationState source : OrganizationState.values()) {
+            assertFalse(source.canTransitionTo(null));
+            for (OrganizationState target : OrganizationState.values()) {
+                boolean expected = switch (source) {
+                    case PROVISIONING -> target == OrganizationState.ACTIVE || target == OrganizationState.DELETION_PENDING;
+                    case ACTIVE -> target == OrganizationState.SUSPENDED || target == OrganizationState.ARCHIVING;
+                    case SUSPENDED -> target == OrganizationState.ACTIVE || target == OrganizationState.ARCHIVING;
+                    case ARCHIVING -> target == OrganizationState.ARCHIVED;
+                    case ARCHIVED -> target == OrganizationState.DELETION_PENDING;
+                    case DELETION_PENDING -> target == OrganizationState.DELETED;
+                    case DELETED -> false;
+                };
+                assertEquals(expected, source.canTransitionTo(target));
+            }
+        }
+        for (SubdivisionState source : SubdivisionState.values()) {
+            assertFalse(source.canTransitionTo(null));
+            for (SubdivisionState target : SubdivisionState.values()) {
+                boolean expected = switch (source) {
+                    case DRAFT -> target == SubdivisionState.ACTIVE;
+                    case ACTIVE -> target == SubdivisionState.INACTIVE;
+                    case INACTIVE -> target == SubdivisionState.ACTIVE || target == SubdivisionState.ARCHIVED;
+                    case ARCHIVED -> target == SubdivisionState.DELETED;
+                    case DELETED -> false;
+                };
+                assertEquals(expected, source.canTransitionTo(target));
+            }
+        }
+    }
+
     private static DomainIdentifier id(long suffix) {
         return new DomainIdentifier(new UUID(0x0198_1000_0000_7000L + suffix, 0x8000_0000_0000_0000L + suffix));
     }

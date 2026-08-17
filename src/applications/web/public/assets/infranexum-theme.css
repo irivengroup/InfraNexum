@@ -1590,3 +1590,55 @@ input[data-inx-temporal].inx-temporal-native::-webkit-calendar-picker-indicator 
   .inx-datatable-size { justify-content: space-between; }
   .inx-datatable-pages { flex-wrap: wrap; }
 }
+
+/* alpha.0.106 — contextual DCIM navigation and CoreUI-style account menu. */
+#dcim-workspace > .row > aside .nav-pills {
+  padding: .65rem;
+  background: var(--inx-surface-soft);
+  border: 1px solid var(--inx-border);
+  border-radius: var(--inx-radius);
+}
+#dcim-workspace > .row > aside .nav-link {
+  padding: .7rem .78rem;
+  text-align: left;
+  font-weight: 630;
+}
+#dcim-workspace > .row > aside .nav-link.active {
+  box-shadow: 0 .25rem .7rem rgba(0,61,143,.14);
+}
+#dcim-workspace [data-dcim-nav-group="location"] > p {
+  color: #0050b8 !important;
+  background: rgba(18,101,197,.10);
+  padding-block: .28rem;
+  border-radius: .42rem;
+}
+#dcim-workspace [data-dcim-nav-group="infrastructure"] > p {
+  color: #087f5b !important;
+  background: rgba(8,127,91,.10);
+  padding-block: .28rem;
+  border-radius: .42rem;
+}
+[data-bs-theme="dark"] #dcim-workspace [data-dcim-nav-group="location"] > p { color: #9cc8ff !important; background: rgba(18,101,197,.22); }
+[data-bs-theme="dark"] #dcim-workspace [data-dcim-nav-group="infrastructure"] > p { color: #8fe1c4 !important; background: rgba(8,127,91,.22); }
+.inx-session-menu { position: relative; }
+.inx-session-trigger { width: 2.55rem; height: 2.55rem; }
+.inx-session-avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  overflow: hidden;
+  color: #fff;
+  background: linear-gradient(135deg, var(--inx-midnight), var(--inx-blue));
+  border-radius: 50%;
+  font-size: .74rem;
+  font-weight: 800;
+  letter-spacing: .03em;
+}
+.inx-session-dropdown { min-width: 16rem; right: 0; left: auto; }
+.inx-session-identity { max-width: 16rem; }
+.inx-session-dropdown[hidden] { display: none !important; }
+
+.inx-min-w-0 {
+  min-width: 0;
+}

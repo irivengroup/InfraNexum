@@ -19,6 +19,16 @@ final class JdbcIdentityAccessRepositoryCoverageTest {
     private static final Instant T=Instant.parse("2026-08-16T12:00:00Z");
     private static final DomainIdentifier USER=id(1),ORG=id(2),SUB=id(3),GROUP=id(4),CHILD=id(5),ROLE=id(6),PERM=id(7),ASSIGN=id(8),ACTOR=id(9);
 
+    @Test void statusFilterBindsLifecycleBeforePagination(){
+        var c=connection(query(List.of(userRow())));
+        var r=repo(c);
+        assertEquals(1,r.listUsers(IdentityUserStatus.SUSPENDED,3,7).size());
+        assertTrue(c.sql().getFirst().contains("WHERE status=?"));
+        assertEquals("SUSPENDED",c.parameters().getFirst().get(1));
+        assertEquals(7,c.parameters().getFirst().get(2));
+        assertEquals(3,c.parameters().getFirst().get(3));
+    }
+
     @Test void usersMembershipsBootstrapAndMembershipEvaluationCoverReadWritePaths(){
         var c=connection(query(List.of(userRow())),query(userRow()),query(userRow()),update(1),update(1),
                 query(List.of(membershipRow())),query(List.of(membershipRow())),update(1),query(Map.of("x",1)),query(membershipRow()));

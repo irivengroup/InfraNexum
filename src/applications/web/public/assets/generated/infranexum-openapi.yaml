@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum — Product API
-  version: 2.0.0-alpha.0.105
+  version: 2.0.0-alpha.0.106
   description: Generated complete product contract; installation availability remains capability-gated.
 servers:
 - url: /
@@ -2455,6 +2455,17 @@ paths:
       operationId: searchIamUsers
       summary: Search IAM users with bounded pagination
       parameters:
+      - name: status
+        in: query
+        required: false
+        description: Optional lifecycle status filter. Omit to include pending, active, suspended and deleted users.
+        schema:
+          type: string
+          enum:
+          - pending
+          - active
+          - suspended
+          - deleted
       - $ref: '#/components/parameters/identity-access-rbac__Offset'
       - $ref: '#/components/parameters/identity-access-rbac__Limit'
       responses:

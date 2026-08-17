@@ -4,6 +4,12 @@ import io.infranexum.core.contracts.DomainIdentifier;
 import io.infranexum.core.contracts.PaginationConstraints;
 import io.infranexum.core.contracts.UuidV7Generator;
 import io.infranexum.core.events.InMemoryEventStore;
+import io.infranexum.core.events.OutboxRecord;
+import io.infranexum.core.events.OutboxStatus;
+import io.infranexum.core.events.RetryPolicy;
+import io.infranexum.core.events.TransactionExecutionException;
+import io.infranexum.core.events.TransactionalEventStore;
+import io.infranexum.core.events.TransactionalWork;
 import io.infranexum.itam.asset.application.AssetPage;
 import io.infranexum.itam.asset.application.AssetSearchCriteria;
 import io.infranexum.itam.asset.domain.Asset;
@@ -20,6 +26,7 @@ import io.infranexum.itam.compliance.application.CreateSupportCoverageCommand;
 import io.infranexum.itam.compliance.application.CreateWarrantyCommand;
 import io.infranexum.itam.compliance.domain.ComplianceAlert;
 import io.infranexum.itam.compliance.domain.ComplianceConflictException;
+import io.infranexum.itam.compliance.domain.ComplianceNotFoundException;
 import io.infranexum.itam.compliance.domain.ComplianceRevision;
 import io.infranexum.itam.compliance.domain.ComplianceStatus;
 import io.infranexum.itam.compliance.domain.SoftwareLicenseContract;
@@ -34,6 +41,7 @@ import io.infranexum.itam.compliance.ports.ComplianceRepository;
 import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -169,6 +177,19 @@ final class ComplianceApplicationServiceTest {
                 context(actor, correlation, "license-activate-0001", "Software entitlement proof verified"));
         require(license.status() == ComplianceStatus.ACTIVE && service.softwareReady(software, TODAY),
                 "active verified license must unlock software readiness");
+
+        DomainIdentifier authorizationId = authorization.id();
+        DomainIdentifier licenseId = license.id();
+        DomainIdentifier coverageId = coverage.id();
+        require(service.enabled(), "enabled compliance feature must report available");
+        require(service.getWarranty(warranty.id()).id().equals(warranty.id()), "warranty read surface failed");
+        require(service.getLicense(licenseId).id().equals(licenseId), "license read surface failed");
+        require(service.getSupportAuthorization(authorizationId).id().equals(authorizationId), "support authorization read failed");
+        require(service.supportAuthorizations(organization).stream().anyMatch(value -> value.id().equals(authorizationId)), "support authorization list failed");
+        require(service.warranties(hardware.id()).stream().anyMatch(value -> value.id().equals(warranty.id())), "warranty list failed");
+        require(service.licenses(software.id()).stream().anyMatch(value -> value.id().equals(licenseId)), "license list failed");
+        require(service.supportCoverages(hardware.id()).stream().anyMatch(value -> value.id().equals(coverageId)), "support coverage list failed");
+        require(service.warrantyTypes().stream().anyMatch(value -> value.id().equals(type.id())), "warranty-type list failed");
 
         require(service.warrantyPage(hardware.id(), null, 1).items().size() == 1, "warranty pagination failed");
         require(service.licensePage(software.id(), null, 1).items().size() == 1, "license pagination failed");
@@ -432,9 +453,48 @@ final class ComplianceApplicationServiceTest {
                 assets, repository, idempotency, references, new Features(true, 20), events, ids, CLOCK, new int[33]));
     }
 
+    @Test
+    void transactionBoundaryPreservesComplianceCausesAndUnknownWrapper() {
+        UuidV7Generator ids = new UuidV7Generator(CLOCK, new SecureRandom(new byte[] {4, 2, 1}));
+        Repository repository = new Repository();
+        Assets assets = new Assets();
+        Idempotency idempotency = new Idempotency();
+        DomainIdentifier manufacturer = ids.next();
+        DomainIdentifier publisher = ids.next();
+        DomainIdentifier provider = ids.next();
+        DomainIdentifier organization = ids.next();
+        DomainIdentifier subdivision = ids.next();
+        References references = new References(manufacturer, publisher, provider, organization, subdivision, repository);
+        DomainIdentifier actor = ids.next();
+        DomainIdentifier correlation = ids.next();
+        ComplianceCommandContext context = context(actor, correlation, "forced-boundary-0001", "Exercise transaction boundary translation");
+
+        for (RuntimeException cause : List.of(
+                new ComplianceConflictException("FORCED_CONFLICT", "forced"),
+                new ComplianceNotFoundException(),
+                new IllegalArgumentException("forced invalid"))) {
+            ComplianceApplicationService failing = service(
+                    assets, repository, idempotency, references, new FailingEventStore(cause), ids, true, 20);
+            RuntimeException observed = assertThrowsRuntime(cause.getClass(), () ->
+                    failing.createWarrantyType("forced_type", "Forced type", context));
+            require(observed == cause, "transaction boundary must rethrow original domain cause");
+        }
+
+        Exception checked = new Exception("forced checked failure");
+        ComplianceApplicationService unknown = service(
+                assets, repository, idempotency, references, new FailingEventStore(checked), ids, true, 20);
+        try {
+            unknown.createWarrantyType("forced_checked", "Forced checked",
+                    context(actor, correlation, "forced-boundary-0002", "Exercise unknown transaction failure"));
+            throw new AssertionError("expected TransactionExecutionException");
+        } catch (TransactionExecutionException failure) {
+            require(failure.getCause() == checked, "unknown transaction cause must remain attached");
+        }
+    }
+
     private static ComplianceApplicationService service(
             AssetRepository assets, ComplianceRepository repository, ComplianceIdempotencyRepository idempotency,
-            ComplianceReferencePolicy references, InMemoryEventStore events, UuidV7Generator ids, boolean enabled, long limit) {
+            ComplianceReferencePolicy references, TransactionalEventStore events, UuidV7Generator ids, boolean enabled, long limit) {
         return new ComplianceApplicationService(assets, repository, idempotency, references,
                 new Features(enabled, limit), events, ids, CLOCK);
     }
@@ -593,7 +653,37 @@ final class ComplianceApplicationServiceTest {
         throw new AssertionError("expected ComplianceConflictException " + code);
     }
 
+    private static RuntimeException assertThrowsRuntime(Class<? extends RuntimeException> expected, ThrowingAction action) {
+        try {
+            action.run();
+        } catch (RuntimeException failure) {
+            if (!expected.isInstance(failure)) throw new AssertionError("unexpected runtime exception", failure);
+            return failure;
+        } catch (Exception failure) {
+            throw new AssertionError("unexpected checked exception", failure);
+        }
+        throw new AssertionError("expected " + expected.getSimpleName());
+    }
+
     private static void require(boolean condition, String message) { if (!condition) throw new AssertionError(message); }
+
+    private static final class FailingEventStore implements TransactionalEventStore {
+        private final Throwable cause;
+        FailingEventStore(Throwable cause) { this.cause = cause; }
+        @Override public <T> io.infranexum.core.events.TransactionOutcome<T> execute(TransactionalWork<T> work) {
+            throw new TransactionExecutionException("forced compliance test failure", cause);
+        }
+        @Override public List<OutboxRecord> claimBatch(String workerId, int limit, Instant now, Duration leaseDuration) {
+            throw new UnsupportedOperationException("not used");
+        }
+        @Override public void markPublished(DomainIdentifier eventId, String workerId, Instant publishedAt) {
+            throw new UnsupportedOperationException("not used");
+        }
+        @Override public OutboxStatus markFailed(
+                DomainIdentifier eventId, String workerId, Instant failedAt, RetryPolicy retryPolicy, Throwable failure) {
+            throw new UnsupportedOperationException("not used");
+        }
+    }
 
     @FunctionalInterface private interface ThrowingAction { void run() throws Exception; }
 }

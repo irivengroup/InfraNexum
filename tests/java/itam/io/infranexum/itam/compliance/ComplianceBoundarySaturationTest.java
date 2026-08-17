@@ -16,6 +16,7 @@ final class ComplianceBoundarySaturationTest {
 
     @Test void warrantySeparatesAllVerifiedAndCoverageOperands() {
         Warranty draft=Warranty.draft(ID,ASSET,PARTNER,TYPE,"standard",START,END,END,"CERT","proof",EvidenceSource.MANUAL,ACTOR,"reason",T);
+        assertEquals("standard", draft.coverageLevel());
         assertFalse(draft.verifiedComplete()); assertFalse(draft.warrantyCovers(START));
         Warranty active=draft.activate(ACTOR,"activate",T.plusSeconds(1));
         assertDoesNotThrow(()->active.revise(PARTNER,TYPE,"standard",START,END,END,"CERT","proof",EvidenceSource.MANUAL,ACTOR,"revise",T.plusSeconds(2)));
@@ -39,6 +40,7 @@ final class ComplianceBoundarySaturationTest {
 
     @Test void licenseSeparatesOpenEndedBoundedAndVerificationOperands() {
         SoftwareLicenseContract open=SoftwareLicenseContract.draft(ID,ASSET,PARTNER,"C-1","perpetual","production",1,START,null,END,"proof",EvidenceSource.MANUAL,ACTOR,"reason",T);
+        assertEquals("C-1", open.contractNumber());
         SoftwareLicenseContract openActive=open.activate(ACTOR,"activate",T.plusSeconds(1));
         assertTrue(openActive.covers(END.plusYears(10))); assertThrows(ComplianceConflictException.class,()->openActive.expire(ACTOR,"expire",T.plusSeconds(2),END.plusYears(10)));
         SoftwareLicenseContract bounded=SoftwareLicenseContract.draft(id(20),ASSET,PARTNER,"C-2","subscription","production",1,START,END,END,"proof",EvidenceSource.IMPORT,ACTOR,"reason",T).activate(ACTOR,"activate",T.plusSeconds(1));
@@ -61,6 +63,15 @@ final class ComplianceBoundarySaturationTest {
 
     @Test void supportAuthorizationCoversEveryFilterAndSubdivisionOperand() {
         SupportProviderAuthorization scoped=SupportProviderAuthorization.draft(ID,PARTNER,ORG,Set.of(MFG),Set.of("server"),Set.of(SUB),"24x7","UTC",Set.of("gold"),Set.of("email"),START,END,ACTOR,"reason",T).activate(ACTOR,"activate",T.plusSeconds(1),START);
+        assertEquals(Set.of(MFG), scoped.supportedManufacturerIds());
+        assertEquals(Set.of("server"), scoped.supportedObjectTypes());
+        assertEquals(Set.of(SUB), scoped.subdivisionScopes());
+        assertEquals("24x7", scoped.serviceHours());
+        assertEquals("UTC", scoped.timeZoneId());
+        assertEquals(Set.of("gold"), scoped.serviceLevels());
+        assertEquals(Set.of("email"), scoped.escalationContactTypes());
+        assertEquals(T, scoped.createdAt());
+        assertEquals("activate", scoped.lastReason());
         assertTrue(scoped.covers(MFG,"server",SUB,"gold",START));
         assertFalse(scoped.covers(id(99),"server",SUB,"gold",START));
         assertFalse(scoped.covers(MFG,"router",SUB,"gold",START));
