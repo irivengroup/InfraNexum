@@ -1,3 +1,13 @@
+# InfraNexum 2.0.0-alpha.0.108 — Jira Assets federated read
+
+`alpha.0.108` opens **PGM-10-E06** with the first official provider integration: a governed Jira Assets Cloud **federated-read** adapter. It uses the provider's current POST AQL surface with bounded offset pagination, keeps authority `EXTERNAL`, does not copy provider attributes into RSOT/ITAM, and never sends Atlassian credentials to the browser. Provider egress is restricted to `https://api.atlassian.com`, redirects are refused, timeouts/body sizes are bounded, and bearer tokens are accepted only through external `env:`/`file:` references.
+
+The Server exposes three capability-gated operations under `/api/v1/integrations/providers/jira-assets` for connector catalogue, health and AQL search. All use the existing `integrations.connector.read` permission. The Web adds a five-locale Integrations workspace only when `integrations.connectors` is enabled. Default product configuration contains no Jira tenant identifier or token.
+
+PGM-10-E05 remains formally pending its exact hosted Temurin 25/JaCoCo and PostgreSQL 17/18 promotion gates. PGM-10-E06 is **not complete** in this candidate: ServiceNow, OpenService, notifications and later synchronization/rollback slices remain downstream. See `docs/integrations-jira-assets.md` and `docs/implementation-status.md`.
+
+---
+
 ## 2.0.0-alpha.0.106
 
 Corrective de qualification et d’administration : filtrage IAM par statut et réactivation visible des comptes suspendus, prévention de l’auto-verrouillage par suspension/suppression, menu utilisateur topbar, navigation DCIM verticale Location/Infrastructure, correction d’affichage avancé IAM, durcissement ReDoc/DataTables, correction du bootstrap Organization Server et renforcement des tests JaCoCo/JDBC/Security sans réduction du seuil 98 %. PGM-10-E05 reste formellement non terminé jusqu’aux gates hébergés JDK 25 et PostgreSQL 17/18.

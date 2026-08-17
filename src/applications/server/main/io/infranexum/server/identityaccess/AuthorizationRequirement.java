@@ -48,6 +48,17 @@ record AuthorizationRequirement(
             return permission(PermissionCodes.PLATFORM_CAPABILITY_READ, AuthorizationScope.platform(), "platform", "quotas");
         }
 
+        if (normalized.equals("/api/v1/integrations/providers/jira-assets") && verb.equals("GET")) {
+            return permission(PermissionCodes.INTEGRATIONS_CONNECTOR_READ, AuthorizationScope.platform(), "integration-provider", "jira-assets");
+        }
+        if (normalized.matches("^/api/v1/integrations/providers/jira-assets/[^/]+/(health|objects/search)$")) {
+            boolean supported = (normalized.endsWith("/health") && verb.equals("GET"))
+                    || (normalized.endsWith("/objects/search") && verb.equals("POST"));
+            if (!supported) return unregistered(normalized);
+            String connectorKey = new io.infranexum.integrations.ConnectorKey(normalized.split("/")[6]).value();
+            return permission(PermissionCodes.INTEGRATIONS_CONNECTOR_READ, AuthorizationScope.platform(), "integration-connector", connectorKey);
+        }
+
         if (normalized.equals("/api/v1/integrations/dlq") && verb.equals("GET")) {
             return permission(PermissionCodes.INTEGRATIONS_DLQ_READ, AuthorizationScope.platform(), "integration-dlq", "collection");
         }

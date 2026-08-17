@@ -8,6 +8,7 @@ const ROUTES = Object.freeze({
   itam: Object.freeze({ viewId: 'itam-workspace', labelKey: 'nav.itam', titleKey: 'topbar.itam' }),
   dcim: Object.freeze({ viewId: 'dcim-workspace', labelKey: 'nav.dcim', titleKey: 'topbar.dcim' }),
   ddi: Object.freeze({ viewId: 'ddi-workspace', labelKey: 'nav.ddi', titleKey: 'topbar.ddi' }),
+  integrations: Object.freeze({ viewId: 'integrations-workspace', labelKey: 'nav.integrations', titleKey: 'topbar.integrations' }),
   swagger: Object.freeze({ viewId: 'swagger-workspace', labelKey: 'nav.swagger', titleKey: 'topbar.swagger' }),
   redoc: Object.freeze({ viewId: 'redoc-workspace', labelKey: 'nav.redoc', titleKey: 'topbar.redoc' }),
 });
@@ -74,6 +75,10 @@ export function setDdiAvailability(documentObject, enabled, windowObject = globa
   setCapabilityRouteAvailability(documentObject, 'ddi', enabled, windowObject);
 }
 
+export function setIntegrationsAvailability(documentObject, enabled, windowObject = globalThis.window) {
+  setCapabilityRouteAvailability(documentObject, 'integrations', enabled, windowObject);
+}
+
 function setCapabilityRouteAvailability(documentObject, route, enabled, windowObject) {
   const available = enabled === true;
   const link = documentObject?.getElementById?.(`nav-${route}`);
@@ -122,6 +127,7 @@ export function applyRoute(
   if (route === 'itam' && !capabilityRouteAvailable(documentObject, 'itam')) route = 'overview';
   if (route === 'dcim' && !capabilityRouteAvailable(documentObject, 'dcim')) route = 'overview';
   if (route === 'ddi' && !capabilityRouteAvailable(documentObject, 'ddi')) route = 'overview';
+  if (route === 'integrations' && !capabilityRouteAvailable(documentObject, 'integrations')) route = 'overview';
 
   for (const [name, definition] of Object.entries(ROUTES)) {
     const view = documentObject?.getElementById?.(definition.viewId);
@@ -254,6 +260,11 @@ export function buildCommands(documentObject, windowObject = globalThis.window) 
   if (capabilityRouteAvailable(documentObject, 'ddi')) {
     commands.splice(1, 0, command('ddi', 'command.category.workspace', 'command.ddi.title', 'command.ddi.description', () => {
       applyRoute(documentObject, 'ddi', windowObject);
+    }));
+  }
+  if (capabilityRouteAvailable(documentObject, 'integrations')) {
+    commands.splice(1, 0, command('integrations', 'command.category.workspace', 'command.integrations.title', 'command.integrations.description', () => {
+      applyRoute(documentObject, 'integrations', windowObject);
     }));
   }
   if (capabilityRouteAvailable(documentObject, 'dcim')) {

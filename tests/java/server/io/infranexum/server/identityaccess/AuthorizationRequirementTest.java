@@ -65,6 +65,22 @@ class AuthorizationRequirementTest {
     }
 
     @Test
+    void jiraAssetsFederatedReadRoutesUseConnectorReadPermissionAndFailClosedOnWrites() {
+        assertPermission("GET", "/api/v1/integrations/providers/jira-assets",
+                PermissionCodes.INTEGRATIONS_CONNECTOR_READ, ScopeKind.PLATFORM);
+        assertPermission("GET", "/api/v1/integrations/providers/jira-assets/jira-assets.test/health",
+                PermissionCodes.INTEGRATIONS_CONNECTOR_READ, ScopeKind.PLATFORM);
+        assertPermission("POST", "/api/v1/integrations/providers/jira-assets/jira-assets.test/objects/search",
+                PermissionCodes.INTEGRATIONS_CONNECTOR_READ, ScopeKind.PLATFORM);
+        assertEquals(AuthorizationRequirement.Type.UNREGISTERED,
+                AuthorizationRequirement.resolve("POST", "/api/v1/integrations/providers/jira-assets/jira-assets.test/health").type());
+        assertEquals(AuthorizationRequirement.Type.UNREGISTERED,
+                AuthorizationRequirement.resolve("DELETE", "/api/v1/integrations/providers/jira-assets/jira-assets.test/objects/search").type());
+        assertThrows(IllegalArgumentException.class,
+                () -> AuthorizationRequirement.resolve("GET", "/api/v1/integrations/providers/jira-assets/unsafe%2Fkey/health"));
+    }
+
+    @Test
     void unknownUnsupportedAndMalformedRoutesFailClosed() {
         assertEquals(AuthorizationRequirement.Type.UNREGISTERED,
                 AuthorizationRequirement.resolve("GET", "/api/v1/not-registered").type());

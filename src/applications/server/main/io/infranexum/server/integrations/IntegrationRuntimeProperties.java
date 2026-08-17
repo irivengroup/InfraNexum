@@ -1,6 +1,7 @@
 package io.infranexum.server.integrations;
 
 import io.infranexum.core.contracts.ConfigurationException;
+import io.infranexum.adapters.jiraassets.JiraAssetsSettings;
 import io.infranexum.core.events.ExponentialBackoffPolicy;
 import io.infranexum.core.events.RetryPolicy;
 import io.infranexum.integrations.ConnectorKey;
@@ -13,7 +14,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
-/** Validated Server settings for the PGM-10-E05 connector webhook/inbox runtime. */
+/** Validated Server settings for the PGM-10-E05 runtime and governed PGM-10-E06 providers. */
 @Validated
 @ConfigurationProperties(prefix = "infranexum.integrations")
 public record IntegrationRuntimeProperties(
@@ -28,7 +29,8 @@ public record IntegrationRuntimeProperties(
         double jitterRatio,
         int suspendAfterDeadLetters,
         Duration suspensionDuration,
-        Map<String, EndpointProperties> endpoints) {
+        Map<String, EndpointProperties> endpoints,
+        JiraAssetsProperties jiraAssets) {
 
     public IntegrationRuntimeProperties {
         if (webhookMaxPayloadBytes < 1 || webhookMaxPayloadBytes > 1_048_576) throw new ConfigurationException("integrations.webhookMaxPayloadBytes must be between 1 and 1048576");
@@ -43,6 +45,7 @@ public record IntegrationRuntimeProperties(
             if (normalized.putIfAbsent(key, Objects.requireNonNull(entry.getValue(), "integration endpoint")) != null) throw new ConfigurationException("duplicate normalized integration endpoint: " + key);
         }
         endpoints = Map.copyOf(normalized);
+        jiraAssets = Objects.requireNonNullElseGet(jiraAssets, () -> new JiraAssetsProperties(2_097_152, Map.of()));
     }
 
     RetryPolicy retryPolicy() {
@@ -54,6 +57,17 @@ public record IntegrationRuntimeProperties(
         endpoints.forEach((key, value) -> {
             ConnectorKey connectorKey = new ConnectorKey(key);
             result.put(connectorKey, new ConnectorWebhookEndpoint(connectorKey, value.handlerName(), value.secretReference(), value.maximumClockSkew(), value.enabled()));
+        });
+        return Map.copyOf(result);
+    }
+
+
+    Map<ConnectorKey, JiraAssetsSettings> jiraAssetsDefinitions() {
+        Map<ConnectorKey, JiraAssetsSettings> result = new LinkedHashMap<>();
+        jiraAssets.connectors().forEach((key, value) -> {
+            ConnectorKey connectorKey = new ConnectorKey(key);
+            result.put(connectorKey, new JiraAssetsSettings(
+                    connectorKey, value.cloudId(), value.workspaceId(), value.bearerTokenReference(), value.requestTimeout(), value.enabled()));
         });
         return Map.copyOf(result);
     }
@@ -70,4 +84,35 @@ public record IntegrationRuntimeProperties(
             if (maximumClockSkew == null) throw new ConfigurationException("integration endpoint maximumClockSkew must be configured");
         }
     }
+
+    /** Jira Assets provider configuration. Connector count is bounded to keep metric cardinality controlled. */
+    public record JiraAssetsProperties(int maximumResponseBytes, Map<String, JiraAssetsConnectorProperties> connectors) {
+        public JiraAssetsProperties {
+            if (maximumResponseBytes < 1 || maximumResponseBytes > 8_388_608) {
+                throw new ConfigurationException("integrations.jiraAssets.maximumResponseBytes must be between 1 and 8388608");
+            }
+            Map<String, JiraAssetsConnectorProperties> normalized = new LinkedHashMap<>();
+            for (Map.Entry<String, JiraAssetsConnectorProperties> entry : Objects.requireNonNullElse(connectors, Map.<String, JiraAssetsConnectorProperties>of()).entrySet()) {
+                String key = new ConnectorKey(entry.getKey()).value();
+                if (normalized.putIfAbsent(key, Objects.requireNonNull(entry.getValue(), "Jira Assets connector")) != null) {
+                    throw new ConfigurationException("duplicate normalized Jira Assets connector: " + key);
+                }
+            }
+            if (normalized.size() > 64) throw new ConfigurationException("at most 64 Jira Assets connectors may be configured per Server runtime");
+            connectors = Map.copyOf(normalized);
+        }
+    }
+
+    /** One Jira Assets Cloud instance. Secrets remain external through a reference only. */
+    public record JiraAssetsConnectorProperties(
+            String cloudId,
+            String workspaceId,
+            String bearerTokenReference,
+            Duration requestTimeout,
+            boolean enabled) {
+        public JiraAssetsConnectorProperties {
+            new JiraAssetsSettings(new ConnectorKey("validation.connector"), cloudId, workspaceId, bearerTokenReference, requestTimeout, enabled);
+        }
+    }
+
 }

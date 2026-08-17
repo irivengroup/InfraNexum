@@ -1,5 +1,7 @@
 package io.infranexum.server.integrations;
 
+import io.infranexum.adapters.jiraassets.JdkJiraAssetsTransport;
+import io.infranexum.adapters.jiraassets.JiraAssetsTransport;
 import io.infranexum.adapters.persistence.jdbc.JdbcConnectorInboxRepository;
 import io.infranexum.adapters.persistence.jdbc.JdbcDatabaseDialect;
 import io.infranexum.core.audit.AuditJournal;
@@ -9,6 +11,7 @@ import io.infranexum.integrations.*;
 import io.infranexum.server.configuration.ServerRuntimeProperties;
 import io.infranexum.server.persistence.PersistenceRuntimeProperties;
 import io.micrometer.core.instrument.MeterRegistry;
+import java.net.http.HttpClient;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.util.Arrays;
@@ -45,6 +48,47 @@ public class IntegrationRuntimeConfiguration {
     }
 
     @Bean ConnectorSecretProvider connectorSecretProvider() { return new ExternalConnectorSecretProvider(); }
+
+    @Bean
+    JiraAssetsTransport jiraAssetsTransport(IntegrationRuntimeProperties properties) {
+        HttpClient client = HttpClient.newBuilder()
+                .connectTimeout(java.time.Duration.ofSeconds(10))
+                .followRedirects(HttpClient.Redirect.NEVER)
+                .version(HttpClient.Version.HTTP_2)
+                .build();
+        return new JdkJiraAssetsTransport(client, properties.jiraAssets().maximumResponseBytes());
+    }
+
+    @Bean
+    ConfiguredJiraAssetsConnectorRegistry jiraAssetsConnectorRegistry(
+            IntegrationRuntimeProperties properties,
+            JiraAssetsTransport transport,
+            ConnectorSecretProvider secrets,
+            tools.jackson.databind.ObjectMapper json) {
+        return new ConfiguredJiraAssetsConnectorRegistry(properties.jiraAssetsDefinitions(), transport, secrets, json);
+    }
+
+    @Bean
+    SmartInitializingSingleton jiraAssetsSecretValidator(
+            IntegrationRuntimeProperties properties, ConnectorSecretProvider secrets) {
+        return () -> {
+            for (var definition : properties.jiraAssetsDefinitions().values()) {
+                if (!definition.enabled()) continue;
+                byte[] resolved = secrets.resolve(definition.bearerTokenReference());
+                Arrays.fill(resolved, (byte) 0);
+            }
+        };
+    }
+
+    @Bean
+    JiraAssetsOperationsService jiraAssetsOperationsService(
+            ConfiguredJiraAssetsConnectorRegistry registry,
+            AuditJournal audit,
+            @Qualifier("integrationIdentifiers") UuidV7Generator ids,
+            @Qualifier("platformClock") Clock clock,
+            MeterRegistry meters) {
+        return new JiraAssetsOperationsService(registry, audit, ids, clock, meters);
+    }
 
     @Bean
     ImmutableConnectorHandlerRegistry connectorHandlerRegistry(ObjectProvider<ConnectorDeliveryHandler> handlers) {

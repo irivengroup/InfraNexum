@@ -28,9 +28,9 @@ class ApiPaginationRuntimeContractTests(unittest.TestCase):
                 for operation in item.values():
                     if isinstance(operation, dict) and operation.get("x-infranexum-pagination"):
                         modes[operation["operationId"]] = operation["x-infranexum-pagination"]
-        self.assertEqual(16, len(modes))
+        self.assertEqual(18, len(modes))
         self.assertEqual(8, sum(mode == "cursor" for mode in modes.values()))
-        self.assertEqual(8, sum(mode == "offset" for mode in modes.values()))
+        self.assertEqual(10, sum(mode == "offset" for mode in modes.values()))
 
     def test_cursor_collections_use_keyset_queries_and_next_cursor_headers(self) -> None:
         dcim_controller = (SERVER / "dcim/DcimPhysicalController.java").read_text(encoding="utf-8")
@@ -72,7 +72,15 @@ class ApiPaginationRuntimeContractTests(unittest.TestCase):
                 for operation in item.values():
                     if not isinstance(operation, dict) or operation.get("x-infranexum-pagination") != "offset":
                         continue
-                    offset = next(parameter for parameter in operation.get("parameters", []) if parameter.get("name") == "offset")
+                    parameters = operation.get("parameters", [])
+                    resolved = []
+                    for parameter in parameters:
+                        reference = parameter.get("$ref") if isinstance(parameter, dict) else None
+                        if reference and reference.startswith("#/components/parameters/"):
+                            resolved.append(document["components"]["parameters"][reference.rsplit("/", 1)[-1]])
+                        else:
+                            resolved.append(parameter)
+                    offset = next(parameter for parameter in resolved if parameter.get("name") == "offset")
                     self.assertEqual(1_000_000, offset["schema"]["maximum"])
 
     def test_legacy_array_bodies_and_cli_overloads_are_preserved(self) -> None:

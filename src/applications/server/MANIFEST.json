@@ -19,7 +19,9 @@
     "components.core.compatibility",
     "components.domains.itam",
     "components.domains.dcim",
-    "components.domains.ddi"
+    "components.domains.ddi",
+    "components.domains.integrations",
+    "components.adapters.jira-assets"
   ],
   "source_baseline": [
     "PGM-02-E01",
@@ -36,6 +38,8 @@
     "PGM-06-E03",
     "PGM-07-E01",
     "PGM-07-E04",
-    "PGM-08-E01"
+    "PGM-08-E01",
+    "PGM-10-E05",
+    "PGM-10-E06"
   ]
 }

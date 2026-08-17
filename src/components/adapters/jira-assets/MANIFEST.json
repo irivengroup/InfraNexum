@@ -1,0 +1,10 @@
+{
+  "schema": "infranexum.component-manifest/v1",
+  "id": "components.adapters.jira-assets",
+  "kind": "adapter",
+  "owner": "team.automation-ecosystem",
+  "lifecycle": "active",
+  "languages": ["java"],
+  "dependencies": ["components.domains.integrations", "components.core.contracts"],
+  "source_baseline": ["PGM-10-E06", "PGM-10-E05", "INT-ADV-003", "INT-ADV-007"]
+}

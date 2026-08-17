@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum Integrations Connectors API
-  version: 2.0.0-alpha.0.107
+  version: 2.0.0-alpha.0.108
 tags:
 - name: Integrations / Connectors / Webhooks
   description: Authenticated connector webhook admission into the durable inbox.
@@ -9,19 +9,26 @@ tags:
   description: Operational dead-letter inspection and controlled replay.
 - name: Integrations / Connectors / Runtime
   description: Connector runtime health, suspension state and operator recovery.
+- name: Integrations / Jira Assets / Catalogue
+  description: Configured Jira Assets Cloud connector instances and provider health.
+- name: Integrations / Jira Assets / Federated Read
+  description: Governed read-only AQL queries returning a minimized external projection.
 x-tagGroups:
 - name: Integrations
   tags:
   - Integrations / Connectors / Webhooks
   - Integrations / Connectors / Dead Letter Queue
   - Integrations / Connectors / Runtime
+  - Integrations / Jira Assets / Catalogue
+  - Integrations / Jira Assets / Federated Read
 paths:
   /api/v1/integrations/webhooks/{connectorKey}:
     parameters:
     - $ref: '#/components/parameters/CorrelationId'
     - $ref: '#/components/parameters/ConnectorKey'
     post:
-      tags: [Integrations / Connectors / Webhooks]
+      tags:
+      - Integrations / Connectors / Webhooks
       operationId: admitConnectorWebhook
       summary: Authenticate and durably admit a connector webhook delivery
       security:
@@ -43,24 +50,34 @@ paths:
         '202':
           description: Delivery admitted or recognized as an identical duplicate.
           headers:
-            X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}
-            Cache-Control: {$ref: '#/components/headers/NoStore'}
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/WebhookAdmission'}
-        '400': {$ref: '#/components/responses/BadRequest'}
-        '401': {$ref: '#/components/responses/Unauthorized'}
-        '404': {$ref: '#/components/responses/NotFound'}
-        '409': {$ref: '#/components/responses/Conflict'}
-        '415': {$ref: '#/components/responses/UnsupportedMediaType'}
-        '503': {$ref: '#/components/responses/ServiceUnavailable'}
+              schema:
+                $ref: '#/components/schemas/WebhookAdmission'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
       x-infranexum-capability: integrations.connectors
       x-infranexum-permission:
         mode: connector-signature
       x-infranexum-idempotency: connector-delivery
   /api/v1/integrations/dlq:
     get:
-      tags: [Integrations / Connectors / Dead Letter Queue]
+      tags:
+      - Integrations / Connectors / Dead Letter Queue
       operationId: listConnectorDeadLetters
       summary: List connector deliveries in the dead-letter queue
       security:
@@ -88,19 +105,28 @@ paths:
         '200':
           description: Bounded dead-letter page. Payload bodies are deliberately excluded.
           headers:
-            X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}
-            Cache-Control: {$ref: '#/components/headers/NoStore'}
-            X-Page-Limit: {$ref: '#/components/headers/PageLimit'}
-            X-Next-Offset: {$ref: '#/components/headers/NextOffset'}
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            X-Page-Limit:
+              $ref: '#/components/headers/PageLimit'
+            X-Next-Offset:
+              $ref: '#/components/headers/NextOffset'
           content:
             application/json:
               schema:
                 type: array
-                items: {$ref: '#/components/schemas/DeadLetter'}
-        '400': {$ref: '#/components/responses/BadRequest'}
-        '401': {$ref: '#/components/responses/Unauthorized'}
-        '403': {$ref: '#/components/responses/Forbidden'}
-        '503': {$ref: '#/components/responses/ServiceUnavailable'}
+                items:
+                  $ref: '#/components/schemas/DeadLetter'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
       x-infranexum-capability: integrations.connectors
       x-infranexum-permission:
         mode: permission
@@ -108,7 +134,8 @@ paths:
       x-infranexum-pagination: offset
   /api/v1/integrations/dlq/{deliveryId}/replay:
     post:
-      tags: [Integrations / Connectors / Dead Letter Queue]
+      tags:
+      - Integrations / Connectors / Dead Letter Queue
       operationId: replayConnectorDeadLetter
       summary: Requeue one dead-letter delivery for controlled replay
       security:
@@ -121,22 +148,32 @@ paths:
         required: false
         content:
           application/json:
-            schema: {$ref: '#/components/schemas/ReasonRequest'}
+            schema:
+              $ref: '#/components/schemas/ReasonRequest'
       responses:
         '200':
           description: Delivery requeued as pending.
           headers:
-            X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}
-            Cache-Control: {$ref: '#/components/headers/NoStore'}
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/DeadLetter'}
-        '400': {$ref: '#/components/responses/BadRequest'}
-        '401': {$ref: '#/components/responses/Unauthorized'}
-        '403': {$ref: '#/components/responses/Forbidden'}
-        '404': {$ref: '#/components/responses/NotFound'}
-        '409': {$ref: '#/components/responses/Conflict'}
-        '503': {$ref: '#/components/responses/ServiceUnavailable'}
+              schema:
+                $ref: '#/components/schemas/DeadLetter'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
       x-infranexum-capability: integrations.connectors
       x-infranexum-permission:
         mode: permission
@@ -144,7 +181,8 @@ paths:
       x-infranexum-idempotency: required
   /api/v1/integrations/connectors/{connectorKey}/runtime:
     get:
-      tags: [Integrations / Connectors / Runtime]
+      tags:
+      - Integrations / Connectors / Runtime
       operationId: getConnectorRuntimeState
       summary: Read connector processing and suspension state
       security:
@@ -156,22 +194,30 @@ paths:
         '200':
           description: Connector runtime state and durable queue gauges.
           headers:
-            X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}
-            Cache-Control: {$ref: '#/components/headers/NoStore'}
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/RuntimeState'}
-        '400': {$ref: '#/components/responses/BadRequest'}
-        '401': {$ref: '#/components/responses/Unauthorized'}
-        '403': {$ref: '#/components/responses/Forbidden'}
-        '503': {$ref: '#/components/responses/ServiceUnavailable'}
+              schema:
+                $ref: '#/components/schemas/RuntimeState'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
       x-infranexum-capability: integrations.connectors
       x-infranexum-permission:
         mode: permission
         code: integrations.connector.read
   /api/v1/integrations/connectors/{connectorKey}/resume:
     post:
-      tags: [Integrations / Connectors / Runtime]
+      tags:
+      - Integrations / Connectors / Runtime
       operationId: resumeConnector
       summary: Explicitly clear a connector runtime suspension
       security:
@@ -184,25 +230,169 @@ paths:
         required: false
         content:
           application/json:
-            schema: {$ref: '#/components/schemas/ReasonRequest'}
+            schema:
+              $ref: '#/components/schemas/ReasonRequest'
       responses:
         '200':
           description: Connector runtime state after explicit resume.
           headers:
-            X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}
-            Cache-Control: {$ref: '#/components/headers/NoStore'}
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/RuntimeState'}
-        '400': {$ref: '#/components/responses/BadRequest'}
-        '401': {$ref: '#/components/responses/Unauthorized'}
-        '403': {$ref: '#/components/responses/Forbidden'}
-        '503': {$ref: '#/components/responses/ServiceUnavailable'}
+              schema:
+                $ref: '#/components/schemas/RuntimeState'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
       x-infranexum-capability: integrations.connectors
       x-infranexum-permission:
         mode: permission
         code: integrations.connector.resume
       x-infranexum-idempotency: required
+  /api/v1/integrations/providers/jira-assets:
+    get:
+      tags:
+      - Integrations / Jira Assets / Catalogue
+      operationId: listJiraAssetsConnectors
+      summary: List configured Jira Assets connector instances
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/Offset'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Bounded connector catalogue. Tenant identifiers and secret references are excluded.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            X-Page-Limit:
+              $ref: '#/components/headers/PageLimit'
+            X-Next-Offset:
+              $ref: '#/components/headers/NextOffset'
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 64
+                items:
+                  $ref: '#/components/schemas/JiraAssetsConnectorDescriptor'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.connector.read
+      x-infranexum-pagination: offset
+  /api/v1/integrations/providers/jira-assets/{connectorKey}/health:
+    get:
+      tags:
+      - Integrations / Jira Assets / Catalogue
+      operationId: checkJiraAssetsConnectorHealth
+      summary: Check read-only Jira Assets provider connectivity and scopes
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/ConnectorKey'
+      responses:
+        '200':
+          description: Provider health with governance metadata.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JiraAssetsHealth'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.connector.read
+  /api/v1/integrations/providers/jira-assets/{connectorKey}/objects/search:
+    post:
+      tags:
+      - Integrations / Jira Assets / Federated Read
+      operationId: searchJiraAssetsObjects
+      summary: Search Jira Assets objects through a governed AQL federated read
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/ConnectorKey'
+      - $ref: '#/components/parameters/Offset'
+      - $ref: '#/components/parameters/Limit'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JiraAssetsSearchRequest'
+      responses:
+        '200':
+          description: Minimized external object page. Jira Assets attributes are not copied into InfraNexum.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            X-Page-Limit:
+              $ref: '#/components/headers/PageLimit'
+            X-Next-Offset:
+              $ref: '#/components/headers/NextOffset'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JiraAssetsRemoteObject'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.connector.read
+      x-infranexum-pagination: offset
+      x-infranexum-idempotency: repeatable
 components:
   securitySchemes:
     LocalSessionCookie:
@@ -220,22 +410,26 @@ components:
       in: header
       required: false
       description: Optional canonical lowercase RFC 9562 UUIDv7 correlation identifier.
-      schema: {$ref: '#/components/schemas/UuidV7'}
+      schema:
+        $ref: '#/components/schemas/UuidV7'
     ConnectorKey:
       name: connectorKey
       in: path
       required: true
-      schema: {$ref: '#/components/schemas/ConnectorKey'}
+      schema:
+        $ref: '#/components/schemas/ConnectorKey'
     OptionalConnectorKey:
       name: connectorKey
       in: query
       required: false
-      schema: {$ref: '#/components/schemas/ConnectorKey'}
+      schema:
+        $ref: '#/components/schemas/ConnectorKey'
     DeliveryId:
       name: deliveryId
       in: path
       required: true
-      schema: {$ref: '#/components/schemas/UuidV7'}
+      schema:
+        $ref: '#/components/schemas/UuidV7'
     ConnectorDeliveryId:
       name: X-InfraNexum-Delivery-ID
       in: header
@@ -285,45 +479,98 @@ components:
   headers:
     CorrelationId:
       description: Canonical UUIDv7 correlation identifier assigned to the request.
-      schema: {$ref: '#/components/schemas/UuidV7'}
+      schema:
+        $ref: '#/components/schemas/UuidV7'
     NoStore:
       description: Prevents caching of connector operational state.
-      schema: {type: string, const: no-store}
+      schema:
+        type: string
+        const: no-store
     PageLimit:
       description: Effective bounded page size.
-      schema: {type: integer, minimum: 1, maximum: 200}
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
     NextOffset:
       description: Offset to request for the next page; omitted only when no later records exist.
-      schema: {type: integer, minimum: 0, maximum: 1000000}
+      schema:
+        type: integer
+        minimum: 0
+        maximum: 1000000
   responses:
     BadRequest:
       description: Invalid connector request, header or payload.
-      headers: {X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}}
-      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
     Unauthorized:
       description: Webhook signature or local session authentication failed.
-      headers: {X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}}
-      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
     Forbidden:
       description: Authenticated operator lacks the required integration permission.
-      headers: {X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}}
-      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
     NotFound:
       description: Connector endpoint or delivery is unavailable.
-      headers: {X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}}
-      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
     Conflict:
       description: Delivery identifier conflict or delivery state prevents the requested transition.
-      headers: {X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}}
-      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
     UnsupportedMediaType:
       description: Webhook admission requires application/json.
-      headers: {X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}}
-      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
     ServiceUnavailable:
       description: Durable integration runtime is unavailable or failed closed.
-      headers: {X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}}
-      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    BadGateway:
+      description: External provider rejected the connector credential or returned an unsupported response.
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
   schemas:
     UuidV7:
       type: string
@@ -334,61 +581,262 @@ components:
       minLength: 3
       maxLength: 80
       pattern: ^[a-z0-9][a-z0-9._-]{2,79}$
+    JiraAssetsConnectorDescriptor:
+      type: object
+      additionalProperties: false
+      required:
+      - connectorKey
+      - provider
+      - direction
+      - authority
+      - enabled
+      properties:
+        connectorKey:
+          $ref: '#/components/schemas/ConnectorKey'
+        provider:
+          type: string
+          const: jira-assets
+        direction:
+          type: string
+          const: FEDERATED_READ
+        authority:
+          type: string
+          const: EXTERNAL
+        enabled:
+          type: boolean
+    JiraAssetsHealth:
+      type: object
+      additionalProperties: false
+      required:
+      - connectorKey
+      - status
+      - provider
+      - direction
+      - authority
+      properties:
+        connectorKey:
+          $ref: '#/components/schemas/ConnectorKey'
+        status:
+          type: string
+          const: UP
+        provider:
+          type: string
+          const: jira-assets
+        direction:
+          type: string
+          const: FEDERATED_READ
+        authority:
+          type: string
+          const: EXTERNAL
+    JiraAssetsSearchRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - aql
+      properties:
+        aql:
+          type: string
+          minLength: 1
+          maxLength: 4096
+    JiraAssetsRemoteObject:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - globalId
+      - objectKey
+      - label
+      - objectTypeId
+      - objectTypeName
+      properties:
+        id:
+          type: string
+          minLength: 1
+          maxLength: 1024
+        globalId:
+          type: string
+          minLength: 1
+          maxLength: 1024
+        objectKey:
+          type: string
+          minLength: 1
+          maxLength: 1024
+        label:
+          type: string
+          minLength: 1
+          maxLength: 1024
+        objectTypeId:
+          type: string
+          minLength: 1
+          maxLength: 1024
+        objectTypeName:
+          type: string
+          minLength: 1
+          maxLength: 1024
     WebhookAdmission:
       type: object
       additionalProperties: false
-      required: [deliveryId, connectorKey, externalDeliveryId, status, receivedAt]
+      required:
+      - deliveryId
+      - connectorKey
+      - externalDeliveryId
+      - status
+      - receivedAt
       properties:
-        deliveryId: {$ref: '#/components/schemas/UuidV7'}
-        connectorKey: {$ref: '#/components/schemas/ConnectorKey'}
-        externalDeliveryId: {type: string, minLength: 1, maxLength: 200}
-        status: {type: string, enum: [ADMITTED, DUPLICATE]}
-        receivedAt: {type: string, format: date-time}
+        deliveryId:
+          $ref: '#/components/schemas/UuidV7'
+        connectorKey:
+          $ref: '#/components/schemas/ConnectorKey'
+        externalDeliveryId:
+          type: string
+          minLength: 1
+          maxLength: 200
+        status:
+          type: string
+          enum:
+          - ADMITTED
+          - DUPLICATE
+        receivedAt:
+          type: string
+          format: date-time
     DeadLetter:
       type: object
       additionalProperties: false
-      required: [deliveryId, connectorKey, externalDeliveryId, status, receivedAt, attempts, replayCount]
+      required:
+      - deliveryId
+      - connectorKey
+      - externalDeliveryId
+      - status
+      - receivedAt
+      - attempts
+      - replayCount
       properties:
-        deliveryId: {$ref: '#/components/schemas/UuidV7'}
-        connectorKey: {$ref: '#/components/schemas/ConnectorKey'}
-        externalDeliveryId: {type: string, minLength: 1, maxLength: 200}
-        receivedAt: {type: string, format: date-time}
-        status: {type: string, enum: [PENDING, DEAD_LETTER]}
-        attempts: {type: integer, minimum: 0}
-        failureClass: {type: [string, 'null'], minLength: 1, maxLength: 1024}
-        replayCount: {type: integer, minimum: 0}
-        lastReplayAt: {type: [string, 'null'], format: date-time}
+        deliveryId:
+          $ref: '#/components/schemas/UuidV7'
+        connectorKey:
+          $ref: '#/components/schemas/ConnectorKey'
+        externalDeliveryId:
+          type: string
+          minLength: 1
+          maxLength: 200
+        receivedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+          - PENDING
+          - DEAD_LETTER
+        attempts:
+          type: integer
+          minimum: 0
+        failureClass:
+          type:
+          - string
+          - 'null'
+          minLength: 1
+          maxLength: 1024
+        replayCount:
+          type: integer
+          minimum: 0
+        lastReplayAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
     RuntimeState:
       type: object
       additionalProperties: false
-      required: [connectorKey, consecutiveDeadLetters, suspended, backlog, deadLetters]
+      required:
+      - connectorKey
+      - consecutiveDeadLetters
+      - suspended
+      - backlog
+      - deadLetters
       properties:
-        connectorKey: {$ref: '#/components/schemas/ConnectorKey'}
-        consecutiveDeadLetters: {type: integer, minimum: 0}
-        suspended: {type: boolean}
-        suspendedUntil: {type: [string, 'null'], format: date-time}
-        backlog: {type: integer, minimum: 0}
-        deadLetters: {type: integer, minimum: 0}
+        connectorKey:
+          $ref: '#/components/schemas/ConnectorKey'
+        consecutiveDeadLetters:
+          type: integer
+          minimum: 0
+        suspended:
+          type: boolean
+        suspendedUntil:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        backlog:
+          type: integer
+          minimum: 0
+        deadLetters:
+          type: integer
+          minimum: 0
     ReasonRequest:
       type: object
       additionalProperties: false
       properties:
-        reason: {type: string, minLength: 2, maxLength: 512}
+        reason:
+          type: string
+          minLength: 2
+          maxLength: 512
     Problem:
       type: object
-      required: [type, title, status, detail, instance, code, message, details, metadata, occurred_at, timestamp, correlation_id, trace_id]
+      required:
+      - type
+      - title
+      - status
+      - detail
+      - instance
+      - code
+      - message
+      - details
+      - metadata
+      - occurred_at
+      - timestamp
+      - correlation_id
+      - trace_id
       properties:
-        type: {type: string, description: Stable InfraNexum problem type URI.}
-        title: {type: string, description: Short human-readable problem summary.}
-        status: {type: integer, minimum: 400, maximum: 599}
-        detail: {type: string, description: Safe redacted problem detail.}
-        instance: {type: string, description: Request URI associated with this occurrence.}
-        code: {type: string, description: Stable machine-readable InfraNexum error code.}
-        message: {type: string, deprecated: true, description: Legacy compatibility alias of detail.}
-        details: {type: object, additionalProperties: true, description: Structured validation or conflict details.}
-        metadata: {type: object, additionalProperties: true, description: Reserved non-sensitive problem metadata.}
-        occurred_at: {type: string, format: date-time, description: UTC timestamp of this problem occurrence.}
-        timestamp: {type: string, format: date-time, deprecated: true, description: Legacy compatibility alias of occurred_at.}
+        type:
+          type: string
+          description: Stable InfraNexum problem type URI.
+        title:
+          type: string
+          description: Short human-readable problem summary.
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+          description: Safe redacted problem detail.
+        instance:
+          type: string
+          description: Request URI associated with this occurrence.
+        code:
+          type: string
+          description: Stable machine-readable InfraNexum error code.
+        message:
+          type: string
+          deprecated: true
+          description: Legacy compatibility alias of detail.
+        details:
+          type: object
+          additionalProperties: true
+          description: Structured validation or conflict details.
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Reserved non-sensitive problem metadata.
+        occurred_at:
+          type: string
+          format: date-time
+          description: UTC timestamp of this problem occurrence.
+        timestamp:
+          type: string
+          format: date-time
+          deprecated: true
+          description: Legacy compatibility alias of occurred_at.
         correlation_id:
           type: string
           format: uuid

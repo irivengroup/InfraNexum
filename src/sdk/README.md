@@ -13,4 +13,4 @@
 - delivery is explicitly idempotent, checkpoint-aware and replay-controlled; no exactly-once guarantee is claimed;
 - HMAC-SHA256 webhook helpers implement timestamp and delivery-id replay protection.
 
-The SDK intentionally does **not** execute non-native packages inside the Server process and does not persist connector credentials. Sandboxed package execution remains governed by the extension/runtime work that follows; durable webhook inbox and DLQ operational replay remain the next phase of PGM-10-E05.
+The SDK intentionally does **not** execute non-native packages inside the Server process and does not persist connector credentials. Sandboxed package execution remains governed by the extension/runtime work that follows. Durable webhook inbox, DLQ replay and bounded retry/suspension are implemented by the Server runtime; provider-specific integrations build on that boundary without moving third-party credentials or domain authority into the SDK.

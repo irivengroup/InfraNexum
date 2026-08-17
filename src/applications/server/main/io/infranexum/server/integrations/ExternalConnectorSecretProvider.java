@@ -29,7 +29,7 @@ final class ExternalConnectorSecretProvider implements ConnectorSecretProvider {
             }
             String value = System.getenv(name);
             if (value == null) {
-                throw new ConfigurationException("connector webhook secret environment variable is not defined: " + name);
+                throw new ConfigurationException("connector secret environment variable is not defined: " + name);
             }
             return bounded(value.getBytes(StandardCharsets.UTF_8));
         }
@@ -57,7 +57,7 @@ final class ExternalConnectorSecretProvider implements ConnectorSecretProvider {
                 }
                 if (buffer.position() > MAX_SECRET_BYTES) {
                     Arrays.fill(buffer.array(), (byte) 0);
-                    throw new ConfigurationException("connector webhook secret must contain 32..4096 bytes");
+                    throw new ConfigurationException("connector secret must contain 32..4096 bytes");
                 }
                 byte[] value = Arrays.copyOf(buffer.array(), buffer.position());
                 Arrays.fill(buffer.array(), (byte) 0);
@@ -71,7 +71,7 @@ final class ExternalConnectorSecretProvider implements ConnectorSecretProvider {
     private static byte[] bounded(byte[] value) {
         if (value.length < MIN_SECRET_BYTES || value.length > MAX_SECRET_BYTES) {
             Arrays.fill(value, (byte) 0);
-            throw new ConfigurationException("connector webhook secret must contain 32..4096 bytes");
+            throw new ConfigurationException("connector secret must contain 32..4096 bytes");
         }
         return value;
     }

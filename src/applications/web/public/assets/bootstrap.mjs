@@ -1,4 +1,4 @@
-import { initializeAdminShell, setDcimAvailability, setDdiAvailability, setIdentityAccessAvailability, setItamAvailability, setOrganizationAvailability, setRsotAvailability } from './admin-shell.mjs';
+import { initializeAdminShell, setDcimAvailability, setDdiAvailability, setIntegrationsAvailability, setIdentityAccessAvailability, setItamAvailability, setOrganizationAvailability, setRsotAvailability } from './admin-shell.mjs';
 import { initializeApiDocumentation } from './api-documentation.mjs';
 import { initializeLocalAuthentication } from './auth.mjs';
 import { initializeIdentityAccess } from './identity-access.mjs';
@@ -12,6 +12,7 @@ import { initializeRsotWorkspace } from './rsot-workspace.mjs';
 import { initializeItamWorkspace } from './itam-workspace.mjs';
 import { initializeDcimWorkspace } from './dcim-workspace.mjs';
 import { initializeDdiIpamWorkspace } from './ddi-ipam-workspace.mjs';
+import { initializeIntegrationsWorkspace } from './integrations-workspace.mjs';
 import {
   initializeLocalization,
   setLocalizedAriaLabel,
@@ -73,6 +74,9 @@ export function validatePublicConfiguration(value) {
   if (typeof value.ddiIpamEnabled !== 'boolean') {
     throw new Error('Runtime configuration ddiIpamEnabled is invalid');
   }
+  if (typeof value.integrationsConnectorsEnabled !== 'boolean') {
+    throw new Error('Runtime configuration integrationsConnectorsEnabled is invalid');
+  }
   if (value.itamAssetsEnabled && !value.itamPartnersEnabled) {
     throw new Error('Runtime configuration ITAM assets require ITAM partners');
   }
@@ -126,6 +130,7 @@ export function renderRuntimeConfiguration(documentObject, configuration) {
   setItamAvailability(documentObject, configuration.itamPartnersEnabled || configuration.itamAssetsEnabled || configuration.itamComplianceEnabled);
   setDcimAvailability(documentObject, configuration.dcimFacilitiesEnabled);
   setDdiAvailability(documentObject, configuration.ddiIpamEnabled);
+  setIntegrationsAvailability(documentObject, configuration.integrationsConnectorsEnabled);
   if (configuration.organizationFoundationEnabled) {
     void loadOrganizations(documentObject, configuration);
   } else {
@@ -149,6 +154,7 @@ export function renderRuntimeFailure(documentObject) {
   setItamAvailability(documentObject, false);
   setDcimAvailability(documentObject, false);
   setDdiAvailability(documentObject, false);
+  setIntegrationsAvailability(documentObject, false);
 }
 
 export function initializeTheme(documentObject = document, storageObject = globalThis.localStorage) {
@@ -395,6 +401,7 @@ if (typeof document !== 'undefined') {
     try { await initializeItamWorkspace(document, configuration, fetch); } catch (error) { console.error('ITAM workspace initialization failed', error); }
     try { await initializeDcimWorkspace(document, configuration, fetch); } catch (error) { console.error('DCIM workspace initialization failed', error); }
     try { await initializeDdiIpamWorkspace(document, configuration, fetch); } catch (error) { console.error('DDI/IPAM workspace initialization failed', error); }
+    try { await initializeIntegrationsWorkspace(document, configuration, fetch); } catch (error) { console.error('Integrations workspace initialization failed', error); }
 
     notificationCenter?.upsert?.({
       id: 'web-runtime', severity: 'success', titleKey: 'notification.runtimeReady.title', bodyKey: 'notification.runtimeReady.body',

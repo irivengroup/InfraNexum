@@ -8,6 +8,7 @@ import {
   normalizeRoute,
   routeForHash,
   setIdentityAccessAvailability,
+  setIntegrationsAvailability,
   setDcimAvailability,
   setItamAvailability,
   setOrganizationAvailability,
@@ -34,7 +35,7 @@ class Element {
   click() { this.clicked = true; }
 }
 
-function shellDocument({ organizations = false, access = false, rsot = false, itam = false, dcim = false } = {}) {
+function shellDocument({ organizations = false, access = false, rsot = false, itam = false, dcim = false, integrations = false } = {}) {
   const root = new Element({ lang: 'en', 'data-route': 'overview' });
   const overviewView = new Element();
   const workspace = new Element({ 'data-capability-enabled': String(organizations) });
@@ -42,6 +43,7 @@ function shellDocument({ organizations = false, access = false, rsot = false, it
   const rsotWorkspace = new Element({ 'data-capability-enabled': String(rsot) });
   const itamWorkspace = new Element({ 'data-capability-enabled': String(itam) });
   const dcimWorkspace = new Element({ 'data-capability-enabled': String(dcim) });
+  const integrationsWorkspace = new Element({ 'data-capability-enabled': String(integrations) });
   const overviewLink = new Element({ 'data-route': 'overview', class: 'nav-link active' });
   const organizationsLink = new Element({ 'data-route': 'organizations', class: 'nav-link' });
   organizationsLink.hidden = !organizations;
@@ -53,6 +55,8 @@ function shellDocument({ organizations = false, access = false, rsot = false, it
   itamLink.hidden = !itam;
   const dcimLink = new Element({ 'data-route': 'dcim', 'data-capability-enabled': String(dcim), class: 'nav-link' });
   dcimLink.hidden = !dcim;
+  const integrationsLink = new Element({ 'data-route': 'integrations', 'data-capability-enabled': String(integrations), class: 'nav-link' });
+  integrationsLink.hidden = !integrations;
   const breadcrumb = new Element();
   const title = new Element();
   const runtimeTitle = new Element();
@@ -66,11 +70,13 @@ function shellDocument({ organizations = false, access = false, rsot = false, it
     ['rsot-workspace', rsotWorkspace],
     ['itam-workspace', itamWorkspace],
     ['dcim-workspace', dcimWorkspace],
+    ['integrations-workspace', integrationsWorkspace],
     ['nav-organizations', organizationsLink],
     ['nav-access', accessLink],
     ['nav-rsot', rsotLink],
     ['nav-itam', itamLink],
     ['nav-dcim', dcimLink],
+    ['nav-integrations', integrationsLink],
     ['breadcrumb-current', breadcrumb],
     ['topbar-page-title', title],
     ['runtime-title', runtimeTitle],
@@ -82,19 +88,21 @@ function shellDocument({ organizations = false, access = false, rsot = false, it
     documentElement: root,
     title: '',
     getElementById: (id) => byId.get(id),
-    querySelectorAll: (selector) => selector === '[data-route]' ? [overviewLink, organizationsLink, accessLink, rsotLink, itamLink, dcimLink] : [],
+    querySelectorAll: (selector) => selector === '[data-route]' ? [overviewLink, organizationsLink, accessLink, rsotLink, itamLink, dcimLink, integrationsLink] : [],
     overviewView,
     workspace,
     accessWorkspace,
     rsotWorkspace,
     itamWorkspace,
     dcimWorkspace,
+    integrationsWorkspace,
     overviewLink,
     organizationsLink,
     accessLink,
     rsotLink,
     itamLink,
     dcimLink,
+    integrationsLink,
     breadcrumb,
     topbarTitle: title,
     runtimeTitle,
@@ -122,11 +130,13 @@ test('route parser accepts only known administration routes', () => {
   assert.equal(normalizeRoute('rsot'), 'rsot');
   assert.equal(normalizeRoute('itam'), 'itam');
   assert.equal(normalizeRoute('dcim'), 'dcim');
+  assert.equal(normalizeRoute('integrations'), 'integrations');
   assert.equal(routeForHash('#/access'), 'access');
   assert.equal(routeForHash('#/organizations'), 'organizations');
   assert.equal(routeForHash('#/rsot'), 'rsot');
   assert.equal(routeForHash('#/itam'), 'itam');
   assert.equal(routeForHash('#/dcim'), 'dcim');
+  assert.equal(routeForHash('#/integrations'), 'integrations');
   assert.equal(routeForHash('#overview'), 'overview');
   assert.equal(routeForHash('#/unknown'), 'overview');
 });
@@ -197,6 +207,25 @@ test('RSOT, ITAM and DCIM routes are fail-closed and become navigable only when 
   assert.equal(documentObject.dcimLink.hidden, true);
 });
 
+test('Integrations route is fail-closed until the connector capability is explicitly available', () => {
+  const documentObject = shellDocument({ integrations: false });
+  const windowObject = windowFixture('#/integrations');
+  assert.equal(applyRoute(documentObject, 'integrations', windowObject, { replaceHash: true }), 'overview');
+  assert.equal(documentObject.integrationsWorkspace.hidden, true);
+  assert.equal(windowObject.location.hash, '#/overview');
+
+  setIntegrationsAvailability(documentObject, true, windowObject);
+  assert.equal(documentObject.integrationsLink.hidden, false);
+  assert.equal(documentObject.integrationsLink.getAttribute('aria-disabled'), 'false');
+  assert.equal(applyRoute(documentObject, 'integrations', windowObject), 'integrations');
+  assert.equal(documentObject.integrationsWorkspace.hidden, false);
+  assert.equal(documentObject.topbarTitle.textContent, 'External integrations');
+
+  setIntegrationsAvailability(documentObject, false, windowObject);
+  assert.equal(documentObject.integrationsLink.hidden, true);
+  assert.equal(applyRoute(documentObject, 'integrations', windowObject), 'overview');
+});
+
 test('command catalogue exposes only actionable capabilities', () => {
   const documentObject = shellDocument({ organizations: false });
   const windowObject = windowFixture();
@@ -208,7 +237,8 @@ test('command catalogue exposes only actionable capabilities', () => {
   setRsotAvailability(documentObject, true, windowObject);
   setItamAvailability(documentObject, true, windowObject);
   setDcimAvailability(documentObject, true, windowObject);
-  assert.deepEqual(buildCommands(documentObject, windowObject).map((item) => item.id), ['overview', 'access', 'organizations', 'rsot', 'dcim', 'itam', 'runtime', 'theme', 'preferences', 'notifications', 'swagger', 'redoc']);
+  setIntegrationsAvailability(documentObject, true, windowObject);
+  assert.deepEqual(buildCommands(documentObject, windowObject).map((item) => item.id), ['overview', 'access', 'organizations', 'rsot', 'dcim', 'integrations', 'itam', 'runtime', 'theme', 'preferences', 'notifications', 'swagger', 'redoc']);
 });
 
 test('command search is localized, case-insensitive and accent-insensitive', () => {

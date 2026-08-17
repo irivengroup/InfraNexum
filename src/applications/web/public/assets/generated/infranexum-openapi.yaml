@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum — Product API
-  version: 2.0.0-alpha.0.107
+  version: 2.0.0-alpha.0.108
   description: Generated complete product contract; installation availability remains capability-gated.
 servers:
 - url: /
@@ -27,6 +27,10 @@ tags:
   description: Operational dead-letter inspection and controlled replay.
 - name: Integrations / Connectors / Runtime
   description: Connector runtime health, suspension state and operator recovery.
+- name: Integrations / Jira Assets / Catalogue
+  description: Configured Jira Assets Cloud connector instances and provider health.
+- name: Integrations / Jira Assets / Federated Read
+  description: Governed read-only AQL queries returning a minimized external projection.
 - name: ITAM / Assets
   description: Organization-governed asset lifecycle with append-only chain of custody.
 - name: ITAM / Compliance
@@ -84,6 +88,8 @@ x-tagGroups:
   - Integrations / Connectors / Webhooks
   - Integrations / Connectors / Dead Letter Queue
   - Integrations / Connectors / Runtime
+  - Integrations / Jira Assets / Catalogue
+  - Integrations / Jira Assets / Federated Read
 - name: Platform
   tags:
   - Platform / Entitlements / Evaluation
@@ -4230,6 +4236,142 @@ paths:
         mode: permission
         code: integrations.connector.resume
       x-infranexum-idempotency: required
+  /api/v1/integrations/providers/jira-assets:
+    get:
+      tags:
+      - Integrations / Jira Assets / Catalogue
+      operationId: listJiraAssetsConnectors
+      summary: List configured Jira Assets connector instances
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/integrations-connectors__CorrelationId'
+      - $ref: '#/components/parameters/integrations-connectors__Offset'
+      - $ref: '#/components/parameters/integrations-connectors__Limit'
+      responses:
+        '200':
+          description: Bounded connector catalogue. Tenant identifiers and secret references are excluded.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/integrations-connectors__CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/integrations-connectors__NoStore'
+            X-Page-Limit:
+              $ref: '#/components/headers/integrations-connectors__PageLimit'
+            X-Next-Offset:
+              $ref: '#/components/headers/integrations-connectors__NextOffset'
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 64
+                items:
+                  $ref: '#/components/schemas/integrations-connectors__JiraAssetsConnectorDescriptor'
+        '401':
+          $ref: '#/components/responses/integrations-connectors__Unauthorized'
+        '403':
+          $ref: '#/components/responses/integrations-connectors__Forbidden'
+        '503':
+          $ref: '#/components/responses/integrations-connectors__ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.connector.read
+      x-infranexum-pagination: offset
+  /api/v1/integrations/providers/jira-assets/{connectorKey}/health:
+    get:
+      tags:
+      - Integrations / Jira Assets / Catalogue
+      operationId: checkJiraAssetsConnectorHealth
+      summary: Check read-only Jira Assets provider connectivity and scopes
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/integrations-connectors__CorrelationId'
+      - $ref: '#/components/parameters/integrations-connectors__ConnectorKey'
+      responses:
+        '200':
+          description: Provider health with governance metadata.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/integrations-connectors__CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/integrations-connectors__NoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/integrations-connectors__JiraAssetsHealth'
+        '400':
+          $ref: '#/components/responses/integrations-connectors__BadRequest'
+        '401':
+          $ref: '#/components/responses/integrations-connectors__Unauthorized'
+        '403':
+          $ref: '#/components/responses/integrations-connectors__Forbidden'
+        '404':
+          $ref: '#/components/responses/integrations-connectors__NotFound'
+        '502':
+          $ref: '#/components/responses/integrations-connectors__BadGateway'
+        '503':
+          $ref: '#/components/responses/integrations-connectors__ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.connector.read
+  /api/v1/integrations/providers/jira-assets/{connectorKey}/objects/search:
+    post:
+      tags:
+      - Integrations / Jira Assets / Federated Read
+      operationId: searchJiraAssetsObjects
+      summary: Search Jira Assets objects through a governed AQL federated read
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/integrations-connectors__CorrelationId'
+      - $ref: '#/components/parameters/integrations-connectors__ConnectorKey'
+      - $ref: '#/components/parameters/integrations-connectors__Offset'
+      - $ref: '#/components/parameters/integrations-connectors__Limit'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/integrations-connectors__JiraAssetsSearchRequest'
+      responses:
+        '200':
+          description: Minimized external object page. Jira Assets attributes are not copied into InfraNexum.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/integrations-connectors__CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/integrations-connectors__NoStore'
+            X-Page-Limit:
+              $ref: '#/components/headers/integrations-connectors__PageLimit'
+            X-Next-Offset:
+              $ref: '#/components/headers/integrations-connectors__NextOffset'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/integrations-connectors__JiraAssetsRemoteObject'
+        '400':
+          $ref: '#/components/responses/integrations-connectors__BadRequest'
+        '401':
+          $ref: '#/components/responses/integrations-connectors__Unauthorized'
+        '403':
+          $ref: '#/components/responses/integrations-connectors__Forbidden'
+        '404':
+          $ref: '#/components/responses/integrations-connectors__NotFound'
+        '502':
+          $ref: '#/components/responses/integrations-connectors__BadGateway'
+        '503':
+          $ref: '#/components/responses/integrations-connectors__ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.connector.read
+      x-infranexum-pagination: offset
+      x-infranexum-idempotency: repeatable
   /api/v1/itam/assets:
     parameters:
     - $ref: '#/components/parameters/itam-assets__CorrelationId'
@@ -11196,6 +11338,98 @@ components:
       minLength: 3
       maxLength: 80
       pattern: ^[a-z0-9][a-z0-9._-]{2,79}$
+    integrations-connectors__JiraAssetsConnectorDescriptor:
+      type: object
+      additionalProperties: false
+      required:
+      - connectorKey
+      - provider
+      - direction
+      - authority
+      - enabled
+      properties:
+        connectorKey:
+          $ref: '#/components/schemas/integrations-connectors__ConnectorKey'
+        provider:
+          type: string
+          const: jira-assets
+        direction:
+          type: string
+          const: FEDERATED_READ
+        authority:
+          type: string
+          const: EXTERNAL
+        enabled:
+          type: boolean
+    integrations-connectors__JiraAssetsHealth:
+      type: object
+      additionalProperties: false
+      required:
+      - connectorKey
+      - status
+      - provider
+      - direction
+      - authority
+      properties:
+        connectorKey:
+          $ref: '#/components/schemas/integrations-connectors__ConnectorKey'
+        status:
+          type: string
+          const: UP
+        provider:
+          type: string
+          const: jira-assets
+        direction:
+          type: string
+          const: FEDERATED_READ
+        authority:
+          type: string
+          const: EXTERNAL
+    integrations-connectors__JiraAssetsSearchRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - aql
+      properties:
+        aql:
+          type: string
+          minLength: 1
+          maxLength: 4096
+    integrations-connectors__JiraAssetsRemoteObject:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - globalId
+      - objectKey
+      - label
+      - objectTypeId
+      - objectTypeName
+      properties:
+        id:
+          type: string
+          minLength: 1
+          maxLength: 1024
+        globalId:
+          type: string
+          minLength: 1
+          maxLength: 1024
+        objectKey:
+          type: string
+          minLength: 1
+          maxLength: 1024
+        label:
+          type: string
+          minLength: 1
+          maxLength: 1024
+        objectTypeId:
+          type: string
+          minLength: 1
+          maxLength: 1024
+        objectTypeName:
+          type: string
+          minLength: 1
+          maxLength: 1024
     integrations-connectors__WebhookAdmission:
       type: object
       additionalProperties: false
@@ -14322,6 +14556,15 @@ components:
             $ref: '#/components/schemas/integrations-connectors__Problem'
     integrations-connectors__ServiceUnavailable:
       description: Durable integration runtime is unavailable or failed closed.
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/integrations-connectors__CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/integrations-connectors__Problem'
+    integrations-connectors__BadGateway:
+      description: External provider rejected the connector credential or returned an unsupported response.
       headers:
         X-Correlation-ID:
           $ref: '#/components/headers/integrations-connectors__CorrelationId'

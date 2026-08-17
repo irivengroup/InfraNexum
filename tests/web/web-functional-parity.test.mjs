@@ -11,6 +11,7 @@ import { ItamComplianceClient } from '../../src/applications/web/public/assets/i
 import { itamWorkspaceTemplate } from '../../src/applications/web/public/assets/itam-workspace.mjs';
 import { RsotCanonicalObjectClient } from '../../src/applications/web/public/assets/rsot-canonical-objects.mjs';
 import { rsotWorkspaceTemplate } from '../../src/applications/web/public/assets/rsot-workspace.mjs';
+import { integrationsWorkspaceTemplate } from '../../src/applications/web/public/assets/integrations-workspace.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const PUBLIC = path.join(ROOT, 'src/applications/web/public');
@@ -25,6 +26,7 @@ function configuration(overrides = {}) {
     dcimFacilitiesEnabled: true,
     dcimPhysicalEnabled: true,
     ddiIpamEnabled: true,
+    integrationsConnectorsEnabled: true,
     ...overrides,
   };
 }
@@ -43,7 +45,7 @@ test('RSOT, ITAM and DCIM are real first-level administration routes with concre
   const shell = await readFile(path.join(PUBLIC, 'assets/admin-shell.mjs'), 'utf8');
   const bootstrap = await readFile(path.join(PUBLIC, 'assets/bootstrap.mjs'), 'utf8');
 
-  for (const route of ['rsot', 'itam', 'dcim', 'ddi']) {
+  for (const route of ['rsot', 'itam', 'dcim', 'ddi', 'integrations']) {
     assert.match(html, new RegExp(`id="nav-${route}"[^>]+data-route="${route}"`));
     assert.match(html, new RegExp(`id="${route}-workspace"[^>]+data-view="${route}"`));
     assert.match(shell, new RegExp(`${route}: Object\\.freeze`));
@@ -56,12 +58,16 @@ test('RSOT, ITAM and DCIM are real first-level administration routes with concre
   assert.match(bootstrap, /setDcimAvailability\(documentObject, configuration\.dcimFacilitiesEnabled\)/);
   assert.match(bootstrap, /initializeDdiIpamWorkspace\(document, configuration, fetch\)/);
   assert.match(bootstrap, /setDdiAvailability\(documentObject, configuration\.ddiIpamEnabled\)/);
+  assert.match(bootstrap, /setIntegrationsAvailability\(documentObject, configuration\.integrationsConnectorsEnabled\)/);
 });
 
 test('functional workspaces expose lists, create workflows and governed lifecycle actions', () => {
   const rsot = rsotWorkspaceTemplate();
   const itam = itamWorkspaceTemplate(configuration());
   const dcim = dcimWorkspaceTemplate();
+  const integrations = integrationsWorkspaceTemplate();
+  assert.match(integrations, /jira-assets-search/);
+  assert.match(integrations, /integrations\.authority/);
   for (const id of [
     'rsot-object-table-body', 'rsot-schema-table-body', 'rsot-profile-table-body', 'rsot-schema-form', 'rsot-schema-lifecycle', 'rsot-profile-form', 'rsot-profile-lifecycle',
   ]) assert.match(rsot, new RegExp(`id="${id}"`));

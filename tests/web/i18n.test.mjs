@@ -95,6 +95,8 @@ test('all supported locales translate navigation and interpolate safe runtime va
     assert.notEqual(translate(locale, 'notification.title'), 'notification.title');
     assert.notEqual(translate(locale, 'preference.title'), 'preference.title');
     assert.notEqual(translate(locale, 'platform.title'), 'platform.title');
+    assert.notEqual(translate(locale, 'nav.integrations'), 'nav.integrations');
+    assert.notEqual(translate(locale, 'integrations.status.ready'), 'integrations.status.ready');
     assert.ok(translate(locale, 'common.version', { value: WEB_VERSION }).includes(WEB_VERSION));
   }
   assert.equal(translate('pt', 'nav.overview'), 'Overview');

@@ -17,6 +17,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.infranexum.adapters.jiraassets.JiraAssetsAuthenticationException;
+import io.infranexum.adapters.jiraassets.JiraAssetsProtocolException;
+import io.infranexum.adapters.jiraassets.JiraAssetsRateLimitedException;
+import io.infranexum.adapters.jiraassets.JiraAssetsSettings;
+import io.infranexum.adapters.jiraassets.JiraAssetsTransport;
+import io.infranexum.adapters.jiraassets.JiraAssetsUnavailableException;
 import io.infranexum.core.audit.AuditEntry;
 import io.infranexum.core.audit.AuditJournal;
 import io.infranexum.core.contracts.ConfigurationException;
@@ -337,6 +343,98 @@ class IntegrationRuntimeTest {
     }
 
     @Test
+    void jiraAssetsRegistryOperationsAndControllerExposeOnlyGovernedFederatedReadMetadata() {
+        JiraAssetsSettings enabled = new JiraAssetsSettings(KEY, "cloud", "workspace", "env:PATH", Duration.ofSeconds(2), true);
+        JiraAssetsSettings disabled = new JiraAssetsSettings(new ConnectorKey("jira-assets.disabled"), "cloud", "workspace", "env:PATH", Duration.ofSeconds(2), false);
+        JiraAssetsTransport transport = request -> {
+            String json = request.uri().getPath().endsWith("/object/aql")
+                    ? "{\"startAt\":0,\"maxResults\":1,\"total\":1,\"values\":[{\"id\":\"1\",\"globalId\":\"g1\",\"objectKey\":\"OBJ-1\",\"label\":\"Object 1\",\"objectType\":{\"id\":\"10\",\"name\":\"Server\"}}]}"
+                    : "{}";
+            return new JiraAssetsTransport.Response(200, Map.of(), json.getBytes(StandardCharsets.UTF_8));
+        };
+        var registry = new ConfiguredJiraAssetsConnectorRegistry(
+                Map.of(disabled.connectorKey(), disabled, enabled.connectorKey(), enabled), transport,
+                reference -> "abcdefghijklmnopqrstuvwxyz0123456789".getBytes(StandardCharsets.UTF_8), new ObjectMapper());
+        assertEquals(List.of("jira-assets.disabled", "jira-assets.test"),
+                registry.settings().stream().map(value -> value.connectorKey().value()).toList());
+        assertSame(enabled, registry.require("JIRA-ASSETS.TEST").settings());
+        assertThrows(io.infranexum.integrations.ConnectorEndpointUnavailableException.class, () -> registry.require("missing.connector"));
+        assertThrows(IllegalArgumentException.class, () -> registry.require("!invalid"));
+
+        AuditJournal journal = mock(AuditJournal.class);
+        List<AuditEntry> entries = new java.util.ArrayList<>();
+        doAnswer(invocation -> { entries.add(invocation.getArgument(0)); return null; }).when(journal).append(any(AuditEntry.class));
+        SimpleMeterRegistry meters = new SimpleMeterRegistry();
+        var service = new JiraAssetsOperationsService(registry, journal,
+                new UuidV7Generator(CLOCK, new SecureRandom()), CLOCK, meters);
+        assertEquals(2, service.connectors().size());
+        assertEquals("EXTERNAL", service.connectors().getFirst().authority());
+        assertEquals("UP", service.health("jira-assets.test", ACTOR, CORRELATION).status());
+        assertEquals("OBJ-1", service.search("jira-assets.test", "objectType = Server", 0, 1, ACTOR, CORRELATION).items().getFirst().objectKey());
+        assertEquals(2, entries.size());
+        assertTrue(entries.stream().allMatch(entry -> entry.metadata().get("authority").equals("EXTERNAL")));
+        assertFalse(entries.toString().contains("objectType = Server"));
+        assertNotNull(meters.find("infranexum.integrations.provider.latency").timer());
+
+        JiraAssetsController controller = new JiraAssetsController(service);
+        assertEquals("no-store", controller.connectors(0, 50).getHeaders().getFirst("Cache-Control"));
+        assertThrows(IllegalArgumentException.class, () -> controller.connectors(-1, 50));
+        assertThrows(IllegalArgumentException.class, () -> controller.connectors(0, 0));
+        assertThrows(IllegalArgumentException.class, () -> controller.connectors(0, 201));
+        MockHttpServletRequest request = operatorRequest();
+        assertEquals("UP", controller.health("jira-assets.test", request).getBody().status());
+        var response = controller.search("jira-assets.test", 0, 1, new JiraAssetsController.SearchRequest("objectType = Server"), request);
+        assertEquals(1, response.getBody().size());
+        assertEquals("no-store", response.getHeaders().getFirst("Cache-Control"));
+        assertThrows(IllegalArgumentException.class, () -> controller.search("jira-assets.test", 0, 1, null, request));
+        assertThrows(IllegalArgumentException.class, () -> controller.search("jira-assets.test", 0, 1, new JiraAssetsController.SearchRequest(null), request));
+        assertThrows(IllegalStateException.class, () -> controller.health("jira-assets.test", new MockHttpServletRequest()));
+        MockHttpServletRequest missingCorrelation = new MockHttpServletRequest();
+        missingCorrelation.setAttribute(LocalAuthenticationFilter.ACCOUNT_ATTRIBUTE, ACTOR);
+        assertThrows(IllegalStateException.class, () -> controller.health("jira-assets.test", missingCorrelation));
+        meters.close();
+    }
+
+    @Test
+    void jiraAssetsOperationFailuresAreAuditedAndMappedWithoutProviderPayloads() {
+        JiraAssetsSettings settings = new JiraAssetsSettings(KEY, "cloud", "workspace", "env:PATH", Duration.ofSeconds(2), true);
+        List<RuntimeException> failures = List.of(
+                new JiraAssetsAuthenticationException(), new JiraAssetsRateLimitedException(),
+                new JiraAssetsUnavailableException("down"), new JiraAssetsProtocolException("bad"),
+                new IllegalArgumentException("invalid"), new IllegalStateException("runtime"));
+        List<String> expected = List.of("authentication", "rate_limited", "unavailable", "protocol", "invalid_request", "runtime");
+        for (int index = 0; index < failures.size(); index++) {
+            RuntimeException failure = failures.get(index);
+            JiraAssetsTransport transport = request -> { throw failure; };
+            var registry = new ConfiguredJiraAssetsConnectorRegistry(Map.of(KEY, settings), transport,
+                    reference -> "abcdefghijklmnopqrstuvwxyz0123456789".getBytes(StandardCharsets.UTF_8), new ObjectMapper());
+            AuditJournal journal = mock(AuditJournal.class);
+            List<AuditEntry> captured = new java.util.ArrayList<>();
+            doAnswer(invocation -> { captured.add(invocation.getArgument(0)); return null; }).when(journal).append(any(AuditEntry.class));
+            SimpleMeterRegistry meters = new SimpleMeterRegistry();
+            var service = new JiraAssetsOperationsService(registry, journal, new UuidV7Generator(CLOCK, new SecureRandom()), CLOCK, meters);
+            assertSame(failure, assertThrows(RuntimeException.class, () -> service.health("jira-assets.test", ACTOR, CORRELATION)));
+            assertEquals(expected.get(index), captured.getFirst().metadata().get("failure_class"));
+            assertEquals("ERROR", captured.getFirst().authorizationDecision());
+            meters.close();
+        }
+        assertThrows(NullPointerException.class, () -> {
+            var registry = new ConfiguredJiraAssetsConnectorRegistry(Map.of(KEY, settings), request -> { throw new AssertionError(); },
+                    reference -> "abcdefghijklmnopqrstuvwxyz0123456789".getBytes(StandardCharsets.UTF_8), new ObjectMapper());
+            new JiraAssetsOperationsService(registry, mock(AuditJournal.class), new UuidV7Generator(CLOCK, new SecureRandom()), CLOCK, new SimpleMeterRegistry())
+                    .health("jira-assets.test", null, CORRELATION);
+        });
+
+        IntegrationExceptionHandler handler = new IntegrationExceptionHandler(ApiProblemTestFixtures.support(CLOCK));
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/integrations/providers/jira-assets/jira-assets.test/health");
+        assertEquals(502, handler.jiraAuth(new JiraAssetsAuthenticationException(), request).getStatusCode().value());
+        assertEquals(503, handler.jiraRate(new JiraAssetsRateLimitedException(), request).getStatusCode().value());
+        assertEquals(503, handler.jiraUnavailable(new JiraAssetsUnavailableException("TOP_SECRET"), request).getStatusCode().value());
+        assertEquals(502, handler.jiraProtocol(new JiraAssetsProtocolException("PROVIDER_PAYLOAD"), request).getStatusCode().value());
+        assertFalse(handler.jiraProtocol(new JiraAssetsProtocolException("PROVIDER_PAYLOAD"), request).getBody().toString().contains("PROVIDER_PAYLOAD"));
+    }
+
+    @Test
     void exceptionHandlerUsesStableGenericProblemCodes() {
         IntegrationExceptionHandler handler = new IntegrationExceptionHandler(ApiProblemTestFixtures.support(CLOCK));
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/integrations/webhooks/test");
@@ -359,7 +457,7 @@ class IntegrationRuntimeTest {
             Duration initial, Duration maximum, double jitter, int threshold, Duration suspension,
             Map<String, IntegrationRuntimeProperties.EndpointProperties> endpoints) {
         return new IntegrationRuntimeProperties(true, maxPayload, batch, poll, lease, attempts, initial, maximum,
-                jitter, threshold, suspension, endpoints);
+                jitter, threshold, suspension, endpoints, new IntegrationRuntimeProperties.JiraAssetsProperties(2_097_152, Map.of()));
     }
 
     private static ConnectorWebhookEndpoint endpoint(boolean enabled) {

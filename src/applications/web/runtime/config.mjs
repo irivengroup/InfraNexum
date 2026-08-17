@@ -29,6 +29,7 @@ export class WebRuntimeConfiguration {
   #dcimFacilitiesEnabled;
   #dcimPhysicalEnabled;
   #ddiIpamEnabled;
+  #integrationsConnectorsEnabled;
 
   constructor({
     listenHost,
@@ -50,6 +51,7 @@ export class WebRuntimeConfiguration {
     dcimFacilitiesEnabled,
     dcimPhysicalEnabled,
     ddiIpamEnabled,
+    integrationsConnectorsEnabled,
   }) {
     this.#listenHost = listenHost;
     this.#listenPort = listenPort;
@@ -70,6 +72,7 @@ export class WebRuntimeConfiguration {
     this.#dcimFacilitiesEnabled = dcimFacilitiesEnabled;
     this.#dcimPhysicalEnabled = dcimPhysicalEnabled;
     this.#ddiIpamEnabled = ddiIpamEnabled;
+    this.#integrationsConnectorsEnabled = integrationsConnectorsEnabled;
     Object.freeze(this);
   }
 
@@ -181,6 +184,11 @@ export class WebRuntimeConfiguration {
       'INFRANEXUM_WEB_DDI_IPAM_ENABLED',
       false,
     );
+    const integrationsConnectorsEnabled = readBoolean(
+      environment,
+      'INFRANEXUM_WEB_INTEGRATIONS_CONNECTORS_ENABLED',
+      false,
+    );
     if (ddiIpamEnabled && !dcimFacilitiesEnabled) {
       throw new Error('DDI/IPAM UI requires the DCIM Facilities capability for site scoping');
     }
@@ -211,6 +219,7 @@ export class WebRuntimeConfiguration {
       dcimFacilitiesEnabled,
       dcimPhysicalEnabled,
       ddiIpamEnabled,
+      integrationsConnectorsEnabled,
     });
   }
 
@@ -233,6 +242,7 @@ export class WebRuntimeConfiguration {
   get dcimFacilitiesEnabled() { return this.#dcimFacilitiesEnabled; }
   get dcimPhysicalEnabled() { return this.#dcimPhysicalEnabled; }
   get ddiIpamEnabled() { return this.#ddiIpamEnabled; }
+  get integrationsConnectorsEnabled() { return this.#integrationsConnectorsEnabled; }
 
   publicConfiguration() {
     return Object.freeze({
@@ -254,6 +264,7 @@ export class WebRuntimeConfiguration {
       dcimFacilitiesEnabled: this.#dcimFacilitiesEnabled,
       dcimPhysicalEnabled: this.#dcimPhysicalEnabled,
       ddiIpamEnabled: this.#ddiIpamEnabled,
+      integrationsConnectorsEnabled: this.#integrationsConnectorsEnabled,
     });
   }
 }

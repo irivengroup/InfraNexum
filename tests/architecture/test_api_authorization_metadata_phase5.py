@@ -29,9 +29,9 @@ class ApiAuthorizationMetadataPhase5Tests(unittest.TestCase):
                         result.append((method, path, operation))
         return result
 
-    def test_all_179_operations_have_registry_backed_capability_and_structured_authorization(self) -> None:
+    def test_all_182_operations_have_registry_backed_capability_and_structured_authorization(self) -> None:
         operations = self.operations()
-        self.assertEqual(179, len(operations))
+        self.assertEqual(182, len(operations))
         with (ROOT / "src/components/core/capabilities/resources/io/infranexum/core/capabilities/capability-catalog.csv").open(
             encoding="utf-8", newline=""
         ) as stream:
@@ -66,7 +66,7 @@ class ApiAuthorizationMetadataPhase5Tests(unittest.TestCase):
         self.assertEqual(
             Counter(
                 {
-                    "permission": 157,
+                    "permission": 160,
                     "platform-admin": 9,
                     "conditional": 4,
                     "authenticated-self": 3,
@@ -121,7 +121,7 @@ class ApiAuthorizationMetadataPhase5Tests(unittest.TestCase):
             / "tests/java-api-capability-smoke/io/infranexum/server/platform/ApiCapabilityRequirementSmoke.java"
         ).read_text(encoding="utf-8")
         self.assertIn('operation["x-infranexum-capability"]', generator)
-        self.assertIn("rows.size() == 179", smoke)
+        self.assertIn("rows.size() == 182", smoke)
 
     def test_special_authorization_modes_match_runtime_boundary_semantics(self) -> None:
         local_auth = yaml.safe_load((OPENAPI / "local-auth.yaml").read_text(encoding="utf-8"))
