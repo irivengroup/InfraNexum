@@ -47,6 +47,54 @@ db_scalar() {
     'export PGPASSWORD="$(cat /run/infranexum-secrets/db-password)"; exec psql --no-psqlrc --tuples-only --no-align --host=postgres --port=5432 --username=infranexum --dbname=infranexum --command "$1"' sh "$sql"
 }
 
+reactivate_admin() {
+  require_repo
+  sql=$(cat <<'SQL'
+WITH recovered AS (
+  UPDATE infranexum_iam.local_account
+  SET status='ACTIVE', failed_attempts=0, locked_until=NULL,
+      security_epoch=security_epoch+1, version=version+1, updated_at=CURRENT_TIMESTAMP
+  WHERE username='admin'
+  RETURNING id
+), projected AS (
+  UPDATE infranexum_iam.iam_user u
+  SET status='ACTIVE', updated_at=CURRENT_TIMESTAMP
+  FROM recovered r
+  WHERE u.id=r.id AND u.status<>'DELETED'
+  RETURNING u.id
+)
+SELECT CASE
+  WHEN NOT EXISTS (SELECT 1 FROM recovered) THEN 'MISSING'
+  WHEN NOT EXISTS (
+    SELECT 1 FROM recovered a
+    JOIN infranexum_iam.role_assignment ra ON ra.actor_type='USER' AND ra.actor_id=a.id
+    JOIN infranexum_iam.role r ON r.id=ra.role_id
+    WHERE r.code='system.platform_admin' AND r.system_role=TRUE AND r.active=TRUE AND r.deleted_at IS NULL
+      AND ra.scope_kind='PLATFORM' AND ra.revoked_at IS NULL
+      AND ra.effective_from<=CURRENT_TIMESTAMP
+      AND (ra.effective_to IS NULL OR ra.effective_to>CURRENT_TIMESTAMP)
+  ) THEN 'ROLE_MISSING'
+  ELSE 'ACTIVE'
+END;
+SQL
+)
+  status=$(db_scalar "$sql")
+  case "$status" in
+    ACTIVE) echo 'admin-reactivate: PASS (admin ACTIVE, lock cleared, sessions invalidated, platform role verified)' ;;
+    MISSING) echo "Developer administrator 'admin' does not exist" >&2; exit 69 ;;
+    ROLE_MISSING) echo "Developer administrator 'admin' was reactivated but has no effective system.platform_admin assignment" >&2; exit 69 ;;
+    *) echo "Unexpected administrator recovery result: $status" >&2; exit 69 ;;
+  esac
+}
+
+seed_dev_data() {
+  require_repo
+  # Developer fixtures are not migrations. Use the application role and a
+  # read-only mounted SQL file so this path cannot acquire hidden DB privileges.
+  compose --profile maintenance run --rm --no-deps --entrypoint /bin/sh db-admin -eu -c \
+    'export PGPASSWORD="$(cat /run/infranexum-secrets/db-password)"; exec psql --no-psqlrc --set=ON_ERROR_STOP=1 --host=postgres --port=5432 --username=infranexum --dbname=infranexum --file=/opt/infranexum/dev-seed-postgresql.sql'
+}
+
 cluster_admin_db_scalar() {
   sql=$1
   # Cluster-wide diagnostics use the postgres maintenance database. Application
@@ -93,7 +141,7 @@ smoke() {
   curl --fail --silent --show-error "http://127.0.0.1:$web_port/health/ready" | grep -q '"status":"UP"'
   curl --fail --silent --show-error "http://127.0.0.1:$web_port/runtime-config.json" > "$tmp"
   grep -Fq '"component":"web"' "$tmp"
-  grep -Fq '"version":"2.0.0-alpha.0.106"' "$tmp"
+  grep -Fq '"version":"2.0.0-alpha.0.107"' "$tmp"
   grep -Fq '"apiBaseUrl":"/api"' "$tmp"
   rm -f "$tmp"; trap - EXIT HUP INT TERM
   iam_history=$(application_admin_db_scalar "SELECT count(*) FROM infranexum_core.schema_history WHERE migration_id IN ('0011','0012','0013')")
@@ -276,16 +324,18 @@ command=${1:-help}; test "$#" -gt 0 && shift || true
 case "$command" in
   config) require_repo; compose config --quiet ;;
   build) require_repo; compose config --quiet; compose build --pull ;;
-  up) require_repo; compose config --quiet; compose rm --stop --force migrate db-bootstrap secret-init >/dev/null 2>&1 || true; compose up --detach --build --wait web ;;
+  up) require_repo; compose config --quiet; compose rm --stop --force migrate db-bootstrap secret-init >/dev/null 2>&1 || true; compose up --detach --build --wait web; seed_dev_data ;;
   down) require_repo; compose down --remove-orphans ;;
   logs) require_repo; if [ "$#" -gt 0 ]; then compose logs --no-color --tail=200 "$@"; else compose logs --no-color --tail=200 web web-1 web-2 server server-1 server-2 server-3 server-4 postgres postgres-1 postgres-2 postgres-3 migrate; fi ;;
   smoke) smoke ;;
   ha-smoke) ha_smoke ;;
   credentials) show_local_credentials ;;
+  admin-reactivate) reactivate_admin ;;
+  seed) seed_dev_data ;;
   backup) backup ;;
   restore) restore ;;
   rollback) require_repo; : "${MIGRATION_ID:?MIGRATION_ID is required}"; test "${CONFIRM_INFRANEXUM_ROLLBACK:-}" = YES || { echo 'Refusing rollback' >&2; exit 64; }; compose up --detach --wait postgres; backup_file=$(backup); echo "Pre-rollback backup: $backup_file"; compose stop web web-1 web-2 server server-1 server-2 server-3 server-4 >/dev/null 2>&1 || true; compose --profile maintenance run --rm -e MIGRATION_ID="$MIGRATION_ID" -e CONFIRM_INFRANEXUM_ROLLBACK=YES rollback ;;
   reset) require_repo; test "${CONFIRM_INFRANEXUM_VOLUME_DELETE:-}" = YES || { echo 'Refusing volume deletion' >&2; exit 64; }; compose down --volumes --remove-orphans ;;
-  help|-h|--help) echo 'Commands: config build up down logs smoke ha-smoke credentials backup restore rollback reset' ;;
+  help|-h|--help) echo 'Commands: config build up down logs smoke ha-smoke credentials admin-reactivate seed backup restore rollback reset' ;;
   *) echo "Unknown command: $command" >&2; exit 64 ;;
 esac

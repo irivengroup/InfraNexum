@@ -189,8 +189,18 @@ final class JdbcIdentityAccessRepositoryCoverageTest {
 
     @Test void authorizationTraversesMembershipUserAndGroupGrantAlternatives(){
         AuthorizationScope org=AuthorizationScope.organization(ORG);
-        var missingMembership=connection(query(Map.of("x",1)),query(Map.of("x",1)),query(List.of()));
+        var missingMembership=connection(
+                query(Map.of("x",1)), query(Map.of("x",1)), query(List.of()),
+                query(Map.of("x",1)), query(List.of()));
         assertFalse(repo(missingMembership).hasEffectivePermission(USER,"iam.role.search",org,T));
+
+        var platformAdminWithoutMembership=connection(
+                query(Map.of("x",1)),                    // authorization active user
+                query(Map.of("x",1)), query(List.of()), // no organization membership
+                query(Map.of("x",1)), query(Map.of("x",1)), // protected PLATFORM admin assignment
+                query(scopeRow("PLATFORM")));           // platform assignment grants the permission
+        assertTrue(repo(platformAdminWithoutMembership)
+                .hasEffectivePermission(USER,"iam.role.search",org,T));
 
         var groupGrant=connection(
                 query(Map.of("x",1)),                 // active user
@@ -231,6 +241,7 @@ final class JdbcIdentityAccessRepositoryCoverageTest {
         assertTrue(repo(effectiveCodes).effectivePermissionCodes(USER,org,T).isEmpty());
 
         var effectiveCodesWithoutMembership=connection(
+                query(Map.of("x",1)), query(Map.of("x",1)), query(List.of()),
                 query(Map.of("x",1)), query(List.of()));
         assertTrue(repo(effectiveCodesWithoutMembership).effectivePermissionCodes(USER,org,T).isEmpty());
 
@@ -240,6 +251,7 @@ final class JdbcIdentityAccessRepositoryCoverageTest {
         assertFalse(repo(roleMembership).hasEffectiveRole(USER,ROLE,org,T));
 
         var roleWithoutMembership=connection(
+                query(Map.of("x",1)), query(Map.of("x",1)), query(List.of()),
                 query(Map.of("x",1)), query(List.of()));
         assertFalse(repo(roleWithoutMembership).hasEffectiveRole(USER,ROLE,org,T));
 

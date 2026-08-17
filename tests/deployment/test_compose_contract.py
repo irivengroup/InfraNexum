@@ -52,7 +52,7 @@ class ComposeContractTest(unittest.TestCase):
     def test_web_cluster_is_two_private_nodes_behind_loopback_router(self) -> None:
         for name in WEB:
             service = self.services[name]
-            self.assertEqual("infranexum/web:${INFRANEXUM_VERSION:-2.0.0-alpha.0.106}", service["image"])
+            self.assertEqual("infranexum/web:${INFRANEXUM_VERSION:-2.0.0-alpha.0.107}", service["image"])
             self.assertEqual("service_healthy", service["depends_on"]["server"]["condition"])
             self.assertNotIn("ports", service)
             self.assertEqual("local", service["environment"]["INFRANEXUM_WEB_ENVIRONMENT"])
@@ -478,7 +478,7 @@ case "$url" in
     [ -z "$output" ] || printf '%s' "$body" > "$output"
     if [ -n "$writeout" ]; then printf '%s' '401'; else printf '%s' "$body"; fi ;;
   */health/ready) printf '%s' '{"status":"UP"}' ;;
-  */runtime-config.json) printf '%s' '{"component":"web","version":"2.0.0-alpha.0.106","apiBaseUrl":"/api"}' ;;
+  */runtime-config.json) printf '%s' '{"component":"web","version":"2.0.0-alpha.0.107","apiBaseUrl":"/api"}' ;;
   *) echo "unexpected curl URL: $url" >&2; exit 70 ;;
 esac
 '''), encoding="utf-8")
@@ -649,7 +649,7 @@ case "$url" in
     [ -z "$output" ] || printf '%s' "$body" > "$output"
     if [ -n "$writeout" ]; then printf '%s' '401'; else printf '%s' "$body"; fi ;;
   */health/ready) printf '%s' '{"status":"UP"}' ;;
-  */runtime-config.json) printf '%s' '{"component":"web","version":"2.0.0-alpha.0.106","apiBaseUrl":"/api"}' ;;
+  */runtime-config.json) printf '%s' '{"component":"web","version":"2.0.0-alpha.0.107","apiBaseUrl":"/api"}' ;;
   *) echo "unexpected curl URL: $url" >&2; exit 70 ;;
 esac
 '''), encoding="utf-8")
@@ -877,6 +877,78 @@ esac
         for text in (ps, sh):
             up_line = next(line for line in text.splitlines() if "'up'" in line or line.strip().startswith('up)'))
             self.assertNotIn('--volumes', up_line)
+
+    def test_developer_seed_is_separate_from_migrations_read_only_and_runs_after_up(self) -> None:
+        seed = DOCKER / "dev-seed-postgresql.sql"
+        self.assertTrue(seed.is_file())
+        self.assertFalse(str(seed).startswith(str(ROOT / "src/distribution/migrations")))
+        self.assertEqual(
+            ["runtime-secrets:/run/infranexum-secrets:ro", "./dev-seed-postgresql.sql:/opt/infranexum/dev-seed-postgresql.sql:ro"],
+            self.services["db-admin"]["volumes"],
+        )
+
+        ps = (DOCKER / "dev-compose.ps1").read_text(encoding="utf-8")
+        sh = (DOCKER / "dev-compose.sh").read_text(encoding="utf-8")
+        self.assertIn("'seed' { Invoke-DeveloperSeedData }", ps)
+        self.assertIn("seed) seed_dev_data ;;", sh)
+        ps_up = next(line for line in ps.splitlines() if line.lstrip().startswith("'up'"))
+        sh_up = next(line for line in sh.splitlines() if line.strip().startswith("up)"))
+        self.assertLess(ps_up.index("--wait web"), ps_up.index("Invoke-DeveloperSeedData"))
+        self.assertLess(sh_up.index("--wait web"), sh_up.index("seed_dev_data"))
+
+    def test_developer_seed_is_idempotent_non_destructive_and_uses_application_role(self) -> None:
+        seed = (DOCKER / "dev-seed-postgresql.sql").read_text(encoding="utf-8")
+        ps = (DOCKER / "dev-compose.ps1").read_text(encoding="utf-8")
+        sh = (DOCKER / "dev-compose.sh").read_text(encoding="utf-8")
+
+        self.assertIn("pg_advisory_xact_lock", seed)
+        self.assertGreaterEqual(seed.count("ON CONFLICT DO NOTHING"), 20)
+        self.assertNotRegex(seed.upper(), r"\b(?:DELETE|TRUNCATE|DROP)\b")
+        self.assertNotIn("infranexum_iam.local_account", seed)
+        self.assertNotRegex(seed, r"(?i)password|private[_ -]?key|secret")
+        for wrapper in (ps, sh):
+            seed_lines = "\n".join(line for line in wrapper.splitlines() if "dev-seed-postgresql.sql" in line)
+            self.assertIn("--username=infranexum", seed_lines)
+            self.assertNotIn("--username=postgres", seed_lines)
+            self.assertIn("--set=ON_ERROR_STOP=1", seed_lines)
+
+    def test_developer_seed_covers_current_operator_workspaces_without_real_credentials(self) -> None:
+        seed = (DOCKER / "dev-seed-postgresql.sql").read_text(encoding="utf-8")
+        for table in (
+            "infranexum_org.organization",
+            "infranexum_org.subdivision",
+            "infranexum_iam.iam_user",
+            "infranexum_iam.user_membership",
+            "infranexum_rsot.canonical_object",
+            "infranexum_core.schema_registry_entry",
+            "infranexum_itam.partner",
+            "infranexum_itam.asset",
+            "infranexum_dcim.facility_node",
+            "infranexum_dcim.rack",
+            "infranexum_dcim.equipment",
+            "infranexum_ddi.ipam_network",
+            "infranexum_ddi.ipam_address",
+            "infranexum_integrations.connector_inbox",
+        ):
+            self.assertIn(table, seed)
+        self.assertIn("@demo.invalid", seed)
+        self.assertNotIn("INSERT INTO infranexum_iam.local_account", seed)
+
+    def test_admin_reactivation_is_bounded_auditable_and_never_grants_missing_role(self) -> None:
+        ps = (DOCKER / "dev-compose.ps1").read_text(encoding="utf-8")
+        sh = (DOCKER / "dev-compose.sh").read_text(encoding="utf-8")
+
+        for wrapper in (ps, sh):
+            self.assertIn("admin-reactivate", wrapper)
+            self.assertIn("UPDATE infranexum_iam.local_account", wrapper)
+            self.assertIn("status='ACTIVE'", wrapper)
+            self.assertIn("failed_attempts=0", wrapper)
+            self.assertIn("locked_until=NULL", wrapper)
+            self.assertIn("security_epoch=security_epoch+1", wrapper)
+            self.assertIn("UPDATE infranexum_iam.iam_user", wrapper)
+            self.assertIn("system.platform_admin", wrapper)
+            self.assertIn("ROLE_MISSING", wrapper)
+            self.assertNotIn("INSERT INTO infranexum_iam.role_assignment", wrapper)
 
     def test_required_docker_files_exist_and_are_executable_where_applicable(self) -> None:
         for name in ("patroni-postgres.Dockerfile", "web.Dockerfile", "haproxy-postgres.cfg", "haproxy-server.cfg", "haproxy-web.cfg"):

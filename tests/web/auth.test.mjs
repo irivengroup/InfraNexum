@@ -27,10 +27,16 @@ class ClassList {
   add(...values) { for (const value of values) this.values.add(value); }
   remove(...values) { for (const value of values) this.values.delete(value); }
   contains(value) { return this.values.has(value); }
+  toggle(value, force) {
+    const next = force === undefined ? !this.values.has(value) : Boolean(force);
+    if (next) this.values.add(value); else this.values.delete(value);
+    return next;
+  }
 }
 class Element {
-  constructor() { this.hidden = true; this.textContent = ''; this.dataset = {}; this.disabled = false; this.listeners = new Map(); this.attributes = new Map(); this.value = ''; }
+  constructor() { this.hidden = true; this.textContent = ''; this.dataset = {}; this.disabled = false; this.listeners = new Map(); this.attributes = new Map(); this.value = ''; this.classList = new ClassList(); }
   addEventListener(name, listener) { this.listeners.set(name, listener); }
+  contains(target) { return target === this; }
   setAttribute(name, value) { this.attributes.set(name, String(value)); }
   removeAttribute(name) { this.attributes.delete(name); if (name === 'hidden') this.hidden = false; }
   focus() {}
@@ -191,6 +197,22 @@ test('authentication gate releases immediately when disabled or when a valid ses
   assert.equal(documentObject.elements.get('session-avatar').textContent, 'LA');
   assert.equal(documentObject.elements.get('session-logout').hidden, false);
   assert.equal(documentObject.elements.get('app-shell').hidden, false);
+
+  const menu = documentObject.elements.get('session-menu');
+  const trigger = documentObject.elements.get('session-menu-trigger');
+  const dropdown = documentObject.elements.get('session-menu-dropdown');
+  const triggerClick = trigger.listeners.get('click');
+  assert.equal(typeof triggerClick, 'function');
+  triggerClick({ preventDefault() {}, stopPropagation() {} });
+  assert.equal(dropdown.hidden, false);
+  assert.equal(dropdown.classList.contains('show'), true);
+  assert.equal(menu.classList.contains('show'), true);
+  assert.equal(trigger.attributes.get('aria-expanded'), 'true');
+  triggerClick({ preventDefault() {}, stopPropagation() {} });
+  assert.equal(dropdown.hidden, true);
+  assert.equal(dropdown.classList.contains('show'), false);
+  assert.equal(menu.classList.contains('show'), false);
+  assert.equal(trigger.attributes.get('aria-expanded'), 'false');
 });
 
 

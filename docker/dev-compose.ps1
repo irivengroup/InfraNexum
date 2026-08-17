@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('config','build','up','down','logs','smoke','ha-smoke','credentials','backup','restore','rollback','reset','help')]
+    [ValidateSet('config','build','up','down','logs','smoke','ha-smoke','credentials','admin-reactivate','seed','backup','restore','rollback','reset','help')]
     [string]$Command = 'help',
     [Parameter(Position = 1, ValueFromRemainingArguments = $true)]
     [string[]]$Services = @()
@@ -166,6 +166,56 @@ function Invoke-DatabaseScalar {
     $shell = 'export PGPASSWORD="$(cat /run/infranexum-secrets/db-password)"; exec psql --no-psqlrc --tuples-only --no-align --host=postgres --port=5432 --username=infranexum --dbname=infranexum --command "$INFRANEXUM_SQL"'
     return ((Invoke-ComposeCapture run --rm --no-deps -e "INFRANEXUM_SQL=$Sql" --entrypoint /bin/sh migrate -eu -c $shell) | Out-String).Trim()
 }
+function Invoke-AdminReactivation {
+    Assert-Repository
+    # Recovery is intentionally scoped to the canonical local developer account.
+    # Incrementing security_epoch invalidates every pre-recovery session without
+    # deleting audit-relevant session rows.
+    $sql = @'
+WITH recovered AS (
+    UPDATE infranexum_iam.local_account
+    SET status='ACTIVE', failed_attempts=0, locked_until=NULL,
+        security_epoch=security_epoch+1, version=version+1, updated_at=CURRENT_TIMESTAMP
+    WHERE username='admin'
+    RETURNING id
+), projected AS (
+    UPDATE infranexum_iam.iam_user u
+    SET status='ACTIVE', updated_at=CURRENT_TIMESTAMP
+    FROM recovered r
+    WHERE u.id=r.id AND u.status<>'DELETED'
+    RETURNING u.id
+)
+SELECT CASE
+    WHEN NOT EXISTS (SELECT 1 FROM recovered) THEN 'MISSING'
+    WHEN NOT EXISTS (
+        SELECT 1
+        FROM recovered a
+        JOIN infranexum_iam.role_assignment ra ON ra.actor_type='USER' AND ra.actor_id=a.id
+        JOIN infranexum_iam.role r ON r.id=ra.role_id
+        WHERE r.code='system.platform_admin' AND r.system_role=TRUE AND r.active=TRUE AND r.deleted_at IS NULL
+          AND ra.scope_kind='PLATFORM' AND ra.revoked_at IS NULL
+          AND ra.effective_from<=CURRENT_TIMESTAMP
+          AND (ra.effective_to IS NULL OR ra.effective_to>CURRENT_TIMESTAMP)
+    ) THEN 'ROLE_MISSING'
+    ELSE 'ACTIVE'
+END;
+'@
+    $status = Invoke-DatabaseScalar -Sql $sql
+    if ($status -eq 'MISSING') { throw "Developer administrator 'admin' does not exist" }
+    if ($status -eq 'ROLE_MISSING') { throw "Developer administrator 'admin' was reactivated but has no effective system.platform_admin assignment" }
+    if ($status -ne 'ACTIVE') { throw "Unexpected administrator recovery result: $status" }
+    Write-Output 'admin-reactivate: PASS (admin ACTIVE, lock cleared, sessions invalidated, platform role verified)'
+}
+
+function Invoke-DeveloperSeedData {
+    Assert-Repository
+    # Developer fixtures are intentionally outside the migration catalogue and
+    # run only after the application topology is ready. The application DB role
+    # is used so the seed cannot rely on superuser-only privileges.
+    $shell = 'export PGPASSWORD="$(cat /run/infranexum-secrets/db-password)"; exec psql --no-psqlrc --set=ON_ERROR_STOP=1 --host=postgres --port=5432 --username=infranexum --dbname=infranexum --file=/opt/infranexum/dev-seed-postgresql.sql'
+    Invoke-Compose --profile maintenance run --rm --no-deps --entrypoint /bin/sh db-admin -eu -c $shell
+}
+
 function Invoke-ClusterDatabaseAdminScalar {
     param([Parameter(Mandatory=$true)][string]$Sql)
     # Cluster-wide diagnostics (for example pg_stat_replication) intentionally use
@@ -246,7 +296,7 @@ function Invoke-Smoke {
     $cid='018bcfe5-6800-7001-8000-000000000001'; $response=Invoke-WebRequest -Uri "http://127.0.0.1:$port/api/v1/system/build" -Headers @{'X-Correlation-ID'=$cid} -TimeoutSec 10
     $build=$response.Content | ConvertFrom-Json; if ($build.instanceId -notmatch '^server-pro-[1-4]$') { throw "Unexpected routed instance $($build.instanceId)" }; if ($response.Headers['X-Correlation-ID'] -ne $cid) { throw 'Correlation was not propagated' }
     $webReady=Invoke-RestMethod -Uri "http://127.0.0.1:$webPort/health/ready" -TimeoutSec 10; if ($webReady.status -ne 'UP') { throw 'Web router readiness is not UP' }
-    $runtime=Invoke-RestMethod -Uri "http://127.0.0.1:$webPort/runtime-config.json" -TimeoutSec 10; if ($runtime.component -ne 'web' -or $runtime.version -ne '2.0.0-alpha.0.106' -or $runtime.apiBaseUrl -ne '/api') { throw 'Web runtime configuration is inconsistent with Compose bindings' }
+    $runtime=Invoke-RestMethod -Uri "http://127.0.0.1:$webPort/runtime-config.json" -TimeoutSec 10; if ($runtime.component -ne 'web' -or $runtime.version -ne '2.0.0-alpha.0.107' -or $runtime.apiBaseUrl -ne '/api') { throw 'Web runtime configuration is inconsistent with Compose bindings' }
     $iamHistory=[int](Invoke-ApplicationDatabaseAdminScalar "SELECT count(*) FROM infranexum_core.schema_history WHERE migration_id IN ('0011','0012','0013')")
     if ($iamHistory -ne 3) { throw "IAM migration history is incomplete; expected 0011, 0012 and 0013, observed $iamHistory" }
     $accountTable=[int](Invoke-ApplicationDatabaseAdminScalar "SELECT CASE WHEN to_regclass('infranexum_iam.local_account') IS NOT NULL THEN 1 ELSE 0 END")
@@ -402,15 +452,17 @@ function Invoke-HaSmoke {
 switch ($Command) {
  'config' { Assert-Repository; Invoke-Compose config --quiet }
  'build' { Assert-Repository; Invoke-Compose config --quiet; Invoke-Compose build --pull }
- 'up' { Assert-Repository; Invoke-Compose config --quiet; try { Invoke-Compose rm --stop --force migrate db-bootstrap secret-init } catch {}; Invoke-Compose up --detach --build --wait web }
+ 'up' { Assert-Repository; Invoke-Compose config --quiet; try { Invoke-Compose rm --stop --force migrate db-bootstrap secret-init } catch {}; Invoke-Compose up --detach --build --wait web; Invoke-DeveloperSeedData }
  'down' { Assert-Repository; Invoke-Compose down --remove-orphans }
  'logs' { Assert-Repository; if ($Services.Count) { Invoke-Compose logs --no-color --tail=200 @Services } else { Invoke-Compose logs --no-color --tail=200 web web-1 web-2 server server-1 server-2 server-3 server-4 postgres postgres-1 postgres-2 postgres-3 migrate } }
  'smoke' { Invoke-Smoke }
  'ha-smoke' { Invoke-HaSmoke }
  'credentials' { Show-LocalDeveloperCredentials }
+ 'admin-reactivate' { Invoke-AdminReactivation }
+ 'seed' { Invoke-DeveloperSeedData }
  'backup' { New-DatabaseBackup }
  'restore' { Assert-Repository; if ($env:CONFIRM_INFRANEXUM_RESTORE -ne 'YES') { throw 'Refusing restore; set CONFIRM_INFRANEXUM_RESTORE=YES' }; if (-not $env:BACKUP_FILE) { throw 'BACKUP_FILE is required' }; $backup=(Resolve-Path $env:BACKUP_FILE).Path; Invoke-Compose up --detach --wait postgres; Invoke-Compose --profile maintenance up --detach db-admin; try { Invoke-Compose stop web web-1 web-2 server server-1 server-2 server-3 server-4 } catch {}; $remote='/tmp/infranexum-dev-restore.dump'; Invoke-Compose cp $backup "db-admin:$remote"; Invoke-Compose exec -T db-admin sh -eu -c 'export PGPASSWORD="$(cat /run/infranexum-secrets/db-password)"; dropdb --if-exists --host=postgres --port=5432 --username=infranexum --maintenance-db=postgres infranexum; createdb --host=postgres --port=5432 --username=infranexum --maintenance-db=postgres --owner=infranexum infranexum; pg_restore --exit-on-error --no-owner --no-privileges --host=postgres --port=5432 --username=infranexum --dbname=infranexum /tmp/infranexum-dev-restore.dump'; Invoke-Compose exec -T db-admin rm -f $remote; Invoke-Compose stop db-admin; Invoke-Compose run --rm migrate; Invoke-Compose up --detach --wait web }
  'rollback' { Assert-Repository; if (-not $env:MIGRATION_ID -or $env:CONFIRM_INFRANEXUM_ROLLBACK -ne 'YES') { throw 'MIGRATION_ID and CONFIRM_INFRANEXUM_ROLLBACK=YES are required' }; Invoke-Compose up --detach --wait postgres; $backup=New-DatabaseBackup; Write-Output "Pre-rollback backup: $backup"; try { Invoke-Compose stop web web-1 web-2 server server-1 server-2 server-3 server-4 } catch {}; Invoke-Compose --profile maintenance run --rm -e "MIGRATION_ID=$($env:MIGRATION_ID)" -e CONFIRM_INFRANEXUM_ROLLBACK=YES rollback }
  'reset' { Assert-Repository; if ($env:CONFIRM_INFRANEXUM_VOLUME_DELETE -ne 'YES') { throw 'Refusing volume deletion' }; Invoke-Compose down --volumes --remove-orphans }
- 'help' { Write-Output 'Commands: config build up down logs smoke ha-smoke credentials backup restore rollback reset' }
+ 'help' { Write-Output 'Commands: config build up down logs smoke ha-smoke credentials admin-reactivate seed backup restore rollback reset' }
 }

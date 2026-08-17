@@ -291,17 +291,19 @@ function wireLogout(documentObject, configuration, fetchFunction) {
   menu.hidden = false;
   button.hidden = false;
 
-  const close = (restoreFocus = false) => {
-    dropdown.hidden = true;
-    trigger.setAttribute('aria-expanded', 'false');
-    if (restoreFocus) trigger.focus?.();
-  };
-  const toggle = () => {
-    const open = dropdown.hidden;
+  const setOpen = (open, restoreFocus = false) => {
+    // Bootstrap's .dropdown-menu remains display:none until .show is present.
+    // Keep the native hidden state and Bootstrap visual state synchronized so
+    // accessibility semantics cannot diverge from what the operator sees.
     dropdown.hidden = !open;
+    dropdown.classList?.toggle?.('show', open);
+    menu.classList?.toggle?.('show', open);
     trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
     if (open) button.focus?.();
+    else if (restoreFocus) trigger.focus?.();
   };
+  const close = (restoreFocus = false) => setOpen(false, restoreFocus);
+  const toggle = () => setOpen(dropdown.hidden || !dropdown.classList?.contains?.('show'));
   trigger.addEventListener('click', (event) => { event.preventDefault?.(); event.stopPropagation?.(); toggle(); });
   dropdown.addEventListener?.('keydown', (event) => { if (event.key === 'Escape') { event.preventDefault?.(); close(true); } });
   documentObject.addEventListener?.('click', (event) => { if (!menu.contains?.(event.target)) close(false); });

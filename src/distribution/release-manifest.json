@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.106",
-  "profile": "alpha106-hosted-coverage-administration-dcim-redoc-corrective-pro-enterprise",
+  "version": "2.0.0-alpha.0.107",
+  "profile": "alpha107-web-iam-developer-data-ci-diagnosis-corrective-pro-enterprise",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -14,7 +14,7 @@
     },
     {
       "id": "infranexum-server",
-      "status": "alpha106-organization-controller-runtime-condition-aligned-iam-status-filter-self-lockout-guard-target-jdk25-jacoco-and-server-context-revalidation-pending"
+      "status": "alpha107-protected-platform-admin-global-scope-evaluation-restored-with-ordinary-membership-boundary-preserved-target-jdk25-jacoco-and-live-postgresql-revalidation-pending"
     },
     {
       "id": "infranexum-agent",
@@ -22,7 +22,7 @@
     },
     {
       "id": "infranexum-web",
-      "status": "alpha106-account-dropdown-iam-suspended-user-filter-reactivation-advanced-tab-visibility-vertical-dcim-location-infrastructure-redoc-parsed-local-openapi-datatable-20-50-100-200-no-internal-scroll"
+      "status": "alpha107-account-avatar-bootstrap-dropdown-show-state-fixed-with-hidden-aria-focus-regression-tests-plus-existing-iam-rsot-itam-dcim-ddi-redoc-datatable-surfaces-preserved"
     },
     {
       "id": "connector-sdk-v1",
@@ -46,11 +46,11 @@
     },
     {
       "id": "ci-foundation",
-      "status": "unix-only-source-integrity-reactor-and-independent-module-verification-postgresql17-live-jacoco-detailed-gap-reporting-no-product-compose-deployment-wiring"
+      "status": "unix-only-source-integrity-reactor-independent-module-postgresql17-18-and-jacoco-gates-preserved; no-repository-workaround-added-for-github-latest-commit-ui-retrieval-symptom-without-job-log-evidence"
     },
     {
       "id": "deployment-boundary",
-      "status": "standalone-baremetal-vm-is-product-target-root-docker-compose-is-developer-test-tooling-loopback-only-postgres-server-web-router-ports-raw-cluster-nodes-private-and-inspect-fallback-not-a-production-deployment-dependency"
+      "status": "standalone-baremetal-vm-production-target; root-docker-compose-remains-local-dev-test-only; alpha107-adds-post-readiness-idempotent-fictional-seed-outside-migrations-and-bounded-admin-recovery-without-silent-role-grant"
     },
     {
       "id": "platform-observability-v1",
@@ -70,7 +70,7 @@
     },
     {
       "id": "identity-access-rbac-v1",
-      "status": "pgm-03-e03-rbac-and-pgm-03-e04-advanced-authorization-contracts-preserved; alpha085-does-not-change-iam-or-web-form-contracts"
+      "status": "pgm-03-e03-rbac-and-pgm-03-e04-advanced-authorization-preserved; protected-system-platform-admin-platform-assignment-covers-organization-subdivision-without-membership; all-other-roles-remain-membership-bound"
     },
     {
       "id": "rsot-authority-foundation-v1",
@@ -119,12 +119,12 @@
   ],
   "validation_reports": [],
   "validation_summary": {
-    "source_inventory_paths": 1385,
+    "source_inventory_paths": 1386,
     "source_integrity_tests": 45,
     "source_integrity_coverage_percent": 100,
     "source_integrity_violations": 0,
-    "python_tests": 469,
-    "architecture_tests": 159,
+    "python_tests": 584,
+    "architecture_tests": 200,
     "architecture_violations": 0,
     "toolchain_tests": 25,
     "toolchain_coverage_percent": 99,
@@ -174,18 +174,18 @@
     "archive_compatibility_max_member_path": 148,
     "entitlements_module_tests_defined": 49,
     "audit_module_tests_defined": 21,
-    "architecture_coverage_status": "NON_EXECUTED_ALPHA097_INSTRUMENTED_MONOLITHIC_RUNNER_TIMEOUT_AFTER_36_TESTS_TARGETED_IDEMPOTENCY_ARCHITECTURE_56_OF_56_PASS_ARCHITECTURE_CHECK_PASS",
-    "architecture_functional_tests": "PARTIAL_TARGETED_IDEMPOTENCY_56_PASS_FULL_INSTRUMENTED_SUITE_RUNNER_TIMEOUT",
+    "architecture_coverage_status": "NON_EXECUTED_FULL_INSTRUMENTED_MONOLITHIC_RUNNER_TIMEOUT; SPLIT_FUNCTIONAL_171_OF_171_EXECUTED; META_CHECKER_NOT_COMPLETED_AS_A_TEST_SUITE",
+    "architecture_functional_tests": "EXECUTED_171_OF_171_SPLIT_PASS; ARCHITECTURE_AS_CODE_CHECK_PASS",
     "jdbc_module_tests_defined": 73,
     "jdbc_postgresql_live_tests_defined": 18,
     "server_module_tests_defined": 121,
     "server_capability_configuration_contract_local": "EXECUTED_JAVA21_STRICT_HARNESS",
-    "agent_target_toolchain_status": "NON_EXECUTED_TARGET_GO_1_26_5_DOWNLOAD_BLOCKED_LOCAL_GO_1_23_2",
+    "agent_target_toolchain_status": "NON_EXECUTED_TARGET_GO_1_26_5_LOCAL_GO_1_23_2",
     "jdbc_deterministic_harness_tests_executed": 43,
     "jdbc_explicit_source_branch_gaps_diagnostic": 0,
     "server_workers_runtime_tests_defined": 10,
     "server_workers_runtime_strict_harness": "EXECUTED_JAVA21_STUBBED_SPRING_DIAGNOSTIC",
-    "compose_contract_tests": 64,
+    "compose_contract_tests": 68,
     "server_clock_framework_autoconfiguration_regression": "DEFINED_REQUIRES_JDK25_MAVEN_EXECUTION",
     "server_workers_observability_regressions": "DEFINED_HEALTH_METRICS_LIVE_LOOP_REQUIRES_JDK25_MAVEN_EXECUTION",
     "server_observability_regressions": "DEFINED_HTTP_DURABLE_WORKER_CORRELATION_MDC_TRACING_AND_SENSITIVE_STRUCTURED_LOG_REDACTION_REQUIRES_JDK25_MAVEN_EXECUTION",
@@ -626,11 +626,11 @@
     "postgresql17_18_live_alpha105": "NON_EXECUTED_LOCAL_TARGET_REQUIRED",
     "packaging_tracked_files": 1385,
     "git_blob_checksums": 1384,
-    "architecture_alpha106": "EXECUTED_171_OF_171_FUNCTIONAL_PLUS_ARCHITECTURE_AS_CODE_PASS_META_CHECKER_NON_EXECUTED_CURRENT_CORRECTIVE",
-    "api_alpha106": "EXECUTED_CLI_15_FRAGMENTS_179_OPERATIONS_ZERO_VIOLATIONS_DEBT_0_0_0_0_TARGETED_REGRESSIONS_FULL_MONOLITHIC_TIMEOUT",
-    "migration_alpha106": "EXECUTED_117_OF_117_ZERO_VIOLATIONS",
-    "java_auxiliary_alpha106": "216_DOMAIN_CORE_PLUS_6_SECURITY_PLUS_133_JDBC_DETERMINISTIC_ZERO_FAILURES_JAVA21_AUXILIARY",
-    "connector_sdk_alpha106": "19_OF_19_COVERAGE99_REPRODUCIBLE_TWO_BUILDS_BYTE_IDENTICAL_IMPORT_SCHEMA_PASS"
+    "architecture_alpha107": "EXECUTED_171_OF_171_FUNCTIONAL_PLUS_ARCHITECTURE_AS_CODE_PASS_META_CHECKER_NON_EXECUTED_CURRENT_CORRECTIVE",
+    "api_alpha107": "EXECUTED_CLI_15_FRAGMENTS_179_OPERATIONS_ZERO_VIOLATIONS_DEBT_0_0_0_0_TARGETED_REGRESSIONS_FULL_MONOLITHIC_TIMEOUT",
+    "migration_alpha107": "EXECUTED_117_OF_117_ZERO_VIOLATIONS",
+    "java_auxiliary_alpha107": "216_DOMAIN_CORE_PLUS_6_SECURITY_PLUS_133_JDBC_DETERMINISTIC_ZERO_FAILURES_JAVA21_AUXILIARY",
+    "connector_sdk_alpha107": "19_OF_19_COVERAGE99_REPRODUCIBLE_TWO_BUILDS_BYTE_IDENTICAL_IMPORT_SCHEMA_PASS"
   },
   "source_layout": "All production solution spaces are contained below src/; Java, Go and Web tests are repository-level under tests/; canonical relative paths are limited to 120 characters and path components to 80 characters.",
   "source_integrity": {
@@ -643,13 +643,13 @@
     "inventory_paths": 1385
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.106",
+    "prefix": "infranexum-2.0.0-alpha.0.107",
     "archive_entries": 1387,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
     "source_recorded_files": 1386,
     "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
-    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.106-validation-evidence.zip"
+    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.107-validation-evidence.zip"
   },
   "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.105-validation-evidence.zip",
   "runtime_validation": {
@@ -1260,19 +1260,37 @@
   "git_blob_checksums_alpha102": 1343,
   "source_integrity_alpha102": "EXECUTED_45_OF_45_100_PERCENT_STAGED_SNAPSHOT_1344_TRACKED_PATHS_1343_GIT_BLOB_CHECKSUMS_1341_CANONICAL_INVENTORY_ZERO_VIOLATIONS",
   "archive_compatibility_alpha102": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS_AND_POST_EXTRACTION_SOURCE_INTEGRITY_ZERO_VIOLATIONS",
-  "architecture_alpha106": "EXECUTED_171_OF_171_FUNCTIONAL_PLUS_ARCHITECTURE_AS_CODE_PASS_META_CHECKER_NON_EXECUTED_CURRENT_CORRECTIVE",
-  "migration_alpha106": "EXECUTED_117_OF_117_ZERO_VIOLATIONS_MIGRATION0035_PRESERVED",
-  "eventing_alpha106": "EXECUTED_10_OF_10_COVERAGE100_ZERO_VIOLATIONS",
-  "persistence_alpha106": "EXECUTED_12_OF_12_COVERAGE98_ZERO_VIOLATIONS",
-  "capabilities_alpha106": "EXECUTED_10_OF_10_COVERAGE99_ZERO_VIOLATIONS_32_CAPABILITIES_119_QUOTAS",
-  "entitlements_alpha106": "EXECUTED_10_OF_10_COVERAGE100_ZERO_VIOLATIONS",
-  "audit_alpha106": "EXECUTED_8_OF_8_COVERAGE100_ZERO_VIOLATIONS",
-  "compose_contract_alpha106": "EXECUTED_64_OF_64",
-  "toolchains_alpha106": "EXECUTED_25_OF_25_COVERAGE99_ZERO_VIOLATIONS",
-  "connector_sdk_alpha106": "EXECUTED_19_OF_19_COVERAGE99_REPRODUCIBLE_WHEEL_BYTE_IDENTICAL_TWO_BUILDS_IMPORT_AND_PACKAGED_SCHEMA_PASS_SHA256_D2E70F171C5E77ABD757F5881ECBA96771ABE3855B46B89FC033D62FFCDE51C5",
-  "web_local_runtime_alpha106": "EXECUTED_LOCAL_NODE22_16_0_195_OF_195_LINE99_73_BRANCH98_53_FUNCTION100_PROCESS_SMOKE_PASS_TARGET_NODE24_18_1_PNPM11_17_0_PENDING",
-  "api_contracts_alpha106": "EXECUTED_CLI_15_FRAGMENTS_179_OPERATIONS_ZERO_VIOLATIONS_DEBT_0_0_0_0_PLUS_TARGETED_CONTRACT_REGRESSIONS_AND_PROJECTION_TESTS;FULL_MONOLITHIC_TEST_RUNNER_TIMEOUT",
-  "source_inventory_paths_alpha106": 1385,
-  "packaging_tracked_files_alpha106": 1387,
-  "git_blob_checksums_alpha106": 1386
+  "architecture_alpha107": "EXECUTED_171_OF_171_FUNCTIONAL_SPLIT_PLUS_ARCHITECTURE_AS_CODE_PASS; META_CHECKER_TEST_SUITE_NON_EXECUTED_TO_COMPLETION_RUNNER_TIMEOUT",
+  "migration_alpha107": "EXECUTED_117_OF_117_COVERAGE99_ZERO_VIOLATIONS_MIGRATION0035_PRESERVED_NO_NEW_PRODUCT_MIGRATION",
+  "eventing_alpha107": "EXECUTED_10_OF_10_COVERAGE100_ZERO_VIOLATIONS",
+  "persistence_alpha107": "EXECUTED_12_OF_12_COVERAGE98_ZERO_VIOLATIONS",
+  "capabilities_alpha107": "EXECUTED_10_OF_10_COVERAGE99_ZERO_VIOLATIONS_32_CAPABILITIES_119_QUOTAS",
+  "entitlements_alpha107": "EXECUTED_10_OF_10_COVERAGE100_ZERO_VIOLATIONS",
+  "audit_alpha107": "EXECUTED_8_OF_8_COVERAGE100_ZERO_VIOLATIONS",
+  "compose_contract_alpha107": "EXECUTED_68_OF_68",
+  "toolchains_alpha107": "EXECUTED_25_OF_25_COVERAGE99_ZERO_VIOLATIONS",
+  "connector_sdk_alpha107": "EXECUTED_19_OF_19_COVERAGE99_PACKAGE_AND_CERTIFICATION_GATE_PRESERVED",
+  "web_local_runtime_alpha107": "EXECUTED_LOCAL_NODE22_16_0_195_OF_195_LINE99_73_BRANCH98_53_FUNCTION100_PROCESS_SMOKE_PASS_ACCOUNT_DROPDOWN_REGRESSION_PASS_TARGET_NODE24_18_1_PNPM11_17_0_PENDING",
+  "api_contracts_alpha107": "EXECUTED_48_OF_48_COVERAGE98_15_FRAGMENTS_179_OPERATIONS_ZERO_VIOLATIONS_DEBT_0_0_0_0",
+  "source_inventory_paths_alpha107": 1386,
+  "packaging_tracked_files_alpha107": 1388,
+  "git_blob_checksums_alpha107": 1387,
+  "corrective_alpha107": "IMPLEMENTED_WEB_ACCOUNT_DROPDOWN_PLATFORM_ADMIN_SCOPE_DEVELOPER_ADMIN_RECOVERY_AND_POST_START_TEST_FIXTURES_NO_ROADMAP_ADVANCE",
+  "java_domain_auxiliary_alpha107": "EXECUTED_LOCAL_JAVA21_POLICY_SMOKE_PASS_XLINT_WERROR_AUXILIARY_ONLY_TARGET_JDK25_MAVEN_JUNIT_PENDING",
+  "security_auxiliary_alpha107": "NON_EXECUTED_CURRENT_CORRECTIVE_NO_SECURITY_ADAPTER_CODE_CHANGE_TARGET_JDK25_MAVEN_GATE_PENDING",
+  "jdbc_auxiliary_alpha107": "EXECUTED_LOCAL_JAVA21_JDBC_SMOKE_AND_JDBC_AUDIT_SMOKE_PASS_XLINT_WERROR_AUXILIARY_ONLY",
+  "maven_target_jdk25_alpha107": "NON_EXECUTED_LOCAL_JAVA21_0_11_TARGET_TEMURIN25_0_4_PLUS_7_REQUIRED_HOSTED_RERUN",
+  "postgresql_live_alpha107": "NON_EXECUTED_LOCAL_POSTGRESQL_AND_DOCKER_UNAVAILABLE_TARGET_POSTGRESQL17_18_HOSTED_MATRIX_REQUIRED",
+  "roadmap_next_alpha107": "CLOSE_PGM10E05_ONLY_AFTER_HOSTED_JDK25_JACOCO_AND_POSTGRESQL17_18_GATES_PASS_THEN_RESUME_DEPENDENCY_ELIGIBLE_ROADMAP",
+  "developer_seed_alpha107": "EXECUTED_STATIC_CONTRACT_26_INSERT_STATEMENTS_26_TABLE_COLUMN_SETS_MATCH_MIGRATION_SCHEMA_IDEMPOTENT_NON_DESTRUCTIVE_APPLICATION_ROLE; LIVE_POSTGRESQL_EXECUTION_PENDING",
+  "admin_reactivation_alpha107": "EXECUTED_STATIC_COMPOSE_CONTRACT_BOUND_TO_ADMIN_ACTIVE_LOCK_CLEAR_SECURITY_EPOCH_INCREMENT_IAM_PROJECTION_AND_PLATFORM_ROLE_VERIFICATION_NO_SILENT_ROLE_GRANT; LIVE_DOCKER_EXECUTION_PENDING",
+  "web_account_dropdown_alpha107": "EXECUTED_NODE_REGRESSION_BOOTSTRAP_SHOW_HIDDEN_ARIA_OPEN_CLOSE_PASS; REAL_BROWSER_RENDER_PENDING",
+  "github_actions_alpha107": "NON_EXECUTED_REPOSITORY_SPECIFIC_HOSTED_RUN_NOT_AVAILABLE_IN_LOCAL_RUNNER; FOUNDATION_WORKFLOW_SOURCE_CONTAINS_NO_LATEST_COMMIT_ERROR_STRING_AND_WAS_NOT_WEAKENED",
+  "docker_runtime_alpha107": "NON_EXECUTED_LOCAL_DOCKER_UNAVAILABLE_OPERATOR_PRO_UP_SEED_SMOKE_HA_SMOKE_REQUIRED",
+  "powershell_runtime_alpha107": "NON_EXECUTED_LOCAL_PWSH_UNAVAILABLE_WINDOWS_POWERSHELL7_WRAPPER_EXECUTION_REQUIRED",
+  "java_offline_smokes_alpha107": "EXECUTED_LOCAL_JAVA21_CONTRACT_EVENTING_AUDIT_JDBC_JDBC_WORKERS_CAPABILITIES_API_CAPABILITY_ENTITLEMENTS_ENTITLEMENT_RUNTIME_ACTIVATION_WORKERS_OBSERVABILITY_RSOT_SCHEMA_ITAM_DCIM_DDI_INTEGRATIONS_POLICY_TARGETS_REACHED_EXIT_ZERO_ACROSS_SPLIT_RUNS",
+  "source_integrity_prepack_alpha107": "EXECUTED_45_OF_45_COVERAGE100_ZERO_VIOLATIONS_CANONICAL_INVENTORY_1386_PATHS",
+  "source_integrity_alpha107": "EXECUTED_45_OF_45_COVERAGE100_STAGED_SNAPSHOT_1388_TRACKED_PATHS_1387_GIT_BLOB_CHECKSUMS_1386_CANONICAL_INVENTORY_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
+  "archive_compatibility_unit_alpha107": "EXECUTED_12_OF_12_COVERAGE100",
+  "archive_compatibility_alpha107": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS_POST_EXTRACTION_SOURCE_INTEGRITY_ZERO_VIOLATIONS_AND_BYTE_REPRODUCIBLE_TWO_BUILDS"
 }

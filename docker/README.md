@@ -79,6 +79,34 @@ make compose-up
 make compose-smoke
 ```
 
+## Developer-only test fixtures and administrator recovery
+
+`dev-compose.ps1 up` and `dev-compose.sh up` load representative developer fixtures only **after** the PRO Web/Server/PostgreSQL topology reaches the Compose `--wait web` readiness boundary. The canonical seed is `docker/dev-seed-postgresql.sql`; it is intentionally outside `src/distribution/migrations`, is mounted read-only only by the maintenance database tooling, runs as the `infranexum` application database role, uses deterministic fictional values (including `.invalid` domains), and never creates local authentication credentials. Replaying it is safe: inserts are idempotent and do not delete, truncate, or overwrite existing rows.
+
+Replay the fixtures explicitly without recreating volumes:
+
+```powershell
+.\docker\dev-compose.ps1 seed
+```
+
+```sh
+./docker/dev-compose.sh seed
+```
+
+A direct `docker compose up ...` invocation does **not** run this post-start seed; use the developer wrapper when fixtures are required.
+
+If the canonical local `admin` account is suspended or locked, use the bounded recovery command:
+
+```powershell
+.\docker\dev-compose.ps1 admin-reactivate
+```
+
+```sh
+./docker/dev-compose.sh admin-reactivate
+```
+
+The recovery changes the local account and IAM projection back to `ACTIVE`, clears failed-attempt/lock state and increments `security_epoch` so pre-recovery sessions become invalid. It then requires an effective protected `system.platform_admin` PLATFORM assignment. A missing platform-admin assignment is reported as an error and is **not** silently created.
+
 ## Stop and diagnostics
 
 Compose log commands use **service names** (`migrate`, `postgres`, `server`), not generated container names such as `infranexum-dev-migrate-1`. From the repository root:

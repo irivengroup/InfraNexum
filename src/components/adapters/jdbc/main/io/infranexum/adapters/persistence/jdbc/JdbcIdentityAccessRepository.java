@@ -395,7 +395,7 @@ public final class JdbcIdentityAccessRepository implements IdentityAccessReposit
     public boolean hasEffectivePermission(DomainIdentifier userId,String permissionCode,AuthorizationScope scope,Instant at){
         Objects.requireNonNull(userId,"userId"); Objects.requireNonNull(permissionCode,"permissionCode"); Objects.requireNonNull(scope,"scope"); Objects.requireNonNull(at,"at");
         if(!isActiveUser(userId)) return false;
-        if(scope.kind()!=ScopeKind.PLATFORM && !hasEffectiveMembership(userId,scope,at)) return false;
+        if(!mayEvaluateScopedAuthorization(userId,scope,at)) return false;
         if(assignmentGrants("USER",userId,permissionCode,scope,at))return true;
         for(DomainIdentifier group:effectiveGroups(userId))if(assignmentGrants("GROUP",group,permissionCode,scope,at))return true;
         return false;
@@ -406,7 +406,7 @@ public final class JdbcIdentityAccessRepository implements IdentityAccessReposit
     public Set<String> effectivePermissionCodes(DomainIdentifier userId, AuthorizationScope scope, Instant at) {
         Objects.requireNonNull(userId, "userId"); Objects.requireNonNull(scope, "scope"); Objects.requireNonNull(at, "at");
         if (!isActiveUser(userId)) return Set.of();
-        if (scope.kind()!=ScopeKind.PLATFORM && !hasEffectiveMembership(userId, scope, at)) return Set.of();
+        if (!mayEvaluateScopedAuthorization(userId, scope, at)) return Set.of();
         TreeSet<String> codes = new TreeSet<>();
         codes.addAll(grantedPermissionCodes("USER", userId, scope, at));
         for (DomainIdentifier group : effectiveGroups(userId)) {
@@ -419,7 +419,7 @@ public final class JdbcIdentityAccessRepository implements IdentityAccessReposit
     public boolean hasEffectiveRole(DomainIdentifier userId,DomainIdentifier roleId,AuthorizationScope scope,Instant at){
         Objects.requireNonNull(userId,"userId");Objects.requireNonNull(roleId,"roleId");Objects.requireNonNull(scope,"scope");Objects.requireNonNull(at,"at");
         if(!isActiveUser(userId))return false;
-        if(scope.kind()!=ScopeKind.PLATFORM&&!hasEffectiveMembership(userId,scope,at))return false;
+        if(!mayEvaluateScopedAuthorization(userId,scope,at))return false;
         if(assignmentHasRole("USER",userId,roleId,scope,at))return true;
         for(DomainIdentifier group:effectiveGroups(userId))if(assignmentHasRole("GROUP",group,roleId,scope,at))return true;
         return false;
@@ -427,6 +427,18 @@ public final class JdbcIdentityAccessRepository implements IdentityAccessReposit
 
     @Override
     public boolean hasEffectiveSystemRole(DomainIdentifier userId,String roleCode,Instant at){if(!isActiveUser(userId)) return false; return withRead(connection->{String sql="SELECT 1 FROM "+assignmentTable()+" a JOIN "+roleTable()+" r ON r.id=a.role_id WHERE a.actor_type='USER' AND a.actor_id=? AND a.scope_kind='PLATFORM' AND a.revoked_at IS NULL AND a.effective_from<=? AND (a.effective_to IS NULL OR a.effective_to>?) AND r.code=? AND r.system_role="+trueLiteral()+" AND r.active="+trueLiteral()+" AND r.deleted_at IS NULL";try(PreparedStatement statement=connection.prepareStatement(sql)){dialect.bindIdentifier(statement,1,userId);JdbcTemporal.bindInstant(statement,2,at);JdbcTemporal.bindInstant(statement,3,at);statement.setString(4,roleCode);try(ResultSet rows=statement.executeQuery()){return rows.next();}}},"evaluate IAM system role");}
+
+    /**
+     * Applies the membership boundary for scoped authorization while preserving
+     * the protected platform-administrator contract. A direct, effective
+     * {@code system.platform_admin} PLATFORM assignment is the only role allowed
+     * to administer an organization before an explicit membership exists.
+     */
+    private boolean mayEvaluateScopedAuthorization(DomainIdentifier userId, AuthorizationScope scope, Instant at) {
+        return scope.kind() == ScopeKind.PLATFORM
+                || hasEffectiveMembership(userId, scope, at)
+                || hasEffectiveSystemRole(userId, Role.PLATFORM_ADMIN_CODE, at);
+    }
 
 
     private boolean assignmentHasRole(String actorType,DomainIdentifier actorId,DomainIdentifier roleId,AuthorizationScope requested,Instant at){

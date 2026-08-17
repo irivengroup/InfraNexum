@@ -22,6 +22,7 @@
     "docker/compose.yaml",
     "docker/dev-compose.ps1",
     "docker/dev-compose.sh",
+    "docker/dev-seed-postgresql.sql",
     "docker/haproxy-postgres.cfg",
     "docker/haproxy-server.cfg",
     "docker/haproxy-web.cfg",

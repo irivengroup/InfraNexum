@@ -210,7 +210,7 @@ final class IdentityAccessTestRepository implements IdentityAccessRepository {
     public Set<String> effectivePermissionCodes(DomainIdentifier userId, AuthorizationScope scope, Instant at) {
         IdentityUser user = users.get(userId);
         if (user == null || user.status() != IdentityUserStatus.ACTIVE) return Set.of();
-        if (scope.kind() != ScopeKind.PLATFORM && !hasEffectiveMembership(userId, scope, at)) return Set.of();
+        if (!mayEvaluateScopedAuthorization(userId, scope, at)) return Set.of();
         TreeSet<String> result = new TreeSet<>();
         for (RoleAssignment assignment : roleAssignments.values()) {
             if (!assignment.effectiveAt(at) || !assignment.scope().covers(scope)) continue;
@@ -231,7 +231,7 @@ final class IdentityAccessTestRepository implements IdentityAccessRepository {
     public boolean hasEffectiveRole(DomainIdentifier userId, DomainIdentifier roleId, AuthorizationScope scope, Instant at) {
         IdentityUser user = users.get(userId);
         if (user == null || user.status() != IdentityUserStatus.ACTIVE) return false;
-        if (scope.kind() != ScopeKind.PLATFORM && !hasEffectiveMembership(userId, scope, at)) return false;
+        if (!mayEvaluateScopedAuthorization(userId, scope, at)) return false;
         for (RoleAssignment assignment : roleAssignments.values()) {
             if (!assignment.roleId().equals(roleId) || !assignment.effectiveAt(at) || !assignment.scope().covers(scope)) continue;
             if (assignment.actorType() == AssignmentActorType.USER && assignment.actorId().equals(userId)) return true;
@@ -248,6 +248,13 @@ final class IdentityAccessTestRepository implements IdentityAccessRepository {
                         && assignment.actorId().equals(userId) && assignment.scope().kind() == ScopeKind.PLATFORM && assignment.effectiveAt(at))
                 .map(assignment -> roles.get(assignment.roleId())).anyMatch(role -> role != null && role.systemRole() && role.active()
                         && !role.deleted() && role.code().equals(roleCode));
+    }
+
+    /** Mirrors the production repository's fail-closed platform administrator exception. */
+    private boolean mayEvaluateScopedAuthorization(DomainIdentifier userId, AuthorizationScope scope, Instant at) {
+        return scope.kind() == ScopeKind.PLATFORM
+                || hasEffectiveMembership(userId, scope, at)
+                || hasEffectiveSystemRole(userId, Role.PLATFORM_ADMIN_CODE, at);
     }
 
     private void addRolePermissions(Set<String> result, DomainIdentifier roleId) {

@@ -243,6 +243,32 @@ class IdentityAccessAdminServiceTest {
     }
 
     @Test
+    void platformAdministratorCrossesOrganizationMembershipBoundaryButOrdinaryUsersRemainDenied() {
+        Permission permission = seedPermission("asset.platform-admin.read", ScopeKind.ORGANIZATION);
+        Role platformAdmin = new Role(IdentityAccessDomainTest.id(299), null, Role.PLATFORM_ADMIN_CODE, "Platform administrator",
+                ScopeKind.PLATFORM, true, true, NOW, NOW, null);
+        repository.insertRole(platformAdmin, Set.of(permission.code()));
+
+        IdentityUser administrator = service.createUser("global.admin", null, "Global Admin", true, context);
+        repository.insertAssignment(new RoleAssignment(IdentityAccessDomainTest.id(298), platformAdmin.id(), AssignmentActorType.USER,
+                administrator.id(), AuthorizationScope.platform(), NOW, null, null, null));
+
+        assertFalse(repository.hasEffectiveMembership(administrator.id(), AuthorizationScope.organization(ORG), NOW));
+        assertTrue(repository.hasEffectivePermission(administrator.id(), permission.code(), AuthorizationScope.organization(ORG), NOW));
+        assertTrue(repository.hasEffectiveRole(administrator.id(), platformAdmin.id(), AuthorizationScope.organization(ORG), NOW));
+
+        Role ordinaryRole = new Role(IdentityAccessDomainTest.id(297), null, "system.test-operator", "Test operator",
+                ScopeKind.PLATFORM, true, true, NOW, NOW, null);
+        repository.insertRole(ordinaryRole, Set.of(permission.code()));
+        IdentityUser ordinaryUser = service.createUser("ordinary.operator", null, "Ordinary Operator", true, context);
+        repository.insertAssignment(new RoleAssignment(IdentityAccessDomainTest.id(296), ordinaryRole.id(), AssignmentActorType.USER,
+                ordinaryUser.id(), AuthorizationScope.platform(), NOW, null, null, null));
+
+        assertFalse(repository.hasEffectivePermission(ordinaryUser.id(), permission.code(), AuthorizationScope.organization(ORG), NOW));
+        assertFalse(repository.hasEffectiveRole(ordinaryUser.id(), ordinaryRole.id(), AuthorizationScope.organization(ORG), NOW));
+    }
+
+    @Test
     void systemRoleCannotBeAssignedOrRevokedByNonAdministrator() {
         Role systemRole = seedSystemPlatformAdminRole();
         IdentityUser target = service.createUser("target.admin", null, "Target", true, context);
