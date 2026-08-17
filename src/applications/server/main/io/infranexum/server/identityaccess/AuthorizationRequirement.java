@@ -59,6 +59,17 @@ record AuthorizationRequirement(
             return permission(PermissionCodes.INTEGRATIONS_CONNECTOR_READ, AuthorizationScope.platform(), "integration-connector", connectorKey);
         }
 
+        if (normalized.equals("/api/v1/integrations/providers/service-now") && verb.equals("GET")) {
+            return permission(PermissionCodes.INTEGRATIONS_CONNECTOR_READ, AuthorizationScope.platform(), "integration-provider", "service-now");
+        }
+        if (normalized.matches("^/api/v1/integrations/providers/service-now/[^/]+/(health|configuration-items/search)$")) {
+            boolean supported = (normalized.endsWith("/health") && verb.equals("GET"))
+                    || (normalized.endsWith("/configuration-items/search") && verb.equals("POST"));
+            if (!supported) return unregistered(normalized);
+            String connectorKey = new io.infranexum.integrations.ConnectorKey(normalized.split("/")[6]).value();
+            return permission(PermissionCodes.INTEGRATIONS_CONNECTOR_READ, AuthorizationScope.platform(), "integration-connector", connectorKey);
+        }
+
         if (normalized.equals("/api/v1/integrations/dlq") && verb.equals("GET")) {
             return permission(PermissionCodes.INTEGRATIONS_DLQ_READ, AuthorizationScope.platform(), "integration-dlq", "collection");
         }

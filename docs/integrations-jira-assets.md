@@ -2,7 +2,7 @@
 
 ## Scope and authority
 
-`2.0.0-alpha.0.108` introduces the first provider-specific slice of PGM-10-E06. The connector is deliberately **federated read only**:
+`2.0.0-alpha.0.108` introduced the first provider-specific slice of PGM-10-E06. The connector is deliberately **federated read only**:
 
 - provider: `jira-assets`;
 - direction: `FEDERATED_READ`;

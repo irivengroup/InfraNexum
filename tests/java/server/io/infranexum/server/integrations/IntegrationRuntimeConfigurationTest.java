@@ -100,7 +100,7 @@ class IntegrationRuntimeConfigurationTest {
                     inbox, mock(AuditJournal.class), observer, ids, CLOCK);
             var dispatcher = configuration.connectorInboxDispatcher(
                     inbox, endpointRegistry, handlerRegistry, observer, CLOCK,
-                    new ServerRuntimeProperties("server-a", RuntimeMode.REGIONAL, "eu-west", "paris", "2.0.0-alpha.0.108", "2.0.0-draft.21"),
+                    new ServerRuntimeProperties("server-a", RuntimeMode.REGIONAL, "eu-west", "paris", "2.0.0-alpha.0.109", "2.0.0-draft.21"),
                     properties);
 
             assertNotNull(webhook);
@@ -123,7 +123,8 @@ class IntegrationRuntimeConfigurationTest {
                 3, Duration.ofMinutes(15),
                 Map.of("jira-assets.test", new IntegrationRuntimeProperties.EndpointProperties(
                         "jira-handler", "env:PATH", Duration.ofMinutes(5), true)),
-                new IntegrationRuntimeProperties.JiraAssetsProperties(2_097_152, Map.of()));
+                new IntegrationRuntimeProperties.JiraAssetsProperties(2_097_152, Map.of()),
+                new IntegrationRuntimeProperties.ServiceNowProperties(2_097_152, Map.of()));
     }
 
     private static ConnectorDeliveryHandler handler(String name) {

@@ -25,6 +25,7 @@
     "components/adapters",
     "components/adapters/jdbc",
     "components/adapters/jira-assets",
+    "components/adapters/service-now",
     "components/core",
     "components/core/contracts",
     "components/core/compatibility",

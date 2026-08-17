@@ -21,7 +21,8 @@
     "components.domains.dcim",
     "components.domains.ddi",
     "components.domains.integrations",
-    "components.adapters.jira-assets"
+    "components.adapters.jira-assets",
+    "components.adapters.service-now"
   ],
   "source_baseline": [
     "PGM-02-E01",

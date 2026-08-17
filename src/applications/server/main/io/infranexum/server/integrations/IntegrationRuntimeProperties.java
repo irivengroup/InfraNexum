@@ -2,6 +2,7 @@ package io.infranexum.server.integrations;
 
 import io.infranexum.core.contracts.ConfigurationException;
 import io.infranexum.adapters.jiraassets.JiraAssetsSettings;
+import io.infranexum.adapters.servicenow.ServiceNowSettings;
 import io.infranexum.core.events.ExponentialBackoffPolicy;
 import io.infranexum.core.events.RetryPolicy;
 import io.infranexum.integrations.ConnectorKey;
@@ -30,7 +31,8 @@ public record IntegrationRuntimeProperties(
         int suspendAfterDeadLetters,
         Duration suspensionDuration,
         Map<String, EndpointProperties> endpoints,
-        JiraAssetsProperties jiraAssets) {
+        JiraAssetsProperties jiraAssets,
+        ServiceNowProperties serviceNow) {
 
     public IntegrationRuntimeProperties {
         if (webhookMaxPayloadBytes < 1 || webhookMaxPayloadBytes > 1_048_576) throw new ConfigurationException("integrations.webhookMaxPayloadBytes must be between 1 and 1048576");
@@ -46,6 +48,7 @@ public record IntegrationRuntimeProperties(
         }
         endpoints = Map.copyOf(normalized);
         jiraAssets = Objects.requireNonNullElseGet(jiraAssets, () -> new JiraAssetsProperties(2_097_152, Map.of()));
+        serviceNow = Objects.requireNonNullElseGet(serviceNow, () -> new ServiceNowProperties(2_097_152, Map.of()));
     }
 
     RetryPolicy retryPolicy() {
@@ -68,6 +71,17 @@ public record IntegrationRuntimeProperties(
             ConnectorKey connectorKey = new ConnectorKey(key);
             result.put(connectorKey, new JiraAssetsSettings(
                     connectorKey, value.cloudId(), value.workspaceId(), value.bearerTokenReference(), value.requestTimeout(), value.enabled()));
+        });
+        return Map.copyOf(result);
+    }
+
+
+    Map<ConnectorKey, ServiceNowSettings> serviceNowDefinitions() {
+        Map<ConnectorKey, ServiceNowSettings> result = new LinkedHashMap<>();
+        serviceNow.connectors().forEach((key, value) -> {
+            ConnectorKey connectorKey = new ConnectorKey(key);
+            result.put(connectorKey, new ServiceNowSettings(
+                    connectorKey, value.instanceHost(), value.tableName(), value.bearerTokenReference(), value.requestTimeout(), value.enabled()));
         });
         return Map.copyOf(result);
     }
@@ -112,6 +126,36 @@ public record IntegrationRuntimeProperties(
             boolean enabled) {
         public JiraAssetsConnectorProperties {
             new JiraAssetsSettings(new ConnectorKey("validation.connector"), cloudId, workspaceId, bearerTokenReference, requestTimeout, enabled);
+        }
+    }
+
+    /** ServiceNow provider configuration. Connector count is bounded to keep metric cardinality controlled. */
+    public record ServiceNowProperties(int maximumResponseBytes, Map<String, ServiceNowConnectorProperties> connectors) {
+        public ServiceNowProperties {
+            if (maximumResponseBytes < 1 || maximumResponseBytes > 8_388_608) {
+                throw new ConfigurationException("integrations.serviceNow.maximumResponseBytes must be between 1 and 8388608");
+            }
+            Map<String, ServiceNowConnectorProperties> normalized = new LinkedHashMap<>();
+            for (Map.Entry<String, ServiceNowConnectorProperties> entry : Objects.requireNonNullElse(connectors, Map.<String, ServiceNowConnectorProperties>of()).entrySet()) {
+                String key = new ConnectorKey(entry.getKey()).value();
+                if (normalized.putIfAbsent(key, Objects.requireNonNull(entry.getValue(), "ServiceNow connector")) != null) {
+                    throw new ConfigurationException("duplicate normalized ServiceNow connector: " + key);
+                }
+            }
+            if (normalized.size() > 64) throw new ConfigurationException("at most 64 ServiceNow connectors may be configured per Server runtime");
+            connectors = Map.copyOf(normalized);
+        }
+    }
+
+    /** One ServiceNow SaaS CMDB instance. Secrets remain external through a reference only. */
+    public record ServiceNowConnectorProperties(
+            String instanceHost,
+            String tableName,
+            String bearerTokenReference,
+            Duration requestTimeout,
+            boolean enabled) {
+        public ServiceNowConnectorProperties {
+            new ServiceNowSettings(new ConnectorKey("validation.connector"), instanceHost, tableName, bearerTokenReference, requestTimeout, enabled);
         }
     }
 

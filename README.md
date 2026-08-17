@@ -1,10 +1,10 @@
-# InfraNexum 2.0.0-alpha.0.108 — Jira Assets federated read
+# InfraNexum 2.0.0-alpha.0.109 — ServiceNow CMDB federated read
 
-`alpha.0.108` opens **PGM-10-E06** with the first official provider integration: a governed Jira Assets Cloud **federated-read** adapter. It uses the provider's current POST AQL surface with bounded offset pagination, keeps authority `EXTERNAL`, does not copy provider attributes into RSOT/ITAM, and never sends Atlassian credentials to the browser. Provider egress is restricted to `https://api.atlassian.com`, redirects are refused, timeouts/body sizes are bounded, and bearer tokens are accepted only through external `env:`/`file:` references.
+`alpha.0.109` advances **PGM-10-E06** with a second governed provider integration: ServiceNow CMDB **federated read**. The existing Jira Assets phase from `alpha.0.108` is preserved. ServiceNow remains authority `EXTERNAL`; InfraNexum performs bounded Table API reads against a configured `cmdb_ci`/`cmdb_ci_*` table and does not copy provider configuration items into RSOT/ITAM. The public search boundary accepts a constrained name term rather than arbitrary ServiceNow encoded queries.
 
-The Server exposes three capability-gated operations under `/api/v1/integrations/providers/jira-assets` for connector catalogue, health and AQL search. All use the existing `integrations.connector.read` permission. The Web adds a five-locale Integrations workspace only when `integrations.connectors` is enabled. Default product configuration contains no Jira tenant identifier or token.
+The Server adds three capability/permission-gated ServiceNow operations (connector catalogue, health and paginated configuration-item search). Egress is HTTPS-only to a configured `*.service-now.com` hostname, redirects and explicit provider ports are refused, response sizes/timeouts are bounded, and the bearer token is accepted only through an external `env:`/`file:` reference. The Web shell extends `Integrations` with ServiceNow catalogue/health/search while keeping provider credentials server-side.
 
-PGM-10-E05 remains formally pending its exact hosted Temurin 25/JaCoCo and PostgreSQL 17/18 promotion gates. PGM-10-E06 is **not complete** in this candidate: ServiceNow, OpenService, notifications and later synchronization/rollback slices remain downstream. See `docs/integrations-jira-assets.md` and `docs/implementation-status.md`.
+PGM-10-E05 remains formally pending its exact hosted Temurin 25/JaCoCo and PostgreSQL 17/18 promotion gates. PGM-10-E06 is **not complete** in this candidate: OpenService, notifications and later synchronization/rollback slices remain downstream. See `docs/integrations-jira-assets.md`, `docs/integrations-service-now.md` and `docs/implementation-status.md`.
 
 ---
 

@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.108",
-  "profile": "alpha108-pgm10e06-jira-assets-federated-read-pro-enterprise",
+  "version": "2.0.0-alpha.0.109",
+  "profile": "alpha109-pgm10e06-jira-assets-federated-read-pro-enterprise",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -14,7 +14,7 @@
     },
     {
       "id": "infranexum-server",
-      "status": "alpha108-jira-assets-governed-federated-read-health-and-aql-search-capability-permission-audit-and-metrics-integrated; alpha107-platform-admin-scope-corrective-preserved; target-jdk25-jacoco-and-live-postgresql-revalidation-pending"
+      "status": "alpha109-jira-assets-governed-federated-read-health-and-aql-search-capability-permission-audit-and-metrics-integrated; alpha107-platform-admin-scope-corrective-preserved; target-jdk25-jacoco-and-live-postgresql-revalidation-pending"
     },
     {
       "id": "infranexum-agent",
@@ -22,11 +22,11 @@
     },
     {
       "id": "infranexum-web",
-      "status": "alpha108-capability-gated-integrations-jira-assets-read-only-workspace-list-health-aql-results-five-locales-no-browser-bearer-token; alpha107-account-dropdown-corrective-preserved"
+      "status": "alpha109-capability-gated-integrations-jira-assets-read-only-workspace-list-health-aql-results-five-locales-no-browser-bearer-token; alpha107-account-dropdown-corrective-preserved"
     },
     {
       "id": "connector-sdk-v1",
-      "status": "sdk1-0-0-durable-connector-runtime-preserved; alpha108-jira-assets-provider-added-as-autonomous-java-adapter-without-rsot-itam-write-path"
+      "status": "sdk1-0-0-durable-connector-runtime-preserved; alpha109-jira-assets-provider-added-as-autonomous-java-adapter-without-rsot-itam-write-path"
     },
     {
       "id": "source-integrity-v1",
@@ -50,7 +50,7 @@
     },
     {
       "id": "deployment-boundary",
-      "status": "standalone-baremetal-vm-production-target; root-docker-compose-remains-local-dev-test-only; alpha108-enables-integrations-capability-in-pro-dev-profile-with-zero-jira-credential-or-connector-by-default; alpha107-seed-admin-recovery-preserved"
+      "status": "standalone-baremetal-vm-production-target; root-docker-compose-remains-local-dev-test-only; alpha109-enables-integrations-capability-in-pro-dev-profile-with-zero-jira-or-servicenow-credential-or-connector-by-default; alpha107-seed-admin-recovery-preserved"
     },
     {
       "id": "platform-observability-v1",
@@ -114,7 +114,7 @@
     },
     {
       "id": "api-platform-contract-v5",
-      "status": "pgm-05-e01-delivered-preserved-plus-alpha108-15-openapi-fragments-182-operations-zero-debt-0-0-0-0-including-paginated-jira-assets-federated-read-contracts"
+      "status": "pgm-05-e01-delivered-preserved-plus-alpha109-15-openapi-fragments-185-operations-zero-debt-0-0-0-0-including-paginated-jira-assets-and-servicenow-federated-read-contracts"
     },
     {
       "id": "adapter-jira-assets-v1",
@@ -123,12 +123,12 @@
   ],
   "validation_reports": [],
   "validation_summary": {
-    "source_inventory_paths": 1409,
+    "source_inventory_paths": 1430,
     "source_integrity_tests": 45,
     "source_integrity_coverage_percent": 100,
     "source_integrity_violations": 0,
-    "python_tests": 590,
-    "architecture_tests": 206,
+    "python_tests": 596,
+    "architecture_tests": 212,
     "architecture_violations": 0,
     "toolchain_tests": 25,
     "toolchain_coverage_percent": 99,
@@ -157,19 +157,19 @@
     "jdbc_workers_junit_tests_defined": 11,
     "jdbc_workers_postgresql_live_tests_defined": 5,
     "agent_local_coverage_percent": 98.4,
-    "web_tests": 202,
+    "web_tests": 204,
     "web_line_coverage_percent": 99.73,
     "web_branch_coverage_percent": 98.54,
     "web_function_coverage_percent": 100,
     "repository_syntax_counts": {
-      "python": 107,
-      "json": 86,
+      "python": 108,
+      "json": 87,
       "yaml": 94,
-      "xml": 20,
-      "javascript": 74,
+      "xml": 21,
+      "javascript": 76,
       "go": 8,
       "shell": 7,
-      "java": 803
+      "java": 818
     },
     "archive_compatibility_tests": 12,
     "archive_compatibility_coverage_percent": 100,
@@ -178,11 +178,11 @@
     "archive_compatibility_max_member_path": 148,
     "entitlements_module_tests_defined": 49,
     "audit_module_tests_defined": 21,
-    "architecture_coverage_status": "NON_EXECUTED_FULL_INSTRUMENTED_MONOLITHIC_RUNNER_TIMEOUT; SPLIT_FUNCTIONAL_177_OF_177_EXECUTED; META_CHECKER_29_OF_29_EXECUTED_INDEPENDENTLY; ARCHITECTURE_AS_CODE_PASS",
-    "architecture_functional_tests": "EXECUTED_177_OF_177_SPLIT_PASS_PLUS_META_CHECKER_29_OF_29_INDEPENDENT_PASS; ARCHITECTURE_AS_CODE_PASS",
+    "architecture_coverage_status": "NON_EXECUTED_FULL_INSTRUMENTED_MONOLITHIC_RUNNER_TIMEOUT; SPLIT_FUNCTIONAL_183_OF_183_EXECUTED; META_CHECKER_29_OF_29_EXECUTED_INDEPENDENTLY; ARCHITECTURE_AS_CODE_PASS",
+    "architecture_functional_tests": "EXECUTED_183_OF_183_SPLIT_PASS_PLUS_META_CHECKER_29_OF_29_INDEPENDENT_PASS; ARCHITECTURE_AS_CODE_PASS",
     "jdbc_module_tests_defined": 73,
     "jdbc_postgresql_live_tests_defined": 18,
-    "server_module_tests_defined": 121,
+    "server_module_tests_defined": 143,
     "server_capability_configuration_contract_local": "EXECUTED_JAVA21_STRICT_HARNESS",
     "agent_target_toolchain_status": "NON_EXECUTED_TARGET_GO_1_26_5_LOCAL_GO_1_23_2",
     "jdbc_deterministic_harness_tests_executed": 43,
@@ -634,26 +634,27 @@
     "api_alpha107": "EXECUTED_CLI_15_FRAGMENTS_179_OPERATIONS_ZERO_VIOLATIONS_DEBT_0_0_0_0_TARGETED_REGRESSIONS_FULL_MONOLITHIC_TIMEOUT",
     "migration_alpha107": "EXECUTED_117_OF_117_ZERO_VIOLATIONS",
     "java_auxiliary_alpha107": "216_DOMAIN_CORE_PLUS_6_SECURITY_PLUS_133_JDBC_DETERMINISTIC_ZERO_FAILURES_JAVA21_AUXILIARY",
-    "connector_sdk_alpha107": "19_OF_19_COVERAGE99_REPRODUCIBLE_TWO_BUILDS_BYTE_IDENTICAL_IMPORT_SCHEMA_PASS"
+    "connector_sdk_alpha107": "19_OF_19_COVERAGE99_REPRODUCIBLE_TWO_BUILDS_BYTE_IDENTICAL_IMPORT_SCHEMA_PASS",
+    "service_now_module_tests_defined": 10
   },
   "source_layout": "All production solution spaces are contained below src/; Java, Go and Web tests are repository-level under tests/; canonical relative paths are limited to 120 characters and path components to 80 characters.",
   "source_integrity": {
     "canonical_inventory": "source-inventory.json",
-    "git_blob_checksums": 1410,
-    "tracked_files": 1411,
-    "source_recorded_files": 1409,
+    "git_blob_checksums": 1431,
+    "tracked_files": 1432,
+    "source_recorded_files": 1430,
     "staged_snapshot_required": true,
     "pre_commit_hook": ".githooks/pre-commit",
-    "inventory_paths": 1409
+    "inventory_paths": 1430
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.108",
-    "archive_entries": 1411,
+    "prefix": "infranexum-2.0.0-alpha.0.109",
+    "archive_entries": 1432,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
-    "source_recorded_files": 1410,
+    "source_recorded_files": 1431,
     "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
-    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.108-validation-evidence.zip"
+    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.109-validation-evidence.zip"
   },
   "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.105-validation-evidence.zip",
   "runtime_validation": {
@@ -1297,35 +1298,37 @@
   "source_integrity_alpha107": "EXECUTED_45_OF_45_COVERAGE100_STAGED_SNAPSHOT_1388_TRACKED_PATHS_1387_GIT_BLOB_CHECKSUMS_1386_CANONICAL_INVENTORY_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
   "archive_compatibility_unit_alpha107": "EXECUTED_12_OF_12_COVERAGE100",
   "archive_compatibility_alpha107": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS_POST_EXTRACTION_SOURCE_INTEGRITY_ZERO_VIOLATIONS_AND_BYTE_REPRODUCIBLE_TWO_BUILDS",
-  "pgm10e05_alpha108": "NON_TERMINE_HOSTED_TEMURIN25_MAVEN_JACOCO_AND_POSTGRESQL17_18_GATES_STILL_REQUIRED",
-  "pgm10e06_alpha108": "EN_COURS_PHASE1_JIRA_ASSETS_FEDERATED_READ_IMPLEMENTED_SERVICENOW_OPENSERVICE_NOTIFICATIONS_AND_LATER_SYNC_ROLLBACK_TRANCHES_PENDING",
-  "jira_assets_alpha108": "IMPLEMENTED_GOVERNED_EXTERNAL_AUTHORITY_FEDERATED_READ_HEALTH_AQL_PAGINATION_NO_LOCAL_COPY_NO_BROWSER_SECRET",
-  "api_contracts_alpha108": "EXECUTED_48_OF_48_COVERAGE98_15_FRAGMENTS_182_OPERATIONS_ZERO_VIOLATIONS_DEBT_0_0_0_0",
-  "architecture_alpha108": "EXECUTED_177_OF_177_FUNCTIONAL_SPLIT_PLUS_META_CHECKER_29_OF_29_INDEPENDENT_PLUS_ARCHITECTURE_AS_CODE_PASS_AND_JIRA_INVARIANTS_6_OF_6",
-  "migration_alpha108": "EXECUTED_117_OF_117_NO_NEW_PRODUCT_MIGRATION_REQUIRED_FOR_FEDERATED_READ",
-  "eventing_alpha108": "EXECUTED_10_OF_10",
-  "persistence_alpha108": "EXECUTED_12_OF_12",
-  "capabilities_alpha108": "EXECUTED_10_OF_10",
-  "entitlements_alpha108": "EXECUTED_10_OF_10",
-  "audit_alpha108": "EXECUTED_8_OF_8",
-  "toolchains_alpha108": "EXECUTED_25_OF_25_STATIC_VALIDATION; EXACT_TARGET_RUNTIMES_REMAIN_SEPARATE_GATES",
-  "compose_contract_alpha108": "EXECUTED_68_OF_68",
-  "connector_sdk_alpha108": "EXECUTED_19_OF_19",
-  "web_local_runtime_alpha108": "EXECUTED_LOCAL_NODE22_16_0_202_OF_202_LINE99_73_BRANCH98_54_FUNCTION100_PROCESS_SMOKE_PASS_TARGET_NODE24_18_1_PNPM11_17_0_PENDING",
-  "java_integrations_auxiliary_alpha108": "EXECUTED_LOCAL_JAVA21_INTEGRATIONS_POLICY_AND_API_CAPABILITY_DEPENDENCY_FREE_SMOKES_EXIT_ZERO; JIRA_ASSETS_MAVEN_JUNIT_NOT_EXECUTED",
-  "maven_target_jdk25_alpha108": "NON_EXECUTED_LOCAL_JAVA21_0_11_WRAPPER_FAILS_CLOSED_REQUIRES_TEMURIN25_0_4_PLUS_7_MAVEN_JUNIT_JACOCO",
-  "postgresql_live_alpha108": "NON_EXECUTED_LOCAL_POSTGRESQL_DOCKER_UNAVAILABLE_TARGET_POSTGRESQL17_18_HOSTED_MATRIX_REQUIRED_FOR_PGM10E05_CLOSURE",
-  "jira_assets_live_alpha108": "NON_EXECUTED_NO_AUTHORIZED_JIRA_ASSETS_TENANT_WORKSPACE_AND_BEARER_TOKEN_IN_RUNNER",
-  "agent_target_go1265_alpha108": "NON_EXECUTED_LOCAL_GO1_23_2_AUTO_TOOLCHAIN_GO1_26_5_DOWNLOAD_BLOCKED_BY_DISABLED_NETWORK",
-  "web_target_node24_alpha108": "NON_EXECUTED_LOCAL_NODE22_16_0_TARGET_NODE24_18_1_PNPM11_17_0_UNAVAILABLE",
-  "docker_runtime_alpha108": "NON_EXECUTED_LOCAL_DOCKER_COMMAND_UNAVAILABLE_PRO_UP_SMOKE_HA_SMOKE_AND_JIRA_CONFIG_RUNTIME_VALIDATION_REQUIRED",
-  "powershell_runtime_alpha108": "NON_EXECUTED_LOCAL_PWSH_UNAVAILABLE_WINDOWS_POWERSHELL7_WRAPPER_EXECUTION_REQUIRED",
-  "source_inventory_paths_alpha108": 1409,
-  "packaging_tracked_files_alpha108": 1411,
-  "git_blob_checksums_alpha108": 1410,
-  "source_integrity_prepack_alpha108": "EXECUTED_45_OF_45_COVERAGE100_ZERO_VIOLATIONS_CANONICAL_INVENTORY_1409_PATHS",
-  "source_integrity_alpha108": "EXECUTED_45_OF_45_COVERAGE100_STAGED_SNAPSHOT_1411_TRACKED_PATHS_1410_GIT_BLOB_CHECKSUMS_1409_CANONICAL_INVENTORY_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
-  "archive_compatibility_unit_alpha108": "EXECUTED_12_OF_12_COVERAGE100",
-  "archive_compatibility_alpha108": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS_POST_EXTRACTION_VALIDATION_AND_BYTE_REPRODUCIBLE_TWO_BUILDS",
-  "roadmap_next_alpha108": "KEEP_PGM10E05_FORMALLY_OPEN_UNTIL_HOSTED_GATES_PASS; PGM10E06_PHASE1_JIRA_ASSETS_IMPLEMENTED; NEXT_COHERENT_PROVIDER_TRANCHE_SERVICENOW_AFTER_CURRENT_RELEASE_QUALIFICATION"
+  "pgm10e05_alpha109": "NON_TERMINE_HOSTED_TEMURIN25_MAVEN_JACOCO_AND_POSTGRESQL17_18_GATES_STILL_REQUIRED",
+  "pgm10e06_alpha109": "EN_COURS_PHASE2_JIRA_ASSETS_AND_SERVICENOW_CMDB_FEDERATED_READ_IMPLEMENTED_OPENSERVICE_NOTIFICATIONS_AND_LATER_SYNC_ROLLBACK_TRANCHES_PENDING",
+  "jira_assets_alpha109": "PRESERVED_FROM_ALPHA108_GOVERNED_EXTERNAL_AUTHORITY_FEDERATED_READ_HEALTH_AQL_PAGINATION_NO_LOCAL_COPY_NO_BROWSER_SECRET",
+  "api_contracts_alpha109": "EXECUTED_48_OF_48_COVERAGE98_15_FRAGMENTS_185_OPERATIONS_ZERO_VIOLATIONS_DEBT_0_0_0_0",
+  "architecture_alpha109": "EXECUTED_183_OF_183_FUNCTIONAL_SPLIT_PLUS_META_CHECKER_29_OF_29_INDEPENDENT_PLUS_ARCHITECTURE_AS_CODE_PASS_JIRA_INVARIANTS_6_OF_6_SERVICENOW_INVARIANTS_6_OF_6",
+  "migration_alpha109": "EXECUTED_117_OF_117_NO_NEW_PRODUCT_MIGRATION_REQUIRED_FOR_FEDERATED_READ",
+  "eventing_alpha109": "EXECUTED_10_OF_10",
+  "persistence_alpha109": "EXECUTED_12_OF_12",
+  "capabilities_alpha109": "EXECUTED_10_OF_10",
+  "entitlements_alpha109": "EXECUTED_10_OF_10",
+  "audit_alpha109": "EXECUTED_8_OF_8",
+  "toolchains_alpha109": "EXECUTED_25_OF_25_STATIC_VALIDATION; EXACT_TARGET_RUNTIMES_REMAIN_SEPARATE_GATES",
+  "compose_contract_alpha109": "EXECUTED_68_OF_68",
+  "connector_sdk_alpha109": "EXECUTED_19_OF_19",
+  "web_local_runtime_alpha109": "EXECUTED_LOCAL_NODE22_16_0_204_OF_204_LINE99_73_BRANCH98_54_FUNCTION100_PROCESS_SMOKE_PASS_TARGET_NODE24_18_1_PNPM11_17_0_PENDING",
+  "java_integrations_auxiliary_alpha109": "EXECUTED_LOCAL_JAVA21_INTEGRATIONS_POLICY_AND_API_CAPABILITY_DEPENDENCY_FREE_SMOKES_EXIT_ZERO_185_OPERATIONS; SERVICENOW_AND_JIRA_ASSETS_MAVEN_JUNIT_NOT_EXECUTED",
+  "maven_target_jdk25_alpha109": "NON_EXECUTED_LOCAL_JAVA21_0_11_WRAPPER_FAILS_CLOSED_REQUIRES_TEMURIN25_0_4_PLUS_7_MAVEN_JUNIT_JACOCO_INCLUDING_SERVICENOW_ADAPTER",
+  "postgresql_live_alpha109": "NON_EXECUTED_LOCAL_POSTGRESQL_DOCKER_UNAVAILABLE_TARGET_POSTGRESQL17_18_HOSTED_MATRIX_REQUIRED_FOR_PGM10E05_CLOSURE",
+  "jira_assets_live_alpha109": "NON_EXECUTED_NO_AUTHORIZED_JIRA_ASSETS_TENANT_WORKSPACE_AND_BEARER_TOKEN_IN_RUNNER",
+  "agent_target_go1265_alpha109": "NON_EXECUTED_LOCAL_GO1_23_2_AUTO_TOOLCHAIN_GO1_26_5_DOWNLOAD_BLOCKED_BY_DISABLED_NETWORK",
+  "web_target_node24_alpha109": "NON_EXECUTED_LOCAL_NODE22_16_0_TARGET_NODE24_18_1_PNPM11_17_0_UNAVAILABLE",
+  "docker_runtime_alpha109": "NON_EXECUTED_LOCAL_DOCKER_COMMAND_UNAVAILABLE_PRO_UP_SMOKE_HA_SMOKE_AND_PROVIDER_CONFIG_RUNTIME_VALIDATION_REQUIRED",
+  "powershell_runtime_alpha109": "NON_EXECUTED_LOCAL_PWSH_UNAVAILABLE_WINDOWS_POWERSHELL7_WRAPPER_EXECUTION_REQUIRED",
+  "source_inventory_paths_alpha109": 1430,
+  "packaging_tracked_files_alpha109": 1432,
+  "git_blob_checksums_alpha109": 1431,
+  "source_integrity_prepack_alpha109": "EXECUTED_45_OF_45_COVERAGE100_ZERO_VIOLATIONS_CANONICAL_INVENTORY_1430_PATHS",
+  "source_integrity_alpha109": "EXECUTED_STRICT_STAGED_SNAPSHOT_1432_TRACKED_PATHS_1431_GIT_BLOB_CHECKSUMS_1430_CANONICAL_INVENTORY_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
+  "archive_compatibility_unit_alpha109": "EXECUTED_12_OF_12_COVERAGE100",
+  "archive_compatibility_alpha109": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS_POST_EXTRACTION_SOURCE_INTEGRITY_ZERO_VIOLATIONS_AND_BYTE_REPRODUCIBLE_TWO_BUILDS",
+  "roadmap_next_alpha109": "KEEP_PGM10E05_FORMALLY_OPEN_UNTIL_HOSTED_GATES_PASS; PGM10E06_PHASE2_JIRA_ASSETS_AND_SERVICENOW_FEDERATED_READ_IMPLEMENTED; NEXT_COHERENT_PROVIDER_TRANCHE_OPENSERVICE_AFTER_CURRENT_RELEASE_QUALIFICATION",
+  "service_now_alpha109": "IMPLEMENTED_GOVERNED_EXTERNAL_AUTHORITY_FEDERATED_READ_CMBD_TABLE_API_HEALTH_BOUNDED_NAME_SEARCH_OFFSET_PAGINATION_MINIMAL_PROJECTION_NO_LOCAL_COPY_NO_BROWSER_SECRET",
+  "service_now_live_alpha109": "NON_EXECUTED_NO_AUTHORIZED_SERVICENOW_INSTANCE_AND_BEARER_TOKEN_IN_RUNNER"
 }

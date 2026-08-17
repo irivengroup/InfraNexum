@@ -1,84 +1,36 @@
 import { applyTranslations, localeFromDocument, translate } from './i18n.mjs';
 import { initializeEnterpriseDataTables, refreshEnterpriseDataTable } from './enterprise-crud.mjs';
 import { JiraAssetsClient } from './jira-assets.mjs';
+import { ServiceNowClient } from './service-now.mjs';
 
-/** PGM-10-E06 phase-1 UI: configured Jira Assets connectors plus governed federated-read query. */
+/** PGM-10-E06 UI for governed provider catalogues and federated reads. */
 export async function initializeIntegrationsWorkspace(documentObject = document, configuration, fetchFunction = fetch) {
   const root = documentObject?.getElementById?.('integrations-workspace');
   if (!root) return Object.freeze({ enabled: false });
   const enabled = configuration?.integrationsConnectorsEnabled === true;
   root.setAttribute('data-capability-enabled', String(enabled));
   if (!enabled) return Object.freeze({ enabled: false });
-  root.innerHTML = template();
-  applyTranslations(documentObject, localeFromDocument(documentObject));
-  const client = new JiraAssetsClient(configuration, { fetchFunction });
-  const state = { connectors: [], selected: null };
-  wire(documentObject, client, state);
-  initializeEnterpriseDataTables(root);
-  try {
-    await refreshConnectors(documentObject, client, state);
-    setStatus(documentObject, 'integrations.status.ready', 'success');
-  } catch (error) {
-    setStatus(documentObject, 'integrations.status.unavailable', 'danger', error?.message);
-  }
-  return Object.freeze({ enabled: true, refresh: () => refreshConnectors(documentObject, client, state) });
+  root.innerHTML = template(); applyTranslations(documentObject, localeFromDocument(documentObject));
+  const jira = new JiraAssetsClient(configuration,{fetchFunction});
+  const serviceNow = new ServiceNowClient(configuration,{fetchFunction});
+  wire(documentObject,jira,serviceNow); initializeEnterpriseDataTables(root);
+  try { await Promise.all([refreshProvider(documentObject,jira,'jira-assets'),refreshProvider(documentObject,serviceNow,'service-now')]); setStatus(documentObject,'integrations.status.ready','success'); }
+  catch(error){ setStatus(documentObject,'integrations.status.unavailable','danger',error?.message); }
+  return Object.freeze({enabled:true,refresh:()=>Promise.all([refreshProvider(documentObject,jira,'jira-assets'),refreshProvider(documentObject,serviceNow,'service-now')])});
 }
-
-export function integrationsWorkspaceTemplate() { return template(); }
-
-function template() {
-  return `<header class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4"><div><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="integrations.eyebrow">Integrations</p><h2 id="integrations-workspace-title" data-i18n="integrations.title">Connector providers</h2><p data-i18n="integrations.description">Governed external providers with explicit authority and sync direction.</p></div><button id="integrations-refresh" class="btn btn-outline-primary" type="button" data-i18n="common.refresh">Refresh</button></header>
+export function integrationsWorkspaceTemplate(){ return template(); }
+function template(){return `<header class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4"><div><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="integrations.eyebrow">Integrations</p><h2 id="integrations-workspace-title" data-i18n="integrations.title">Connector providers</h2><p data-i18n="integrations.description">Governed external providers with explicit authority and sync direction.</p></div><button id="integrations-refresh" class="btn btn-outline-primary" type="button" data-i18n="common.refresh">Refresh</button></header>
 <p id="integrations-status" class="alert alert-info py-2" role="status" aria-live="polite" data-state="info" data-i18n="integrations.status.loading">Loading connectors…</p>
-<section class="mb-4"><div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-2"><div><h3 class="h5 mb-1" data-i18n="integrations.jira.title">Jira Assets</h3><p class="small text-body-secondary mb-0" data-i18n="integrations.jira.federated">Federated read · external authority · no implicit import</p></div></div><div class="table-responsive"><table class="table table-hover align-middle"><thead><tr><th data-i18n="integrations.connector">Connector</th><th data-i18n="integrations.provider">Provider</th><th data-i18n="integrations.direction">Direction</th><th data-i18n="integrations.authority">Authority</th><th data-i18n="common.status">Status</th><th data-inx-action-column data-i18n="common.actions">Actions</th></tr></thead><tbody id="jira-assets-connectors"></tbody></table></div></section>
-<section class="border rounded p-3 bg-body-tertiary"><h3 class="h5" data-i18n="integrations.search.title">Federated AQL read</h3><p class="small text-body-secondary" data-i18n="integrations.search.description">Query the selected Jira Assets instance without copying provider attributes into InfraNexum.</p><form id="jira-assets-search" class="row g-3"><div class="col-md-4"><label class="form-label" for="jira-assets-connector" data-i18n="integrations.connector">Connector</label><select id="jira-assets-connector" class="form-select" required></select></div><div class="col-md-6"><label class="form-label" for="jira-assets-aql" data-i18n="integrations.aql">AQL</label><input id="jira-assets-aql" class="form-control" maxlength="4096" required autocomplete="off" placeholder="objectType = Server"></div><div class="col-md-2 d-flex align-items-end"><button class="btn btn-primary w-100" type="submit" data-i18n="integrations.search">Search</button></div></form><div class="table-responsive mt-3"><table class="table table-hover align-middle"><thead><tr><th data-i18n="integrations.objectKey">Object key</th><th data-i18n="integrations.label">Label</th><th data-i18n="integrations.objectType">Object type</th><th data-i18n="integrations.remoteId">Remote ID</th></tr></thead><tbody id="jira-assets-results"></tbody></table></div><p id="jira-assets-page" class="small text-body-secondary mb-0" aria-live="polite"></p></section>`;
-}
-
-function wire(documentObject, client, state) {
-  documentObject.getElementById('integrations-refresh')?.addEventListener('click', async () => {
-    try { await refreshConnectors(documentObject, client, state); setStatus(documentObject, 'integrations.status.ready', 'success'); }
-    catch (error) { setStatus(documentObject, 'integrations.status.unavailable', 'danger', error?.message); }
-  });
-  documentObject.getElementById('jira-assets-search')?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const connector = documentObject.getElementById('jira-assets-connector')?.value;
-    const aql = documentObject.getElementById('jira-assets-aql')?.value;
-    try {
-      setStatus(documentObject, 'integrations.status.searching', 'info');
-      const result = await client.search(connector, aql, { limit: 50 });
-      renderObjects(documentObject, result.payload, result.pagination);
-      setStatus(documentObject, 'integrations.status.ready', 'success');
-    } catch (error) { setStatus(documentObject, 'integrations.status.searchFailed', 'danger', error?.message); }
-  });
-}
-
-async function refreshConnectors(documentObject, client, state) {
-  const result = await client.connectors();
-  state.connectors = Array.isArray(result.payload) ? result.payload : [];
-  const tbody = documentObject.getElementById('jira-assets-connectors');
-  tbody?.replaceChildren(...state.connectors.map((item) => connectorRow(documentObject, client, item)));
-  if (tbody?.closest) refreshEnterpriseDataTable(tbody.closest('table'));
-  const select = documentObject.getElementById('jira-assets-connector');
-  if (select) {
-    select.replaceChildren(...state.connectors.filter((item) => item.enabled).map((item) => option(documentObject, item.connectorKey)));
-    select.disabled = select.options.length === 0;
-  }
-}
-
-function connectorRow(documentObject, client, item) {
-  const row = documentObject.createElement('tr');
-  append(row, item.connectorKey); append(row, item.provider); append(row, item.direction); append(row, item.authority);
-  const status = documentObject.createElement('td'); status.textContent = item.enabled ? translate(localeFromDocument(documentObject), 'common.enabled') : translate(localeFromDocument(documentObject), 'common.disabled'); row.appendChild(status);
-  const actions = documentObject.createElement('td'); const button = documentObject.createElement('button'); button.type = 'button'; button.className = 'btn btn-sm btn-outline-primary'; button.textContent = translate(localeFromDocument(documentObject), 'integrations.health'); button.disabled = !item.enabled;
-  button.addEventListener('click', async () => { try { const response = await client.health(item.connectorKey); setStatus(documentObject, response.payload?.status === 'UP' ? 'integrations.health.up' : 'integrations.status.unavailable', response.payload?.status === 'UP' ? 'success' : 'danger'); } catch (error) { setStatus(documentObject, 'integrations.health.down', 'danger', error?.message); } });
-  actions.appendChild(button); row.appendChild(actions); return row;
-}
-function renderObjects(documentObject, objects, pagination) {
-  const rows = Array.isArray(objects) ? objects : [];
-  const tbody = documentObject.getElementById('jira-assets-results');
-  tbody?.replaceChildren(...rows.map((item) => { const row = documentObject.createElement('tr'); append(row, item.objectKey); append(row, item.label); append(row, item.objectTypeName); append(row, item.id); return row; }));
-  if (tbody?.closest) refreshEnterpriseDataTable(tbody.closest('table'));
-  const page = documentObject.getElementById('jira-assets-page'); if (page) { const next = pagination?.nextOffset == null ? '—' : `${translate(localeFromDocument(documentObject), 'integrations.page.next')} ${pagination.nextOffset}`; page.textContent = `${rows.length} · ${next}`; }
-}
-function option(documentObject, value) { const item = documentObject.createElement('option'); item.value = value; item.textContent = value; return item; }
-function append(row, value) { const cell = row.ownerDocument.createElement('td'); cell.textContent = value ?? '—'; row.appendChild(cell); }
-function setStatus(documentObject, key, contextual, detail = '') { const node = documentObject.getElementById('integrations-status'); if (!node) return; const base = translate(localeFromDocument(documentObject), key); node.textContent = detail ? `${base} ${detail}` : base; node.className = `alert alert-${contextual} py-2`; node.setAttribute('data-state', contextual); }
+${providerSection('jira-assets','integrations.jira.title','integrations.jira.federated')}
+<section class="border rounded p-3 bg-body-tertiary mb-4"><h3 class="h5" data-i18n="integrations.search.title">Federated AQL read</h3><p class="small text-body-secondary" data-i18n="integrations.search.description">Query Jira Assets without copying provider attributes.</p><form id="jira-assets-search" class="row g-3"><div class="col-md-4"><label class="form-label" for="jira-assets-connector" data-i18n="integrations.connector">Connector</label><select id="jira-assets-connector" class="form-select" required></select></div><div class="col-md-6"><label class="form-label" for="jira-assets-aql" data-i18n="integrations.aql">AQL</label><input id="jira-assets-aql" class="form-control" maxlength="4096" required autocomplete="off" placeholder="objectType = Server"></div><div class="col-md-2 d-flex align-items-end"><button class="btn btn-primary w-100" type="submit" data-i18n="integrations.search">Search</button></div></form><div class="table-responsive mt-3"><table class="table table-hover align-middle"><thead><tr><th data-i18n="integrations.objectKey">Object key</th><th data-i18n="integrations.label">Label</th><th data-i18n="integrations.objectType">Object type</th><th data-i18n="integrations.remoteId">Remote ID</th></tr></thead><tbody id="jira-assets-results"></tbody></table></div><p id="jira-assets-page" class="small text-body-secondary mb-0" aria-live="polite"></p></section>
+${providerSection('service-now','integrations.servicenow.title','integrations.servicenow.federated')}
+<section class="border rounded p-3 bg-body-tertiary"><h3 class="h5" data-i18n="integrations.servicenow.searchTitle">Federated CMDB read</h3><p class="small text-body-secondary" data-i18n="integrations.servicenow.searchDescription">Search the selected ServiceNow CMDB without copying provider attributes.</p><form id="service-now-search" class="row g-3"><div class="col-md-4"><label class="form-label" for="service-now-connector" data-i18n="integrations.connector">Connector</label><select id="service-now-connector" class="form-select" required></select></div><div class="col-md-6"><label class="form-label" for="service-now-query" data-i18n="integrations.servicenow.query">CI name</label><input id="service-now-query" class="form-control" maxlength="256" required autocomplete="off" placeholder="server"></div><div class="col-md-2 d-flex align-items-end"><button class="btn btn-primary w-100" type="submit" data-i18n="integrations.search">Search</button></div></form><div class="table-responsive mt-3"><table class="table table-hover align-middle"><thead><tr><th data-i18n="integrations.servicenow.name">Name</th><th data-i18n="integrations.servicenow.class">Class</th><th data-i18n="integrations.remoteId">Remote ID</th><th data-i18n="integrations.servicenow.updated">Updated</th></tr></thead><tbody id="service-now-results"></tbody></table></div><p id="service-now-page" class="small text-body-secondary mb-0" aria-live="polite"></p></section>`;}
+function providerSection(id,titleKey,federatedKey){return `<section class="mb-4"><div class="mb-2"><h3 class="h5 mb-1" data-i18n="${titleKey}">${id}</h3><p class="small text-body-secondary mb-0" data-i18n="${federatedKey}">Federated read · external authority · no implicit import</p></div><div class="table-responsive"><table class="table table-hover align-middle"><thead><tr><th data-i18n="integrations.connector">Connector</th><th data-i18n="integrations.provider">Provider</th><th data-i18n="integrations.direction">Direction</th><th data-i18n="integrations.authority">Authority</th><th data-i18n="common.status">Status</th><th data-inx-action-column data-i18n="common.actions">Actions</th></tr></thead><tbody id="${id}-connectors"></tbody></table></div></section>`;}
+function wire(doc,jira,sn){doc.getElementById('integrations-refresh')?.addEventListener('click',async()=>{try{await Promise.all([refreshProvider(doc,jira,'jira-assets'),refreshProvider(doc,sn,'service-now')]);setStatus(doc,'integrations.status.ready','success');}catch(e){setStatus(doc,'integrations.status.unavailable','danger',e?.message);}});doc.getElementById('jira-assets-search')?.addEventListener('submit',async e=>{e.preventDefault();try{setStatus(doc,'integrations.status.searching','info');const r=await jira.search(doc.getElementById('jira-assets-connector')?.value,doc.getElementById('jira-assets-aql')?.value,{limit:50});renderJira(doc,r.payload,r.pagination);setStatus(doc,'integrations.status.ready','success');}catch(x){setStatus(doc,'integrations.status.searchFailed','danger',x?.message);}});doc.getElementById('service-now-search')?.addEventListener('submit',async e=>{e.preventDefault();try{setStatus(doc,'integrations.servicenow.searching','info');const r=await sn.search(doc.getElementById('service-now-connector')?.value,doc.getElementById('service-now-query')?.value,{limit:50});renderServiceNow(doc,r.payload,r.pagination);setStatus(doc,'integrations.status.ready','success');}catch(x){setStatus(doc,'integrations.servicenow.searchFailed','danger',x?.message);}});}
+async function refreshProvider(doc,client,id){const r=await client.connectors();const items=Array.isArray(r.payload)?r.payload:[];const tbody=doc.getElementById(`${id}-connectors`);tbody?.replaceChildren(...items.map(item=>connectorRow(doc,client,item,id)));if(tbody?.closest)refreshEnterpriseDataTable(tbody.closest('table'));const select=doc.getElementById(`${id}-connector`);if(select){select.replaceChildren(...items.filter(x=>x.enabled).map(x=>option(doc,x.connectorKey)));select.disabled=select.options.length===0;}}
+function connectorRow(doc,client,item,id){const row=doc.createElement('tr');for(const v of [item.connectorKey,item.provider,item.direction,item.authority])append(row,v);const status=doc.createElement('td');status.textContent=item.enabled?translate(localeFromDocument(doc),'common.enabled'):translate(localeFromDocument(doc),'common.disabled');row.appendChild(status);const actions=doc.createElement('td');const b=doc.createElement('button');b.type='button';b.className='btn btn-sm btn-outline-primary';b.textContent=translate(localeFromDocument(doc),'integrations.health');b.disabled=!item.enabled;b.addEventListener('click',async()=>{try{const r=await client.health(item.connectorKey);setStatus(doc,r.payload?.status==='UP'?(id==='service-now'?'integrations.servicenow.healthUp':'integrations.health.up'):'integrations.status.unavailable',r.payload?.status==='UP'?'success':'danger');}catch(e){setStatus(doc,id==='service-now'?'integrations.servicenow.healthDown':'integrations.health.down','danger',e?.message);}});actions.appendChild(b);row.appendChild(actions);return row;}
+function renderJira(doc,items,p){renderRows(doc,'jira-assets-results',items,x=>[x.objectKey,x.label,x.objectTypeName,x.id]);page(doc,'jira-assets-page',items,p);}
+function renderServiceNow(doc,items,p){renderRows(doc,'service-now-results',items,x=>[x.name,x.className,x.sysId,x.updatedOn]);page(doc,'service-now-page',items,p);}
+function renderRows(doc,id,items,map){const rows=Array.isArray(items)?items:[];const tbody=doc.getElementById(id);tbody?.replaceChildren(...rows.map(item=>{const r=doc.createElement('tr');for(const v of map(item))append(r,v);return r;}));if(tbody?.closest)refreshEnterpriseDataTable(tbody.closest('table'));}
+function page(doc,id,items,p){const n=Array.isArray(items)?items.length:0;const node=doc.getElementById(id);if(node){const next=p?.nextOffset==null?'—':`${translate(localeFromDocument(doc),'integrations.page.next')} ${p.nextOffset}`;node.textContent=`${n} · ${next}`;}}
+function option(doc,value){const o=doc.createElement('option');o.value=value;o.textContent=value;return o;} function append(row,value){const c=row.ownerDocument.createElement('td');c.textContent=value||'—';row.appendChild(c);} function setStatus(doc,key,context,detail=''){const n=doc.getElementById('integrations-status');if(!n)return;const base=translate(localeFromDocument(doc),key);n.textContent=detail?`${base} ${detail}`:base;n.className=`alert alert-${context} py-2`;n.setAttribute('data-state',context);}

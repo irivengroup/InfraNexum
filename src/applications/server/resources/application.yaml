@@ -7,7 +7,7 @@ server:
 spring:
   application:
     name: infranexum-server
-    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.108}
+    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.109}
   jackson:
     deserialization:
       fail-on-unknown-properties: true
@@ -56,6 +56,9 @@ infranexum:
     endpoints: {}
     jira-assets:
       maximum-response-bytes: ${INFRANEXUM_INTEGRATIONS_JIRA_ASSETS_MAX_RESPONSE_BYTES:2097152}
+      connectors: {}
+    service-now:
+      maximum-response-bytes: ${INFRANEXUM_INTEGRATIONS_SERVICE_NOW_MAX_RESPONSE_BYTES:2097152}
       connectors: {}
   workers:
     enabled: ${INFRANEXUM_WORKERS_ENABLED:true}
@@ -106,7 +109,7 @@ infranexum:
     mode: ${INFRANEXUM_SERVER_MODE:STANDALONE}
     region: ${INFRANEXUM_SERVER_REGION:local}
     site: ${INFRANEXUM_SERVER_SITE:local}
-    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.108}
+    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.109}
     architecture-baseline: ${INFRANEXUM_ARCHITECTURE_BASELINE:2.0.0-draft.21}
 
 logging:
@@ -122,7 +125,7 @@ logging:
         include-hashes: true
     ecs:
       service:
-        version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.108}
+        version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.109}
         environment: ${INFRANEXUM_ENVIRONMENT:local}
         node-name: ${INFRANEXUM_SERVER_INSTANCE_ID:server-local-1}
 
@@ -147,7 +150,7 @@ management:
     map-environment-variables: false
     resource-attributes:
       service.namespace: infranexum
-      service.version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.108}
+      service.version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.109}
       service.instance.id: ${INFRANEXUM_SERVER_INSTANCE_ID:server-local-1}
       deployment.environment.name: ${INFRANEXUM_ENVIRONMENT:local}
     tracing:

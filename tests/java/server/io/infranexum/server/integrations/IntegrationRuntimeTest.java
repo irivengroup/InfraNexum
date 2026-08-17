@@ -457,7 +457,8 @@ class IntegrationRuntimeTest {
             Duration initial, Duration maximum, double jitter, int threshold, Duration suspension,
             Map<String, IntegrationRuntimeProperties.EndpointProperties> endpoints) {
         return new IntegrationRuntimeProperties(true, maxPayload, batch, poll, lease, attempts, initial, maximum,
-                jitter, threshold, suspension, endpoints, new IntegrationRuntimeProperties.JiraAssetsProperties(2_097_152, Map.of()));
+                jitter, threshold, suspension, endpoints, new IntegrationRuntimeProperties.JiraAssetsProperties(2_097_152, Map.of()),
+                new IntegrationRuntimeProperties.ServiceNowProperties(2_097_152, Map.of()));
     }
 
     private static ConnectorWebhookEndpoint endpoint(boolean enabled) {

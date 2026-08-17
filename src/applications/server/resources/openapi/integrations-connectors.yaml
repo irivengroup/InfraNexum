@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum Integrations Connectors API
-  version: 2.0.0-alpha.0.108
+  version: 2.0.0-alpha.0.109
 tags:
 - name: Integrations / Connectors / Webhooks
   description: Authenticated connector webhook admission into the durable inbox.
@@ -13,6 +13,10 @@ tags:
   description: Configured Jira Assets Cloud connector instances and provider health.
 - name: Integrations / Jira Assets / Federated Read
   description: Governed read-only AQL queries returning a minimized external projection.
+- name: Integrations / ServiceNow / Catalogue
+  description: Configured ServiceNow SaaS CMDB connector instances and provider health.
+- name: Integrations / ServiceNow / Federated Read
+  description: Governed read-only CMDB name searches returning a minimized external projection.
 x-tagGroups:
 - name: Integrations
   tags:
@@ -21,6 +25,8 @@ x-tagGroups:
   - Integrations / Connectors / Runtime
   - Integrations / Jira Assets / Catalogue
   - Integrations / Jira Assets / Federated Read
+  - Integrations / ServiceNow / Catalogue
+  - Integrations / ServiceNow / Federated Read
 paths:
   /api/v1/integrations/webhooks/{connectorKey}:
     parameters:
@@ -393,6 +399,142 @@ paths:
         code: integrations.connector.read
       x-infranexum-pagination: offset
       x-infranexum-idempotency: repeatable
+  /api/v1/integrations/providers/service-now:
+    get:
+      tags:
+      - Integrations / ServiceNow / Catalogue
+      operationId: listServiceNowConnectors
+      summary: List configured ServiceNow CMDB connector instances
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/Offset'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Bounded connector catalogue. Instance hosts, table names and secret references are excluded.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            X-Page-Limit:
+              $ref: '#/components/headers/PageLimit'
+            X-Next-Offset:
+              $ref: '#/components/headers/NextOffset'
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 64
+                items:
+                  $ref: '#/components/schemas/ServiceNowConnectorDescriptor'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.connector.read
+      x-infranexum-pagination: offset
+  /api/v1/integrations/providers/service-now/{connectorKey}/health:
+    get:
+      tags:
+      - Integrations / ServiceNow / Catalogue
+      operationId: checkServiceNowConnectorHealth
+      summary: Check read-only ServiceNow CMDB connectivity and ACLs
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/ConnectorKey'
+      responses:
+        '200':
+          description: Provider health with governance metadata.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceNowHealth'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.connector.read
+  /api/v1/integrations/providers/service-now/{connectorKey}/configuration-items/search:
+    post:
+      tags:
+      - Integrations / ServiceNow / Federated Read
+      operationId: searchServiceNowConfigurationItems
+      summary: Search ServiceNow CMDB items through a governed name query
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/ConnectorKey'
+      - $ref: '#/components/parameters/Offset'
+      - $ref: '#/components/parameters/Limit'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceNowSearchRequest'
+      responses:
+        '200':
+          description: Minimized external CMDB page. Provider-specific attributes are not copied into InfraNexum.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            X-Page-Limit:
+              $ref: '#/components/headers/PageLimit'
+            X-Next-Offset:
+              $ref: '#/components/headers/NextOffset'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceNowRemoteConfigurationItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.connector.read
+      x-infranexum-pagination: offset
+      x-infranexum-idempotency: repeatable
 components:
   securitySchemes:
     LocalSessionCookie:
@@ -672,6 +814,85 @@ components:
         objectTypeName:
           type: string
           minLength: 1
+          maxLength: 1024
+    ServiceNowConnectorDescriptor:
+      type: object
+      additionalProperties: false
+      required:
+      - connectorKey
+      - provider
+      - direction
+      - authority
+      - enabled
+      properties:
+        connectorKey:
+          $ref: '#/components/schemas/ConnectorKey'
+        provider:
+          type: string
+          const: service-now
+        direction:
+          type: string
+          const: FEDERATED_READ
+        authority:
+          type: string
+          const: EXTERNAL
+        enabled:
+          type: boolean
+    ServiceNowHealth:
+      type: object
+      additionalProperties: false
+      required:
+      - connectorKey
+      - status
+      - provider
+      - direction
+      - authority
+      properties:
+        connectorKey:
+          $ref: '#/components/schemas/ConnectorKey'
+        status:
+          type: string
+          const: UP
+        provider:
+          type: string
+          const: service-now
+        direction:
+          type: string
+          const: FEDERATED_READ
+        authority:
+          type: string
+          const: EXTERNAL
+    ServiceNowSearchRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - query
+      properties:
+        query:
+          type: string
+          minLength: 1
+          maxLength: 256
+          pattern: '^[A-Za-z0-9 _./:-]+$'
+    ServiceNowRemoteConfigurationItem:
+      type: object
+      additionalProperties: false
+      required:
+      - sysId
+      - name
+      - className
+      - updatedOn
+      properties:
+        sysId:
+          type: string
+          pattern: '^[0-9a-f]{32}$'
+        name:
+          type: string
+          maxLength: 1024
+        className:
+          type: string
+          pattern: '^cmdb_ci(?:_[a-z0-9_]{1,56})?$'
+        updatedOn:
+          type: string
           maxLength: 1024
     WebhookAdmission:
       type: object
