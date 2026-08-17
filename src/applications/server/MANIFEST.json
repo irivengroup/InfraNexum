@@ -22,7 +22,8 @@
     "components.domains.ddi",
     "components.domains.integrations",
     "components.adapters.jira-assets",
-    "components.adapters.service-now"
+    "components.adapters.service-now",
+    "components.adapters.outbound-webhook"
   ],
   "source_baseline": [
     "PGM-02-E01",

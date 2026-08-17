@@ -81,6 +81,28 @@ class AuthorizationRequirementTest {
     }
 
     @Test
+    void notificationRoutesAreRegisteredFailClosed() {
+        assertPermission("GET", "/api/v1/integrations/notifications/endpoints",
+                PermissionCodes.INTEGRATIONS_NOTIFICATION_READ, ScopeKind.PLATFORM);
+        assertPermission("POST", "/api/v1/integrations/notifications/events",
+                PermissionCodes.INTEGRATIONS_NOTIFICATION_PUBLISH, ScopeKind.PLATFORM);
+        assertPermission("GET", "/api/v1/integrations/notifications/dlq",
+                PermissionCodes.INTEGRATIONS_NOTIFICATION_READ, ScopeKind.PLATFORM);
+        assertPermission("POST", "/api/v1/integrations/notifications/dlq/018bcfe5-6800-7000-8000-000000000700/replay",
+                PermissionCodes.INTEGRATIONS_NOTIFICATION_REPLAY, ScopeKind.PLATFORM);
+        assertPermission("GET", "/api/v1/integrations/notifications/endpoints/ops.webhook/runtime",
+                PermissionCodes.INTEGRATIONS_NOTIFICATION_READ, ScopeKind.PLATFORM);
+        assertPermission("POST", "/api/v1/integrations/notifications/endpoints/ops.webhook/resume",
+                PermissionCodes.INTEGRATIONS_NOTIFICATION_RESUME, ScopeKind.PLATFORM);
+        assertEquals(AuthorizationRequirement.Type.UNREGISTERED,
+                AuthorizationRequirement.resolve("DELETE", "/api/v1/integrations/notifications/endpoints").type());
+        assertEquals(AuthorizationRequirement.Type.UNREGISTERED,
+                AuthorizationRequirement.resolve("POST", "/api/v1/integrations/notifications/dlq").type());
+        assertThrows(IllegalArgumentException.class, () -> AuthorizationRequirement.resolve(
+                "GET", "/api/v1/integrations/notifications/endpoints/unsafe%2Fkey/runtime"));
+    }
+
+    @Test
     void serviceNowFederatedReadRoutesUseConnectorReadPermissionAndFailClosedOnWrites() {
         assertPermission("GET", "/api/v1/integrations/providers/service-now",
                 PermissionCodes.INTEGRATIONS_CONNECTOR_READ, ScopeKind.PLATFORM);

@@ -1,0 +1,25 @@
+schema: infranexum.migration/v1
+id: '0037'
+name: identity-access-notification-permissions
+owner_context: identity-access
+dependencies:
+- '0036'
+preconditions:
+- identity-access-rbac-created
+- outbound-notification-outbox-created
+postconditions:
+- notification-runtime-permissions-seeded
+recovery: rerun-idempotent-permission-seeding-after-correcting-database-connectivity
+rollback: removes-only-notification-runtime-permissions-and-bootstrap-grants
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 20
+checksums:
+  postgresql.sql: fa465bb92e20caaab4103b3e54c22273e5f355c773ac0f2ef6783b4e97ba0f9c
+  oracle.sql: 7caa26d7718db6e4526057aa9a18f788bc490e5405b905be72f6bf57d3ef4e5e
+  rollback/postgresql.sql: 6e3e9963bd9ae34c6ea7ee03c053e200320e3b56301c3e34eca77ce8ed0efcd0
+  rollback/oracle.sql: e87b39e783bdaf00fca96a065d1127d4cf45b2dcefcbb57bca10e11f90ffac31
+  logical-model.json: 4c6917143df489aa725c148cc36784ddeb4d63e3b3ce1c34d146589d3c6b2a3f
+  verify.sql.yaml: 8b4f5942b8ef5746861858489ca550615380c0ff971dfb4730d8509a594e6af7

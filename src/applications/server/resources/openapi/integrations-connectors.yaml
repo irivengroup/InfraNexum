@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum Integrations Connectors API
-  version: 2.0.0-alpha.0.109
+  version: 2.0.0-alpha.0.110
 tags:
 - name: Integrations / Connectors / Webhooks
   description: Authenticated connector webhook admission into the durable inbox.
@@ -17,6 +17,12 @@ tags:
   description: Configured ServiceNow SaaS CMDB connector instances and provider health.
 - name: Integrations / ServiceNow / Federated Read
   description: Governed read-only CMDB name searches returning a minimized external projection.
+- name: Integrations / Notifications / Endpoints
+  description: Configured signed-webhook notification destinations without secret or destination disclosure.
+- name: Integrations / Notifications / Delivery
+  description: Durable idempotent publication of operational events to explicit outbound endpoints.
+- name: Integrations / Notifications / Recovery
+  description: Dead-letter inspection, controlled replay and explicit endpoint recovery.
 x-tagGroups:
 - name: Integrations
   tags:
@@ -27,6 +33,9 @@ x-tagGroups:
   - Integrations / Jira Assets / Federated Read
   - Integrations / ServiceNow / Catalogue
   - Integrations / ServiceNow / Federated Read
+  - Integrations / Notifications / Endpoints
+  - Integrations / Notifications / Delivery
+  - Integrations / Notifications / Recovery
 paths:
   /api/v1/integrations/webhooks/{connectorKey}:
     parameters:
@@ -535,6 +544,270 @@ paths:
         code: integrations.connector.read
       x-infranexum-pagination: offset
       x-infranexum-idempotency: repeatable
+  /api/v1/integrations/notifications/endpoints:
+    get:
+      tags:
+      - Integrations / Notifications / Endpoints
+      operationId: listNotificationEndpoints
+      summary: List configured outbound notification endpoints
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/Offset'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Bounded page of secret-free notification endpoint descriptors.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            X-Page-Limit:
+              $ref: '#/components/headers/PageLimit'
+            X-Next-Offset:
+              $ref: '#/components/headers/NextOffset'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificationEndpoint'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.notification.read
+      x-infranexum-pagination: offset
+  /api/v1/integrations/notifications/events:
+    post:
+      tags:
+      - Integrations / Notifications / Delivery
+      operationId: publishOperationalNotification
+      summary: Durably publish one operational event to explicit notification endpoints
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationPublishRequest'
+      responses:
+        '202':
+          description: Event durably admitted for every requested endpoint or recognized as an identical duplicate.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+          content:
+            application/json:
+              schema:
+                type: array
+                minItems: 1
+                maxItems: 64
+                items:
+                  $ref: '#/components/schemas/NotificationAdmission'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.notification.publish
+      x-infranexum-idempotency: required
+  /api/v1/integrations/notifications/dlq:
+    get:
+      tags:
+      - Integrations / Notifications / Recovery
+      operationId: listNotificationDeadLetters
+      summary: List outbound notification deliveries in the dead-letter queue
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/OptionalNotificationEndpointKey'
+      - $ref: '#/components/parameters/Offset'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Bounded dead-letter page without notification payload bodies.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            X-Page-Limit:
+              $ref: '#/components/headers/PageLimit'
+            X-Next-Offset:
+              $ref: '#/components/headers/NextOffset'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificationDeadLetter'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.notification.read
+      x-infranexum-pagination: offset
+  /api/v1/integrations/notifications/dlq/{deliveryId}/replay:
+    post:
+      tags:
+      - Integrations / Notifications / Recovery
+      operationId: replayNotificationDeadLetter
+      summary: Explicitly requeue one outbound notification dead letter
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/DeliveryId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReasonRequest'
+      responses:
+        '200':
+          description: Notification delivery requeued as pending.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationDeadLetter'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.notification.replay
+      x-infranexum-idempotency: required
+  /api/v1/integrations/notifications/endpoints/{endpointKey}/runtime:
+    get:
+      tags:
+      - Integrations / Notifications / Recovery
+      operationId: getNotificationEndpointRuntime
+      summary: Read outbound notification endpoint queue and suspension state
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/NotificationEndpointKey'
+      responses:
+        '200':
+          description: Endpoint runtime state and bounded queue gauges.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationRuntime'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.notification.read
+  /api/v1/integrations/notifications/endpoints/{endpointKey}/resume:
+    post:
+      tags:
+      - Integrations / Notifications / Recovery
+      operationId: resumeNotificationEndpoint
+      summary: Explicitly clear an outbound notification endpoint suspension
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/NotificationEndpointKey'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReasonRequest'
+      responses:
+        '200':
+          description: Endpoint runtime state after explicit resume.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationRuntime'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.notification.resume
+      x-infranexum-idempotency: required
 components:
   securitySchemes:
     LocalSessionCookie:
@@ -562,6 +835,18 @@ components:
         $ref: '#/components/schemas/ConnectorKey'
     OptionalConnectorKey:
       name: connectorKey
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/ConnectorKey'
+    NotificationEndpointKey:
+      name: endpointKey
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/ConnectorKey'
+    OptionalNotificationEndpointKey:
+      name: endpointKey
       in: query
       required: false
       schema:
@@ -894,6 +1179,173 @@ components:
         updatedOn:
           type: string
           maxLength: 1024
+    NotificationEndpoint:
+      type: object
+      additionalProperties: false
+      required:
+      - endpointKey
+      - transport
+      - direction
+      - authority
+      - enabled
+      properties:
+        endpointKey:
+          $ref: '#/components/schemas/ConnectorKey'
+        transport:
+          type: string
+          const: SIGNED_WEBHOOK
+        direction:
+          type: string
+          const: OUTBOUND
+        authority:
+          type: string
+          const: INFRANEXUM
+        enabled:
+          type: boolean
+    NotificationPublishRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - eventId
+      - eventType
+      - endpointKeys
+      - payload
+      properties:
+        eventId:
+          type: string
+          minLength: 8
+          maxLength: 200
+          pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]{7,199}$'
+        eventType:
+          type: string
+          minLength: 3
+          maxLength: 128
+          pattern: '^[a-z][a-z0-9]*(?:[._-][a-z0-9]+){1,15}$'
+        endpointKeys:
+          type: array
+          minItems: 1
+          maxItems: 64
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/ConnectorKey'
+        payload:
+          oneOf:
+          - type: object
+            additionalProperties: true
+          - type: array
+            items: {}
+    NotificationAdmission:
+      type: object
+      additionalProperties: false
+      required:
+      - deliveryId
+      - endpointKey
+      - eventId
+      - eventType
+      - status
+      - createdAt
+      properties:
+        deliveryId:
+          $ref: '#/components/schemas/UuidV7'
+        endpointKey:
+          $ref: '#/components/schemas/ConnectorKey'
+        eventId:
+          type: string
+          minLength: 8
+          maxLength: 200
+        eventType:
+          type: string
+          minLength: 3
+          maxLength: 128
+        status:
+          type: string
+          enum:
+          - ADMITTED
+          - DUPLICATE
+        createdAt:
+          type: string
+          format: date-time
+    NotificationDeadLetter:
+      type: object
+      additionalProperties: false
+      required:
+      - deliveryId
+      - endpointKey
+      - eventId
+      - eventType
+      - attempts
+      - replayCount
+      - createdAt
+      properties:
+        deliveryId:
+          $ref: '#/components/schemas/UuidV7'
+        endpointKey:
+          $ref: '#/components/schemas/ConnectorKey'
+        eventId:
+          type: string
+          minLength: 8
+          maxLength: 200
+        eventType:
+          type: string
+          minLength: 3
+          maxLength: 128
+        attempts:
+          type: integer
+          minimum: 0
+        failureCode:
+          type:
+          - string
+          - 'null'
+          maxLength: 64
+        replayCount:
+          type: integer
+          minimum: 0
+        createdAt:
+          type: string
+          format: date-time
+        lastReplayedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+    NotificationRuntime:
+      type: object
+      additionalProperties: false
+      required:
+      - endpointKey
+      - consecutiveDeadLetters
+      - suspended
+      - backlog
+      - deadLetters
+      properties:
+        endpointKey:
+          $ref: '#/components/schemas/ConnectorKey'
+        consecutiveDeadLetters:
+          type: integer
+          minimum: 0
+        suspendedUntil:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        lastSuccessAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        lastFailureAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        suspended:
+          type: boolean
+        backlog:
+          type: integer
+          minimum: 0
+        deadLetters:
+          type: integer
+          minimum: 0
     WebhookAdmission:
       type: object
       additionalProperties: false

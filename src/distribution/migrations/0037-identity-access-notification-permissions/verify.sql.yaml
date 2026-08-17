@@ -1,0 +1,10 @@
+schema: infranexum.migration-verification/v1
+checks:
+- id: notification-permissions-created
+  postgresql: "SELECT COUNT(*) FROM infranexum_iam.permission WHERE code LIKE 'integrations.notification.%'"
+  oracle: "SELECT COUNT(*) FROM INFRANEXUM_IAM_PERMISSION WHERE CODE LIKE 'integrations.notification.%'"
+  expected: 4
+- id: platform-admin-notification-grants-created
+  postgresql: "SELECT COUNT(*) FROM infranexum_iam.role_permission rp JOIN infranexum_iam.permission p ON p.id=rp.permission_id WHERE rp.role_id='019ffbda-1001-7e80-9ec8-7580467e9a85' AND p.code LIKE 'integrations.notification.%'"
+  oracle: "SELECT COUNT(*) FROM INFRANEXUM_IAM_ROLE_PERMISSION rp JOIN INFRANEXUM_IAM_PERMISSION p ON p.ID=rp.PERMISSION_ID WHERE rp.ROLE_ID='019ffbda-1001-7e80-9ec8-7580467e9a85' AND p.CODE LIKE 'integrations.notification.%'"
+  expected: 4

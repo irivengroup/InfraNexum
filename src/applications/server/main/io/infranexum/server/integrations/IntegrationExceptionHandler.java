@@ -13,6 +13,8 @@ import io.infranexum.integrations.ConnectorEndpointUnavailableException;
 import io.infranexum.integrations.ConnectorDeliveryStateConflictException;
 import io.infranexum.integrations.DuplicateDeliveryConflictException;
 import io.infranexum.integrations.WebhookAuthenticationException;
+import io.infranexum.integrations.OutboundNotificationNotFoundException;
+import io.infranexum.integrations.OutboundNotificationStateConflictException;
 import io.infranexum.server.http.ApiProblem;
 import io.infranexum.server.http.ApiProblemSupport;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,7 +27,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /** Canonical RFC 9457 translation for PGM-10-E05/E06 integration failures. */
-@RestControllerAdvice(assignableTypes={IntegrationController.class,JiraAssetsController.class,ServiceNowController.class})
+@RestControllerAdvice(assignableTypes={IntegrationController.class,JiraAssetsController.class,ServiceNowController.class,NotificationController.class})
 final class IntegrationExceptionHandler {
     private final ApiProblemSupport problems;
     IntegrationExceptionHandler(ApiProblemSupport problems){this.problems=Objects.requireNonNull(problems,"problems");}
@@ -33,6 +35,8 @@ final class IntegrationExceptionHandler {
     @ExceptionHandler(ConnectorEndpointUnavailableException.class) ResponseEntity<ApiProblem> endpoint(ConnectorEndpointUnavailableException failure,HttpServletRequest request){return problem(HttpStatus.NOT_FOUND,"INFRANEXUM_CONNECTOR_ENDPOINT_UNAVAILABLE","Connector endpoint is unavailable",request);}
     @ExceptionHandler(ConnectorDeliveryNotFoundException.class) ResponseEntity<ApiProblem> missing(ConnectorDeliveryNotFoundException failure,HttpServletRequest request){return problem(HttpStatus.NOT_FOUND,"INFRANEXUM_CONNECTOR_DELIVERY_NOT_FOUND","Connector delivery was not found",request);}
     @ExceptionHandler({DuplicateDeliveryConflictException.class,ConnectorDeliveryStateConflictException.class}) ResponseEntity<ApiProblem> conflict(RuntimeException failure,HttpServletRequest request){return problem(HttpStatus.CONFLICT,"INFRANEXUM_CONNECTOR_DELIVERY_CONFLICT","Connector delivery state conflicts with the requested operation",request);}
+    @ExceptionHandler(OutboundNotificationNotFoundException.class) ResponseEntity<ApiProblem> notificationMissing(OutboundNotificationNotFoundException failure,HttpServletRequest request){return problem(HttpStatus.NOT_FOUND,"INFRANEXUM_NOTIFICATION_NOT_FOUND","Notification delivery or endpoint was not found",request);}
+    @ExceptionHandler(OutboundNotificationStateConflictException.class) ResponseEntity<ApiProblem> notificationConflict(OutboundNotificationStateConflictException failure,HttpServletRequest request){return problem(HttpStatus.CONFLICT,"INFRANEXUM_NOTIFICATION_STATE_CONFLICT","Notification state conflicts with the requested operation",request);}
     @ExceptionHandler({IllegalArgumentException.class,MissingRequestHeaderException.class}) ResponseEntity<ApiProblem> invalid(Exception failure,HttpServletRequest request){return problem(HttpStatus.BAD_REQUEST,"INFRANEXUM_CONNECTOR_INVALID_REQUEST","Connector request is invalid",request);}
     @ExceptionHandler(JiraAssetsAuthenticationException.class) ResponseEntity<ApiProblem> jiraAuth(JiraAssetsAuthenticationException failure,HttpServletRequest request){return problem(HttpStatus.BAD_GATEWAY,"INFRANEXUM_JIRA_ASSETS_AUTHENTICATION_FAILED","Jira Assets rejected the configured connector credential or read scopes",request);}
     @ExceptionHandler(JiraAssetsRateLimitedException.class) ResponseEntity<ApiProblem> jiraRate(JiraAssetsRateLimitedException failure,HttpServletRequest request){return problem(HttpStatus.SERVICE_UNAVAILABLE,"INFRANEXUM_JIRA_ASSETS_RATE_LIMITED","Jira Assets temporarily rate limited the connector",request);}

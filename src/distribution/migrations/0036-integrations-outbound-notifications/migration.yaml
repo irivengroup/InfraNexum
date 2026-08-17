@@ -1,0 +1,24 @@
+schema: infranexum.migration/v1
+id: '0036'
+name: integrations-outbound-notifications
+owner_context: integrations
+dependencies:
+- '0035'
+preconditions:
+- connector-inbox-created
+postconditions:
+- outbound-notification-outbox-and-endpoint-state-created
+recovery: rerun-idempotent-notification-schema-after-correcting-database-connectivity
+rollback: drops-only-outbound-notification-outbox-and-endpoint-state
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 30
+checksums:
+  postgresql.sql: d8bd830ce6584659826067a5541d77c4eab4221f06eb165ac4b0fc72f0d9fb38
+  oracle.sql: 9b1ad34e20a1e87dab0608792712971925c591b4d59210265feaee6cc47860dc
+  rollback/postgresql.sql: 329dc3a3403a4aa0546ba3ed35c4e8ea75954d8325cfc5e4089af7a6ac9b0276
+  rollback/oracle.sql: d54384f38e6b9a0ef7fdd3bb93f2bf924d6114734075159f743d9b8bddec0722
+  logical-model.json: 569e4207c1f4f1eac630ac8b07f8fc49925e6881e50fea958a7fca8136954c14
+  verify.sql.yaml: daa93b629d4239b832147344abe6856631f05a4fe62fda3b68dd04b40393ed27

@@ -1,3 +1,17 @@
+# InfraNexum 2.0.0-alpha.0.110 — PGM-10-E06 phase 3: durable signed outbound notifications
+
+**Nature : évolution fonctionnelle PGM-10-E06, tranche notifications.** Jira Assets (`alpha.0.108`) et ServiceNow CMDB (`alpha.0.109`) restent en lecture fédérée gouvernée. Cette candidate ajoute une pile de notifications sortantes réellement durable : domaine d'admission/idempotence, outbox PostgreSQL/Oracle, leasing borné multi-Server, retries/DLQ/suspension par endpoint, transport HTTPS signé HMAC-SHA256, récupération explicite par replay/resume, métriques à faible cardinalité, audit et UI Web sans secret.
+
+**Sécurité et autorisation :** les destinations sont de la configuration opérateur et ne peuvent pas être fournies par l'API de publication. Les secrets sont uniquement `env:`/`file:`, exigent au moins 32 octets et sont effacés du buffer après usage. Le transport refuse redirections, userinfo et ports explicites autres que 443. Les six routes Notification sont enregistrées dans le résolveur RBAC Server avec `integrations.notification.read|publish|replay|resume`; tout verbe/chemin non enregistré reste fail-closed. Les erreurs publiques ne reflètent ni payload distant ni message interne.
+
+**Durabilité/récupération :** `(endpoint,event-id)` est la clé métier d'idempotence ; une rediffusion identique est reconnue comme duplicate et une réutilisation sémantiquement différente est rejetée. Les réponses 408/425/429/5xx et erreurs réseau sont transitoires ; les autres non-2xx sont permanentes. Replay ne lève jamais implicitement une suspension : `resume` reste une action séparée et auditée. Les migrations `0036` et `0037` ont parité PostgreSQL/Oracle ; le rollback `0036` détruit l'outbox/l'état et nécessite donc drainage/sauvegarde préalable.
+
+**OpenService :** le connecteur n'est volontairement pas inventé. Les sources `draft.21` disponibles le nomment mais ne définissent pas un produit/API faisant autorité, ses endpoints, son authentification ni son schéma métier. PGM-10-E06 reste donc ouvert jusqu'à décision produit/contrat fournisseur.
+
+**Validation de développement avant gel :** Web **205/205** à **99,73 % lignes / 98,54 % branches / 100 % fonctions** ; API Contracts **48/48**, **15 fragments / 191 opérations**, dette **0/0/0/0** ; Architecture fonctionnelle **184/184** en split déterministe plus méta-checker **29/29**, Architecture-as-Code `PASS` ; Migrations **117/117**, Eventing **10/10**, Persistence **12/12**, Capabilities **10/10**, Entitlements **10/10**, Audit **8/8**, Toolchains **25/25**, SDK **19/19**, Compose **68/68** ; smokes Java dependency-free JDBC/JDBC-audit/Integrations/Policy/API-Capability exécutés sous Java 21. Le gel final revalide ces surfaces après versionnage. Exact Temurin **25.0.4+7**, Maven/JUnit/JaCoCo **98 % lignes+branches**, PostgreSQL **17/18**, Docker PRO/PowerShell, Node **24.18.1 + pnpm 11.17.0** et un récepteur webhook réel restent des gates externes/non disponibles dans le runner local.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.109 — PGM-10-E06 phase 2: ServiceNow CMDB federated read
 
 **Statut : EN COURS / NON TERMINÉ. Nature : évolution fonctionnelle bornée.** Cette version préserve la tranche Jira Assets de `alpha.0.108` et ajoute ServiceNow CMDB en **lecture fédérée sans copie**. PGM-10-E05 n'est toujours pas clôturé formellement : les gates hébergés Temurin 25/Maven/JaCoCo et PostgreSQL 17/18 restent obligatoires. PGM-10-E06 complet reste NON TERMINÉ tant qu'OpenService, notifications et les tranches de synchronisation/rollback prévues par la roadmap ne sont pas livrés.

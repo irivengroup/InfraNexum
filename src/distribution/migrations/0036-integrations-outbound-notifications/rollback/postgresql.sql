@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS infranexum_integrations.notification_endpoint_state;
+DROP TABLE IF EXISTS infranexum_integrations.notification_outbox;

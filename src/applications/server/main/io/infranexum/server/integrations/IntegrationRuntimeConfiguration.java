@@ -1,10 +1,12 @@
 package io.infranexum.server.integrations;
 
 import io.infranexum.adapters.jiraassets.JdkJiraAssetsTransport;
+import io.infranexum.adapters.outboundwebhook.JdkSignedWebhookTransport;
 import io.infranexum.adapters.jiraassets.JiraAssetsTransport;
 import io.infranexum.adapters.servicenow.JdkServiceNowTransport;
 import io.infranexum.adapters.servicenow.ServiceNowTransport;
 import io.infranexum.adapters.persistence.jdbc.JdbcConnectorInboxRepository;
+import io.infranexum.adapters.persistence.jdbc.JdbcOutboundNotificationRepository;
 import io.infranexum.adapters.persistence.jdbc.JdbcDatabaseDialect;
 import io.infranexum.core.audit.AuditJournal;
 import io.infranexum.core.contracts.ConfigurationException;
@@ -175,6 +177,88 @@ public class IntegrationRuntimeConfiguration {
     ConnectorInboxDispatcher connectorInboxDispatcher(ConnectorInboxRepository inbox,ConnectorEndpointRegistry endpoints,ConnectorHandlerRegistry handlers,ConnectorRuntimeObserver observer,@Qualifier("platformClock") Clock clock,ServerRuntimeProperties server,IntegrationRuntimeProperties properties) {
         return new ConnectorInboxDispatcher(inbox,endpoints,handlers,observer,properties.retryPolicy(),clock,server.instanceId()+":integration",properties.claimBatchSize(),properties.leaseDuration(),properties.suspendAfterDeadLetters(),properties.suspensionDuration());
     }
+
+    @Bean
+    OutboundNotificationRepository outboundNotificationRepository(DataSource dataSource, PersistenceRuntimeProperties persistence) {
+        JdbcDatabaseDialect dialect = switch (persistence.mode()) {
+            case POSTGRESQL -> JdbcDatabaseDialect.POSTGRESQL;
+            case ORACLE -> JdbcDatabaseDialect.ORACLE;
+            case MEMORY -> throw new ConfigurationException("outbound notifications require PostgreSQL or Oracle persistence");
+        };
+        return new JdbcOutboundNotificationRepository(dataSource, dialect);
+    }
+
+    @Bean
+    OutboundNotificationEndpointRegistry outboundNotificationEndpointRegistry(IntegrationRuntimeProperties properties) {
+        return new ConfiguredOutboundNotificationEndpointRegistry(properties.notificationEndpointDefinitions());
+    }
+
+    @Bean
+    SmartInitializingSingleton outboundNotificationSecretValidator(
+            OutboundNotificationEndpointRegistry endpoints, ConnectorSecretProvider secrets) {
+        return () -> {
+            for (OutboundNotificationEndpoint endpoint : endpoints.endpoints()) {
+                if (!endpoint.enabled()) continue;
+                byte[] resolved = secrets.resolve(endpoint.secretReference());
+                try {
+                    if (resolved == null || resolved.length < 32) {
+                        throw new ConfigurationException("enabled notification endpoint secret is unavailable or shorter than 32 bytes: " + endpoint.endpointKey());
+                    }
+                } finally {
+                    if (resolved != null) Arrays.fill(resolved, (byte) 0);
+                }
+            }
+        };
+    }
+
+    @Bean
+    OutboundNotificationTransport outboundNotificationTransport(
+            ConnectorSecretProvider secrets, @Qualifier("platformClock") Clock clock) {
+        HttpClient client = HttpClient.newBuilder()
+                .connectTimeout(java.time.Duration.ofSeconds(10))
+                .followRedirects(HttpClient.Redirect.NEVER)
+                .version(HttpClient.Version.HTTP_2)
+                .build();
+        return new JdkSignedWebhookTransport(client, secrets, clock);
+    }
+
+    @Bean
+    OutboundNotificationRuntimeObserver outboundNotificationRuntimeObserver(
+            MeterRegistry registry, OutboundNotificationRepository repository,
+            OutboundNotificationEndpointRegistry endpoints, @Qualifier("platformClock") Clock clock) {
+        return new MicrometerOutboundNotificationObserver(registry, repository, endpoints, clock);
+    }
+
+    @Bean
+    OutboundNotificationPublisher outboundNotificationPublisher(
+            OutboundNotificationEndpointRegistry endpoints, OutboundNotificationRepository repository,
+            OutboundNotificationRuntimeObserver observer, @Qualifier("integrationIdentifiers") UuidV7Generator ids,
+            @Qualifier("platformClock") Clock clock, IntegrationRuntimeProperties properties) {
+        return new OutboundNotificationPublisher(
+                endpoints, repository, observer, ids, clock, properties.notifications().maximumPayloadBytes());
+    }
+
+    @Bean
+    NotificationOperationsService notificationOperationsService(
+            OutboundNotificationEndpointRegistry endpoints, OutboundNotificationPublisher publisher,
+            OutboundNotificationRepository repository, OutboundNotificationRuntimeObserver observer,
+            AuditJournal audit, @Qualifier("integrationIdentifiers") UuidV7Generator ids,
+            @Qualifier("platformClock") Clock clock) {
+        return new NotificationOperationsService(endpoints, publisher, repository, observer, audit, ids, clock);
+    }
+
+    @Bean
+    OutboundNotificationDispatcher outboundNotificationDispatcher(
+            OutboundNotificationRepository repository, OutboundNotificationEndpointRegistry endpoints,
+            OutboundNotificationTransport transport, OutboundNotificationRuntimeObserver observer,
+            @Qualifier("platformClock") Clock clock, ServerRuntimeProperties server, IntegrationRuntimeProperties properties) {
+        return new OutboundNotificationDispatcher(
+                repository, endpoints, transport, observer, properties.retryPolicy(), clock,
+                server.instanceId() + ":notifications", properties.claimBatchSize(), properties.leaseDuration(),
+                properties.suspendAfterDeadLetters(), properties.suspensionDuration());
+    }
+
+    @Bean OutboundNotificationSchedule outboundNotificationSchedule(OutboundNotificationDispatcher dispatcher) { return new OutboundNotificationSchedule(dispatcher); }
 
     @Bean ConnectorInboxSchedule connectorInboxSchedule(ConnectorInboxDispatcher dispatcher) { return new ConnectorInboxSchedule(dispatcher); }
 }

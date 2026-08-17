@@ -1,11 +1,12 @@
 {
   "schema": "infranexum.source-baseline/v1",
   "product": "InfraNexum — Infrastructure Control & Governance Platform",
-  "implementation_version": "2.0.0-alpha.0.109",
+  "implementation_version": "2.0.0-alpha.0.110",
   "architecture_baseline": "2.0.0-draft.21",
   "roadmap_baseline": "2.0.0-draft.21",
   "architecture_archive_sha256": "372cf19929f8ea3b7586c3af3e7c5004e590cf746ff2d6d59d4d0b88912aea64",
   "implemented_scope": [
+    "PGM-10-E06 phase 3 alpha.0.110: preserves Jira Assets and ServiceNow governed federated-read providers and adds durable signed outbound notifications with InfraNexum authority/OUTBOUND direction, PostgreSQL/Oracle outbox and endpoint state, endpoint-event durable idempotency, bounded multi-Server leasing/retry/DLQ/suspension, HMAC-SHA256 HTTPS delivery using external env/file secrets, explicit replay/resume recovery, low-cardinality metrics/audit, four notification permissions, six capability/RBAC-gated API operations and five-locale secret-free Web operations. OpenService remains intentionally unimplemented because draft.21 names it without an authoritative product/API/authentication/data contract. PGM-10-E05 remains formally open pending exact hosted Temurin 25/JaCoCo and PostgreSQL 17/18 gates; PGM-10-E06 remains open for OpenService and later synchronization/rollback slices.",
     "PGM-10-E06 phase 2 alpha.0.109: preserves the alpha.0.108 Jira Assets governed federated-read provider and adds a first-class ServiceNow CMDB adapter with EXTERNAL authority/FEDERATED_READ direction, HTTPS-only *.service-now.com Table API egress, cmdb_ci/cmdb_ci_* table restriction, redirect/port refusal, bounded timeout/body/offset/limit, constrained name search instead of arbitrary encoded-query proxying, minimal sys_id/name/sys_class_name/sys_updated_on projection, env/file bearer-token references with server-side use only, capability/permission-gated catalogue-health-search API, five-locale Web workspace integration and no local RSOT/ITAM copy or product migration. PGM-10-E05 remains formally open pending exact hosted Temurin 25/JaCoCo and PostgreSQL 17/18 gates; PGM-10-E06 remains open for OpenService, notifications and later synchronization/rollback slices.",
     "alpha.0.107 corrective: fixes the authenticated account avatar dropdown by synchronizing Bootstrap show state with hidden/ARIA state; restores the protected system.platform_admin PLATFORM role as the global administration boundary across Organization/Subdivision scopes while ordinary roles remain membership-bound; adds bounded admin-reactivate developer recovery and idempotent representative developer fixtures loaded only after the PRO Compose topology is ready, outside product migrations and without local credentials; keeps PGM-10-E05 formally open pending exact hosted Temurin 25/JaCoCo and PostgreSQL 17/18 gates, and introduces no workaround for the external GitHub 'Cannot retrieve latest commit at this time' UI symptom without job-level evidence.",
     "alpha.0.106 corrective: hosted JDK25 qualification and administration/Web hardening over alpha.0.105; adds status-filtered IAM user administration with visible suspended-account reactivation and self-lockout prevention, account dropdown/topbar and vertical DCIM Location/Infrastructure navigation, advanced-authorization tab visibility fix, Organization Server conditional composition repair, Security adapter branch hardening, deterministic JDBC error-path coverage, and preserves ReDoc same-origin parsed OpenAPI plus bounded DataTables. No JaCoCo threshold is lowered and no new roadmap epic is advanced.",
@@ -105,7 +106,7 @@
   ],
   "roadmap_archive_sha256": "11db7d27bbc79f688cd1fda31a24aaf31b56a56db36b6487b64154c148ab54d3",
   "engineering_governance_sha256": "f24357051a5401f598c3d77bbe5814d3759a176095537659243658ba3ff109c7",
-  "runtime_validation_note": "alpha.0.106 is a qualification/administration corrective over alpha.0.105. Local Web executes 195/195 at 99.73% lines / 98.53% branches / 100% functions; affected Java21 Core/domain tests execute 216/216, Security 6/6 and deterministic non-PostgreSQL JDBC 133/133. Exact Temurin25 Maven/JUnit/JaCoCo and live PostgreSQL17/18 remain mandatory before formal PGM-10-E05 promotion.",
+  "runtime_validation_note": "alpha.0.110 advances PGM-10-E06 with durable signed outbound notifications. Local Web/API/architecture/migration and dependency-free Java21 validations are executed; exact Temurin25 Maven/JUnit/JaCoCo, live PostgreSQL17/18, Docker PRO/PowerShell, exact target Node/pnpm/Go and real remote webhook execution remain mandatory external gates. PGM-10-E05 is not formally closed.",
   "server_contract_stabilization_alpha085": "EXECUTED_15_OF_15_TARGETED_DCIM_DDI_TEXT_BLOCK_AND_REPOSITORY_COMPOSITION_REGRESSIONS_PASS_JDBC_REPOSITORY_CONSTRUCTOR_ARITY_SCAN_ZERO_MISMATCHES",
   "maven_target_jdk25_alpha085": "NON_EXECUTED_LOCAL_JDK21_0_11_TARGET_TEMURIN25_0_4_DOWNLOAD_FAILED_DNS_GITHUB_COM_OPERATOR_DOCKER_REVALIDATION_REQUIRED",
   "docker_runtime_alpha085": "NON_EXECUTED_LOCAL_DOCKER_AND_PWSH_UNAVAILABLE_OPERATOR_PRO_UP_SMOKE_HA_SMOKE_REQUIRED",
@@ -327,5 +328,14 @@
   "connector_sdk_alpha107": "EXECUTED_19_OF_19_COVERAGE99_REPRODUCIBLE_WHEEL_BYTE_IDENTICAL_TWO_BUILDS_IMPORT_AND_PACKAGED_SCHEMA_PASS_SHA256_D2E70F171C5E77ABD757F5881ECBA96771ABE3855B46B89FC033D62FFCDE51C5",
   "source_inventory_paths_alpha107": 1385,
   "packaging_tracked_files_alpha107": 1387,
-  "git_blob_checksums_alpha107": 1386
+  "git_blob_checksums_alpha107": 1386,
+  "pgm10e05_alpha110": "NON_TERMINE_HOSTED_TEMURIN25_MAVEN_JACOCO_AND_POSTGRESQL17_18_GATES_STILL_REQUIRED",
+  "pgm10e06_alpha110": "EN_COURS_PHASE3_DURABLE_SIGNED_NOTIFICATIONS_IMPLEMENTED_OPENSERVICE_REQUIRES_AUTHORITATIVE_PROVIDER_CONTRACT",
+  "api_contracts_alpha110": "EXECUTED_48_OF_48_PARALLEL_FINAL_15_FRAGMENTS_191_OPERATIONS_ZERO_DEBT",
+  "architecture_alpha110": "EXECUTED_189_OF_189_FUNCTIONAL_SPLIT_PLUS_29_OF_29_META_PLUS_ARCHITECTURE_AS_CODE_PASS",
+  "web_alpha110": "EXECUTED_LOCAL_NODE22_16_0_205_OF_205_LINE99_73_BRANCH98_54_FUNCTION100_PROCESS_SMOKE_PASS",
+  "migrations_alpha110": "EXECUTED_117_OF_117_99_PERCENT_ZERO_VIOLATIONS_POSTGRESQL_ORACLE_STATIC_CONTRACTS_LIVE_DATABASE_PENDING",
+  "source_inventory_paths_alpha110": 1477,
+  "packaging_tracked_files_alpha110": 1479,
+  "git_blob_checksums_alpha110": 1478
 }

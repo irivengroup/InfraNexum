@@ -1,0 +1,2 @@
+DELETE FROM infranexum_iam.role_permission WHERE permission_id IN (SELECT id FROM infranexum_iam.permission WHERE code IN ('integrations.notification.read','integrations.notification.publish','integrations.notification.replay','integrations.notification.resume'));
+DELETE FROM infranexum_iam.permission WHERE code IN ('integrations.notification.read','integrations.notification.publish','integrations.notification.replay','integrations.notification.resume');

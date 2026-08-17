@@ -1,10 +1,10 @@
-# InfraNexum 2.0.0-alpha.0.109 — ServiceNow CMDB federated read
+# InfraNexum 2.0.0-alpha.0.110 — durable signed outbound notifications
 
-`alpha.0.109` advances **PGM-10-E06** with a second governed provider integration: ServiceNow CMDB **federated read**. The existing Jira Assets phase from `alpha.0.108` is preserved. ServiceNow remains authority `EXTERNAL`; InfraNexum performs bounded Table API reads against a configured `cmdb_ci`/`cmdb_ci_*` table and does not copy provider configuration items into RSOT/ITAM. The public search boundary accepts a constrained name term rather than arbitrary ServiceNow encoded queries.
+`alpha.0.110` advances **PGM-10-E06** with durable outbound notifications delivered as signed HTTPS webhooks. The Jira Assets federated-read phase from `alpha.0.108` and ServiceNow CMDB federated-read phase from `alpha.0.109` are preserved. InfraNexum now owns a durable outbox, endpoint-scoped retry/DLQ/suspension runtime, HMAC-SHA256 delivery signing, explicit replay/resume recovery, audited RBAC operations and a secret-free Web operations surface.
 
-The Server adds three capability/permission-gated ServiceNow operations (connector catalogue, health and paginated configuration-item search). Egress is HTTPS-only to a configured `*.service-now.com` hostname, redirects and explicit provider ports are refused, response sizes/timeouts are bounded, and the bearer token is accepted only through an external `env:`/`file:` reference. The Web shell extends `Integrations` with ServiceNow catalogue/health/search while keeping provider credentials server-side.
+Notification publication is at-least-once and idempotent on `(endpoint, event-id)`. Destinations and HMAC secrets are static operator configuration; secrets remain external through `env:`/`file:` references and are never returned to the browser. The Server registers all six notification routes in the deny-by-default authorization resolver using the four `integrations.notification.*` permissions. PostgreSQL and Oracle migrations add the durable outbox/state and permission grants with explicit destructive rollback semantics.
 
-PGM-10-E05 remains formally pending its exact hosted Temurin 25/JaCoCo and PostgreSQL 17/18 promotion gates. PGM-10-E06 is **not complete** in this candidate: OpenService, notifications and later synchronization/rollback slices remain downstream. See `docs/integrations-jira-assets.md`, `docs/integrations-service-now.md` and `docs/implementation-status.md`.
+PGM-10-E05 remains formally pending its exact hosted Temurin 25/JaCoCo and PostgreSQL 17/18 promotion gates. PGM-10-E06 is **not complete**: `draft.21` names OpenService but does not provide an authoritative provider/API/authentication/data contract, so no speculative adapter is published. See `docs/integrations-jira-assets.md`, `docs/integrations-service-now.md`, `docs/integrations-notifications.md` and `docs/implementation-status.md`.
 
 ---
 

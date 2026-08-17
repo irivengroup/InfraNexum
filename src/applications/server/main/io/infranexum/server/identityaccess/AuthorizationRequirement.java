@@ -70,6 +70,31 @@ record AuthorizationRequirement(
             return permission(PermissionCodes.INTEGRATIONS_CONNECTOR_READ, AuthorizationScope.platform(), "integration-connector", connectorKey);
         }
 
+        if (normalized.equals("/api/v1/integrations/notifications/endpoints") && verb.equals("GET")) {
+            return permission(PermissionCodes.INTEGRATIONS_NOTIFICATION_READ, AuthorizationScope.platform(), "integration-notification-endpoint", "collection");
+        }
+        if (normalized.equals("/api/v1/integrations/notifications/events") && verb.equals("POST")) {
+            return permission(PermissionCodes.INTEGRATIONS_NOTIFICATION_PUBLISH, AuthorizationScope.platform(), "integration-notification", "collection");
+        }
+        if (normalized.equals("/api/v1/integrations/notifications/dlq") && verb.equals("GET")) {
+            return permission(PermissionCodes.INTEGRATIONS_NOTIFICATION_READ, AuthorizationScope.platform(), "integration-notification-dlq", "collection");
+        }
+        if (normalized.matches("^/api/v1/integrations/notifications/dlq/[^/]+/replay$") && verb.equals("POST")) {
+            String deliveryId = DomainIdentifier.parse(normalized.split("/")[6]).toString();
+            return permission(PermissionCodes.INTEGRATIONS_NOTIFICATION_REPLAY, AuthorizationScope.platform(), "integration-notification-delivery", deliveryId);
+        }
+        if (normalized.matches("^/api/v1/integrations/notifications/endpoints/[^/]+/runtime$") && verb.equals("GET")) {
+            String endpointKey = new io.infranexum.integrations.ConnectorKey(normalized.split("/")[6]).value();
+            return permission(PermissionCodes.INTEGRATIONS_NOTIFICATION_READ, AuthorizationScope.platform(), "integration-notification-endpoint", endpointKey);
+        }
+        if (normalized.matches("^/api/v1/integrations/notifications/endpoints/[^/]+/resume$") && verb.equals("POST")) {
+            String endpointKey = new io.infranexum.integrations.ConnectorKey(normalized.split("/")[6]).value();
+            return permission(PermissionCodes.INTEGRATIONS_NOTIFICATION_RESUME, AuthorizationScope.platform(), "integration-notification-endpoint", endpointKey);
+        }
+        if (normalized.startsWith("/api/v1/integrations/notifications/")) {
+            return unregistered(normalized);
+        }
+
         if (normalized.equals("/api/v1/integrations/dlq") && verb.equals("GET")) {
             return permission(PermissionCodes.INTEGRATIONS_DLQ_READ, AuthorizationScope.platform(), "integration-dlq", "collection");
         }

@@ -1,0 +1,10 @@
+schema: infranexum.migration-verification/v1
+checks:
+- id: notification-outbox-created
+  postgresql: "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='infranexum_integrations' AND table_name='notification_outbox'"
+  oracle: "SELECT COUNT(*) FROM user_tables WHERE table_name='INFRANEXUM_NOTIFICATION_OUTBOX'"
+  expected: 1
+- id: notification-state-created
+  postgresql: "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='infranexum_integrations' AND table_name='notification_endpoint_state'"
+  oracle: "SELECT COUNT(*) FROM user_tables WHERE table_name='INFRANEXUM_NOTIFICATION_STATE'"
+  expected: 1

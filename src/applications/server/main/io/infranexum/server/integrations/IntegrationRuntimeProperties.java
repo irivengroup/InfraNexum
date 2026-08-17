@@ -7,6 +7,8 @@ import io.infranexum.core.events.ExponentialBackoffPolicy;
 import io.infranexum.core.events.RetryPolicy;
 import io.infranexum.integrations.ConnectorKey;
 import io.infranexum.integrations.ConnectorWebhookEndpoint;
+import io.infranexum.integrations.OutboundNotificationEndpoint;
+import java.net.URI;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -32,7 +34,29 @@ public record IntegrationRuntimeProperties(
         Duration suspensionDuration,
         Map<String, EndpointProperties> endpoints,
         JiraAssetsProperties jiraAssets,
-        ServiceNowProperties serviceNow) {
+        ServiceNowProperties serviceNow,
+        NotificationsProperties notifications) {
+
+    /** Compatibility constructor for callers created before outbound notifications became configurable. */
+    public IntegrationRuntimeProperties(
+            boolean enabled,
+            int webhookMaxPayloadBytes,
+            int claimBatchSize,
+            Duration pollInterval,
+            Duration leaseDuration,
+            int maximumAttempts,
+            Duration initialRetryDelay,
+            Duration maximumRetryDelay,
+            double jitterRatio,
+            int suspendAfterDeadLetters,
+            Duration suspensionDuration,
+            Map<String, EndpointProperties> endpoints,
+            JiraAssetsProperties jiraAssets,
+            ServiceNowProperties serviceNow) {
+        this(enabled, webhookMaxPayloadBytes, claimBatchSize, pollInterval, leaseDuration, maximumAttempts,
+                initialRetryDelay, maximumRetryDelay, jitterRatio, suspendAfterDeadLetters, suspensionDuration,
+                endpoints, jiraAssets, serviceNow, new NotificationsProperties(1_048_576, Map.of()));
+    }
 
     public IntegrationRuntimeProperties {
         if (webhookMaxPayloadBytes < 1 || webhookMaxPayloadBytes > 1_048_576) throw new ConfigurationException("integrations.webhookMaxPayloadBytes must be between 1 and 1048576");
@@ -49,6 +73,7 @@ public record IntegrationRuntimeProperties(
         endpoints = Map.copyOf(normalized);
         jiraAssets = Objects.requireNonNullElseGet(jiraAssets, () -> new JiraAssetsProperties(2_097_152, Map.of()));
         serviceNow = Objects.requireNonNullElseGet(serviceNow, () -> new ServiceNowProperties(2_097_152, Map.of()));
+        notifications = Objects.requireNonNullElseGet(notifications, () -> new NotificationsProperties(1_048_576, Map.of()));
     }
 
     RetryPolicy retryPolicy() {
@@ -82,6 +107,17 @@ public record IntegrationRuntimeProperties(
             ConnectorKey connectorKey = new ConnectorKey(key);
             result.put(connectorKey, new ServiceNowSettings(
                     connectorKey, value.instanceHost(), value.tableName(), value.bearerTokenReference(), value.requestTimeout(), value.enabled()));
+        });
+        return Map.copyOf(result);
+    }
+
+
+    Map<ConnectorKey, OutboundNotificationEndpoint> notificationEndpointDefinitions() {
+        Map<ConnectorKey, OutboundNotificationEndpoint> result = new LinkedHashMap<>();
+        notifications.endpoints().forEach((key, value) -> {
+            ConnectorKey endpointKey = new ConnectorKey(key);
+            result.put(endpointKey, new OutboundNotificationEndpoint(
+                    endpointKey, URI.create(value.destination()), value.secretReference(), value.requestTimeout(), value.enabled()));
         });
         return Map.copyOf(result);
     }
@@ -158,5 +194,35 @@ public record IntegrationRuntimeProperties(
             new ServiceNowSettings(new ConnectorKey("validation.connector"), instanceHost, tableName, bearerTokenReference, requestTimeout, enabled);
         }
     }
+
+    /** Outbound notification configuration with bounded endpoint cardinality. */
+    public record NotificationsProperties(int maximumPayloadBytes, Map<String, NotificationEndpointProperties> endpoints) {
+        public NotificationsProperties {
+            if (maximumPayloadBytes < 1 || maximumPayloadBytes > 1_048_576) {
+                throw new ConfigurationException("integrations.notifications.maximumPayloadBytes must be between 1 and 1048576");
+            }
+            Map<String, NotificationEndpointProperties> normalized = new LinkedHashMap<>();
+            for (Map.Entry<String, NotificationEndpointProperties> entry : Objects.requireNonNullElse(endpoints, Map.<String, NotificationEndpointProperties>of()).entrySet()) {
+                String key = new ConnectorKey(entry.getKey()).value();
+                if (normalized.putIfAbsent(key, Objects.requireNonNull(entry.getValue(), "notification endpoint")) != null) {
+                    throw new ConfigurationException("duplicate normalized notification endpoint: " + key);
+                }
+            }
+            if (normalized.size() > 64) throw new ConfigurationException("at most 64 notification endpoints may be configured per Server runtime");
+            endpoints = Map.copyOf(normalized);
+        }
+    }
+
+    /** One signed HTTPS notification destination; the secret itself is never configured here. */
+    public record NotificationEndpointProperties(String destination, String secretReference, Duration requestTimeout, boolean enabled) {
+        public NotificationEndpointProperties {
+            try {
+                new OutboundNotificationEndpoint(new ConnectorKey("validation.endpoint"), URI.create(destination), secretReference, requestTimeout, enabled);
+            } catch (RuntimeException invalid) {
+                throw new ConfigurationException("invalid notification endpoint: " + invalid.getMessage());
+            }
+        }
+    }
+
 
 }
