@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum Local Authentication API
-  version: 2.0.0-alpha.0.110
+  version: 2.0.0-alpha.0.111
   description: Local human authentication foundation. Credentials are verified server-side with Argon2id; browser sessions are opaque,
     durable and revocable. The bootstrap administrator must replace its generated password before accessing protected v1 APIs. A validated
     session establishes the actor consumed by the downstream PGM-03-E03 RBAC PEP.

@@ -1,3 +1,17 @@
+# InfraNexum 2.0.0-alpha.0.111 — Integration configuration binding corrective
+
+**Nature: corrective de démarrage Server, aucune avancée de roadmap.** Les logs Docker PRO de `alpha.0.109` ont reproduit un échec Spring Boot `ConverterNotFoundException` lors du binding de `infranexum.integrations.endpoints`: la notation YAML vide `endpoints: {}` est exposée par ConfigData comme valeur scalaire vide alors que `IntegrationRuntimeProperties` attend une `Map`. Le même risque existait pour les maps vides Jira Assets, ServiceNow et Notifications.
+
+**Correction:** les maps endpoint/connector vides sont désormais omises de `application.yaml`. Les constructeurs validés existants normalisent une propriété absente en `Map.of()`, ce qui conserve le comportement métier « zéro connecteur configuré » sans publier de valeur YAML ambiguë. Aucune variable d'environnement monolithique de map n'est introduite dans Compose. Le profil PRO conserve `INFRANEXUM_INTEGRATIONS_ENABLED=true` et doit donc démarrer même lorsque Jira Assets, ServiceNow, webhooks entrants et notifications sortantes ne sont pas configurés.
+
+**Non-régression:** un test Spring Boot charge le vrai `application.yaml` via ConfigData et vérifie que les quatre collections sont vides après binding; un contrat Compose exécutable sans JDK interdit le retour des notations `endpoints: {}` / `connectors: {}` et vérifie que les quatre nœuds Server PRO activent Integrations sans override `INFRANEXUM_INTEGRATIONS_ENDPOINTS`. Les tests d'architecture Jira Assets et ServiceNow ont été alignés pour exiger l'absence de la clé vide, et non sa matérialisation YAML.
+
+**État:** PGM-10-E05 reste formellement **NON TERMINÉ** tant que les gates hébergées JDK25/JaCoCo/PostgreSQL 17/18 ne sont pas closes. PGM-10-E06 reste **EN COURS**; `alpha.0.111` est strictement corrective et ne modifie ni API, ni migrations, ni RBAC, ni capabilities.
+
+**Validation corrective locale :** Compose **69/69** ; invariants Jira Assets/ServiceNow/Notifications **18/18** ; API Contracts **48/48** avec **15 fragments / 191 opérations** et dette **0/0/0/0** ; Architecture fonctionnelle **189/189** en split déterministe, méta-checker **29/29** et Architecture-as-Code `PASS` ; Web **205/205**, couverture **99,73 % lignes / 98,54 % branches / 100 % fonctions**, smoke process réussi ; Migrations **117/117**, Eventing **10/10**, Persistence **12/12**, Capabilities **10/10**, Entitlements **10/10**, Audit **8/8**, Toolchains **25/25**, SDK **19/19**, Source Integrity **45/45**. Les smokes Java dependency-free JDBC/JDBC-audit/Integrations/Notifications/Policy/API-Capability passent sous Java 21, dont **191 opérations** capability-gated. Le wrapper Maven est **ÉCHOUÉ volontairement/fail-closed** sous Java 21 (`InfraNexum requires JDK 25; detected 21`), donc le test Spring ConfigData JUnit, Maven/JaCoCo JDK25, PostgreSQL 17/18 et Docker PRO `alpha.0.111` restent **NON EXÉCUTÉS** dans ce runner.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.110 — PGM-10-E06 phase 3: durable signed outbound notifications
 
 **Nature : évolution fonctionnelle PGM-10-E06, tranche notifications.** Jira Assets (`alpha.0.108`) et ServiceNow CMDB (`alpha.0.109`) restent en lecture fédérée gouvernée. Cette candidate ajoute une pile de notifications sortantes réellement durable : domaine d'admission/idempotence, outbox PostgreSQL/Oracle, leasing borné multi-Server, retries/DLQ/suspension par endpoint, transport HTTPS signé HMAC-SHA256, récupération explicite par replay/resume, métriques à faible cardinalité, audit et UI Web sans secret.

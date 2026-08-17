@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum RSOT Canonical Object API
-  version: 2.0.0-alpha.0.110
+  version: 2.0.0-alpha.0.111
 x-tagGroups:
 - name: RSOT
   tags:

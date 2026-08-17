@@ -1,10 +1,10 @@
-# InfraNexum 2.0.0-alpha.0.110 — durable signed outbound notifications
+# InfraNexum 2.0.0-alpha.0.111 — integration configuration binding corrective
 
-`alpha.0.110` advances **PGM-10-E06** with durable outbound notifications delivered as signed HTTPS webhooks. The Jira Assets federated-read phase from `alpha.0.108` and ServiceNow CMDB federated-read phase from `alpha.0.109` are preserved. InfraNexum now owns a durable outbox, endpoint-scoped retry/DLQ/suspension runtime, HMAC-SHA256 delivery signing, explicit replay/resume recovery, audited RBAC operations and a secret-free Web operations surface.
+`alpha.0.111` is a startup corrective over `alpha.0.110`. It fixes the Docker PRO Server crash observed when Integrations is enabled with no connector endpoint configured: empty YAML maps are no longer emitted for `infranexum.integrations` because Spring Boot ConfigData can surface those empty mappings as scalar empty values that cannot bind to the corresponding `Map` properties. Missing maps are normalized by the validated Java configuration records to immutable empty maps.
 
-Notification publication is at-least-once and idempotent on `(endpoint, event-id)`. Destinations and HMAC secrets are static operator configuration; secrets remain external through `env:`/`file:` references and are never returned to the browser. The Server registers all six notification routes in the deny-by-default authorization resolver using the four `integrations.notification.*` permissions. PostgreSQL and Oracle migrations add the durable outbox/state and permission grants with explicit destructive rollback semantics.
+The correction covers generic connector webhook endpoints, Jira Assets connectors, ServiceNow connectors and outbound notification endpoints. Jira Assets federated read, ServiceNow CMDB federated read and durable signed outbound notifications from `alpha.0.110` are preserved unchanged. No API operation, migration, permission, capability or business-domain contract is added or removed.
 
-PGM-10-E05 remains formally pending its exact hosted Temurin 25/JaCoCo and PostgreSQL 17/18 promotion gates. PGM-10-E06 is **not complete**: `draft.21` names OpenService but does not provide an authoritative provider/API/authentication/data contract, so no speculative adapter is published. See `docs/integrations-jira-assets.md`, `docs/integrations-service-now.md`, `docs/integrations-notifications.md` and `docs/implementation-status.md`.
+PGM-10-E05 remains formally pending its exact hosted Temurin 25/JaCoCo and PostgreSQL 17/18 promotion gates. PGM-10-E06 remains in progress with the OpenService provider contract still unspecified in `draft.21`. See `docs/implementation-status.md` for validation status and remaining gates.
 
 ---
 

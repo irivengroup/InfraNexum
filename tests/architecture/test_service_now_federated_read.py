@@ -113,7 +113,7 @@ class ServiceNowFederatedReadArchitectureTest(unittest.TestCase):
         service_now = application["infranexum"]["integrations"]["service-now"]
         compose = (self.ROOT / "docker/compose.yaml").read_text(encoding="utf-8")
 
-        self.assertEqual({}, service_now["connectors"])
+        self.assertNotIn("connectors", service_now)
         self.assertIn('INFRANEXUM_INTEGRATIONS_ENABLED: "true"', compose)
         self.assertIn('INFRANEXUM_WEB_INTEGRATIONS_CONNECTORS_ENABLED: "true"', compose)
         for forbidden in (

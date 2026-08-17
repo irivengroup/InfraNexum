@@ -103,7 +103,7 @@ class JiraAssetsFederatedReadArchitectureTest(unittest.TestCase):
         compose = (self.ROOT / "docker/compose.yaml").read_text(encoding="utf-8")
         web_example = (self.WEB / "configs/web.env.example").read_text(encoding="utf-8")
 
-        self.assertEqual({}, jira["connectors"])
+        self.assertNotIn("connectors", jira)
         self.assertIn('INFRANEXUM_INTEGRATIONS_ENABLED: "true"', compose)
         self.assertIn('INFRANEXUM_WEB_INTEGRATIONS_CONNECTORS_ENABLED: "true"', compose)
         for forbidden in ("JIRA_TOKEN", "JIRA_BEARER", "JIRA_CLOUD_ID", "JIRA_WORKSPACE_ID"):

@@ -2,6 +2,8 @@ package io.infranexum.server.integrations;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
@@ -27,6 +29,10 @@ import java.util.List;
 import java.util.Map;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.support.StaticListableBeanFactory;
 
@@ -34,6 +40,21 @@ import org.springframework.beans.factory.support.StaticListableBeanFactory;
 class IntegrationRuntimeConfigurationTest {
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-08-16T12:00:00Z"), ZoneOffset.UTC);
     private final IntegrationRuntimeConfiguration configuration = new IntegrationRuntimeConfiguration();
+
+    @Test
+    void applicationYamlBindsWithNoIntegrationEndpointsConfigured() {
+        new ApplicationContextRunner()
+                .withInitializer(new ConfigDataApplicationContextInitializer())
+                .withUserConfiguration(IntegrationPropertiesBindingConfiguration.class)
+                .run(context -> {
+                    assertNull(context.getStartupFailure());
+                    IntegrationRuntimeProperties properties = context.getBean(IntegrationRuntimeProperties.class);
+                    assertTrue(properties.endpoints().isEmpty());
+                    assertTrue(properties.jiraAssets().connectors().isEmpty());
+                    assertTrue(properties.serviceNow().connectors().isEmpty());
+                    assertTrue(properties.notifications().endpoints().isEmpty());
+                });
+    }
 
     @Test
     void durableRepositorySupportsOnlyPostgresqlAndOracle() {
@@ -100,7 +121,7 @@ class IntegrationRuntimeConfigurationTest {
                     inbox, mock(AuditJournal.class), observer, ids, CLOCK);
             var dispatcher = configuration.connectorInboxDispatcher(
                     inbox, endpointRegistry, handlerRegistry, observer, CLOCK,
-                    new ServerRuntimeProperties("server-a", RuntimeMode.REGIONAL, "eu-west", "paris", "2.0.0-alpha.0.110", "2.0.0-draft.21"),
+                    new ServerRuntimeProperties("server-a", RuntimeMode.REGIONAL, "eu-west", "paris", "2.0.0-alpha.0.111", "2.0.0-draft.21"),
                     properties);
 
             assertNotNull(webhook);
@@ -111,6 +132,10 @@ class IntegrationRuntimeConfigurationTest {
             meters.close();
         }
     }
+
+    @Configuration(proxyBeanMethods = false)
+    @EnableConfigurationProperties(IntegrationRuntimeProperties.class)
+    static class IntegrationPropertiesBindingConfiguration { }
 
     private static PersistenceRuntimeProperties persistence(PersistenceMode mode) {
         return new PersistenceRuntimeProperties(mode, JdbcIsolation.READ_COMMITTED);

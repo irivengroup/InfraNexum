@@ -7,7 +7,7 @@ server:
 spring:
   application:
     name: infranexum-server
-    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.110}
+    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.111}
   jackson:
     deserialization:
       fail-on-unknown-properties: true
@@ -53,16 +53,14 @@ infranexum:
     jitter-ratio: ${INFRANEXUM_INTEGRATIONS_JITTER_RATIO:0.2}
     suspend-after-dead-letters: ${INFRANEXUM_INTEGRATIONS_SUSPEND_AFTER_DEAD_LETTERS:3}
     suspension-duration: ${INFRANEXUM_INTEGRATIONS_SUSPENSION_DURATION:PT15M}
-    endpoints: {}
+    # Empty endpoint/connector maps are intentionally omitted: Spring ConfigData flattens `{}` to an empty scalar,
+    # which cannot bind to Map-valued configuration properties. Constructors normalize absent maps to Map.of().
     jira-assets:
       maximum-response-bytes: ${INFRANEXUM_INTEGRATIONS_JIRA_ASSETS_MAX_RESPONSE_BYTES:2097152}
-      connectors: {}
     service-now:
       maximum-response-bytes: ${INFRANEXUM_INTEGRATIONS_SERVICE_NOW_MAX_RESPONSE_BYTES:2097152}
-      connectors: {}
     notifications:
       maximum-payload-bytes: ${INFRANEXUM_INTEGRATIONS_NOTIFICATION_MAX_PAYLOAD_BYTES:1048576}
-      endpoints: {}
   workers:
     enabled: ${INFRANEXUM_WORKERS_ENABLED:true}
     concurrency: ${INFRANEXUM_WORKERS_CONCURRENCY:2}
@@ -112,7 +110,7 @@ infranexum:
     mode: ${INFRANEXUM_SERVER_MODE:STANDALONE}
     region: ${INFRANEXUM_SERVER_REGION:local}
     site: ${INFRANEXUM_SERVER_SITE:local}
-    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.110}
+    version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.111}
     architecture-baseline: ${INFRANEXUM_ARCHITECTURE_BASELINE:2.0.0-draft.21}
 
 logging:
@@ -128,7 +126,7 @@ logging:
         include-hashes: true
     ecs:
       service:
-        version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.110}
+        version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.111}
         environment: ${INFRANEXUM_ENVIRONMENT:local}
         node-name: ${INFRANEXUM_SERVER_INSTANCE_ID:server-local-1}
 
@@ -153,7 +151,7 @@ management:
     map-environment-variables: false
     resource-attributes:
       service.namespace: infranexum
-      service.version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.110}
+      service.version: ${INFRANEXUM_VERSION:2.0.0-alpha.0.111}
       service.instance.id: ${INFRANEXUM_SERVER_INSTANCE_ID:server-local-1}
       deployment.environment.name: ${INFRANEXUM_ENVIRONMENT:local}
     tracing:
