@@ -1234,6 +1234,7 @@
     "tests/java-integrations-smoke/io/infranexum/integrations/ConnectorRuntimeSmoke.java",
     "tests/java-integrations-smoke/io/infranexum/integrations/ConnectorSyncRuntimeSmoke.java",
     "tests/java-integrations-smoke/io/infranexum/integrations/OutboundNotificationSmoke.java",
+    "tests/java-integrations-smoke/io/infranexum/server/integrations/ConnectorSyncHandlerRegistrySmoke.java",
     "tests/java-itam-asset-smoke/io/infranexum/itam/asset/ItamAssetSmoke.java",
     "tests/java-itam-compliance-smoke/io/infranexum/itam/compliance/ItamComplianceSmoke.java",
     "tests/java-itam-partner-smoke/io/infranexum/itam/partner/ItamPartnerSmoke.java",

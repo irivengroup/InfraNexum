@@ -312,12 +312,13 @@ java-ddi-ipam-smoke:
 java-integrations-smoke:
 	@set -eu; out="$$(mktemp -d)"; trap 'rm -rf "$$out"' EXIT; \
 	find $(PRODUCT_ROOT)/components/core/contracts/main $(PRODUCT_ROOT)/components/core/events/main $(PRODUCT_ROOT)/components/domains/integrations/main -name '*.java' -print > "$$out/sources"; \
-	printf '%s\n' $(TEST_ROOT)/java/integrations/io/infranexum/integrations/InMemoryConnectorInboxRepository.java $(TEST_ROOT)/java/integrations/io/infranexum/integrations/InMemoryOutboundNotificationRepository.java $(TEST_ROOT)/java/integrations/io/infranexum/integrations/InMemoryConnectorSyncRepository.java $(TEST_ROOT)/java-integrations-smoke/io/infranexum/integrations/ConnectorRuntimeSmoke.java $(TEST_ROOT)/java-integrations-smoke/io/infranexum/integrations/OutboundNotificationSmoke.java $(TEST_ROOT)/java-integrations-smoke/io/infranexum/integrations/ConnectorGovernanceSmoke.java $(TEST_ROOT)/java-integrations-smoke/io/infranexum/integrations/ConnectorSyncRuntimeSmoke.java >> "$$out/sources"; \
+	printf '%s\n' $(PRODUCT_ROOT)/applications/server/main/io/infranexum/server/integrations/ImmutableConnectorSyncHandlerRegistry.java $(TEST_ROOT)/java/integrations/io/infranexum/integrations/InMemoryConnectorInboxRepository.java $(TEST_ROOT)/java/integrations/io/infranexum/integrations/InMemoryOutboundNotificationRepository.java $(TEST_ROOT)/java/integrations/io/infranexum/integrations/InMemoryConnectorSyncRepository.java $(TEST_ROOT)/java-integrations-smoke/io/infranexum/integrations/ConnectorRuntimeSmoke.java $(TEST_ROOT)/java-integrations-smoke/io/infranexum/integrations/OutboundNotificationSmoke.java $(TEST_ROOT)/java-integrations-smoke/io/infranexum/integrations/ConnectorGovernanceSmoke.java $(TEST_ROOT)/java-integrations-smoke/io/infranexum/integrations/ConnectorSyncRuntimeSmoke.java $(TEST_ROOT)/java-integrations-smoke/io/infranexum/server/integrations/ConnectorSyncHandlerRegistrySmoke.java >> "$$out/sources"; \
 	$(JAVAC) -Xlint:all -Werror -d "$$out/classes" @"$$out/sources"; \
 	$(JAVA) -ea -cp "$$out/classes" io.infranexum.integrations.ConnectorRuntimeSmoke; \
 	$(JAVA) -ea -cp "$$out/classes" io.infranexum.integrations.OutboundNotificationSmoke; \
 	$(JAVA) -ea -cp "$$out/classes" io.infranexum.integrations.ConnectorGovernanceSmoke; \
-	$(JAVA) -ea -cp "$$out/classes" io.infranexum.integrations.ConnectorSyncRuntimeSmoke
+	$(JAVA) -ea -cp "$$out/classes" io.infranexum.integrations.ConnectorSyncRuntimeSmoke; \
+	$(JAVA) -ea -cp "$$out/classes" io.infranexum.server.integrations.ConnectorSyncHandlerRegistrySmoke
 
 java-policy-smoke:
 	@build_dir="$$(mktemp -d)"; \

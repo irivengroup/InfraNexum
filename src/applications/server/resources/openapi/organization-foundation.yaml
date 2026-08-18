@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum Organization Foundation API
-  version: 2.0.0-alpha.0.116
+  version: 2.0.0-alpha.0.117
   description: Authoritative Organization/Subdivision/temporal-scope foundation. Local authentication establishes the actor and the Server
     PGM-03-E03 RBAC PEP enforces explicit authorization before this adapter executes.
 tags:

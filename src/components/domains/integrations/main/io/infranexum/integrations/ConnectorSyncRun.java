@@ -37,7 +37,7 @@ public record ConnectorSyncRun(
         Objects.requireNonNull(status, "status");
         idempotencyKey = bounded(idempotencyKey, "idempotencyKey", 8, 200, "^[A-Za-z0-9._:-]+$");
         requestSha256 = bounded(requestSha256, "requestSha256", 64, 64, "^[0-9a-f]{64}$");
-        fields = Set.copyOf(Objects.requireNonNullElse(fields, Set.of()));
+        fields = Set.copyOf(Objects.requireNonNullElse(fields, Set.<String>of()));
         if (fields.size() > 512) throw new IllegalArgumentException("sync run supports at most 512 fields");
         if (maxBatches < 1 || maxBatches > 100) throw new IllegalArgumentException("maxBatches must be between 1 and 100");
         if (initialRevision < 0 || lastCheckpointRevision < initialRevision) throw new IllegalArgumentException("invalid sync revisions");

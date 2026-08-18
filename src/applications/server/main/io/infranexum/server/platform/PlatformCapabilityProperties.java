@@ -42,13 +42,13 @@ public record PlatformCapabilityProperties(
         Objects.requireNonNull(allocationTier, "allocationTier");
         Objects.requireNonNull(topology, "topology");
         roles = Set.copyOf(Objects.requireNonNull(roles, "roles"));
-        traits = Set.copyOf(Objects.requireNonNullElse(traits, Set.of()));
+        traits = Set.copyOf(Objects.requireNonNullElse(traits, Set.<TechnicalTrait>of()));
         installedCapabilities = Set.copyOf(Objects.requireNonNull(installedCapabilities, "installedCapabilities"));
-        entitledCapabilities = Set.copyOf(Objects.requireNonNullElse(entitledCapabilities, Set.of()));
-        dependencies = Map.copyOf(Objects.requireNonNullElse(dependencies, Map.of()));
+        entitledCapabilities = Set.copyOf(Objects.requireNonNullElse(entitledCapabilities, Set.<String>of()));
+        dependencies = Map.copyOf(Objects.requireNonNullElse(dependencies, Map.<String, DependencyStatus>of()));
         Objects.requireNonNull(activationState, "activationState");
         catalogVersion = Objects.requireNonNull(catalogVersion, "catalogVersion").strip();
-        quotaOverrides = Map.copyOf(Objects.requireNonNullElse(quotaOverrides, Map.of()));
+        quotaOverrides = Map.copyOf(Objects.requireNonNullElse(quotaOverrides, Map.<String, Long>of()));
         if (roles.isEmpty() || installedCapabilities.isEmpty() || catalogVersion.isEmpty() || profileVersion < 1) {
             throw new IllegalArgumentException("platform capability configuration is incomplete");
         }

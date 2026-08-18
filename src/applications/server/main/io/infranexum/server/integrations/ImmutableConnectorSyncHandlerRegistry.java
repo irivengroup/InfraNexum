@@ -16,7 +16,7 @@ final class ImmutableConnectorSyncHandlerRegistry implements ConnectorSyncHandle
 
     ImmutableConnectorSyncHandlerRegistry(List<ConnectorSyncHandler> handlers) {
         Map<ConnectorKey, ConnectorSyncHandler> indexed = new LinkedHashMap<>();
-        for (ConnectorSyncHandler handler : Objects.requireNonNullElse(handlers, List.of())) {
+        for (ConnectorSyncHandler handler : Objects.requireNonNullElse(handlers, List.<ConnectorSyncHandler>of())) {
             ConnectorSyncHandler nonNull = Objects.requireNonNull(handler, "handler");
             ConnectorKey key = Objects.requireNonNull(nonNull.connectorKey(), "handler connectorKey");
             if (indexed.putIfAbsent(key, nonNull) != null) throw new ConfigurationException("duplicate connector synchronization handler: " + key.value());

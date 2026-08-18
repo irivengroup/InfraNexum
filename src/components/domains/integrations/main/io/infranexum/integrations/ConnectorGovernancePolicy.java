@@ -26,7 +26,7 @@ public record ConnectorGovernancePolicy(
         Objects.requireNonNull(conflictStrategy, "conflictStrategy");
         Objects.requireNonNull(deletionPolicy, "deletionPolicy");
         Objects.requireNonNull(rollbackStrategy, "rollbackStrategy");
-        List<ConnectorFieldAuthority> requested = List.copyOf(Objects.requireNonNullElse(fields, List.of()));
+        List<ConnectorFieldAuthority> requested = List.copyOf(Objects.requireNonNullElse(fields, List.<ConnectorFieldAuthority>of()));
         Map<String, ConnectorFieldAuthority> unique = new LinkedHashMap<>();
         for (ConnectorFieldAuthority field : requested) {
             ConnectorFieldAuthority previous = unique.putIfAbsent(field.field(), field);

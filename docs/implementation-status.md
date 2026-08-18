@@ -1,3 +1,17 @@
+# InfraNexum 2.0.0-alpha.0.117 — JDK25 Server compilation corrective
+
+**Statut : CORRECTIVE / AUCUNE AVANCÉE ROADMAP.** Le build Docker de `alpha.0.116` sous JDK25 échoue pendant la compilation du Server dans `ImmutableConnectorSyncHandlerRegistry`. La cause est l'inférence générique de `Objects.requireNonNullElse(handlers, List.of())` dans un `for-each`, dont le fallback vide devient `? extends Object` au lieu de `ConnectorSyncHandler`.
+
+**Correction :** fallback explicitement typé `List.<ConnectorSyncHandler>of()` dans le registre, plus typage explicite des autres fallbacks de collections vides `requireNonNullElse` rencontrés dans les surfaces Java affectées. Aucun seuil, test, invariant de sécurité ou contrat métier n'est affaibli.
+
+**Non-régression :** `java-integrations-smoke` compile désormais le vrai `ImmutableConnectorSyncHandlerRegistry` avec `-Xlint:all -Werror` et exécute les cas registre vide, doublon, handler nul et clé absente. L'architecture interdit également les fallbacks `List.of()/Set.of()/Map.of()` non typés dans `Objects.requireNonNullElse`.
+
+**Contrats préservés :** 15 fragments OpenAPI / 200 opérations, migrations jusqu'à 0039, gouvernance/checkpoints/compensation `alpha.0.116`, Jira Assets et ServiceNow non mutateurs. PGM-10-E05 reste FORMELLEMENT NON TERMINÉ jusqu'aux preuves exactes JDK25/JaCoCo/PostgreSQL 17/18.
+
+**Qualification locale alpha.0.117 :** API Contracts 48/48 en split déterministe et checker 15 fragments / 200 opérations / dette 0/0/0/0; Web 220/220 avec 99,73 % lignes / 98,54 % branches / 100 % fonctions et smoke process réussi; Architecture 205/205 fonctionnels + 29/29 méta + Architecture-as-Code PASS; Source Integrity 45/45 à 100 %; migrations 117/117; Eventing 10/10; Persistence 12/12; Capabilities 10/10; Entitlements 10/10; Audit 8/8; Toolchains 25/25; SDK 19/19 à 99 %; Compose 69/69; smokes Java Integrations/Sync/registre Server/JDBC/Capabilities/Policy/API Capability PASS. Maven/JUnit/JaCoCo JDK25 et PostgreSQL 17/18 live restent NON EXÉCUTÉS dans ce runner.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.116 — durable connector sync checkpoints and compensation runtime
 
 **Statut : PGM-10-E06 EN COURS / PGM-10-E05 FORMELLEMENT NON TERMINÉ. Nature : incrément fonctionnel provider-agnostique.** `alpha.0.116` complète le modèle d'autorité/direction/rollback de `alpha.0.114` par un vrai chemin d'exécution durable de synchronisation, sans activer de mutation Jira Assets ou ServiceNow.

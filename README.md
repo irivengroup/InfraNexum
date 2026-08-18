@@ -1,3 +1,13 @@
+# InfraNexum 2.0.0-alpha.0.117 — JDK25 Server compilation corrective
+
+`alpha.0.117` is a corrective over `alpha.0.116`; it does **not** advance PGM-10-E06. The Docker/JDK25 build exposed a Java generic-inference defect in `ImmutableConnectorSyncHandlerRegistry`: `Objects.requireNonNullElse(handlers, List.of())` is inferred as an object-typed empty list in the enhanced `for` expression, so `javac` rejects the element as `ConnectorSyncHandler`.
+
+The registry now uses an explicitly typed empty collection fallback, and the same hardening is applied to other `Objects.requireNonNullElse` empty Set/List/Map defaults in the affected Java surfaces. A dependency-free preflight now compiles the **real Server registry** with `-Xlint:all -Werror` and exercises empty, duplicate, null-handler and missing-key behavior, so this class of compile regression is caught before Maven/Docker.
+
+No API operation, migration, RBAC permission, connector policy, synchronization semantics or Web behavior changes. The product contract remains **15 fragments / 200 operations**. Jira Assets and ServiceNow remain `FEDERATED_READ`; PGM-10-E05 remains formally open until exact hosted JDK25/JaCoCo/PostgreSQL 17/18 gates pass.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.116 — durable connector synchronization and compensation runtime
 
 **PGM-10-E06 remains EN COURS.** This increment turns the connector governance model delivered in `alpha.0.114` into a real provider-neutral synchronization execution boundary: durable runs, append-only checkpoints, bounded batch progression, pause/resume, active-run fencing and governed compensation. Jira Assets and ServiceNow remain strictly `FEDERATED_READ / EXTERNAL`; no mutating provider handler is registered until an explicit field-authority contract exists.

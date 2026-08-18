@@ -68,6 +68,25 @@ class ConnectorSyncRuntimeArchitectureTest(unittest.TestCase):
         self.assertNotIn('new JiraAssetsSyncHandler',config)
         self.assertNotIn('new ServiceNowSyncHandler',config)
 
+    def test_java_empty_collection_fallbacks_are_explicitly_typed_and_registry_is_in_preflight(self):
+        registry=(SERVER/'ImmutableConnectorSyncHandlerRegistry.java').read_text(encoding='utf-8')
+        self.assertIn('List.<ConnectorSyncHandler>of()',registry)
+        self.assertNotIn('Objects.requireNonNullElse(handlers, List.of())',registry)
+        makefile=(ROOT/'Makefile').read_text(encoding='utf-8')
+        self.assertIn('ImmutableConnectorSyncHandlerRegistry.java',makefile)
+        self.assertIn('ConnectorSyncHandlerRegistrySmoke.java',makefile)
+        self.assertIn('ConnectorSyncHandlerRegistrySmoke',makefile)
+
+        import re
+        offenders=[]
+        for source in (ROOT/'src').rglob('*.java'):
+            for lineno,line in enumerate(source.read_text(encoding='utf-8').splitlines(),1):
+                if 'Objects.requireNonNullElse(' not in line:
+                    continue
+                if re.search(r'\b(?:List|Set|Map)\.of\(\)',line):
+                    offenders.append(f'{source.relative_to(ROOT)}:{lineno}')
+        self.assertEqual([],offenders,"untyped empty collection fallback(s): "+", ".join(offenders))
+
     def test_browser_never_receives_raw_cursor_or_provider_credentials(self):
         client=(WEB/'connector-sync.mjs').read_text(encoding='utf-8')
         workspace=(WEB/'integrations-workspace.mjs').read_text(encoding='utf-8')

@@ -51,7 +51,7 @@ public final class JdbcConnectorSyncRepository implements ConnectorSyncRepositor
         Objects.requireNonNull(actorId, "actorId");
         Objects.requireNonNull(correlationId, "correlationId");
         Objects.requireNonNull(startedAt, "startedAt");
-        Set<String> stableFields = Set.copyOf(Objects.requireNonNullElse(fields, Set.of()));
+        Set<String> stableFields = Set.copyOf(Objects.requireNonNullElse(fields, Set.<String>of()));
         return tx("begin connector synchronization", connection -> {
             ensureState(connection, connectorKey, startedAt);
             State state = lockState(connection, connectorKey);
