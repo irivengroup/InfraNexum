@@ -20,6 +20,7 @@ import {
 
 const RESOURCES = Object.freeze(['sites', 'buildings', 'floors', 'rooms', 'zones']);
 const KIND_BY_RESOURCE = Object.freeze({ sites:'site', buildings:'building', floors:'floor', rooms:'room', zones:'zone' });
+const TITLE_BY_RESOURCE = Object.freeze({ sites:'dcim.sites', buildings:'dcim.buildings', floors:'dcim.floors', rooms:'dcim.rooms', zones:'dcim.zones' });
 
 /**
  * Mounts the complete PGM-07-E04 facilities UI.
@@ -105,9 +106,12 @@ export function dcimWorkspaceTemplate(physicalEnabled=false){
 }
 
 function tab(resource,key,active=false){return `<button class="nav-link text-start${active?' active':''}" type="button" role="tab" aria-selected="${active}" tabindex="${active?'0':'-1'}" data-dcim-tab="${resource}" data-i18n="${key}">${resource}</button>`;}
-function panel(resource,fields){return `
+function panel(resource,fields){const titleKey=TITLE_BY_RESOURCE[resource]??'dcim.title';return `
   <section class="tab-pane inx-crud-panel" role="tabpanel" data-inx-crud-panel="dcim-${resource}" data-dcim-panel="${resource}"${resource==='sites'?'':' hidden aria-hidden="true"'}>
     <div class="inx-crud-list-view" data-inx-crud-list>
+      <header class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3 inx-dcim-context-header" data-dcim-context="location">
+        <div><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="dcim.nav.location">Location</p><h3 class="h5 mb-1" data-i18n="${titleKey}">${resource}</h3></div>
+      </header>
       <div class="inx-filter-bar mb-4">
         <div class="inx-filter-field inx-filter-field-wide"><label class="form-label" for="dcim-${resource}-status-filter" data-i18n="common.status">Status</label><select id="dcim-${resource}-status-filter" class="form-select"><option value="" data-i18n="common.all">All</option>${statusOptions()}</select></div>
         ${resource==='sites'?'<div class="inx-filter-field"><label class="form-label" for="dcim-sites-country-filter" data-i18n="dcim.countryFilter">Country</label><select id="dcim-sites-country-filter" class="form-select" data-inx-country-select></select></div>':''}
@@ -116,7 +120,7 @@ function panel(resource,fields){return `
       <div class="border rounded-3 overflow-hidden mb-4 bg-body shadow-sm"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th data-i18n="dcim.code">Code</th><th data-i18n="dcim.name">Name</th><th data-i18n="common.status">Status</th><th data-i18n="common.version">Version</th><th data-i18n="dcim.parent">Parent</th></tr></thead><tbody id="dcim-${resource}-rows"></tbody></table></div></div>
     </div>
     <section class="inx-crud-editor-view" data-inx-crud-editor hidden aria-hidden="true">
-      <div class="inx-crud-editor-header"><div><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="dcim.title">Facilities</p><h3 class="h5 mb-0" data-inx-crud-editor-title data-i18n="dcim.manage">Create / edit</h3></div><button class="btn btn-outline-secondary btn-sm" type="button" data-inx-crud-back data-i18n="common.backToList">Back to list</button></div>
+      <div class="inx-crud-editor-header"><div><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="dcim.nav.location">Location</p><h3 class="h5 mb-1" data-i18n="${titleKey}">${resource}</h3><p class="small text-body-secondary mb-0" data-inx-crud-editor-title data-i18n="dcim.manage">Create / edit</p></div><button class="btn btn-outline-secondary btn-sm" type="button" data-inx-crud-back data-i18n="common.backToList">Back to list</button></div>
       <div data-inx-crud-form="record" data-inx-crud-title-key="dcim.manage">
         <form id="dcim-${resource}-form" class="border rounded-3 p-3 p-xl-4 bg-body-tertiary row g-3" autocomplete="off">
           <h3 data-i18n="dcim.manage">Create / edit</h3>

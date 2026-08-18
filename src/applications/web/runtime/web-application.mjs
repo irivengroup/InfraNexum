@@ -1,13 +1,14 @@
 import http from 'node:http';
 
+const SHELL_CONTENT_SECURITY_POLICY = "default-src 'self'; base-uri 'none'; connect-src 'self' https:; font-src 'self'; form-action 'self'; frame-ancestors 'none'; frame-src 'self'; img-src 'self' data:; object-src 'none'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://cdn.jsdelivr.net";
+const REDOC_FRAME_CONTENT_SECURITY_POLICY = "default-src 'none'; base-uri 'none'; connect-src 'self'; font-src 'self' data:; form-action 'none'; frame-ancestors 'self'; frame-src 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'";
+const REDOC_FRAME_PATH = '/assets/redoc-frame.html';
 const SECURITY_HEADERS = Object.freeze({
-  'Content-Security-Policy': "default-src 'self'; base-uri 'none'; connect-src 'self' https:; font-src 'self'; form-action 'self'; frame-ancestors 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://cdn.jsdelivr.net",
   'Cross-Origin-Opener-Policy': 'same-origin',
   'Cross-Origin-Resource-Policy': 'same-origin',
   'Permissions-Policy': 'camera=(), geolocation=(), microphone=(), payment=(), usb=()',
   'Referrer-Policy': 'no-referrer',
   'X-Content-Type-Options': 'nosniff',
-  'X-Frame-Options': 'DENY',
 });
 
 /** Owns the Web process lifecycle, health state, and immutable asset HTTP boundary. */
@@ -93,13 +94,13 @@ export class WebApplication {
   }
 
   async #handle(request, response) {
-    this.#securityHeaders(response);
     // Node's IncomingMessage always supplies method and URL for accepted HTTP requests.
     /* node:coverage ignore next */
     const method = request.method ?? 'GET';
     /* node:coverage ignore next */
     const requestUrl = new URL(request.url ?? '/', 'http://infranexum.invalid');
     const pathname = requestUrl.pathname;
+    this.#securityHeaders(response, pathname);
 
     if (!['GET', 'HEAD'].includes(method)) {
       response.setHeader('Allow', 'GET, HEAD');
@@ -156,10 +157,16 @@ export class WebApplication {
     response.end(method === 'HEAD' ? undefined : asset.body);
   }
 
-  #securityHeaders(response) {
+  #securityHeaders(response, pathname) {
     for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
       response.setHeader(name, value);
     }
+    const redocFrame = pathname === REDOC_FRAME_PATH;
+    response.setHeader(
+      'Content-Security-Policy',
+      redocFrame ? REDOC_FRAME_CONTENT_SECURITY_POLICY : SHELL_CONTENT_SECURITY_POLICY,
+    );
+    response.setHeader('X-Frame-Options', redocFrame ? 'SAMEORIGIN' : 'DENY');
   }
 
   #json(response, statusCode, payload, headOnly = false) {

@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.118",
-  "profile": "alpha117-jdk25-server-generic-inference-corrective",
+  "version": "2.0.0-alpha.0.119",
+  "profile": "alpha119-web-datatable-dcim-context-redoc-corrective",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -22,7 +22,7 @@
     },
     {
       "id": "infranexum-web",
-      "status": "source-behavior-unchanged-from-alpha116-220-test-sync-runtime-ui-preserved-de-en-es-fr-it"
+      "status": "alpha119-shared-datatable-no-nested-scroll-full-workspace-width-explicit-empty-state-dcim-location-context-de-en-es-fr-it-redoc-isolated-same-origin-frame-csp-handshake; alpha116-durable-sync-runtime-ui-preserved"
     },
     {
       "id": "connector-sdk-v1",
@@ -660,15 +660,15 @@
     "inventory_paths": 1549
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.118",
+    "prefix": "infranexum-2.0.0-alpha.0.119",
     "archive_entries": 1551,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
     "source_recorded_files": 1550,
     "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
-    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.118-validation-evidence.zip"
+    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.119-validation-evidence.zip"
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.118-validation-evidence.zip",
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.119-validation-evidence.zip",
   "runtime_validation": {
     "web_local_runtime_alpha058": "EXECUTED_38_OF_38_LINE_99_67_BRANCH_98_33_FUNCTION_100_PROCESS_SMOKE_PASS_LOCAL_NODE22_BOOTSTRAP5_3_6_PROFESSIONAL_ADMIN_DASHBOARD_THEME_TOGGLE_TRUTHFUL_KPI_SAME_ORIGIN_ORGANIZATION_UI",
     "architecture_functional_alpha058": "EXECUTED_57_OF_57",
@@ -1574,5 +1574,12 @@
   "git_blob_checksums_alpha118": 1550,
   "source_integrity_alpha118": "EXECUTED_STRICT_STAGED_SNAPSHOT_1551_TRACKED_PATHS_1550_GIT_BLOB_CHECKSUMS_1549_CANONICAL_INVENTORY_ZERO_VIOLATIONS",
   "archive_compatibility_alpha118": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS_POST_EXTRACTION_SOURCE_INTEGRITY_ZERO_VIOLATIONS_BYTE_REPRODUCIBLE_TWO_BUILDS_1547_RAW_CHECKSUM_MATCHES_PLUS_3_DECLARED_CRLF_EXPORTS_NORMALIZED_TO_GIT_BLOBS_ZERO_UNEXPECTED_DIVERGENCES",
-  "archive_extraction_alpha118": "EXECUTED_UNZIP_STRUCTURE_PASS_SOURCE_INTEGRITY_ZERO_VIOLATIONS_CHECKSUM_AUDIT_1547_RAW_PLUS_3_CRLF_ZERO_MISSING_ZERO_BAD"
+  "archive_extraction_alpha118": "EXECUTED_UNZIP_STRUCTURE_PASS_SOURCE_INTEGRITY_ZERO_VIOLATIONS_CHECKSUM_AUDIT_1547_RAW_PLUS_3_CRLF_ZERO_MISSING_ZERO_BAD",
+  "corrective_alpha119": "WEB_DATATABLE_GEOMETRY_EMPTY_STATE_AND_DCIM_LOCATION_CONTEXT_CORRECTIVE_NO_ROADMAP_ADVANCE",
+  "pgm10e05_alpha119": "FORMALLY_NON_TERMINE_EXACT_HOSTED_TEMURIN25_JACOCO_AND_POSTGRESQL17_18_GATES_STILL_REQUIRED",
+  "pgm10e06_alpha119": "EN_COURS_PHASE5_ALPHA116_DURABLE_SYNC_AND_COMPENSATION_RUNTIME_PRESERVED_NO_MUTATING_PROVIDER_ACTIVATED",
+  "roadmap_next_alpha119": "NO_EPIC_ADVANCE_CORRECTIVE_ONLY_KEEP_PGM10E05_FORMALLY_OPEN_AND_PGM10E06_PHASE5_PRESERVED",
+  "web_target_node24_alpha119": "NON_EXECUTED_LOCAL_TARGET_NODE24_18_1_PNPM11_17_0_REQUIRED",
+  "maven_target_jdk25_alpha119": "NON_EXECUTED_EXACT_TARGET_GATE_REQUIRED",
+  "postgresql_live_alpha119": "NON_EXECUTED_EXACT_POSTGRESQL17_18_GATE_REQUIRED"
 }

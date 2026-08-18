@@ -131,7 +131,8 @@ export function replaceRows(documentObject, tbody, rows, cellValues, onSelect, {
   if (withAction) ensureActionHeader(documentObject, tbody, actionLabelKey);
   if (!rows.length) {
     const tr = documentObject.createElement('tr'); const td = documentObject.createElement('td');
-    td.colSpan = Math.max(1, cellValues.length + (withAction ? 1 : 0)); td.className = 'text-body-secondary text-center py-4'; td.textContent = translate(localeFromDocument(documentObject), 'common.emptyList');
+    tr.setAttribute('data-inx-empty-state', 'true');
+    td.colSpan = Math.max(1, cellValues.length + (withAction ? 1 : 0)); td.className = 'inx-datatable-empty text-body-secondary text-center py-4'; td.textContent = translate(localeFromDocument(documentObject), 'common.emptyList');
     tr.appendChild(td); tbody.replaceChildren(tr); return;
   }
   const nodes = rows.map((row) => {

@@ -150,6 +150,8 @@ export function initializeEnterpriseDataTables(root = document) {
     if (!headerRow || !tbody) continue;
 
     table.classList?.add?.('inx-data-table');
+    const responsiveContainer = table.closest?.('.table-responsive');
+    responsiveContainer?.parentElement?.classList?.add?.('inx-datatable-frame');
     let state = DATA_TABLES.get(table);
     if (!state) {
       state = createDataTableState(root, table);
@@ -349,6 +351,7 @@ function refreshDataTable(table) {
   const state = DATA_TABLES.get(table);
   const tbody = table?.querySelector?.('tbody');
   if (!state || !tbody) return false;
+  ensureDataTableEmptyState(table, tbody);
   const rows = dataRows(tbody);
   const window = pageWindow(rows.length, state.pageSize, state.page);
   state.page = window.page;
@@ -406,6 +409,35 @@ function compactPageIndexes(pageCount, current) {
 function formatSummary(doc, window) {
   if (window.total === 0) return translate(localeFromDocument(doc), 'datatable.empty');
   return `${window.start + 1}–${window.end} / ${window.total}`;
+}
+
+function ensureDataTableEmptyState(table, tbody) {
+  const children = [...(tbody?.children ?? [])];
+  const data = children.filter((row) => !isStructuralRow(row));
+  const current = children.find((row) => row.getAttribute?.('data-inx-empty-state') === 'true');
+  if (data.length > 0) {
+    current?.remove?.();
+    return false;
+  }
+
+  // Preserve explicit loading/error structural rows. Only synthesize an empty
+  // row when no other structural state is already rendered by the workspace.
+  if (!current && children.length > 0) return false;
+  const doc = table?.ownerDocument;
+  if (!doc?.createElement) return false;
+  const row = current ?? doc.createElement('tr');
+  row.setAttribute?.('data-inx-empty-state', 'true');
+  let cell = row.children?.[0] ?? null;
+  if (!cell) {
+    cell = doc.createElement('td');
+    row.appendChild?.(cell);
+  }
+  const columns = Math.max(1, table.querySelector?.('thead tr')?.children?.length ?? 1);
+  cell.colSpan = columns;
+  cell.className = 'inx-datatable-empty text-body-secondary text-center py-4';
+  cell.textContent = translate(localeFromDocument(doc), 'common.emptyList');
+  if (!current) tbody.replaceChildren?.(row);
+  return true;
 }
 
 function dataRows(tbody) {

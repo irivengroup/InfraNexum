@@ -70,12 +70,24 @@ class WebEnterpriseCrudContractTests(unittest.TestCase):
         css = (ASSETS / "infranexum-theme.css").read_text(encoding="utf-8")
         self.assertIn("Object.freeze([20, 50, 100, 200])", controller)
         self.assertIn("inx-datatable-pagination", controller)
-        self.assertIn("overflow-x: auto !important", css)
+        self.assertIn("overflow: visible !important", css)
+        self.assertNotIn("overscroll-behavior-inline: contain", css)
         self.assertIn("max-width: 100%", css)
+        self.assertIn("min-width: 0 !important", css)
         self.assertIn("table-layout: auto", css)
-        self.assertIn("overscroll-behavior-inline: contain", css)
         self.assertNotIn("table-layout: fixed", css)
+        self.assertIn("inx-datatable-frame", controller)
+        self.assertIn("ensureDataTableEmptyState(table, tbody)", controller)
         self.assertIn(".inx-datatable-page-button.btn-primary", css)
+
+    def test_dcim_location_navigation_exposes_context_and_current_rubric(self) -> None:
+        dcim = (ASSETS / "dcim-workspace.mjs").read_text(encoding="utf-8")
+        physical = (ASSETS / "dcim-physical-workspace.mjs").read_text(encoding="utf-8")
+        self.assertIn("TITLE_BY_RESOURCE", dcim)
+        self.assertIn('data-dcim-context="location"', dcim)
+        self.assertIn('data-i18n="dcim.nav.location"', dcim)
+        self.assertIn('data-i18n="${titleKey}"', dcim)
+        self.assertIn('data-i18n="dcim.physical.eyebrow"', physical)
 
 
 if __name__ == "__main__":

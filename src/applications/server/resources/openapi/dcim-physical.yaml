@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum DCIM Physical API
-  version: 2.0.0-alpha.0.118
+  version: 2.0.0-alpha.0.119
   description: PGM-07-E05 rack occupancy, equipment footprints, physical ports and point-to-point cabling.
 tags:
 - name: DCIM / Physical / Models

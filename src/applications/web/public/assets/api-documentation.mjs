@@ -6,8 +6,13 @@ export const SWAGGER_UI_VERSION = '5.32.13';
 export const REDOC_VERSION = '2.5.3';
 const SWAGGER_SCRIPT = `https://cdn.jsdelivr.net/npm/swagger-ui-dist@${SWAGGER_UI_VERSION}/swagger-ui-bundle.js`;
 const SWAGGER_STYLE = `https://cdn.jsdelivr.net/npm/swagger-ui-dist@${SWAGGER_UI_VERSION}/swagger-ui.css`;
-const REDOC_SCRIPT = `https://cdn.jsdelivr.net/npm/redoc@${REDOC_VERSION}/bundles/redoc.standalone.js`;
+export const REDOC_SCRIPT_URL = `https://cdn.jsdelivr.net/npm/redoc@${REDOC_VERSION}/bundles/redoc.standalone.js`;
+export const REDOC_FRAME_URL = '/assets/redoc-frame.html';
+export const REDOC_FRAME_MESSAGE_SOURCE = 'infranexum-redoc-frame';
 const ASSET_TIMEOUT_MS = 15_000;
+const REDOC_MIN_HEIGHT = 576;
+const REDOC_MAX_HEIGHT = 2_000_000;
+const redocBridges = new WeakMap();
 const initialized = new Set();
 
 /**
@@ -23,11 +28,12 @@ export function initializeApiDocumentation(documentObject = document, windowObje
   documentObject?.addEventListener?.('infranexum:route-change', (event) => render(event?.detail?.route));
   render(documentObject?.documentElement?.getAttribute?.('data-route'));
   documentObject?.addEventListener?.('infranexum:theme-change', () => {
-    if (documentObject?.documentElement?.getAttribute?.('data-route') === 'redoc' && initialized.has('redoc')) {
+    if (documentObject?.documentElement?.getAttribute?.('data-route') === 'redoc') {
       initialized.delete('redoc');
       const host = documentObject?.getElementById?.('redoc-ui');
+      detachRedocBridge(host, windowObject);
       host?.replaceChildren?.();
-      void renderRedoc(documentObject, windowObject, assetLoader);
+      void renderRedoc(documentObject, windowObject);
     }
   });
   return Object.freeze({ render });
@@ -53,28 +59,105 @@ export async function renderSwagger(documentObject, windowObject, assetLoader = 
   }
 }
 
-export async function renderRedoc(documentObject, windowObject, assetLoader = loadExternalAsset, specLoader = loadCertifiedOpenApi) {
+export async function renderRedoc(documentObject, windowObject, frameFactory = createRedocFrame) {
   const host = documentObject?.getElementById?.('redoc-ui');
   if (!host || initialized.has('redoc')) return Boolean(host);
   setLoading(documentObject, 'redoc');
+  detachRedocBridge(host, windowObject);
   try {
-    const specification = await specLoader(windowObject, OPENAPI_RENDER_SPEC_URL);
-    await assetLoader(documentObject, windowObject, REDOC_SCRIPT, 'script');
-    const redoc = windowObject?.Redoc ?? globalThis.Redoc;
-    if (!redoc || typeof redoc.init !== 'function') throw new Error('ReDoc bundle did not expose Redoc.init');
-    host.replaceChildren?.();
-    await new Promise((resolve, reject) => {
-      try { redoc.init(specification, redocConfiguration(documentObject), host, resolve); }
-      catch (error) { reject(error); }
-    });
-    if (containsRedocFatalError(host)) throw new Error('ReDoc reported an embedded rendering failure');
-    initialized.add('redoc');
-    setReady(documentObject, 'redoc');
-    return true;
+    const frame = frameFactory(documentObject, redocFrameConfiguration(documentObject));
+    if (!frame) throw new Error('ReDoc frame creation unavailable');
+    host.replaceChildren?.(frame);
+    return await waitForRedocFrame(documentObject, windowObject, host, frame);
   } catch (error) {
     setUnavailable(documentObject, 'redoc', error);
     return false;
   }
+}
+
+/**
+ * Creates the isolated ReDoc browsing context. ReDoc's styled-components runtime
+ * is intentionally kept out of the InfraNexum shell so its injected styles do
+ * not collide with Bootstrap/product CSS and do not require weakening shell CSP.
+ */
+export function createRedocFrame(documentObject, configuration = {}) {
+  const frame = documentObject?.createElement?.('iframe');
+  if (!frame) return null;
+  const theme = configuration.theme === 'dark' ? 'dark' : 'light';
+  frame.id = 'redoc-frame';
+  frame.className = 'inx-redoc-frame';
+  frame.title = configuration.title ?? 'ReDoc API reference';
+  frame.src = `${REDOC_FRAME_URL}?theme=${encodeURIComponent(theme)}`;
+  frame.loading = 'eager';
+  frame.referrerPolicy = 'no-referrer';
+  frame.setAttribute?.('sandbox', 'allow-scripts allow-same-origin');
+  frame.setAttribute?.('scrolling', 'no');
+  frame.setAttribute?.('height', String(REDOC_MIN_HEIGHT));
+  return frame;
+}
+
+export function redocFrameConfiguration(documentObject) {
+  return Object.freeze({
+    theme: documentObject?.documentElement?.getAttribute?.('data-bs-theme') === 'dark' ? 'dark' : 'light',
+    title: translate(localeFromDocument(documentObject), 'docs.redoc.title'),
+  });
+}
+
+function waitForRedocFrame(documentObject, windowObject, host, frame) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (ok, error) => {
+      if (settled) return;
+      settled = true;
+      windowObject?.clearTimeout?.(timer);
+      if (ok) {
+        initialized.add('redoc');
+        setReady(documentObject, 'redoc');
+      } else {
+        setUnavailable(documentObject, 'redoc', error);
+      }
+      resolve(ok);
+    };
+    const onMessage = (event) => {
+      if (!isTrustedRedocFrameMessage(event, frame, windowObject)) return;
+      const payload = event.data;
+      if (payload.type === 'resize') {
+        const height = normalizeRedocFrameHeight(payload.height);
+        if (height !== null) frame.setAttribute?.('height', String(height));
+        return;
+      }
+      if (payload.type === 'ready') finish(true);
+      if (payload.type === 'error') finish(false, new Error(safeMessage({ message: payload.message }) || 'ReDoc rendering failed'));
+    };
+    const timer = windowObject?.setTimeout?.(() => finish(false, new Error('ReDoc frame initialization timed out')), ASSET_TIMEOUT_MS);
+    windowObject?.addEventListener?.('message', onMessage);
+    redocBridges.set(host, {
+      dispose() {
+        windowObject?.clearTimeout?.(timer);
+        windowObject?.removeEventListener?.('message', onMessage);
+      },
+    });
+  });
+}
+
+function isTrustedRedocFrameMessage(event, frame, windowObject) {
+  if (event?.data?.source !== REDOC_FRAME_MESSAGE_SOURCE || event?.source !== frame?.contentWindow) return false;
+  const expectedOrigin = windowObject?.location?.origin;
+  return !expectedOrigin || expectedOrigin === 'null' || event.origin === expectedOrigin;
+}
+
+function normalizeRedocFrameHeight(value) {
+  const height = Number(value);
+  if (!Number.isFinite(height) || height <= 0) return null;
+  return Math.min(REDOC_MAX_HEIGHT, Math.max(REDOC_MIN_HEIGHT, Math.ceil(height)));
+}
+
+function detachRedocBridge(host, windowObject) {
+  const bridge = host && redocBridges.get(host);
+  bridge?.dispose?.();
+  if (host) redocBridges.delete(host);
+  // Defensive cleanup for test/window implementations that omit removeEventListener.
+  void windowObject;
 }
 
 export async function loadCertifiedOpenApi(windowObject = globalThis.window, url = OPENAPI_RENDER_SPEC_URL) {
@@ -104,7 +187,7 @@ export function validateCertifiedOpenApi(specification) {
   return true;
 }
 
-function containsRedocFatalError(host) {
+export function containsRedocFatalError(host) {
   const text = String(host?.textContent ?? '');
   return /Something went wrong|ReDoc Version:|Stack trace/i.test(text);
 }

@@ -1,0 +1,86 @@
+import {
+  OPENAPI_RENDER_SPEC_URL,
+  REDOC_FRAME_MESSAGE_SOURCE,
+  REDOC_SCRIPT_URL,
+  containsRedocFatalError,
+  loadCertifiedOpenApi,
+  loadExternalAsset,
+  redocConfiguration,
+} from './api-documentation.mjs';
+
+/**
+ * Boots ReDoc inside its dedicated browsing context. styled-components may inject
+ * inline style elements here; the runtime grants that capability only to this
+ * frame while the authenticated InfraNexum shell keeps its strict CSP.
+ */
+export async function initializeRedocFrame(
+  documentObject = document,
+  windowObject = globalThis.window,
+  assetLoader = loadExternalAsset,
+  specLoader = loadCertifiedOpenApi,
+) {
+  const root = documentObject?.getElementById?.('redoc-frame-root');
+  if (!root) throw new Error('ReDoc frame root is unavailable');
+  applyRequestedTheme(documentObject, windowObject);
+
+  try {
+    const specification = await specLoader(windowObject, OPENAPI_RENDER_SPEC_URL);
+    await assetLoader(documentObject, windowObject, REDOC_SCRIPT_URL, 'script');
+    const redoc = windowObject?.Redoc ?? globalThis.Redoc;
+    if (!redoc || typeof redoc.init !== 'function') throw new Error('ReDoc bundle did not expose Redoc.init');
+    root.replaceChildren?.();
+    await new Promise((resolve, reject) => {
+      try { redoc.init(specification, redocConfiguration(documentObject), root, resolve); }
+      catch (error) { reject(error); }
+    });
+    if (containsRedocFatalError(root)) throw new Error('ReDoc reported an embedded rendering failure');
+    installHeightReporter(documentObject, windowObject, root);
+    postFrameMessage(windowObject, 'ready');
+    reportHeight(documentObject, windowObject);
+    return true;
+  } catch (error) {
+    root.textContent = '';
+    postFrameMessage(windowObject, 'error', { message: safeFrameMessage(error) });
+    return false;
+  }
+}
+
+export function applyRequestedTheme(documentObject, windowObject) {
+  const href = String(windowObject?.location?.href ?? 'http://infranexum.invalid/assets/redoc-frame.html');
+  const theme = new URL(href, 'http://infranexum.invalid').searchParams.get('theme') === 'dark' ? 'dark' : 'light';
+  documentObject?.documentElement?.setAttribute?.('data-bs-theme', theme);
+  return theme;
+}
+
+export function reportHeight(documentObject, windowObject) {
+  const height = Math.max(
+    Number(documentObject?.documentElement?.scrollHeight ?? 0),
+    Number(documentObject?.body?.scrollHeight ?? 0),
+  );
+  if (height > 0) postFrameMessage(windowObject, 'resize', { height });
+  return height;
+}
+
+function installHeightReporter(documentObject, windowObject, root) {
+  const resizeObserver = windowObject?.ResizeObserver;
+  if (typeof resizeObserver !== 'function') return null;
+  const observer = new resizeObserver(() => reportHeight(documentObject, windowObject));
+  observer.observe(root);
+  windowObject?.addEventListener?.('pagehide', () => observer.disconnect(), { once: true });
+  return observer;
+}
+
+function postFrameMessage(windowObject, type, detail = {}) {
+  const origin = windowObject?.location?.origin;
+  const targetOrigin = origin && origin !== 'null' ? origin : '*';
+  windowObject?.parent?.postMessage?.({ source: REDOC_FRAME_MESSAGE_SOURCE, type, ...detail }, targetOrigin);
+}
+
+function safeFrameMessage(error) {
+  const value = String(error?.message ?? 'ReDoc rendering failed').replace(/https?:\/\/\S+/g, '').trim();
+  return value.length > 180 ? `${value.slice(0, 177)}…` : value;
+}
+
+if (typeof document !== 'undefined' && typeof window !== 'undefined' && document.documentElement?.getAttribute?.('data-inx-redoc-frame') === 'true') {
+  void initializeRedocFrame();
+}

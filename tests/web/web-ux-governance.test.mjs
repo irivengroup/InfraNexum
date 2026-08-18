@@ -17,16 +17,38 @@ function functionBody(source, name, next = 'function ') {
   return source.slice(start, end === -1 ? source.length : end);
 }
 
-test('DataTables stay bounded to the workspace and use content-aware automatic sizing', async () => {
+test('DataTables fit the complete workspace width without nested scrolling or clipped actions', async () => {
   const [theme, crud] = await Promise.all([read('assets/infranexum-theme.css'), read('assets/enterprise-crud.mjs')]);
-  assert.match(theme, /\.inx-workspace \.table-responsive,[\s\S]*max-width:\s*100%[\s\S]*overflow-x:\s*auto\s*!important/);
-  assert.match(theme, /\.inx-data-table\s*\{[\s\S]*table-layout:\s*auto/);
+  assert.match(theme, /\.inx-workspace \.table-responsive,[\s\S]*max-width:\s*100%[\s\S]*overflow:\s*visible\s*!important/);
+  assert.doesNotMatch(theme, /\.inx-workspace \.table-responsive,[\s\S]{0,260}overflow-x:\s*auto\s*!important/);
+  assert.match(theme, /\.inx-datatable-frame\s*\{[\s\S]*overflow:\s*visible\s*!important/);
+  assert.match(theme, /\.inx-data-table\s*\{[\s\S]*width:\s*100%\s*!important[\s\S]*min-width:\s*0\s*!important[\s\S]*max-width:\s*100%\s*!important[\s\S]*table-layout:\s*auto/);
+  assert.match(theme, /\.inx-data-table > :not\(caption\) > \* > \*\s*\{[\s\S]*overflow-wrap:\s*anywhere[\s\S]*white-space:\s*normal/);
+  assert.match(theme, /\.inx-data-table \.inx-crud-actions\s*\{[\s\S]*flex-wrap:\s*wrap/);
   assert.match(theme, /data-inx-column-size="compact"/);
   assert.match(theme, /data-inx-column-size="flex"/);
   assert.match(theme, /data-inx-column-size="actions"/);
-  assert.doesNotMatch(theme, /alpha\.0\.105[\s\S]{0,350}overflow:\s*visible\s*!important/);
+  assert.match(crud, /responsiveContainer\?\.parentElement\?\.classList\?\.add\?\.\('inx-datatable-frame'\)/);
   assert.match(crud, /classifyDataTableColumns\(table\)/);
   assert.match(crud, /longest <= 12 \? 'compact' : longest <= 32 \? 'content' : 'flex'/);
+});
+
+test('DataTables render an explicit localized empty row for every empty tbody', async () => {
+  const [crud, utils] = await Promise.all([read('assets/enterprise-crud.mjs'), read('assets/web-workspace-utils.mjs')]);
+  assert.match(crud, /ensureDataTableEmptyState\(table, tbody\)/);
+  assert.match(crud, /data-inx-empty-state/);
+  assert.match(crud, /translate\(localeFromDocument\(doc\), 'common\.emptyList'\)/);
+  assert.match(utils, /data-inx-empty-state/);
+  assert.equal(translate('en', 'common.emptyList'), 'No records are available.');
+});
+
+test('DCIM Location panels expose both the context and the active rubric like Infrastructure panels', async () => {
+  const [dcim, physical] = await Promise.all([read('assets/dcim-workspace.mjs'), read('assets/dcim-physical-workspace.mjs')]);
+  assert.match(dcim, /TITLE_BY_RESOURCE/);
+  assert.match(dcim, /data-dcim-context="location"/);
+  assert.match(dcim, /data-i18n="dcim\.nav\.location"[\s\S]*data-i18n="\$\{titleKey\}"/);
+  assert.match(dcim, /inx-crud-editor-header[\s\S]*data-i18n="dcim\.nav\.location"[\s\S]*data-i18n="\$\{titleKey\}"/);
+  assert.match(physical, /data-i18n="dcim\.physical\.eyebrow"[\s\S]*data-i18n="\$\{titleKey\}"/);
 });
 
 test('technical ID and UUID columns are removed from list presentation and surfaced read-only in detail editors', async () => {

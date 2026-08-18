@@ -1,3 +1,19 @@
+# InfraNexum 2.0.0-alpha.0.119 — DataTable and DCIM context Web/UX corrective
+
+**InfraNexum — Infrastructure Control & Governance Platform**
+
+`alpha.0.119` is a transverse Web/UX corrective over `alpha.0.118`; it does **not** advance PGM-10-E06 and does not alter any API, persistence, RBAC, capability or connector-provider contract.
+
+The shared enterprise DataTable layer now follows one geometry rule across IAM, DCIM, ITAM, RSOT, DDI, Integrations and other enhanced tables: the table occupies the complete available workspace width and never owns a vertical scroll region. The previous `overflow-x:auto` responsive wrapper is removed because CSS can compute the paired vertical overflow as `auto`; cells, headers and action buttons are instead allowed to shrink and wrap inside the available width. Enhanced table frames explicitly neutralize legacy `overflow-hidden` clipping, so the right edge and action column remain visible rather than being cut off.
+
+Empty tables now always expose the localized structural row `No records are available.` in English, with the existing DE/ES/FR/IT equivalents, including tables that do not use the common row renderer. DCIM Location panels now show both the `Location` context and the active Sites/Buildings/Floors/Rooms/Zones rubric in list and editor views, matching the contextual signposting already present for Infrastructure.
+
+**ReDoc :** the renderer is now isolated from the authenticated Bootstrap shell in a same-origin sandboxed frame. This removes CSS namespace collisions and, more importantly, confines ReDoc/styled-components inline style injection to a dedicated CSP that permits `style-src 'unsafe-inline'` only inside the ReDoc frame. The InfraNexum shell remains strict (no `unsafe-inline`) and explicitly permits only its same-origin documentation frame. The certified OpenAPI 3.1 JSON remains local and is transferred as an object to ReDoc; renderer failures are surfaced through a bounded same-origin `postMessage` handshake instead of leaving a blank panel.
+
+**Roadmap status is unchanged:** PGM-10-E05 remains formally **NON TERMINÉ** until the exact JDK25/JaCoCo/PostgreSQL 17/18 gates pass. PGM-10-E06 remains **EN COURS** with the durable checkpoints/synchronization/compensation runtime from `alpha.0.116` preserved and no mutating provider activated.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.118 — hosted JDK25 verification corrective
 
 **InfraNexum — Infrastructure Control & Governance Platform**

@@ -1,3 +1,19 @@
+# InfraNexum 2.0.0-alpha.0.119 — DataTable and DCIM context Web/UX corrective
+
+**Nature : corrective Web/UX transverse, aucune avancée de roadmap.** Cette tranche corrige la géométrie commune des DataTables et le repérage contextuel DCIM sans modifier API, migrations, RBAC, capacités, synchronisation ni providers.
+
+**DataTables :** les wrappers de tables ne sont plus des régions de scroll. `overflow-x:auto` est supprimé de la couche commune car il peut calculer `overflow-y:auto` et créer un scroll vertical imbriqué. Les cellules, entêtes et actions peuvent se replier dans la largeur disponible ; les frames historiques `overflow-hidden` sont neutralisées uniquement lorsqu'elles hébergent une DataTable enrichie. La table reste à `width/max-width: 100%` et aucune extrémité droite ne doit être masquée.
+
+**État vide :** tout `tbody` vide enrichi reçoit une ligne structurelle localisée via `common.emptyList`; la valeur anglaise canonique est `No records are available.`. Le renderer commun marque également cet état pour conserver un comportement uniforme et correctement retraduit lors d'un changement de langue.
+
+**DCIM :** les panneaux `Location` affichent désormais le contexte `Location` puis la rubrique active `Sites / Buildings / Floors / Rooms / Zones`, dans la liste comme dans l'éditeur, sur le même principe que les panneaux `Infrastructure`.
+
+**ReDoc :** le renderer est désormais isolé de la shell Bootstrap authentifiée dans une iframe sandboxée same-origin. Cela supprime les collisions de portée CSS et confine l'injection de styles inline de ReDoc/styled-components à une CSP dédiée autorisant `style-src 'unsafe-inline'` uniquement dans le document ReDoc. La shell InfraNexum conserve une CSP stricte sans `unsafe-inline`, autorise uniquement la frame documentaire same-origin et conserve le contrat OpenAPI 3.1 certifié en local. Un handshake `postMessage` borné remonte explicitement ready/error/resize afin d'éviter un panneau blanc silencieux.
+
+**État roadmap :** PGM-10-E05 reste formellement **NON TERMINÉ** jusqu'à réussite des gates exacts JDK25/JaCoCo/PostgreSQL 17/18. PGM-10-E06 reste **EN COURS** ; le runtime durable checkpoints/synchronisation/compensation de `alpha.0.116` est conservé et aucun provider mutateur n'est activé.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.118 — hosted JDK25 quality-gate corrective
 
 **Nature : corrective CI/JDK25, aucune avancée de roadmap.** Le run hébergé `alpha.0.117` confirme que la compilation Server JDK25 est réparée, mais laisse quatre gates rouges : DDI JaCoCo lignes à 96 %, fixture `ConnectorSyncEngineTest` incohérente avec la gouvernance de rollback, adaptateur JDBC à 96 % lignes / 89 % branches, et testCompile Server invalide autour de `SimpleMeterRegistry`.

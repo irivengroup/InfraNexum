@@ -1459,7 +1459,18 @@ input[data-inx-temporal].inx-temporal-native::-webkit-calendar-picker-indicator 
 [data-bs-theme="dark"] .inx-api-docs .swagger-ui table thead tr td,
 [data-bs-theme="dark"] .inx-api-docs .swagger-ui table thead tr th { color: #eef7ff; }
 [data-bs-theme="dark"] .inx-api-docs .swagger-ui .scheme-container { background: #0d2744; }
-.inx-redoc-host > div { min-height: 36rem; }
+.inx-redoc-host {
+  min-width: 0;
+  overflow: visible;
+}
+.inx-redoc-frame {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 36rem;
+  border: 0;
+  background: var(--inx-surface);
+}
 @media (max-width: 575.98px) {
   .inx-auth-story-title { font-size: 2rem; }
 }
@@ -1515,7 +1526,11 @@ input[data-inx-temporal].inx-temporal-native::-webkit-calendar-picker-indicator 
 .inx-workspace .inx-filter-bar { border-radius: .72rem; }
 .inx-workspace .table-responsive { border-radius: .72rem; }
 
-/* alpha.0.113 — bounded responsive DataTables with content-aware columns. */
+/* alpha.0.119 — viewport-bound DataTables with one page scroll.
+ * Do not put a scroll container around tables. CSS computes overflow-y:auto when
+ * overflow-x is auto and overflow-y is visible, which creates the nested vertical
+ * scrollbars reported on otherwise tall enough pages. Instead, every cell may
+ * shrink/wrap so the complete table stays inside the workspace inline size. */
 .inx-main,
 .inx-workspace,
 .inx-workspace > .row,
@@ -1530,54 +1545,54 @@ input[data-inx-temporal].inx-temporal-native::-webkit-calendar-picker-indicator 
 .inx-crud-list-view .table-responsive {
   width: 100%;
   max-width: 100%;
-  overflow-x: auto !important;
-  overflow-y: visible !important;
+  overflow: visible !important;
   max-height: none !important;
-  scrollbar-width: thin;
-  scrollbar-gutter: stable;
-  overscroll-behavior-inline: contain;
+}
+.inx-datatable-frame {
+  width: 100%;
+  max-width: 100%;
+  overflow: visible !important;
 }
 .inx-data-table {
   width: 100% !important;
-  min-width: 100%;
-  max-width: 100%;
+  min-width: 0 !important;
+  max-width: 100% !important;
   table-layout: auto;
 }
 .inx-data-table > :not(caption) > * > * {
   min-width: 0;
+  max-width: 100%;
   overflow-wrap: anywhere;
   word-break: normal;
   white-space: normal;
 }
-.inx-data-table > thead > tr > th {
-  white-space: nowrap;
-}
-.inx-data-table [data-inx-column-size="compact"] {
-  width: 1%;
-  white-space: nowrap;
-}
-.inx-data-table [data-inx-column-size="content"] {
-  width: auto;
-  white-space: nowrap;
-}
-.inx-data-table td[data-inx-column-size="flex"] {
-  min-width: 10rem;
-  max-width: min(34rem, 42vw);
-}
+.inx-data-table > thead > tr > th,
+.inx-data-table [data-inx-column-size="compact"],
+.inx-data-table [data-inx-column-size="content"],
 .inx-data-table [data-inx-column-size="actions"] {
-  width: 1%;
-  min-width: max-content;
-  white-space: nowrap;
+  min-width: 0;
+  white-space: normal;
 }
+.inx-data-table [data-inx-column-size="compact"] { width: 1%; }
+.inx-data-table [data-inx-column-size="content"] { width: auto; }
+.inx-data-table td[data-inx-column-size="flex"] { width: auto; }
+.inx-data-table [data-inx-column-size="actions"] { width: 1%; }
 .inx-data-table [data-inx-technical-id-column="true"],
 .inx-data-table [data-inx-technical-id-cell="true"] {
   display: none !important;
 }
 .inx-data-table .inx-crud-actions {
-  display: inline-flex;
-  flex-wrap: nowrap;
+  display: flex;
+  flex-wrap: wrap;
   justify-content: flex-start;
   gap: .35rem;
+  max-width: 100%;
+}
+.inx-data-table .inx-crud-actions .btn {
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .inx-technical-id-field .form-control[readonly] {
   color: var(--inx-muted);
