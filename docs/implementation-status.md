@@ -1,3 +1,15 @@
+# InfraNexum 2.0.0-alpha.0.118 — hosted JDK25 quality-gate corrective
+
+**Nature : corrective CI/JDK25, aucune avancée de roadmap.** Le run hébergé `alpha.0.117` confirme que la compilation Server JDK25 est réparée, mais laisse quatre gates rouges : DDI JaCoCo lignes à 96 %, fixture `ConnectorSyncEngineTest` incohérente avec la gouvernance de rollback, adaptateur JDBC à 96 % lignes / 89 % branches, et testCompile Server invalide autour de `SimpleMeterRegistry`.
+
+**Corrections :** aucun seuil JaCoCo n'est abaissé et aucune exclusion n'est ajoutée. DDI couvre explicitement la surface générée/accessors restante. Integrations utilise `DUAL_COMPENSATION` lorsque des mutations locale+distant doivent être compensées et garde un test distinct qui prouve que `INBOUND + REMOTE_COMPENSATION` reste rejeté. Le moteur corrige en plus la transition réelle de compensation MANUAL : après `beginCompensation`, l'issue est `COMPENSATION_FAILED / MANUAL_COMPENSATION_REQUIRED` via `compensationFailed(...)`. JDBC renforce les branches PostgreSQL/Oracle/fencing/transactions et supprime des branches internes inatteignables. Le test Server ferme explicitement `SimpleMeterRegistry` en `finally`.
+
+**Préflight local avant gel :** DDI JUnit-compatible 18/18 et traçage 49/49 lignes exécutables des classes DDI chargées ; Integrations JUnit-compatible 32/32 ; JDBC Connector Sync JUnit-compatible 13/13 ; smokes officiels DDI, Integrations/Sync, JDBC/JDBC-audit, Policy et API Capability 200 opérations PASS. Ces preuves sont auxiliaires et ne remplacent pas le gate Maven/JUnit/JaCoCo JDK25.
+
+**État roadmap :** PGM-10-E05 reste formellement **NON TERMINÉ** jusqu'au prochain run exact JDK25/JaCoCo/PostgreSQL 17/18 réussi. PGM-10-E06 reste **EN COURS** et conserve intégralement le runtime de checkpoints/synchronisation/compensation de `alpha.0.116`; aucun provider mutateur n'est activé.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.117 — JDK25 Server compilation corrective
 
 **Statut : CORRECTIVE / AUCUNE AVANCÉE ROADMAP.** Le build Docker de `alpha.0.116` sous JDK25 échoue pendant la compilation du Server dans `ImmutableConnectorSyncHandlerRegistry`. La cause est l'inférence générique de `Objects.requireNonNullElse(handlers, List.of())` dans un `for-each`, dont le fallback vide devient `? extends Object` au lieu de `ConnectorSyncHandler`.

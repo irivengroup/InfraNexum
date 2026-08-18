@@ -70,6 +70,8 @@ final class JdbcScriptedSupport {
         private final Connection connection;
         private boolean autoCommit;
         private int savepointSequence;
+        private SQLException rollbackFailure;
+        private SQLException restoreAutoCommitFailure;
 
         ScriptedConnection(List<Script> scripts) {
             this.scripts = new ArrayDeque<>(scripts);
@@ -79,6 +81,8 @@ final class JdbcScriptedSupport {
 
         Connection connection() { return connection; }
         ScriptedConnection autoCommit(boolean value) { this.autoCommit = value; return this; }
+        ScriptedConnection rollbackFails(SQLException failure) { this.rollbackFailure = failure; return this; }
+        ScriptedConnection restoreAutoCommitFails(SQLException failure) { this.restoreAutoCommitFailure = failure; return this; }
         boolean autoCommit() { return autoCommit; }
         List<String> sql() { return sql; }
         List<Map<Integer, Object>> parameters() { return parameters; }
@@ -88,8 +92,14 @@ final class JdbcScriptedSupport {
         private Object invokeConnection(Object proxy, Method method, Object[] args) throws Throwable {
             return switch (method.getName()) {
                 case "prepareStatement" -> prepare(String.valueOf(args[0]));
-                case "close", "commit", "rollback", "releaseSavepoint", "setReadOnly" -> null;
-                case "setAutoCommit" -> { autoCommit = (Boolean) args[0]; yield null; }
+                case "close", "commit", "releaseSavepoint", "setReadOnly" -> null;
+                case "rollback" -> { if (rollbackFailure != null) throw rollbackFailure; yield null; }
+                case "setAutoCommit" -> {
+                    boolean requested = (Boolean) args[0];
+                    if (requested && restoreAutoCommitFailure != null) throw restoreAutoCommitFailure;
+                    autoCommit = requested;
+                    yield null;
+                }
                 case "setSavepoint" -> {
                     int id = ++savepointSequence;
                     yield new Savepoint() {

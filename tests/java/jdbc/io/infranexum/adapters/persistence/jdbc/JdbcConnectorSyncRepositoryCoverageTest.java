@@ -247,6 +247,114 @@ final class JdbcConnectorSyncRepositoryCoverageTest {
                 "idem-bad-count", CURSOR_SHA, Set.of(), false, 1, ACTOR, CORRELATION, NOW));
     }
 
+
+    @Test
+    void coversRemainingOracleAdmissionAndNullableRepresentations() {
+        Map<String,Object> oracleCreatedRow = runRowOracle(ConnectorSyncRunStatus.RUNNING, 0, 0, null, null);
+        oracleCreatedRow.put("requested_fields", null);
+        oracleCreatedRow.put("propagate_deletions", 0);
+        ScriptedConnection oracle = connection(
+                update(1), query(state(0, null, null)), query(List.of()), update(1), update(1),
+                query(oracleCreatedRow));
+        ConnectorSyncRepository.BeginResult created = repository(JdbcDatabaseDialect.ORACLE, oracle).begin(
+                RUN, KEY, "future-provider", ConnectorSyncDirection.OUTBOUND, ConnectorRollbackStrategy.REMOTE_COMPENSATION,
+                "sync-idem-oracle-false", CURSOR_SHA, null, false, 1, ACTOR, CORRELATION, NOW);
+        assertTrue(created.created());
+        assertTrue(created.run().fields().isEmpty());
+        assertEquals(0, oracle.parameters().get(3).get(9));
+        assertTrue(oracle.exhausted());
+
+        Map<String,Object> numericTrue = runRowOracle(ConnectorSyncRunStatus.SUCCEEDED, 0, 1, null, NOW);
+        numericTrue.put("propagate_deletions", 1);
+        numericTrue.put("requested_fields", null);
+        assertTrue(repository(JdbcDatabaseDialect.ORACLE, connection(query(numericTrue))).findRun(RUN).orElseThrow().propagateDeletions());
+        assertTrue(repository(JdbcDatabaseDialect.POSTGRESQL, connection(query(List.of()))).listRuns(null, 0, 1).isEmpty());
+        assertTrue(repository(JdbcDatabaseDialect.POSTGRESQL, connection(query(List.of()))).listCheckpoints(KEY, 0, 1).isEmpty());
+
+        Map<String,Object> emptyFields = runRow(ConnectorSyncRunStatus.SUCCEEDED, 0, 1, null, NOW);
+        emptyFields.put("requested_fields", "");
+        assertTrue(repository(JdbcDatabaseDialect.POSTGRESQL, connection(query(emptyFields))).findRun(RUN).orElseThrow().fields().isEmpty());
+    }
+
+    @Test
+    void rejectsEveryRemainingFenceAndCheckpointRace() {
+        ScriptedConnection wrongAppendFence = connection(
+                query(runRow(ConnectorSyncRunStatus.RUNNING, 0, 0, null, null)), query(state(0, null, CHECKPOINT)));
+        assertThrows(ConnectorSyncStateConflictException.class, () -> repository(JdbcDatabaseDialect.POSTGRESQL, wrongAppendFence)
+                .appendCheckpoint(CHECKPOINT, RUN, 0, ConnectorSyncCheckpointKind.PROGRESS, null, EMPTY_SHA, 0, 0, 0, NOW));
+
+        ScriptedConnection missingInsertedCheckpoint = connection(
+                query(runRow(ConnectorSyncRunStatus.RUNNING, 0, 0, null, null)), query(state(0, null, RUN)),
+                update(1), update(1), update(1), query(List.of()));
+        assertThrows(ConnectorSyncNotFoundException.class, () -> repository(JdbcDatabaseDialect.POSTGRESQL, missingInsertedCheckpoint)
+                .appendCheckpoint(CHECKPOINT, RUN, 0, ConnectorSyncCheckpointKind.PROGRESS, null, EMPTY_SHA, 1, 1, 0, NOW));
+
+        ScriptedConnection staleCompensation = connection(
+                query(runRow(ConnectorSyncRunStatus.COMPENSATING, 0, 1, null, null)), query(state(2, "newer", RUN)));
+        assertThrows(ConnectorSyncStateConflictException.class, () -> repository(JdbcDatabaseDialect.POSTGRESQL, staleCompensation)
+                .finishCompensation(RUN, 1, CHECKPOINT, null, EMPTY_SHA, NOW));
+
+        ScriptedConnection wrongCompensationFence = connection(
+                query(runRow(ConnectorSyncRunStatus.COMPENSATING, 0, 1, null, null)), query(state(1, "cursor", CHECKPOINT)));
+        assertThrows(ConnectorSyncStateConflictException.class, () -> repository(JdbcDatabaseDialect.POSTGRESQL, wrongCompensationFence)
+                .finishCompensation(RUN, 1, CHECKPOINT, null, EMPTY_SHA, NOW));
+
+        ScriptedConnection wrongFailureFence = connection(
+                query(runRow(ConnectorSyncRunStatus.COMPENSATING, 0, 1, null, null)), query(state(1, "cursor", CHECKPOINT)));
+        assertThrows(ConnectorSyncStateConflictException.class, () -> repository(JdbcDatabaseDialect.POSTGRESQL, wrongFailureFence)
+                .compensationFailed(RUN, "ROLLBACK_500", NOW));
+    }
+
+    @Test
+    void allowsSameRunToReacquireCompensationFenceAndRejectsWrongActiveFinishFence() {
+        ScriptedConnection sameOwner = connection(
+                query(runRow(ConnectorSyncRunStatus.SUCCEEDED, 0, 1, null, NOW)), query(state(1, "cursor", RUN)),
+                update(1), update(1), query(runRow(ConnectorSyncRunStatus.COMPENSATING, 0, 1, null, null)));
+        ConnectorSyncRepository.CompensationStart started = repository(JdbcDatabaseDialect.POSTGRESQL, sameOwner).beginCompensation(RUN, NOW);
+        assertEquals(ConnectorSyncRunStatus.COMPENSATING, started.run().status());
+
+        ScriptedConnection wrongFinishFence = connection(
+                query(runRow(ConnectorSyncRunStatus.RUNNING, 0, 1, null, null)), query(state(1, "cursor", CHECKPOINT)));
+        assertThrows(ConnectorSyncStateConflictException.class,
+                () -> repository(JdbcDatabaseDialect.POSTGRESQL, wrongFinishFence).pause(RUN, "WAIT", NOW));
+    }
+
+    @Test
+    void transactionBoundaryRestoresAutocommitAndPreservesRollbackFailure() {
+        ScriptedConnection success = connection(query(runRow(ConnectorSyncRunStatus.SUCCEEDED, 0, 1, null, NOW))).autoCommit(true);
+        assertTrue(repository(JdbcDatabaseDialect.POSTGRESQL, success).findRun(RUN).isPresent());
+        assertTrue(success.autoCommit());
+
+        SQLException queryFailure = new SQLException("query failed", "42000", 77);
+        SQLException rollbackFailure = new SQLException("rollback failed", "08006", 88);
+        ScriptedConnection failed = connection(queryFailure(queryFailure)).rollbackFails(rollbackFailure);
+        JdbcPersistenceException wrapped = assertThrows(JdbcPersistenceException.class,
+                () -> repository(JdbcDatabaseDialect.POSTGRESQL, failed).findRun(RUN));
+        assertSame(queryFailure, wrapped.getCause());
+        assertArrayEquals(new Throwable[] {rollbackFailure}, wrapped.getCause().getSuppressed());
+
+        ScriptedConnection restoreFailure = connection(query(runRow(ConnectorSyncRunStatus.SUCCEEDED, 0, 1, null, NOW)))
+                .autoCommit(true).restoreAutoCommitFails(new SQLException("restore failed"));
+        assertTrue(repository(JdbcDatabaseDialect.POSTGRESQL, restoreFailure).findRun(RUN).isPresent());
+        assertFalse(restoreFailure.autoCommit());
+    }
+
+    @Test
+    void validatesRemainingRequiredBeginMetadata() {
+        JdbcConnectorSyncRepository repo = repository(JdbcDatabaseDialect.POSTGRESQL, connection());
+        assertThrows(NullPointerException.class, () -> repo.begin(RUN, KEY, "provider", ConnectorSyncDirection.INBOUND,
+                ConnectorRollbackStrategy.LOCAL_CHECKPOINT, "idem", CURSOR_SHA, Set.of(), false, 1, null, CORRELATION, NOW));
+        assertThrows(NullPointerException.class, () -> repo.begin(RUN, KEY, "provider", ConnectorSyncDirection.INBOUND,
+                ConnectorRollbackStrategy.LOCAL_CHECKPOINT, "idem", CURSOR_SHA, Set.of(), false, 1, ACTOR, null, NOW));
+        assertThrows(NullPointerException.class, () -> repo.begin(RUN, KEY, "provider", ConnectorSyncDirection.INBOUND,
+                ConnectorRollbackStrategy.LOCAL_CHECKPOINT, "idem", CURSOR_SHA, Set.of(), false, 1, ACTOR, CORRELATION, null));
+        assertThrows(NullPointerException.class, () -> repo.activate(RUN, null));
+        assertThrows(NullPointerException.class, () -> repo.finishCompensation(RUN, 0, null, null, EMPTY_SHA, NOW));
+        assertThrows(NullPointerException.class, () -> repo.finishCompensation(RUN, 0, CHECKPOINT, null, null, NOW));
+        assertThrows(NullPointerException.class, () -> repo.finishCompensation(RUN, 0, CHECKPOINT, null, EMPTY_SHA, null));
+        assertThrows(NullPointerException.class, () -> repo.compensationFailed(RUN, "FAIL", null));
+    }
+
     private static JdbcConnectorSyncRepository repository(JdbcDatabaseDialect dialect, ScriptedConnection connection) {
         return new JdbcConnectorSyncRepository(dataSource(connection.connection()), dialect);
     }

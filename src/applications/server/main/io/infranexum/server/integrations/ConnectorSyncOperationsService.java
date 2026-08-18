@@ -59,7 +59,7 @@ final class ConnectorSyncOperationsService {
     }
 
     private void audit(ConnectorSyncRun run,String operation,String outcome,String reason,DomainIdentifier actor,DomainIdentifier correlation,String failureType){
-        Map<String,String> metadata=run==null?Map.of("operation",operation,"failure_type",failureType==null?"unknown":failureType):Map.of(
+        Map<String,String> metadata=run==null?Map.of("operation",operation,"failure_type",failureType):Map.of(
                 "operation",operation,"provider",run.provider(),"direction",run.direction().name(),"rollback",run.rollbackStrategy().name(),"status",run.status().name(),"revision",Long.toString(run.lastCheckpointRevision()));
         audit.append(new AuditEntry(ids.next(),AuditScope.platform(),actor.toString(),"USER","integrations.connector-sync."+operation,
                 "integration_sync",run==null?"unknown":run.runId().toString(),outcome,clock.instant(),correlation,outcome,"HTTP",null,null,reason,metadata,"CRITICAL"));

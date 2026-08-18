@@ -51,27 +51,35 @@ final class ConnectorSyncServerRuntimeTest {
         when(repo.listRuns(isNull(),eq(0),eq(10))).thenReturn(List.of(run(ConnectorSyncRunStatus.SUCCEEDED)));
         when(repo.listRuns(eq(KEY),eq(0),eq(10))).thenReturn(List.of(run(ConnectorSyncRunStatus.SUCCEEDED)));
         when(repo.listCheckpoints(eq(KEY),eq(0),eq(10))).thenReturn(List.of(checkpoint()));
-        try(SimpleMeterRegistry meters=new SimpleMeterRegistry()){
+        SimpleMeterRegistry meters=new SimpleMeterRegistry();
+        try {
             ConnectorSyncOperationsService service=new ConnectorSyncOperationsService(engine,repo,audit,new UuidV7Generator(CLOCK,new SecureRandom()),CLOCK,meters);
-            assertEquals(1,service.runs(" ",0,10).size()); assertEquals(1,service.runs(KEY.value(),0,10).size()); assertEquals(1,service.checkpoints(KEY.value(),0,10).size());
+            assertEquals(1,service.runs(null,0,10).size()); assertEquals(1,service.runs(" ",0,10).size()); assertEquals(1,service.runs(KEY.value(),0,10).size()); assertEquals(1,service.checkpoints(KEY.value(),0,10).size());
             assertEquals(ConnectorSyncRunStatus.SUCCEEDED,service.execute(KEY.value(),new ConnectorSyncExecutionRequest(ConnectorSyncDirection.INBOUND,Set.of("name"),false,1),"idem-1"," approved sync ",ACTOR,CORRELATION).status());
             assertEquals(ConnectorSyncRunStatus.SUCCEEDED,service.resume(RUN,"resume after outage",ACTOR,CORRELATION).status());
             assertEquals(ConnectorSyncRunStatus.COMPENSATED,service.compensate(RUN,"operator rollback",ACTOR,CORRELATION).status());
             verify(audit,times(3)).append(any());
             assertEquals(3.0,meters.find("infranexum.integrations.sync.operations").counters().stream().mapToDouble(c->c.count()).sum());
+            assertThrows(IllegalArgumentException.class,()->service.resume(RUN,null,ACTOR,CORRELATION));
             assertThrows(IllegalArgumentException.class,()->service.resume(RUN," ",ACTOR,CORRELATION));
             assertThrows(IllegalArgumentException.class,()->service.resume(RUN,"x".repeat(501),ACTOR,CORRELATION));
             assertThrows(NullPointerException.class,()->service.resume(RUN,"valid reason",null,CORRELATION));
+            assertThrows(NullPointerException.class,()->service.resume(RUN,"valid reason",ACTOR,null));
+        } finally {
+            meters.close();
         }
     }
 
     @Test void operationFailuresAreAuditedWithoutLeakingAsSuccess(){
         ConnectorSyncEngine engine=mock(ConnectorSyncEngine.class); ConnectorSyncRepository repo=mock(ConnectorSyncRepository.class); AuditJournal audit=mock(AuditJournal.class);
         when(engine.resume(RUN)).thenThrow(new ConnectorSyncStateConflictException("stale"));
-        try(SimpleMeterRegistry meters=new SimpleMeterRegistry()){
+        SimpleMeterRegistry meters=new SimpleMeterRegistry();
+        try {
             ConnectorSyncOperationsService service=new ConnectorSyncOperationsService(engine,repo,audit,new UuidV7Generator(CLOCK,new SecureRandom()),CLOCK,meters);
             assertThrows(ConnectorSyncStateConflictException.class,()->service.resume(RUN,"retry safely",ACTOR,CORRELATION));
             verify(audit).append(any()); assertEquals(1.0,meters.find("infranexum.integrations.sync.operations").counter().count());
+        } finally {
+            meters.close();
         }
     }
 
@@ -79,15 +87,26 @@ final class ConnectorSyncServerRuntimeTest {
         ConnectorSyncOperationsService operations=mock(ConnectorSyncOperationsService.class); ConnectorSyncController controller=new ConnectorSyncController(operations);
         when(operations.runs(null,0,3)).thenReturn(List.of(run(ConnectorSyncRunStatus.SUCCEEDED),run(ConnectorSyncRunStatus.PAUSED),run(ConnectorSyncRunStatus.FAILED)));
         var page=controller.runs(null,0,2); assertEquals(2,page.getBody().size()); assertEquals("2",page.getHeaders().getFirst("X-Next-Offset")); assertEquals("no-store",page.getHeaders().getFirst("Cache-Control"));
+        when(operations.runs(KEY.value(),0,3)).thenReturn(List.of(run(ConnectorSyncRunStatus.SUCCEEDED)));
+        var finalPage=controller.runs(KEY.value(),0,2); assertEquals(1,finalPage.getBody().size()); assertNull(finalPage.getHeaders().getFirst("X-Next-Offset"));
         when(operations.checkpoints(KEY.value(),0,3)).thenReturn(List.of(checkpoint(),checkpoint(),checkpoint()));
         var checkpoints=controller.checkpoints(KEY.value(),0,2); assertEquals(2,checkpoints.getBody().size()); assertEquals("a".repeat(64),checkpoints.getBody().getFirst().cursorSha256());
+        when(operations.checkpoints(KEY.value(),2,3)).thenReturn(List.of(checkpoint()));
+        var finalCheckpoints=controller.checkpoints(KEY.value(),2,2); assertEquals(1,finalCheckpoints.getBody().size()); assertNull(finalCheckpoints.getHeaders().getFirst("X-Next-Offset"));
         MockHttpServletRequest request=request(); when(operations.execute(eq(KEY.value()),any(),eq("idem-1"),eq("approved"),eq(ACTOR),eq(CORRELATION))).thenReturn(run(ConnectorSyncRunStatus.RUNNING));
         var execute=controller.execute(KEY.value(),"idem-1",new ConnectorSyncController.ExecuteRequest(" inbound ",Set.of("name"),false,2,"approved"),request); assertEquals("RUNNING",execute.getBody().status());
+        when(operations.execute(eq(KEY.value()),any(),eq("idem-default"),eq("approved"),eq(ACTOR),eq(CORRELATION))).thenReturn(run(ConnectorSyncRunStatus.RUNNING));
+        assertEquals("RUNNING",controller.execute(KEY.value(),"idem-default",new ConnectorSyncController.ExecuteRequest("INBOUND",null,false,null,"approved"),request).getBody().status());
         when(operations.resume(eq(RUN),eq("resume"),eq(ACTOR),eq(CORRELATION))).thenReturn(run(ConnectorSyncRunStatus.RUNNING));
         assertEquals("RUNNING",controller.resume(RUN.toString(),"idem-r",new ConnectorSyncController.ReasonRequest("resume"),request).getBody().status());
+        when(operations.resume(eq(RUN),isNull(),eq(ACTOR),eq(CORRELATION))).thenReturn(run(ConnectorSyncRunStatus.RUNNING));
+        assertEquals("RUNNING",controller.resume(RUN.toString(),"idem-r-null",null,request).getBody().status());
         when(operations.compensate(eq(RUN),eq("rollback"),eq(ACTOR),eq(CORRELATION))).thenReturn(run(ConnectorSyncRunStatus.COMPENSATED));
         assertEquals("COMPENSATED",controller.compensate(RUN.toString(),"idem-c",new ConnectorSyncController.ReasonRequest("rollback"),request).getBody().status());
+        when(operations.compensate(eq(RUN),isNull(),eq(ACTOR),eq(CORRELATION))).thenReturn(run(ConnectorSyncRunStatus.COMPENSATED));
+        assertEquals("COMPENSATED",controller.compensate(RUN.toString(),"idem-c-null",null,request).getBody().status());
         assertThrows(IllegalArgumentException.class,()->controller.execute(KEY.value(),"x",null,request));
+        assertThrows(IllegalArgumentException.class,()->controller.execute(KEY.value(),"x",new ConnectorSyncController.ExecuteRequest(null,Set.of(),false,1,"reason"),request));
         assertThrows(IllegalArgumentException.class,()->controller.execute(KEY.value(),"x",new ConnectorSyncController.ExecuteRequest("bogus",Set.of(),false,1,"ok reason"),request));
         assertThrows(IllegalArgumentException.class,()->controller.runs(null,0,201));
         assertThrows(IllegalArgumentException.class,()->controller.checkpoints(KEY.value(),0,0));

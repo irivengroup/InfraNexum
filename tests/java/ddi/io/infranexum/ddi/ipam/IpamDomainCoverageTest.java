@@ -232,6 +232,96 @@ final class IpamDomainCoverageTest {
         assertTrue(ipv6.lastSortKey() != null);
     }
 
+
+    @Test
+    void generatedRecordAndAccessorSurfaceIsFullyExercised() {
+        DomainIdentifier org = id();
+        DomainIdentifier vrfId = id();
+        DomainIdentifier site = id();
+        DomainIdentifier vlanId = id();
+        DomainIdentifier networkId = id();
+        DomainIdentifier poolId = id();
+        DomainIdentifier actor = id();
+        DomainIdentifier correlation = id();
+        DomainIdentifier rsot = id();
+        DomainIdentifier equipment = id();
+
+        IpCidr cidr = new IpCidr("198.51.100.42/24");
+        assertEquals(cidr.first(), new java.math.BigInteger("3325256704"));
+        assertEquals(cidr.last(), new java.math.BigInteger("3325256959"));
+
+        var vrfCommand = new io.infranexum.ddi.ipam.application.CreateVrfCommand(org, "EDGE", "Edge", "65000:8");
+        assertEquals(org, vrfCommand.organizationId());
+        assertEquals("EDGE", vrfCommand.code());
+        assertEquals("Edge", vrfCommand.displayName());
+        assertEquals("65000:8", vrfCommand.routeDistinguisher());
+        assertEquals(vrfCommand, new io.infranexum.ddi.ipam.application.CreateVrfCommand(org, "EDGE", "Edge", "65000:8"));
+        assertEquals(vrfCommand.hashCode(), new io.infranexum.ddi.ipam.application.CreateVrfCommand(org, "EDGE", "Edge", "65000:8").hashCode());
+        assertTrue(vrfCommand.toString().contains("EDGE"));
+
+        var vlanCommand = new io.infranexum.ddi.ipam.application.CreateVlanCommand(org, site, 8, 8008L, "edge");
+        assertEquals(org, vlanCommand.organizationId()); assertEquals(site, vlanCommand.siteId());
+        assertEquals(8, vlanCommand.vlanId()); assertEquals(8008L, vlanCommand.vni()); assertEquals("edge", vlanCommand.name());
+        assertEquals(vlanCommand, new io.infranexum.ddi.ipam.application.CreateVlanCommand(org, site, 8, 8008L, "edge"));
+        assertTrue(vlanCommand.hashCode() != 0); assertTrue(vlanCommand.toString().contains("edge"));
+
+        var networkCommand = new io.infranexum.ddi.ipam.application.CreateNetworkCommand(org, id(), site, vrfId, vlanId, null,
+                NetworkKind.SUBNET, "198.51.100.0/24", "edge", "trusted");
+        assertEquals(org, networkCommand.organizationId()); assertEquals(site, networkCommand.siteId()); assertEquals(vrfId, networkCommand.vrfId());
+        assertEquals(vlanId, networkCommand.vlanId()); assertNull(networkCommand.parentNetworkId()); assertEquals(NetworkKind.SUBNET, networkCommand.kind());
+        assertEquals("198.51.100.0/24", networkCommand.cidr()); assertEquals("edge", networkCommand.usage()); assertEquals("trusted", networkCommand.trustLevel());
+        assertTrue(networkCommand.toString().contains("SUBNET")); assertTrue(networkCommand.hashCode() != 0);
+
+        var poolCommand = new io.infranexum.ddi.ipam.application.CreatePoolCommand(org, networkId, "198.51.100.10", "198.51.100.20", "edge-pool");
+        assertEquals(org, poolCommand.organizationId()); assertEquals(networkId, poolCommand.networkId()); assertEquals("198.51.100.10", poolCommand.startAddress());
+        assertEquals("198.51.100.20", poolCommand.endAddress()); assertEquals("edge-pool", poolCommand.name()); assertTrue(poolCommand.toString().contains("edge-pool"));
+
+        var allocate = new io.infranexum.ddi.ipam.application.AllocateAddressCommand(org, vrfId, networkId, poolId, "198.51.100.10", true,
+                "host.example", rsot, equipment, "reservation");
+        assertEquals(org, allocate.organizationId()); assertEquals(vrfId, allocate.vrfId()); assertEquals(networkId, allocate.networkId()); assertEquals(poolId, allocate.poolId());
+        assertEquals("198.51.100.10", allocate.requestedAddress()); assertTrue(allocate.reservation()); assertEquals("host.example", allocate.hostname());
+        assertEquals(rsot, allocate.rsotObjectId()); assertEquals(equipment, allocate.dcimEquipmentId()); assertEquals("reservation", allocate.purpose());
+        assertTrue(allocate.toString().contains("reservation")); assertTrue(allocate.hashCode() != 0);
+
+        var update = new io.infranexum.ddi.ipam.application.UpdateNetworkCommand(vlanId, "new-usage", "restricted");
+        assertEquals(vlanId, update.vlanId()); assertEquals("new-usage", update.usage()); assertEquals("restricted", update.trustLevel());
+        assertEquals(update, new io.infranexum.ddi.ipam.application.UpdateNetworkCommand(vlanId, "new-usage", "restricted"));
+        assertTrue(update.hashCode() != 0); assertTrue(update.toString().contains("new-usage"));
+
+        IpamVrf vrf = IpamVrf.draft(vrfId, org, "EDGE", "Edge", null, NOW);
+        assertEquals(vrfId, vrf.id()); assertEquals(org, vrf.organizationId()); assertEquals(NOW, vrf.createdAt()); assertEquals(NOW, vrf.updatedAt());
+        assertEquals(vrf, IpamVrf.draft(vrfId, org, "EDGE", "Edge", null, NOW)); assertTrue(vrf.hashCode() != 0); assertTrue(vrf.toString().contains("EDGE"));
+
+        IpamVlan vlan = IpamVlan.draft(vlanId, org, site, 8, 8008L, "edge", NOW);
+        assertEquals(vlanId, vlan.id()); assertEquals(org, vlan.organizationId()); assertEquals(site, vlan.siteId()); assertEquals(NOW, vlan.createdAt()); assertEquals(NOW, vlan.updatedAt());
+        assertEquals(vlan, IpamVlan.draft(vlanId, org, site, 8, 8008L, "edge", NOW)); assertTrue(vlan.hashCode() != 0); assertTrue(vlan.toString().contains("edge"));
+
+        IpamNetwork network = IpamNetwork.draft(networkId, org, null, site, vrfId, vlanId, null, NetworkKind.SUBNET, cidr, "edge", "trusted", NOW);
+        assertEquals(networkId, network.id()); assertEquals(org, network.organizationId()); assertNull(network.subdivisionId()); assertEquals(site, network.siteId());
+        assertEquals(vrfId, network.vrfId()); assertEquals(vlanId, network.vlanId()); assertNull(network.parentNetworkId()); assertEquals(NetworkKind.SUBNET, network.kind());
+        assertEquals(cidr, network.cidr()); assertEquals(IpamStatus.DRAFT, network.status()); assertEquals(NOW, network.createdAt()); assertEquals(NOW, network.updatedAt());
+        assertEquals(network, IpamNetwork.draft(networkId, org, null, site, vrfId, vlanId, null, NetworkKind.SUBNET, cidr, "edge", "trusted", NOW));
+        assertTrue(network.hashCode() != 0); assertTrue(network.toString().contains("198.51.100.0/24"));
+
+        IpamPool pool = IpamPool.active(poolId, org, networkId, "198.51.100.10", "198.51.100.20", "edge-pool", NOW);
+        assertEquals(poolId, pool.id()); assertEquals(org, pool.organizationId()); assertEquals(networkId, pool.networkId()); assertEquals(IpamStatus.ACTIVE, pool.status());
+        assertEquals(NOW, pool.createdAt()); assertEquals(NOW, pool.updatedAt()); assertEquals(pool, IpamPool.active(poolId, org, networkId, "198.51.100.10", "198.51.100.20", "edge-pool", NOW));
+        assertTrue(pool.hashCode() != 0); assertTrue(pool.toString().contains("edge-pool"));
+
+        IpamAddress address = IpamAddress.assigned(id(), org, vrfId, networkId, poolId, "198.51.100.10", true, "host.example", rsot, equipment, "reservation", NOW);
+        assertEquals(org, address.organizationId()); assertEquals(vrfId, address.vrfId()); assertEquals(networkId, address.networkId()); assertEquals(poolId, address.poolId());
+        assertEquals(rsot, address.rsotObjectId()); assertEquals(equipment, address.dcimEquipmentId()); assertEquals(NOW, address.createdAt()); assertEquals(NOW, address.updatedAt());
+        assertTrue(address.hashCode() != 0); assertTrue(address.toString().contains("198.51.100.10"));
+
+        IpamCommandContext context = new IpamCommandContext(actor, correlation, "coverage", "ddi-accessors-0001");
+        assertEquals(actor, context.actorId()); assertEquals(correlation, context.correlationId()); assertTrue(context.toString().contains("coverage")); assertTrue(context.hashCode() != 0);
+
+        var ledger = new io.infranexum.ddi.ipam.ports.IpamIdempotencyRepository.Record("ddi-accessors-0002", "b".repeat(64), "address.allocate", address.id(), NOW);
+        assertEquals("b".repeat(64), ledger.payloadSha256()); assertEquals("address.allocate", ledger.operation());
+        assertEquals(ledger, new io.infranexum.ddi.ipam.ports.IpamIdempotencyRepository.Record("ddi-accessors-0002", "b".repeat(64), "address.allocate", address.id(), NOW));
+        assertTrue(ledger.hashCode() != 0); assertTrue(ledger.toString().contains("address.allocate"));
+    }
+
     private static DomainIdentifier id() {
         return new UuidV7Generator(CLOCK, new SecureRandom(new byte[] {1, 2, 3, 4})).next();
     }

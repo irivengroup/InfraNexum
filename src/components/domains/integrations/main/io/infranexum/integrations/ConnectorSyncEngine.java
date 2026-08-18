@@ -120,7 +120,7 @@ public final class ConnectorSyncEngine {
             ConnectorSyncRepository.CompensationStart start, ConnectorSyncHandler handler, String failureCode) {
         ConnectorSyncRun run = start.run();
         if (!automaticCompensation(run.rollbackStrategy())) {
-            return repository.fail(run.runId(), "MANUAL_COMPENSATION_REQUIRED", clock.instant());
+            return repository.compensationFailed(run.runId(), "MANUAL_COMPENSATION_REQUIRED", clock.instant());
         }
         ConnectorSyncCompensationResult result = Objects.requireNonNull(
                 handler.compensate(new ConnectorSyncCompensationContext(run, start.initialCursor(), start.currentCursor(), failureCode)),

@@ -30,6 +30,7 @@ final class ConnectorSyncEngineTest {
         assertThrows(IllegalArgumentException.class,()->ConnectorSyncBatchResult.failed("bad code",false,false));
         assertThrows(IllegalArgumentException.class,()->new ConnectorSyncCompensationResult(true,"ERR"));
         assertThrows(IllegalArgumentException.class,()->new ConnectorSyncCompensationResult(false,null));
+        assertThrows(IllegalArgumentException.class,()->new ConnectorGovernancePolicy(KEY,"sync-test",ConnectorSyncDirection.INBOUND,ConnectorDataAuthority.EXTERNAL,ConnectorConflictStrategy.REJECT,ConnectorDeletionPolicy.IGNORE,ConnectorRollbackStrategy.REMOTE_COMPENSATION,List.of(new ConnectorFieldAuthority("name",ConnectorDataAuthority.EXTERNAL))));
         assertThrows(IllegalArgumentException.class,()->new ConnectorSyncCheckpoint(ACTOR,KEY,CORR,0,ConnectorSyncCheckpointKind.PROGRESS,null,"a".repeat(64),0,0,0,NOW));
         assertThrows(IllegalArgumentException.class,()->ConnectorSyncCheckpoint.normalizeCursor("x\n"));
         assertThrows(IllegalArgumentException.class,()->ConnectorSyncCheckpoint.normalizeCursor("x".repeat(2049)));
@@ -70,7 +71,7 @@ final class ConnectorSyncEngineTest {
     @Test void automaticallyCompensatesPartialMutationAndSurfacesCompensationFailure(){
         InMemoryConnectorSyncRepository okRepo=new InMemoryConnectorSyncRepository();ConnectorSyncEngine ok=engine(policy(ConnectorRollbackStrategy.DUAL_COMPENSATION),handler(c->ConnectorSyncBatchResult.failed("PARTIAL_WRITE",false,true),c->ConnectorSyncCompensationResult.succeeded()),okRepo);
         ConnectorSyncRun compensated=ok.execute(KEY,request(2),"sync-comp-0001",ACTOR,CORR);assertEquals(ConnectorSyncRunStatus.COMPENSATED,compensated.status());assertEquals(1,compensated.compensationCheckpointRevision());
-        InMemoryConnectorSyncRepository badRepo=new InMemoryConnectorSyncRepository();ConnectorSyncEngine bad=engine(policy(ConnectorRollbackStrategy.REMOTE_COMPENSATION),handler(c->ConnectorSyncBatchResult.failed("PARTIAL_WRITE",false,true),c->ConnectorSyncCompensationResult.failed("ROLLBACK_503")),badRepo);
+        InMemoryConnectorSyncRepository badRepo=new InMemoryConnectorSyncRepository();ConnectorSyncEngine bad=engine(policy(ConnectorRollbackStrategy.DUAL_COMPENSATION),handler(c->ConnectorSyncBatchResult.failed("PARTIAL_WRITE",false,true),c->ConnectorSyncCompensationResult.failed("ROLLBACK_503")),badRepo);
         ConnectorSyncRun failure=bad.execute(KEY,request(2),"sync-comp-0002",ACTOR,CORR);assertEquals(ConnectorSyncRunStatus.COMPENSATION_FAILED,failure.status());assertEquals("ROLLBACK_503",failure.failureCode());
         InMemoryConnectorSyncRepository manualRepo=new InMemoryConnectorSyncRepository();ConnectorSyncEngine manual=engine(policy(ConnectorRollbackStrategy.MANUAL),handler(c->ConnectorSyncBatchResult.failed("PARTIAL_WRITE",false,true),c->ConnectorSyncCompensationResult.succeeded()),manualRepo);
         assertEquals("MANUAL_COMPENSATION_REQUIRED",manual.execute(KEY,request(2),"sync-comp-0003",ACTOR,CORR).failureCode());
@@ -81,6 +82,76 @@ final class ConnectorSyncEngineTest {
         ConnectorSyncRun run=engine.execute(KEY,request(2),"sync-explicit-1",ACTOR,CORR);ConnectorSyncRun compensated=engine.compensate(run.runId());assertEquals(ConnectorSyncRunStatus.COMPENSATED,compensated.status());assertEquals(2,compensated.lastCheckpointRevision());assertNull(repo.cursor(KEY));assertEquals(ConnectorSyncCheckpointKind.COMPENSATION,repo.listCheckpoints(KEY,0,10).getFirst().kind());
         assertThrows(ConnectorSyncStateConflictException.class,()->engine.compensate(run.runId()));
         InMemoryConnectorSyncRepository newer=new InMemoryConnectorSyncRepository();ConnectorSyncEngine engine2=engine(policy(ConnectorRollbackStrategy.LOCAL_CHECKPOINT),handler,newer);ConnectorSyncRun old=engine2.execute(KEY,request(2),"sync-explicit-2",ACTOR,CORR);newer.advanceExternally(KEY);assertThrows(ConnectorSyncStateConflictException.class,()->engine2.compensate(old.runId()));
+    }
+
+    @Test void deniedPlansNullHandlerResultsAndManualCompensationStayFailClosed(){
+        ConnectorGovernancePolicy inbound=policy(ConnectorRollbackStrategy.LOCAL_CHECKPOINT);
+        AtomicInteger calls=new AtomicInteger();
+        ConnectorSyncHandler counting=handler(c->{calls.incrementAndGet();return ConnectorSyncBatchResult.applied(null,0,0,0,true);},c->ConnectorSyncCompensationResult.succeeded());
+        ConnectorSyncEngine denied=engine(inbound,counting,new InMemoryConnectorSyncRepository());
+        assertThrows(ConnectorSyncPolicyDeniedException.class,()->denied.execute(KEY,new ConnectorSyncExecutionRequest(ConnectorSyncDirection.OUTBOUND,Set.of("name"),false,1),"sync-deny-plan-1",ACTOR,CORR));
+        assertEquals(0,calls.get());
+
+        InMemoryConnectorSyncRepository nullBatchRepo=new InMemoryConnectorSyncRepository();
+        ConnectorSyncEngine nullBatch=engine(inbound,handler(c->null,c->ConnectorSyncCompensationResult.succeeded()),nullBatchRepo);
+        assertThrows(NullPointerException.class,()->nullBatch.execute(KEY,request(1),"sync-null-batch-1",ACTOR,CORR));
+
+        InMemoryConnectorSyncRepository nullCompRepo=new InMemoryConnectorSyncRepository();
+        ConnectorSyncEngine nullComp=engine(policy(ConnectorRollbackStrategy.DUAL_COMPENSATION),handler(c->ConnectorSyncBatchResult.failed("PARTIAL_WRITE",false,true),c->null),nullCompRepo);
+        assertThrows(NullPointerException.class,()->nullComp.execute(KEY,request(1),"sync-null-comp-1",ACTOR,CORR));
+
+        InMemoryConnectorSyncRepository manualRepo=new InMemoryConnectorSyncRepository();
+        ConnectorSyncHandler noCursor=handler(c->ConnectorSyncBatchResult.applied(null,1,1,0,true),c->{throw new AssertionError("manual rollback must not invoke handler compensation");});
+        ConnectorSyncEngine manual=engine(policy(ConnectorRollbackStrategy.MANUAL),noCursor,manualRepo);
+        ConnectorSyncRun succeeded=manual.execute(KEY,request(1),"sync-manual-explicit-1",ACTOR,CORR);
+        ConnectorSyncRun recovery=manual.compensate(succeeded.runId());
+        assertEquals(ConnectorSyncRunStatus.COMPENSATION_FAILED,recovery.status());
+        assertEquals("MANUAL_COMPENSATION_REQUIRED",recovery.failureCode());
+        assertNull(manualRepo.cursor(KEY));
+    }
+
+    @Test void saturatesRemainingSyncValueObjectBoundaries(){
+        ConnectorSyncBatchContext context=new ConnectorSyncBatchContext(ACTOR,KEY,ConnectorSyncDirection.INBOUND,"cursor",0,100);
+        assertEquals(100,context.batchNumber());
+        assertThrows(IllegalArgumentException.class,()->new ConnectorSyncBatchContext(ACTOR,KEY,ConnectorSyncDirection.INBOUND,null,0,101));
+        assertThrows(NullPointerException.class,()->new ConnectorSyncBatchContext(null,KEY,ConnectorSyncDirection.INBOUND,null,0,1));
+        assertThrows(NullPointerException.class,()->new ConnectorSyncBatchContext(ACTOR,null,ConnectorSyncDirection.INBOUND,null,0,1));
+        assertThrows(NullPointerException.class,()->new ConnectorSyncBatchContext(ACTOR,KEY,null,null,0,1));
+
+        assertEquals(ConnectorSyncBatchResult.Outcome.NOOP,new ConnectorSyncBatchResult(ConnectorSyncBatchResult.Outcome.NOOP,null,0,0,0,true,false,false,null).outcome());
+        assertThrows(IllegalArgumentException.class,()->new ConnectorSyncBatchResult(ConnectorSyncBatchResult.Outcome.APPLIED,null,-1,0,0,false,false,false,null));
+        assertThrows(IllegalArgumentException.class,()->new ConnectorSyncBatchResult(ConnectorSyncBatchResult.Outcome.APPLIED,null,1,-1,0,false,false,false,null));
+        assertThrows(IllegalArgumentException.class,()->new ConnectorSyncBatchResult(ConnectorSyncBatchResult.Outcome.APPLIED,null,1,0,-1,false,false,false,null));
+        assertThrows(IllegalArgumentException.class,()->new ConnectorSyncBatchResult(ConnectorSyncBatchResult.Outcome.APPLIED,null,1,1,1,false,false,false,null));
+        assertThrows(IllegalArgumentException.class,()->new ConnectorSyncBatchResult(ConnectorSyncBatchResult.Outcome.FAILED,null,0,0,0,false,false,false,null));
+        assertThrows(IllegalArgumentException.class,()->new ConnectorSyncBatchResult(ConnectorSyncBatchResult.Outcome.APPLIED,null,0,0,0,false,false,true,null));
+
+        assertEquals("cursor",new ConnectorSyncCheckpoint(ACTOR,KEY,CORR,1,ConnectorSyncCheckpointKind.PROGRESS,"cursor","a".repeat(64),1,1,0,NOW).cursor());
+        assertThrows(IllegalArgumentException.class,()->new ConnectorSyncCheckpoint(ACTOR,KEY,CORR,1,ConnectorSyncCheckpointKind.PROGRESS,null,"bad",0,0,0,NOW));
+        assertThrows(IllegalArgumentException.class,()->new ConnectorSyncCheckpoint(ACTOR,KEY,CORR,1,ConnectorSyncCheckpointKind.PROGRESS,null,"a".repeat(64),1,1,1,NOW));
+        assertThrows(NullPointerException.class,()->new ConnectorSyncCheckpoint(ACTOR,KEY,CORR,1,ConnectorSyncCheckpointKind.PROGRESS,null,"a".repeat(64),0,0,0,null));
+        assertThrows(IllegalArgumentException.class,()->ConnectorSyncCheckpoint.normalizeCursor("x\u007f"));
+
+        ConnectorSyncRun valid=run(ConnectorSyncRunStatus.SUCCEEDED,0,1,null,null);
+        ConnectorSyncCompensationContext compensation=new ConnectorSyncCompensationContext(valid,null,"cursor",null);
+        assertEquals("cursor",compensation.currentCursor());
+        assertThrows(IllegalArgumentException.class,()->new ConnectorSyncCompensationContext(valid,null,"cursor","bad code"));
+        assertThrows(NullPointerException.class,()->new ConnectorSyncCompensationContext(null,null,null,null));
+        assertTrue(ConnectorSyncCompensationResult.succeeded().success());
+        assertEquals("ROLLBACK_500",ConnectorSyncCompensationResult.failed("ROLLBACK_500").failureCode());
+        assertThrows(IllegalArgumentException.class,()->new ConnectorSyncCompensationResult(false,"bad code"));
+
+        assertEquals(100,new ConnectorSyncExecutionRequest(ConnectorSyncDirection.INBOUND,Set.of("name"),false,100).maxBatches());
+        assertThrows(IllegalArgumentException.class,()->new ConnectorSyncExecutionRequest(ConnectorSyncDirection.INBOUND,Set.of("name"),false,101));
+        assertThrows(NullPointerException.class,()->new ConnectorSyncExecutionRequest(null,Set.of(),false,1));
+        assertThrows(IllegalArgumentException.class,()->new ConnectorSyncRun(ACTOR,KEY,"Bad",ConnectorSyncDirection.INBOUND,ConnectorRollbackStrategy.LOCAL_CHECKPOINT,ConnectorSyncRunStatus.RUNNING,"sync-test-0001","a".repeat(64),Set.of(),false,1,0,0,null,ACTOR,CORR,NOW,NOW,null,null));
+        assertThrows(IllegalArgumentException.class,()->new ConnectorSyncRun(ACTOR,KEY,"lab",ConnectorSyncDirection.INBOUND,ConnectorRollbackStrategy.LOCAL_CHECKPOINT,ConnectorSyncRunStatus.RUNNING,"short","a".repeat(64),Set.of(),false,1,0,0,null,ACTOR,CORR,NOW,NOW,null,null));
+        assertThrows(IllegalArgumentException.class,()->new ConnectorSyncRun(ACTOR,KEY,"lab",ConnectorSyncDirection.INBOUND,ConnectorRollbackStrategy.LOCAL_CHECKPOINT,ConnectorSyncRunStatus.RUNNING,"sync-test-0001","b",Set.of(),false,1,0,0,null,ACTOR,CORR,NOW,NOW,null,null));
+        assertThrows(IllegalArgumentException.class,()->new ConnectorSyncRun(ACTOR,KEY,"lab",ConnectorSyncDirection.INBOUND,ConnectorRollbackStrategy.LOCAL_CHECKPOINT,ConnectorSyncRunStatus.RUNNING,"sync-test-0001","a".repeat(64),Set.of(),false,0,0,0,null,ACTOR,CORR,NOW,NOW,null,null));
+        assertThrows(IllegalArgumentException.class,()->new ConnectorSyncRun(ACTOR,KEY,"lab",ConnectorSyncDirection.INBOUND,ConnectorRollbackStrategy.LOCAL_CHECKPOINT,ConnectorSyncRunStatus.RUNNING,"sync-test-0001","a".repeat(64),Set.of(),false,1,2,1,null,ACTOR,CORR,NOW,NOW,null,null));
+        assertThrows(IllegalArgumentException.class,()->new ConnectorSyncRun(ACTOR,KEY,"lab",ConnectorSyncDirection.INBOUND,ConnectorRollbackStrategy.LOCAL_CHECKPOINT,ConnectorSyncRunStatus.FAILED,"sync-test-0001","a".repeat(64),Set.of(),false,1,0,1,"bad code",ACTOR,CORR,NOW,NOW,NOW,null));
+        assertThrows(IllegalArgumentException.class,()->new ConnectorSyncRun(ACTOR,KEY,"lab",ConnectorSyncDirection.INBOUND,ConnectorRollbackStrategy.LOCAL_CHECKPOINT,ConnectorSyncRunStatus.SUCCEEDED,"sync-test-0001","a".repeat(64),Set.of(),false,1,0,1,null,ACTOR,CORR,NOW,NOW,NOW.minusSeconds(1),null));
+        assertThrows(IllegalArgumentException.class,()->new ConnectorSyncRun(ACTOR,KEY,"lab",ConnectorSyncDirection.INBOUND,ConnectorRollbackStrategy.LOCAL_CHECKPOINT,ConnectorSyncRunStatus.COMPENSATED,"sync-test-0001","a".repeat(64),Set.of(),false,1,0,2,null,ACTOR,CORR,NOW,NOW,NOW,1L));
     }
 
     @Test void governanceAndHandlerRegistrationStayFailClosed(){

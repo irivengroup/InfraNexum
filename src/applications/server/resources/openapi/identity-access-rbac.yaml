@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum Identity Access RBAC API
-  version: 2.0.0-alpha.0.117
+  version: 2.0.0-alpha.0.118
   description: PGM-03-E03 RBAC foundation for users, memberships, groups, roles, permissions, temporal scoped assignments and explainable
     permission evaluation. Local authentication establishes the actor; the Server RBAC PEP denies unregistered protected routes by default.
 tags:

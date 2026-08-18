@@ -1,3 +1,15 @@
+# InfraNexum 2.0.0-alpha.0.118 — hosted JDK25 verification corrective
+
+**InfraNexum — Infrastructure Control & Governance Platform**
+
+`alpha.0.118` is a corrective over `alpha.0.117`; it does **not** advance PGM-10-E06. The hosted JDK25 run confirms that `alpha.0.117` repaired the Server generic-inference compilation defect, then exposes four independent quality-gate issues: DDI remains below the 98% JaCoCo line threshold, one Connector Sync test creates a governance policy that the production model correctly rejects, the independent JDBC adapter remains below its 98% line/branch thresholds, and the Server sync test incorrectly uses `SimpleMeterRegistry` in try-with-resources.
+
+This corrective keeps every quality threshold unchanged. DDI coverage now explicitly exercises the remaining generated/accessor surface; Connector Sync tests use valid rollback semantics and exercise denial/null/manual-compensation paths; JDBC sync repository tests cover PostgreSQL/Oracle admission, fencing, checkpoint/compensation races, nullable representations and transaction failure/restoration paths while unreachable internal branches are removed; the Server test closes the registry explicitly in `finally`. During this work a real lifecycle defect was found and fixed: explicit MANUAL compensation already in `COMPENSATING` now terminates through `compensationFailed(...)` with `MANUAL_COMPENSATION_REQUIRED`, instead of incorrectly calling the RUNNING-only `fail(...)` transition.
+
+The public contract remains **15 OpenAPI fragments / 200 operations**, migrations remain through `0039`, and Jira Assets/ServiceNow remain `FEDERATED_READ`. Exact JDK25/JUnit/JaCoCo proof for this corrected snapshot remains a hosted gate until CI is rerun; local Java 21 compilation/smokes are auxiliary preflight only.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.117 — JDK25 Server compilation corrective
 
 `alpha.0.117` is a corrective over `alpha.0.116`; it does **not** advance PGM-10-E06. The Docker/JDK25 build exposed a Java generic-inference defect in `ImmutableConnectorSyncHandlerRegistry`: `Objects.requireNonNullElse(handlers, List.of())` is inferred as an object-typed empty list in the enhanced `for` expression, so `javac` rejects the element as `ConnectorSyncHandler`.

@@ -55,7 +55,7 @@ public final class JdbcConnectorSyncRepository implements ConnectorSyncRepositor
         return tx("begin connector synchronization", connection -> {
             ensureState(connection, connectorKey, startedAt);
             State state = lockState(connection, connectorKey);
-            Optional<ConnectorSyncRun> duplicate = findByIdempotency(connection, connectorKey, idempotencyKey, true);
+            Optional<ConnectorSyncRun> duplicate = findByIdempotency(connection, connectorKey, idempotencyKey);
             if (duplicate.isPresent()) {
                 ConnectorSyncRun existing = duplicate.get();
                 if (!existing.requestSha256().equals(requestSha256)) {
@@ -307,9 +307,8 @@ public final class JdbcConnectorSyncRepository implements ConnectorSyncRepositor
         }
     }
 
-    private Optional<ConnectorSyncRun> findByIdempotency(Connection c, ConnectorKey key, String idem, boolean lock) throws SQLException {
-        String suffix = lock ? " FOR UPDATE" : "";
-        try (PreparedStatement st = c.prepareStatement("SELECT * FROM " + runTable() + " WHERE connector_key=? AND idempotency_key=?" + suffix)) {
+    private Optional<ConnectorSyncRun> findByIdempotency(Connection c, ConnectorKey key, String idem) throws SQLException {
+        try (PreparedStatement st = c.prepareStatement("SELECT * FROM " + runTable() + " WHERE connector_key=? AND idempotency_key=? FOR UPDATE")) {
             st.setString(1,key.value()); st.setString(2,idem); try(ResultSet rs=st.executeQuery()){return rs.next()?Optional.of(readRun(rs)):Optional.empty();}
         }
     }
