@@ -306,6 +306,14 @@ class ToolchainCheckerTest(unittest.TestCase):
         )
         self.assertIn("CHECK-TOOLCHAIN-042", self.ids())
 
+        shutil.copy2(SOURCE / ".github/workflows/foundation.yml", workflow_path)
+        workflow = workflow_path.read_text(encoding="utf-8")
+        workflow_path.write_text(
+            workflow.replace(",PostgreSqlJdbcConnectorSyncRepositoryTest", "", 1),
+            encoding="utf-8",
+        )
+        self.assertIn("CHECK-TOOLCHAIN-042", self.ids())
+
     def test_root_compose_tooling_is_complete_but_not_a_product_ci_dependency(self) -> None:
         workflow_path = self.root / ".github/workflows/foundation.yml"
         workflow = workflow_path.read_text(encoding="utf-8")

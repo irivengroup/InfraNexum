@@ -1,3 +1,31 @@
+# InfraNexum 2.0.0-alpha.0.121 — deterministic DataTable geometry corrective
+
+**InfraNexum — Infrastructure Control & Governance Platform**
+
+`alpha.0.121` is a Web/UX regression corrective over the in-progress `alpha.0.120` qualification baseline. It preserves the PostgreSQL/JDK25 connector-sync gate hardening from `alpha.0.120` and the isolated ReDoc integration from `alpha.0.119`; it does not advance PGM-10-E06 and does not modify any public API, migration, RBAC permission, capability, connector authority policy or provider mutation path.
+
+The previous DataTable overflow corrective made every cell shrinkable while retaining automatic table layout, and assigned `1%` width to compact/action columns. On multi-column workspaces this let intrinsic sizing repeatedly compress headers and controls, producing visually fragmented tables. The shared enterprise DataTable layer now uses deterministic fixed-layout geometry with normalized semantic column weights (`compact`, `content`, `flex`, `actions`). The complete table remains exactly within the available workspace width, outer clipping stays neutralized, and no DataTable owns a horizontal or vertical scroll region.
+
+Headers wrap only at normal word boundaries, long body values may break only when required to preserve the table boundary, dense tables receive controlled padding/typography, and action buttons remain intact units while the action group may wrap between buttons. Empty-state handling and DCIM Location contextual signposting delivered in `alpha.0.119` are preserved.
+
+**Roadmap status remains unchanged:** PGM-10-E05 is formally **NON TERMINÉ** until the exact JDK25/Maven/JUnit/JaCoCo and PostgreSQL 17/18 executions succeed on this source snapshot. PGM-10-E06 remains **EN COURS** with the durable checkpoints/synchronization/compensation runtime from `alpha.0.116` preserved; Jira Assets and ServiceNow remain federated read-only and no mutating provider is activated.
+
+---
+
+# InfraNexum 2.0.0-alpha.0.120 — PostgreSQL connector-sync qualification gate hardening
+
+**InfraNexum — Infrastructure Control & Governance Platform**
+
+`alpha.0.120` is a qualification corrective over `alpha.0.119`; it does **not** advance PGM-10-E06 and does not modify any public API, migration, RBAC permission, capability, connector authority policy or provider mutation path.
+
+The PostgreSQL 17/18 integration matrix now exercises the durable `JdbcConnectorSyncRepository` introduced by `alpha.0.116` instead of relying only on deterministic JDBC simulations. The live contract verifies idempotent run admission, pause/resume continuity, monotonic checkpoint revisions, rejection of stale checkpoints, append-only compensation and a concurrent two-run race in which exactly one transaction can own the connector state fence.
+
+The toolchain checker now treats the live entitlement, connector inbox and connector-sync persistence tests as mandatory contents of the PostgreSQL integration job. Removing any of these tests from the matrix fails `CHECK-TOOLCHAIN-042`, preventing future CI refactors from silently weakening the database qualification boundary.
+
+**Roadmap status remains unchanged:** PGM-10-E05 is formally **NON TERMINÉ** until the exact JDK25/Maven/JUnit/JaCoCo and PostgreSQL 17/18 executions succeed on this source snapshot. PGM-10-E06 remains **EN COURS** with the durable checkpoints/synchronization/compensation runtime from `alpha.0.116` preserved; Jira Assets and ServiceNow remain federated read-only and no mutating provider is activated.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.119 — DataTable and DCIM context Web/UX corrective
 
 **InfraNexum — Infrastructure Control & Governance Platform**

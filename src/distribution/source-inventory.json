@@ -1367,6 +1367,7 @@
     "tests/java/jdbc/io/infranexum/adapters/persistence/jdbc/JdbcTransactionalEventStoreTest.java",
     "tests/java/jdbc/io/infranexum/adapters/persistence/jdbc/PostgreSqlJdbcAuditJournalTest.java",
     "tests/java/jdbc/io/infranexum/adapters/persistence/jdbc/PostgreSqlJdbcConnectorInboxRepositoryTest.java",
+    "tests/java/jdbc/io/infranexum/adapters/persistence/jdbc/PostgreSqlJdbcConnectorSyncRepositoryTest.java",
     "tests/java/jdbc/io/infranexum/adapters/persistence/jdbc/PostgreSqlJdbcEntitlementPersistenceTest.java",
     "tests/java/jdbc/io/infranexum/adapters/persistence/jdbc/PostgreSqlJdbcTaskStoreTest.java",
     "tests/java/jdbc/io/infranexum/adapters/persistence/jdbc/PostgreSqlJdbcTransactionalEventStoreTest.java",

@@ -1,3 +1,46 @@
+# InfraNexum 2.0.0-alpha.0.121 — deterministic DataTable geometry corrective
+
+## Scope
+
+- Corrects the transverse table-layout regression introduced while removing nested DataTable scrolling.
+- Replaces automatic intrinsic sizing plus `1%` compact/action columns with fixed-layout, normalized semantic column weights.
+- Keeps every enhanced table at exactly `100%` of its available workspace with no nested horizontal or vertical scroll region.
+- Preserves readable headers, controlled long-value wrapping, dense-table spacing, intact action-button labels, localized empty states and DCIM Location context.
+- Preserves the `alpha.0.119` isolated ReDoc/CSP design and the `alpha.0.120` PostgreSQL/JDK25 connector-sync qualification hardening.
+- Adds no API operation, migration, permission, capability, provider authority mapping or provider mutation.
+
+## Roadmap status
+
+PGM-10-E05 remains **NON TERMINÉ** pending exact JDK25/JaCoCo/PostgreSQL 17/18 evidence on this snapshot. PGM-10-E06 remains **EN COURS**; no mutating provider is activated.
+
+## Validation evidence
+
+- **EXÉCUTÉ — Web:** 223/223 tests; 99.73% lines, 98.56% branches, 100% functions; process smoke passed.
+- **EXÉCUTÉ — browser geometry:** Chromium headless at 1440/1024/800 px; table width equals container width, right-edge delta 0 px, horizontal overflow 0 px, wrapper vertical overflow visible, localized empty row present.
+- **EXÉCUTÉ — API contracts:** 48/48 tests; 15 fragments, 200 operations, zero contract debt.
+- **EXÉCUTÉ — toolchain policy:** 25/25 tests; zero violations.
+- **EXÉCUTÉ — migrations:** 117/117 tests; zero violations; no new migration.
+- **EXÉCUTÉ — targeted architecture:** 17/17 relevant tests plus Architecture-as-Code check.
+- **EXÉCUTÉ — Compose contract:** 69/69 tests.
+- **NON EXÉCUTÉ — exact JDK25/JaCoCo:** runner provides JDK 21.0.11; target JDK25 gate remains mandatory.
+- **NON EXÉCUTÉ — live PostgreSQL 17/18:** no `psql`/target database is available in this runner; the CI matrix remains the required proof.
+
+---
+
+# InfraNexum 2.0.0-alpha.0.120 — PostgreSQL connector-sync qualification gate hardening
+
+**Nature : corrective de qualification CI/JDBC, aucune avancée de roadmap.** La revue de `alpha.0.119` a identifié un défaut de preuve : le repository durable `JdbcConnectorSyncRepository` de `alpha.0.116` possédait une couverture JUnit déterministe PostgreSQL/Oracle, mais n'était pas explicitement exécuté dans la matrice live PostgreSQL 17/18.
+
+**Correction :** ajout de `PostgreSqlJdbcConnectorSyncRepositoryTest` sur la vraie datasource PostgreSQL. Le contrat couvre l'admission idempotente et le rejet d'une réutilisation sémantiquement différente, l'écriture de checkpoints monotones, pause/reprise avec conservation du curseur, rejet d'une révision stale, succès puis compensation append-only vers un nouveau checkpoint, lecture durable des runs/checkpoints, ainsi qu'une course concurrente de deux admissions démontrant qu'un seul run acquiert le fence actif du connecteur.
+
+**CI fail-closed :** le job `postgresql-integration` 17/18 exécute explicitement ce nouveau contrat. `CHECK-TOOLCHAIN-042` exige désormais dans ce job les contrats live Entitlements, Connector Inbox et Connector Sync ; leur suppression ou déplacement hors de la matrice déclenche une violation. Aucun seuil JaCoCo, aucun test existant et aucune contrainte de persistance n'est affaibli.
+
+**Contrats préservés :** 15 fragments OpenAPI / 200 opérations, migrations jusqu'à `0039`, Jira Assets et ServiceNow `FEDERATED_READ`, runtime checkpoints/synchronisation/compensation `alpha.0.116`. Aucun provider mutateur n'est enregistré ou activé.
+
+**État roadmap :** PGM-10-E05 reste formellement **NON TERMINÉ** tant que les gates exacts Temurin 25/Maven/JUnit/JaCoCo et PostgreSQL 17/18 de ce snapshot ne sont pas exécutés avec succès. PGM-10-E06 reste **EN COURS**.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.119 — DataTable and DCIM context Web/UX corrective
 
 **Nature : corrective Web/UX transverse, aucune avancée de roadmap.** Cette tranche corrige la géométrie commune des DataTables et le repérage contextuel DCIM sans modifier API, migrations, RBAC, capacités, synchronisation ni providers.

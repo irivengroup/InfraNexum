@@ -4,6 +4,8 @@ const CONTROLLERS = new WeakMap();
 const DATA_TABLES = new WeakMap();
 const DATA_TABLE_PAGE_SIZES = Object.freeze([20, 50, 100, 200]);
 const CRUD_HANDLED_EVENTS = new WeakSet();
+const DATA_TABLE_COLUMN_WEIGHTS = Object.freeze({ compact: 0.85, content: 1.2, flex: 1.8, actions: 1.7 });
+const DATA_TABLE_DENSE_COLUMN_COUNT = 7;
 
 /**
  * Converts InfraNexum tab panels into a list-first enterprise CRUD workflow.
@@ -260,21 +262,34 @@ function classifyDataTableColumns(table) {
   const tbody = table?.querySelector?.('tbody');
   if (!headerRow || !tbody) return;
   const headers = [...(headerRow.children ?? [])];
+  const visible = [];
   headers.forEach((header, index) => {
     if (header.hidden) return;
+    let size = 'compact';
     if (isActionHeader(header)) {
-      header.setAttribute?.('data-inx-column-size', 'actions');
-      for (const row of tbody.children ?? []) row.children?.[index]?.setAttribute?.('data-inx-column-size', 'actions');
-      return;
+      size = 'actions';
+    } else {
+      const values = [...(tbody.children ?? [])]
+        .filter((row) => !isStructuralRow(row))
+        .map((row) => String(row.children?.[index]?.textContent ?? '').trim())
+        .filter(Boolean);
+      const longest = Math.max(String(header.textContent ?? '').trim().length, ...values.map((value) => value.length), 0);
+      size = longest <= 12 ? 'compact' : longest <= 32 ? 'content' : 'flex';
     }
-    const values = [...(tbody.children ?? [])]
-      .map((row) => String(row.children?.[index]?.textContent ?? '').trim())
-      .filter(Boolean);
-    const longest = Math.max(String(header.textContent ?? '').trim().length, ...values.map((value) => value.length), 0);
-    const size = longest <= 12 ? 'compact' : longest <= 32 ? 'content' : 'flex';
     header.setAttribute?.('data-inx-column-size', size);
+    visible.push({ header, index, size });
     for (const row of tbody.children ?? []) row.children?.[index]?.setAttribute?.('data-inx-column-size', size);
   });
+
+  // Fixed-layout tables need deterministic relative widths. Percentages are
+  // normalized from semantic weights so no content can force the table beyond
+  // its workspace while compact/action columns remain readable.
+  const totalWeight = visible.reduce((total, column) => total + DATA_TABLE_COLUMN_WEIGHTS[column.size], 0) || 1;
+  for (const column of visible) {
+    const percentage = (DATA_TABLE_COLUMN_WEIGHTS[column.size] / totalWeight) * 100;
+    column.header.style?.setProperty?.('--inx-column-width', `${percentage.toFixed(4)}%`);
+  }
+  table.setAttribute?.('data-inx-density', visible.length >= DATA_TABLE_DENSE_COLUMN_COUNT ? 'dense' : 'comfortable');
 }
 
 function createDataTableState(documentObject, table) {

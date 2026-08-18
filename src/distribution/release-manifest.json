@@ -2,7 +2,7 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.119",
+  "version": "2.0.0-alpha.0.121",
   "profile": "alpha119-web-datatable-dcim-context-redoc-corrective",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
@@ -660,15 +660,15 @@
     "inventory_paths": 1549
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.119",
+    "prefix": "infranexum-2.0.0-alpha.0.121",
     "archive_entries": 1551,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
     "source_recorded_files": 1550,
     "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
-    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.119-validation-evidence.zip"
+    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.121-validation-evidence.zip"
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.119-validation-evidence.zip",
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.121-validation-evidence.zip",
   "runtime_validation": {
     "web_local_runtime_alpha058": "EXECUTED_38_OF_38_LINE_99_67_BRANCH_98_33_FUNCTION_100_PROCESS_SMOKE_PASS_LOCAL_NODE22_BOOTSTRAP5_3_6_PROFESSIONAL_ADMIN_DASHBOARD_THEME_TOGGLE_TRUTHFUL_KPI_SAME_ORIGIN_ORGANIZATION_UI",
     "architecture_functional_alpha058": "EXECUTED_57_OF_57",

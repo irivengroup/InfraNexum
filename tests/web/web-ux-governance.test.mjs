@@ -17,17 +17,20 @@ function functionBody(source, name, next = 'function ') {
   return source.slice(start, end === -1 ? source.length : end);
 }
 
-test('DataTables fit the complete workspace width without nested scrolling or clipped actions', async () => {
+test('DataTables fit the complete workspace width with stable columns and no nested scrolling', async () => {
   const [theme, crud] = await Promise.all([read('assets/infranexum-theme.css'), read('assets/enterprise-crud.mjs')]);
   assert.match(theme, /\.inx-workspace \.table-responsive,[\s\S]*max-width:\s*100%[\s\S]*overflow:\s*visible\s*!important/);
   assert.doesNotMatch(theme, /\.inx-workspace \.table-responsive,[\s\S]{0,260}overflow-x:\s*auto\s*!important/);
-  assert.match(theme, /\.inx-datatable-frame\s*\{[\s\S]*overflow:\s*visible\s*!important/);
-  assert.match(theme, /\.inx-data-table\s*\{[\s\S]*width:\s*100%\s*!important[\s\S]*min-width:\s*0\s*!important[\s\S]*max-width:\s*100%\s*!important[\s\S]*table-layout:\s*auto/);
-  assert.match(theme, /\.inx-data-table > :not\(caption\) > \* > \*\s*\{[\s\S]*overflow-wrap:\s*anywhere[\s\S]*white-space:\s*normal/);
-  assert.match(theme, /\.inx-data-table \.inx-crud-actions\s*\{[\s\S]*flex-wrap:\s*wrap/);
-  assert.match(theme, /data-inx-column-size="compact"/);
-  assert.match(theme, /data-inx-column-size="flex"/);
-  assert.match(theme, /data-inx-column-size="actions"/);
+  assert.match(theme, /\.inx-datatable-frame[\s\S]*overflow:\s*visible\s*!important/);
+  assert.match(theme, /\.inx-data-table\s*\{[\s\S]*width:\s*100%\s*!important[\s\S]*min-width:\s*0\s*!important[\s\S]*max-width:\s*100%\s*!important[\s\S]*table-layout:\s*fixed/);
+  assert.match(theme, /\.inx-data-table > :not\(caption\) > \* > \*\s*\{[\s\S]*overflow-wrap:\s*break-word[\s\S]*word-break:\s*normal/);
+  assert.match(theme, /\.inx-data-table > thead > tr > th\s*\{[\s\S]*width:\s*var\(--inx-column-width, auto\)[\s\S]*overflow-wrap:\s*normal/);
+  assert.match(theme, /\.inx-data-table \.inx-crud-actions \.btn\s*\{[\s\S]*white-space:\s*nowrap/);
+  assert.match(theme, /data-inx-density="dense"/);
+  assert.match(crud, /DATA_TABLE_COLUMN_WEIGHTS = Object\.freeze\(\{ compact: 0\.85, content: 1\.2, flex: 1\.8, actions: 1\.7 \}\)/);
+  assert.match(crud, /percentage = \(DATA_TABLE_COLUMN_WEIGHTS\[column\.size\] \/ totalWeight\) \* 100/);
+  assert.match(crud, /--inx-column-width/);
+  assert.match(crud, /data-inx-density/);
   assert.match(crud, /responsiveContainer\?\.parentElement\?\.classList\?\.add\?\.\('inx-datatable-frame'\)/);
   assert.match(crud, /classifyDataTableColumns\(table\)/);
   assert.match(crud, /longest <= 12 \? 'compact' : longest <= 32 \? 'content' : 'flex'/);

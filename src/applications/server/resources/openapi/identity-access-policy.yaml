@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum Identity Access Policy API
-  version: 2.0.0-alpha.0.119
+  version: 2.0.0-alpha.0.121
   description: PGM-03-E04 PAP/PDP surface for deterministic versioned ABAC policies, static separation of duty, deny-overrides evaluation
     and non-sensitive explanations. RBAC remains the mandatory baseline and every PDP result other than permit is refused by the PEP.
 tags:

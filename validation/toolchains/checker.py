@@ -422,11 +422,17 @@ class ToolchainChecker:
             )
             if any(fragment not in body for fragment in required_fragments):
                 missing_live_jdbc.append(name)
-        if missing_live_jdbc or "PostgreSqlJdbcEntitlementPersistenceTest" not in workflow:
+        required_live_jdbc_tests = (
+            "PostgreSqlJdbcEntitlementPersistenceTest",
+            "PostgreSqlJdbcConnectorInboxRepositoryTest",
+            "PostgreSqlJdbcConnectorSyncRepositoryTest",
+        )
+        postgresql_integration_job = job_bodies.get("postgresql-integration", "")
+        if missing_live_jdbc or any(test not in postgresql_integration_job for test in required_live_jdbc_tests):
             self._add(
                 "CHECK-TOOLCHAIN-042",
                 workflow_path,
-                "Java coverage jobs must run the live PostgreSQL JDBC contracts, including entitlement persistence, so JaCoCo does not depend on skipped integration tests",
+                "Java coverage jobs must run the live PostgreSQL JDBC contracts, including entitlement, connector inbox and durable connector-sync persistence, so JaCoCo does not depend on skipped integration tests",
             )
 
         makefile_text = makefile or ""

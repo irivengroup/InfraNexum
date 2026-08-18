@@ -1526,64 +1526,74 @@ input[data-inx-temporal].inx-temporal-native::-webkit-calendar-picker-indicator 
 .inx-workspace .inx-filter-bar { border-radius: .72rem; }
 .inx-workspace .table-responsive { border-radius: .72rem; }
 
-/* alpha.0.119 — viewport-bound DataTables with one page scroll.
- * Do not put a scroll container around tables. CSS computes overflow-y:auto when
- * overflow-x is auto and overflow-y is visible, which creates the nested vertical
- * scrollbars reported on otherwise tall enough pages. Instead, every cell may
- * shrink/wrap so the complete table stays inside the workspace inline size. */
+/* alpha.0.121 — deterministic DataTable geometry without nested scrolling.
+ * The table owns exactly the workspace inline size. A fixed layout prevents
+ * intrinsic cell content from widening the right edge; semantic column weights
+ * keep compact, content, flexible and action columns visually stable. */
 .inx-main,
 .inx-workspace,
 .inx-workspace > .row,
 .inx-workspace > .row > [class*="col-"],
 .inx-crud-panel,
 .inx-crud-list-view,
-.inx-crud-editor-view {
+.inx-datatable-frame {
   min-width: 0;
   max-width: 100%;
 }
 .inx-workspace .table-responsive,
-.inx-crud-list-view .table-responsive {
+.inx-crud-list-view .table-responsive,
+.inx-datatable-frame {
   width: 100%;
   max-width: 100%;
   overflow: visible !important;
   max-height: none !important;
 }
-.inx-datatable-frame {
-  width: 100%;
-  max-width: 100%;
-  overflow: visible !important;
-}
 .inx-data-table {
   width: 100% !important;
   min-width: 0 !important;
   max-width: 100% !important;
-  table-layout: auto;
+  table-layout: fixed;
 }
 .inx-data-table > :not(caption) > * > * {
   min-width: 0;
-  max-width: 100%;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   word-break: normal;
   white-space: normal;
 }
-.inx-data-table > thead > tr > th,
-.inx-data-table [data-inx-column-size="compact"],
-.inx-data-table [data-inx-column-size="content"],
-.inx-data-table [data-inx-column-size="actions"] {
-  min-width: 0;
-  white-space: normal;
+.inx-data-table > thead > tr > th {
+  width: var(--inx-column-width, auto);
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: auto;
 }
-.inx-data-table [data-inx-column-size="compact"] { width: 1%; }
-.inx-data-table [data-inx-column-size="content"] { width: auto; }
-.inx-data-table td[data-inx-column-size="flex"] { width: auto; }
-.inx-data-table [data-inx-column-size="actions"] { width: 1%; }
+.inx-data-table td[data-inx-column-size="flex"] {
+  overflow-wrap: anywhere;
+}
+.inx-data-table [data-inx-column-size="actions"] {
+  vertical-align: middle;
+}
+.inx-data-table[data-inx-density="dense"] > :not(caption) > * > * {
+  padding: .64rem .62rem;
+  font-size: .86rem;
+}
+.inx-data-table[data-inx-density="dense"] > thead > tr > th {
+  font-size: .72rem;
+  letter-spacing: .035em;
+}
+.inx-data-table[data-inx-density="dense"] > thead > tr > th[data-inx-sortable="true"] {
+  padding-right: 1.35rem;
+}
+.inx-data-table[data-inx-density="dense"] > thead > tr > th[data-inx-sortable="true"]::after {
+  right: .38rem;
+}
 .inx-data-table [data-inx-technical-id-column="true"],
 .inx-data-table [data-inx-technical-id-cell="true"] {
   display: none !important;
 }
 .inx-data-table .inx-crud-actions {
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-start;
   gap: .35rem;
   max-width: 100%;
@@ -1591,8 +1601,8 @@ input[data-inx-temporal].inx-temporal-native::-webkit-calendar-picker-indicator 
 .inx-data-table .inx-crud-actions .btn {
   min-width: 0;
   max-width: 100%;
-  white-space: normal;
-  overflow-wrap: anywhere;
+  margin: 0 !important;
+  white-space: nowrap;
 }
 .inx-technical-id-field .form-control[readonly] {
   color: var(--inx-muted);

@@ -271,4 +271,4 @@ jobs:
           INFRANEXUM_POSTGRESQL_TEST_URL: jdbc:postgresql://127.0.0.1:5432/infranexum
           INFRANEXUM_POSTGRESQL_TEST_USERNAME: infranexum
           INFRANEXUM_POSTGRESQL_TEST_PASSWORD: infranexum-ci
-        run: ./mvnw --batch-mode --no-transfer-progress -pl src/components/adapters/jdbc -am -Dtest=PostgreSqlJdbcTransactionalEventStoreTest,PostgreSqlJdbcAuditJournalTest,PostgreSqlJdbcTaskStoreTest,PostgreSqlJdbcEntitlementPersistenceTest,PostgreSqlJdbcConnectorInboxRepositoryTest -Dinfranexum.surefire.failIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false test
+        run: ./mvnw --batch-mode --no-transfer-progress -pl src/components/adapters/jdbc -am -Dtest=PostgreSqlJdbcTransactionalEventStoreTest,PostgreSqlJdbcAuditJournalTest,PostgreSqlJdbcTaskStoreTest,PostgreSqlJdbcEntitlementPersistenceTest,PostgreSqlJdbcConnectorInboxRepositoryTest,PostgreSqlJdbcConnectorSyncRepositoryTest -Dinfranexum.surefire.failIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false test
