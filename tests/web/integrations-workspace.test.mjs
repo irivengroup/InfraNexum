@@ -12,7 +12,7 @@ test('Integrations workspace is capability gated and exposes Jira Assets plus Se
   assert.equal(root.attributes['data-capability-enabled'], 'false');
 
   const template = integrationsWorkspaceTemplate();
-  for (const id of ['jira-assets-connectors', 'jira-assets-search', 'jira-assets-connector', 'jira-assets-aql', 'jira-assets-results', 'service-now-connectors', 'service-now-search', 'service-now-connector', 'service-now-query', 'service-now-results', 'connector-governance-policies', 'connector-governance-page', 'notification-endpoints', 'notification-publish', 'notification-endpoint', 'notification-event-id', 'notification-event-type', 'notification-payload', 'notification-dlq']) {
+  for (const id of ['jira-assets-connectors', 'jira-assets-search', 'jira-assets-connector', 'jira-assets-aql', 'jira-assets-results', 'service-now-connectors', 'service-now-search', 'service-now-connector', 'service-now-query', 'service-now-results', 'connector-governance-policies', 'connector-governance-page', 'connector-sync-runs', 'connector-sync-checkpoints', 'connector-sync-execute', 'connector-sync-connector', 'connector-sync-direction', 'connector-sync-reason', 'notification-endpoints', 'notification-publish', 'notification-endpoint', 'notification-event-id', 'notification-event-type', 'notification-payload', 'notification-dlq']) {
     assert.match(template, new RegExp(`id="${id}"`));
   }
   for (const key of ['integrations.connector', 'integrations.direction', 'integrations.authority', 'integrations.search.title']) {
@@ -22,11 +22,14 @@ test('Integrations workspace is capability gated and exposes Jira Assets plus Se
   assert.doesNotMatch(template, /password|bearer|token|credential/i);
 });
 
-test('Integrations workspace source only performs governed reads through provider clients', async () => {
+test('Integrations workspace keeps providers read-only while exposing governed generic sync runtime', async () => {
   const source = await readFile(new URL('../../src/applications/web/public/assets/integrations-workspace.mjs', import.meta.url), 'utf8');
   assert.match(source, /new JiraAssetsClient/);
   assert.match(source, /new NotificationClient/);
   assert.match(source, /new ConnectorGovernanceClient/);
+  assert.match(source, /new ConnectorSyncClient/);
+  assert.match(source, /client\.runs\(/);
+  assert.match(source, /sync\.execute\(/);
   assert.match(source, /client\.connectors\(\)/);
   assert.match(source, /client\.health\(item\.connectorKey\)/);
   assert.match(source, /jira\.search\(/);
@@ -35,5 +38,6 @@ test('Integrations workspace source only performs governed reads through provide
   assert.match(source, /client\.plan\(item\.connectorKey/);
   assert.match(source, /client\.replay\(/);
   assert.match(source, /client\.resume\(/);
-  assert.doesNotMatch(source, /(?:client|jira|sn|notifications|governance)\.(create|update|delete|import|synchronize|push)\(/);
+  assert.doesNotMatch(source, /(?:jira|sn)\.(create|update|delete|import|synchronize|push|execute)\(/);
+  assert.match(source, /FEDERATED_READ|mutating/);
 });

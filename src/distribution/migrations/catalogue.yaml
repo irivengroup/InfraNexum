@@ -75,3 +75,7 @@ entries:
   path: 0036-integrations-outbound-notifications/migration.yaml
 - id: '0037'
   path: 0037-identity-access-notification-permissions/migration.yaml
+- id: '0038'
+  path: 0038-integrations-connector-sync-runtime/migration.yaml
+- id: '0039'
+  path: 0039-identity-access-integration-sync-permissions/migration.yaml

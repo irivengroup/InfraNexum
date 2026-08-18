@@ -1,0 +1,25 @@
+schema: infranexum.migration/v1
+id: 0039
+name: identity-access-integration-sync-permissions
+owner_context: identity-access
+dependencies:
+- 0038
+preconditions:
+- identity-access-rbac-created
+- durable-connector-sync-state-runs-checkpoints-created
+postconditions:
+- connector-sync-runtime-permissions-seeded
+recovery: rerun-idempotent-permission-seeding-after-correcting-database-connectivity
+rollback: removes-only-connector-sync-runtime-permissions-and-bootstrap-grants
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 20
+checksums:
+  postgresql.sql: e4edeb80da8609f0524075e915f3835a84a76bef0f0e41d1bb3aaba26af75d7f
+  oracle.sql: 993a58500e02f665d5b363baf8f48fba704e1d99bc1eb61df7f4b9c3de6a9a79
+  rollback/postgresql.sql: 8937859887a66d6d7fc56124e72177b7629acb7f467fb2a61c72b3a0b9bb0734
+  rollback/oracle.sql: effd0ee8e3f7fcb1e33262b0cda9943473fca8ddbf43c3ca6b2588ce8f7ddcee
+  logical-model.json: 1864970ccc6c01483900ed8a7c127666a888e8e9dde7b85c656062f9ccd9cf0d
+  verify.sql.yaml: dae66e7d3a471ccacc41ec994415a4ccd715c85fdb6b6c9a0d91d2f95451b171

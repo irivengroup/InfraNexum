@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum — Product API
-  version: 2.0.0-alpha.0.115
+  version: 2.0.0-alpha.0.116
   description: Generated complete product contract; installation availability remains capability-gated.
 servers:
 - url: /
@@ -29,6 +29,8 @@ tags:
   description: Connector runtime health, suspension state and operator recovery.
 - name: Integrations / Connectors / Governance
   description: Connector authority, sync direction, field ownership and rollback policy with fail-closed dry-run planning.
+- name: Integrations / Connectors / Synchronization
+  description: Durable connector synchronization runs, append-only checkpoints, explicit resume and governed compensation.
 - name: Integrations / Jira Assets / Catalogue
   description: Configured Jira Assets Cloud connector instances and provider health.
 - name: Integrations / Jira Assets / Federated Read
@@ -101,6 +103,7 @@ x-tagGroups:
   - Integrations / Connectors / Dead Letter Queue
   - Integrations / Connectors / Runtime
   - Integrations / Connectors / Governance
+  - Integrations / Connectors / Synchronization
   - Integrations / Jira Assets / Catalogue
   - Integrations / Jira Assets / Federated Read
   - Integrations / ServiceNow / Catalogue
@@ -4978,6 +4981,243 @@ paths:
         mode: permission
         code: integrations.connector.read
       x-infranexum-idempotency: repeatable
+  /api/v1/integrations/sync/runs:
+    get:
+      tags:
+      - Integrations / Connectors / Synchronization
+      operationId: listConnectorSynchronizationRuns
+      summary: List durable connector synchronization runs
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/integrations-connectors__CorrelationId'
+      - $ref: '#/components/parameters/integrations-connectors__OptionalConnectorKey'
+      - $ref: '#/components/parameters/integrations-connectors__Offset'
+      - $ref: '#/components/parameters/integrations-connectors__Limit'
+      responses:
+        '200':
+          description: Bounded synchronization run history.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/integrations-connectors__CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/integrations-connectors__NoStore'
+            X-Page-Limit:
+              $ref: '#/components/headers/integrations-connectors__PageLimit'
+            X-Next-Offset:
+              $ref: '#/components/headers/integrations-connectors__NextOffset'
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 200
+                items:
+                  $ref: '#/components/schemas/integrations-connectors__ConnectorSyncRun'
+        '400':
+          $ref: '#/components/responses/integrations-connectors__BadRequest'
+        '401':
+          $ref: '#/components/responses/integrations-connectors__Unauthorized'
+        '403':
+          $ref: '#/components/responses/integrations-connectors__Forbidden'
+        '503':
+          $ref: '#/components/responses/integrations-connectors__ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.sync.read
+      x-infranexum-pagination: offset
+  /api/v1/integrations/sync/{connectorKey}/checkpoints:
+    get:
+      tags:
+      - Integrations / Connectors / Synchronization
+      operationId: listConnectorSynchronizationCheckpoints
+      summary: List append-only connector checkpoints without exposing raw cursors
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/integrations-connectors__CorrelationId'
+      - $ref: '#/components/parameters/integrations-connectors__ConnectorKey'
+      - $ref: '#/components/parameters/integrations-connectors__Offset'
+      - $ref: '#/components/parameters/integrations-connectors__Limit'
+      responses:
+        '200':
+          description: Monotonic checkpoint history. Raw cursor values remain server-internal.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/integrations-connectors__CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/integrations-connectors__NoStore'
+            X-Page-Limit:
+              $ref: '#/components/headers/integrations-connectors__PageLimit'
+            X-Next-Offset:
+              $ref: '#/components/headers/integrations-connectors__NextOffset'
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 200
+                items:
+                  $ref: '#/components/schemas/integrations-connectors__ConnectorSyncCheckpoint'
+        '400':
+          $ref: '#/components/responses/integrations-connectors__BadRequest'
+        '401':
+          $ref: '#/components/responses/integrations-connectors__Unauthorized'
+        '403':
+          $ref: '#/components/responses/integrations-connectors__Forbidden'
+        '404':
+          $ref: '#/components/responses/integrations-connectors__NotFound'
+        '503':
+          $ref: '#/components/responses/integrations-connectors__ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.sync.read
+      x-infranexum-pagination: offset
+  /api/v1/integrations/sync/{connectorKey}/execute:
+    post:
+      tags:
+      - Integrations / Connectors / Synchronization
+      operationId: executeConnectorSynchronization
+      summary: Execute a governed mutating synchronization with durable checkpoints
+      description: Federated-read connectors are deliberately rejected here; they remain query-only until an explicit mutating
+        authority mapping and approved handler exist.
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/integrations-connectors__CorrelationId'
+      - $ref: '#/components/parameters/integrations-connectors__ConnectorKey'
+      - $ref: '#/components/parameters/integrations-connectors__IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/integrations-connectors__ConnectorSyncExecutionRequest'
+      responses:
+        '200':
+          description: Durable run state after synchronous bounded processing.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/integrations-connectors__CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/integrations-connectors__NoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/integrations-connectors__ConnectorSyncRun'
+        '400':
+          $ref: '#/components/responses/integrations-connectors__BadRequest'
+        '401':
+          $ref: '#/components/responses/integrations-connectors__Unauthorized'
+        '403':
+          $ref: '#/components/responses/integrations-connectors__Forbidden'
+        '404':
+          $ref: '#/components/responses/integrations-connectors__NotFound'
+        '409':
+          $ref: '#/components/responses/integrations-connectors__Conflict'
+        '503':
+          $ref: '#/components/responses/integrations-connectors__ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.sync.execute
+      x-infranexum-idempotency: required
+  /api/v1/integrations/sync/runs/{syncRunId}/resume:
+    post:
+      tags:
+      - Integrations / Connectors / Synchronization
+      operationId: resumeConnectorSynchronization
+      summary: Resume a paused synchronization from its last durable checkpoint
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/integrations-connectors__CorrelationId'
+      - $ref: '#/components/parameters/integrations-connectors__SyncRunId'
+      - $ref: '#/components/parameters/integrations-connectors__IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/integrations-connectors__ReasonRequest'
+      responses:
+        '200':
+          description: Updated synchronization run.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/integrations-connectors__CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/integrations-connectors__NoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/integrations-connectors__ConnectorSyncRun'
+        '400':
+          $ref: '#/components/responses/integrations-connectors__BadRequest'
+        '401':
+          $ref: '#/components/responses/integrations-connectors__Unauthorized'
+        '403':
+          $ref: '#/components/responses/integrations-connectors__Forbidden'
+        '404':
+          $ref: '#/components/responses/integrations-connectors__NotFound'
+        '409':
+          $ref: '#/components/responses/integrations-connectors__Conflict'
+        '503':
+          $ref: '#/components/responses/integrations-connectors__ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.sync.execute
+      x-infranexum-idempotency: required
+  /api/v1/integrations/sync/runs/{syncRunId}/compensate:
+    post:
+      tags:
+      - Integrations / Connectors / Synchronization
+      operationId: compensateConnectorSynchronization
+      summary: Execute the approved compensation strategy for a synchronization run
+      description: Compensation is fenced against newer connector revisions and appends a new restoration checkpoint instead
+        of rewriting history. MANUAL and NONE_REQUIRED rollback strategies are not auto-executed.
+      security:
+      - LocalSessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/integrations-connectors__CorrelationId'
+      - $ref: '#/components/parameters/integrations-connectors__SyncRunId'
+      - $ref: '#/components/parameters/integrations-connectors__IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/integrations-connectors__ReasonRequest'
+      responses:
+        '200':
+          description: Compensated or compensation-failed run state.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/integrations-connectors__CorrelationId'
+            Cache-Control:
+              $ref: '#/components/headers/integrations-connectors__NoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/integrations-connectors__ConnectorSyncRun'
+        '400':
+          $ref: '#/components/responses/integrations-connectors__BadRequest'
+        '401':
+          $ref: '#/components/responses/integrations-connectors__Unauthorized'
+        '403':
+          $ref: '#/components/responses/integrations-connectors__Forbidden'
+        '404':
+          $ref: '#/components/responses/integrations-connectors__NotFound'
+        '409':
+          $ref: '#/components/responses/integrations-connectors__Conflict'
+        '503':
+          $ref: '#/components/responses/integrations-connectors__ServiceUnavailable'
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission:
+        mode: permission
+        code: integrations.sync.compensate
+      x-infranexum-idempotency: required
   /api/v1/itam/assets:
     parameters:
     - $ref: '#/components/parameters/itam-assets__CorrelationId'
@@ -8703,6 +8943,12 @@ components:
       required: true
       schema:
         $ref: '#/components/schemas/integrations-connectors__UuidV7'
+    integrations-connectors__SyncRunId:
+      name: syncRunId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/integrations-connectors__UuidV7'
     integrations-connectors__ConnectorDeliveryId:
       name: X-InfraNexum-Delivery-ID
       in: header
@@ -12323,6 +12569,183 @@ components:
           - EXTERNAL
           - INFRANEXUM
           - MANUAL
+    integrations-connectors__ConnectorSyncExecutionRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - direction
+      - reason
+      properties:
+        direction:
+          type: string
+          enum:
+          - INBOUND
+          - OUTBOUND
+          - BIDIRECTIONAL
+        fields:
+          type: array
+          uniqueItems: true
+          maxItems: 512
+          items:
+            type: string
+            minLength: 1
+            maxLength: 128
+            pattern: ^[a-z][a-z0-9_.-]{0,127}$
+          default: []
+        propagateDeletions:
+          type: boolean
+          default: false
+        maxBatches:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+        reason:
+          type: string
+          minLength: 3
+          maxLength: 500
+    integrations-connectors__ConnectorSyncRun:
+      type: object
+      additionalProperties: false
+      required:
+      - runId
+      - connectorKey
+      - provider
+      - direction
+      - rollbackStrategy
+      - status
+      - fields
+      - propagateDeletions
+      - maxBatches
+      - initialRevision
+      - lastCheckpointRevision
+      - startedAt
+      - updatedAt
+      properties:
+        runId:
+          $ref: '#/components/schemas/integrations-connectors__UuidV7'
+        connectorKey:
+          $ref: '#/components/schemas/integrations-connectors__ConnectorKey'
+        provider:
+          type: string
+          minLength: 1
+          maxLength: 80
+          pattern: ^[a-z][a-z0-9-]{0,79}$
+        direction:
+          type: string
+          enum:
+          - INBOUND
+          - OUTBOUND
+          - BIDIRECTIONAL
+        rollbackStrategy:
+          type: string
+          enum:
+          - LOCAL_CHECKPOINT
+          - REMOTE_COMPENSATION
+          - DUAL_COMPENSATION
+          - MANUAL
+        status:
+          type: string
+          enum:
+          - RUNNING
+          - PAUSED
+          - SUCCEEDED
+          - FAILED
+          - COMPENSATING
+          - COMPENSATED
+          - COMPENSATION_FAILED
+        fields:
+          type: array
+          uniqueItems: true
+          maxItems: 512
+          items:
+            type: string
+            maxLength: 128
+        propagateDeletions:
+          type: boolean
+        maxBatches:
+          type: integer
+          minimum: 1
+          maximum: 100
+        initialRevision:
+          type: integer
+          format: int64
+          minimum: 0
+        lastCheckpointRevision:
+          type: integer
+          format: int64
+          minimum: 0
+        failureCode:
+          type:
+          - string
+          - 'null'
+          maxLength: 64
+        startedAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        compensationCheckpointRevision:
+          type:
+          - integer
+          - 'null'
+          format: int64
+          minimum: 1
+    integrations-connectors__ConnectorSyncCheckpoint:
+      type: object
+      additionalProperties: false
+      description: Public checkpoint projection. The raw provider cursor is intentionally omitted.
+      required:
+      - checkpointId
+      - connectorKey
+      - runId
+      - revision
+      - kind
+      - cursorSha256
+      - processedCount
+      - changedCount
+      - rejectedCount
+      - createdAt
+      properties:
+        checkpointId:
+          $ref: '#/components/schemas/integrations-connectors__UuidV7'
+        connectorKey:
+          $ref: '#/components/schemas/integrations-connectors__ConnectorKey'
+        runId:
+          $ref: '#/components/schemas/integrations-connectors__UuidV7'
+        revision:
+          type: integer
+          format: int64
+          minimum: 1
+        kind:
+          type: string
+          enum:
+          - PROGRESS
+          - COMPENSATION
+        cursorSha256:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        processedCount:
+          type: integer
+          format: int64
+          minimum: 0
+        changedCount:
+          type: integer
+          format: int64
+          minimum: 0
+        rejectedCount:
+          type: integer
+          format: int64
+          minimum: 0
+        createdAt:
+          type: string
+          format: date-time
     integrations-connectors__ConnectorGovernancePolicy:
       type: object
       additionalProperties: false

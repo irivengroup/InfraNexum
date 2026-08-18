@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 import io.infranexum.adapters.persistence.jdbc.JdbcConnectorInboxRepository;
+import io.infranexum.adapters.persistence.jdbc.JdbcConnectorSyncRepository;
 import io.infranexum.core.audit.AuditJournal;
 import io.infranexum.core.contracts.ConfigurationException;
 import io.infranexum.core.contracts.RuntimeMode;
@@ -15,6 +16,11 @@ import io.infranexum.integrations.ConnectorDelivery;
 import io.infranexum.integrations.ConnectorDeliveryHandler;
 import io.infranexum.integrations.ConnectorInboxRepository;
 import io.infranexum.integrations.ConnectorKey;
+import io.infranexum.integrations.ConnectorSyncHandler;
+import io.infranexum.integrations.ConnectorSyncBatchContext;
+import io.infranexum.integrations.ConnectorSyncBatchResult;
+import io.infranexum.integrations.ConnectorSyncCompensationContext;
+import io.infranexum.integrations.ConnectorSyncCompensationResult;
 import io.infranexum.integrations.ConnectorWebhookEndpoint;
 import io.infranexum.server.configuration.ServerRuntimeProperties;
 import io.infranexum.server.persistence.JdbcIsolation;
@@ -65,6 +71,31 @@ class IntegrationRuntimeConfigurationTest {
                 dataSource, persistence(PersistenceMode.ORACLE)));
         assertThrows(ConfigurationException.class, () -> configuration.connectorInboxRepository(
                 dataSource, persistence(PersistenceMode.MEMORY)));
+    }
+
+    @Test
+    void connectorSyncRepositoryIsDurableOnlyAndHandlerValidatorRejectsReadOnlyProviders() {
+        DataSource dataSource = mock(DataSource.class);
+        assertInstanceOf(JdbcConnectorSyncRepository.class, configuration.connectorSyncRepository(dataSource, persistence(PersistenceMode.POSTGRESQL)));
+        assertInstanceOf(JdbcConnectorSyncRepository.class, configuration.connectorSyncRepository(dataSource, persistence(PersistenceMode.ORACLE)));
+        assertThrows(ConfigurationException.class, () -> configuration.connectorSyncRepository(dataSource, persistence(PersistenceMode.MEMORY)));
+
+        ConnectorSyncHandler jiraMutation = new ConnectorSyncHandler() {
+            @Override public ConnectorKey connectorKey() { return new ConnectorKey("jira-prod"); }
+            @Override public ConnectorSyncBatchResult synchronize(ConnectorSyncBatchContext context) { return ConnectorSyncBatchResult.applied(null, 0, 0, 0, true); }
+            @Override public ConnectorSyncCompensationResult compensate(ConnectorSyncCompensationContext context) { return ConnectorSyncCompensationResult.succeeded(); }
+        };
+        StaticListableBeanFactory handlersFactory = new StaticListableBeanFactory();
+        handlersFactory.addBean("jiraMutation", jiraMutation);
+        var handlers = configuration.connectorSyncHandlerRegistry(handlersFactory.getBeanProvider(ConnectorSyncHandler.class));
+        var governance = new ConfiguredConnectorGovernanceRegistry(
+                Map.of(new ConnectorKey("jira-prod"), new io.infranexum.adapters.jiraassets.JiraAssetsSettings(new ConnectorKey("jira-prod"),"cloud","workspace","env:PATH",Duration.ofSeconds(5),true)),
+                Map.of());
+        assertThrows(ConfigurationException.class, configuration.connectorSyncHandlerValidator(handlers, governance)::afterSingletonsInstantiated);
+
+        StaticListableBeanFactory emptyFactory = new StaticListableBeanFactory();
+        configuration.connectorSyncHandlerValidator(
+                configuration.connectorSyncHandlerRegistry(emptyFactory.getBeanProvider(ConnectorSyncHandler.class)), governance).afterSingletonsInstantiated();
     }
 
     @Test
@@ -121,7 +152,7 @@ class IntegrationRuntimeConfigurationTest {
                     inbox, mock(AuditJournal.class), observer, ids, CLOCK);
             var dispatcher = configuration.connectorInboxDispatcher(
                     inbox, endpointRegistry, handlerRegistry, observer, CLOCK,
-                    new ServerRuntimeProperties("server-a", RuntimeMode.REGIONAL, "eu-west", "paris", "2.0.0-alpha.0.115", "2.0.0-draft.21"),
+                    new ServerRuntimeProperties("server-a", RuntimeMode.REGIONAL, "eu-west", "paris", "2.0.0-alpha.0.116", "2.0.0-draft.21"),
                     properties);
 
             assertNotNull(webhook);

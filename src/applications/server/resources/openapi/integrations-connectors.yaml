@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum Integrations Connectors API
-  version: 2.0.0-alpha.0.115
+  version: 2.0.0-alpha.0.116
 tags:
 - name: Integrations / Connectors / Webhooks
   description: Authenticated connector webhook admission into the durable inbox.
@@ -11,6 +11,8 @@ tags:
   description: Connector runtime health, suspension state and operator recovery.
 - name: Integrations / Connectors / Governance
   description: Connector authority, sync direction, field ownership and rollback policy with fail-closed dry-run planning.
+- name: Integrations / Connectors / Synchronization
+  description: Durable connector synchronization runs, append-only checkpoints, explicit resume and governed compensation.
 - name: Integrations / Jira Assets / Catalogue
   description: Configured Jira Assets Cloud connector instances and provider health.
 - name: Integrations / Jira Assets / Federated Read
@@ -32,6 +34,7 @@ x-tagGroups:
   - Integrations / Connectors / Dead Letter Queue
   - Integrations / Connectors / Runtime
   - Integrations / Connectors / Governance
+  - Integrations / Connectors / Synchronization
   - Integrations / Jira Assets / Catalogue
   - Integrations / Jira Assets / Federated Read
   - Integrations / ServiceNow / Catalogue
@@ -937,6 +940,154 @@ paths:
         mode: permission
         code: integrations.connector.read
       x-infranexum-idempotency: repeatable
+  /api/v1/integrations/sync/runs:
+    get:
+      tags: [Integrations / Connectors / Synchronization]
+      operationId: listConnectorSynchronizationRuns
+      summary: List durable connector synchronization runs
+      security: [{LocalSessionCookie: []}]
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/OptionalConnectorKey'
+      - $ref: '#/components/parameters/Offset'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Bounded synchronization run history.
+          headers:
+            X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}
+            Cache-Control: {$ref: '#/components/headers/NoStore'}
+            X-Page-Limit: {$ref: '#/components/headers/PageLimit'}
+            X-Next-Offset: {$ref: '#/components/headers/NextOffset'}
+          content:
+            application/json:
+              schema: {type: array, maxItems: 200, items: {$ref: '#/components/schemas/ConnectorSyncRun'}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '503': {$ref: '#/components/responses/ServiceUnavailable'}
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission: {mode: permission, code: integrations.sync.read}
+      x-infranexum-pagination: offset
+  /api/v1/integrations/sync/{connectorKey}/checkpoints:
+    get:
+      tags: [Integrations / Connectors / Synchronization]
+      operationId: listConnectorSynchronizationCheckpoints
+      summary: List append-only connector checkpoints without exposing raw cursors
+      security: [{LocalSessionCookie: []}]
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/ConnectorKey'
+      - $ref: '#/components/parameters/Offset'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Monotonic checkpoint history. Raw cursor values remain server-internal.
+          headers:
+            X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}
+            Cache-Control: {$ref: '#/components/headers/NoStore'}
+            X-Page-Limit: {$ref: '#/components/headers/PageLimit'}
+            X-Next-Offset: {$ref: '#/components/headers/NextOffset'}
+          content:
+            application/json:
+              schema: {type: array, maxItems: 200, items: {$ref: '#/components/schemas/ConnectorSyncCheckpoint'}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '503': {$ref: '#/components/responses/ServiceUnavailable'}
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission: {mode: permission, code: integrations.sync.read}
+      x-infranexum-pagination: offset
+  /api/v1/integrations/sync/{connectorKey}/execute:
+    post:
+      tags: [Integrations / Connectors / Synchronization]
+      operationId: executeConnectorSynchronization
+      summary: Execute a governed mutating synchronization with durable checkpoints
+      description: Federated-read connectors are deliberately rejected here; they remain query-only until an explicit mutating authority mapping and approved handler exist.
+      security: [{LocalSessionCookie: []}]
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/ConnectorKey'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/ConnectorSyncExecutionRequest'}}}
+      responses:
+        '200':
+          description: Durable run state after synchronous bounded processing.
+          headers:
+            X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}
+            Cache-Control: {$ref: '#/components/headers/NoStore'}
+          content: {application/json: {schema: {$ref: '#/components/schemas/ConnectorSyncRun'}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '503': {$ref: '#/components/responses/ServiceUnavailable'}
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission: {mode: permission, code: integrations.sync.execute}
+      x-infranexum-idempotency: required
+  /api/v1/integrations/sync/runs/{syncRunId}/resume:
+    post:
+      tags: [Integrations / Connectors / Synchronization]
+      operationId: resumeConnectorSynchronization
+      summary: Resume a paused synchronization from its last durable checkpoint
+      security: [{LocalSessionCookie: []}]
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/SyncRunId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/ReasonRequest'}}}
+      responses:
+        '200':
+          description: Updated synchronization run.
+          headers:
+            X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}
+            Cache-Control: {$ref: '#/components/headers/NoStore'}
+          content: {application/json: {schema: {$ref: '#/components/schemas/ConnectorSyncRun'}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '503': {$ref: '#/components/responses/ServiceUnavailable'}
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission: {mode: permission, code: integrations.sync.execute}
+      x-infranexum-idempotency: required
+  /api/v1/integrations/sync/runs/{syncRunId}/compensate:
+    post:
+      tags: [Integrations / Connectors / Synchronization]
+      operationId: compensateConnectorSynchronization
+      summary: Execute the approved compensation strategy for a synchronization run
+      description: Compensation is fenced against newer connector revisions and appends a new restoration checkpoint instead of rewriting history. MANUAL and NONE_REQUIRED rollback strategies are not auto-executed.
+      security: [{LocalSessionCookie: []}]
+      parameters:
+      - $ref: '#/components/parameters/CorrelationId'
+      - $ref: '#/components/parameters/SyncRunId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/ReasonRequest'}}}
+      responses:
+        '200':
+          description: Compensated or compensation-failed run state.
+          headers:
+            X-Correlation-ID: {$ref: '#/components/headers/CorrelationId'}
+            Cache-Control: {$ref: '#/components/headers/NoStore'}
+          content: {application/json: {schema: {$ref: '#/components/schemas/ConnectorSyncRun'}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '503': {$ref: '#/components/responses/ServiceUnavailable'}
+      x-infranexum-capability: integrations.connectors
+      x-infranexum-permission: {mode: permission, code: integrations.sync.compensate}
+      x-infranexum-idempotency: required
 components:
   securitySchemes:
     LocalSessionCookie:
@@ -982,6 +1133,12 @@ components:
         $ref: '#/components/schemas/ConnectorKey'
     DeliveryId:
       name: deliveryId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UuidV7'
+    SyncRunId:
+      name: syncRunId
       in: path
       required: true
       schema:
@@ -1493,6 +1650,64 @@ components:
           - EXTERNAL
           - INFRANEXUM
           - MANUAL
+    ConnectorSyncExecutionRequest:
+      type: object
+      additionalProperties: false
+      required: [direction, reason]
+      properties:
+        direction:
+          type: string
+          enum: [INBOUND, OUTBOUND, BIDIRECTIONAL]
+        fields:
+          type: array
+          uniqueItems: true
+          maxItems: 512
+          items: {type: string, minLength: 1, maxLength: 128, pattern: '^[a-z][a-z0-9_.-]{0,127}$'}
+          default: []
+        propagateDeletions: {type: boolean, default: false}
+        maxBatches: {type: integer, minimum: 1, maximum: 100, default: 10}
+        reason: {type: string, minLength: 3, maxLength: 500}
+    ConnectorSyncRun:
+      type: object
+      additionalProperties: false
+      required: [runId, connectorKey, provider, direction, rollbackStrategy, status, fields, propagateDeletions, maxBatches, initialRevision, lastCheckpointRevision, startedAt, updatedAt]
+      properties:
+        runId: {$ref: '#/components/schemas/UuidV7'}
+        connectorKey: {$ref: '#/components/schemas/ConnectorKey'}
+        provider: {type: string, minLength: 1, maxLength: 80, pattern: '^[a-z][a-z0-9-]{0,79}$'}
+        direction: {type: string, enum: [INBOUND, OUTBOUND, BIDIRECTIONAL]}
+        rollbackStrategy: {type: string, enum: [LOCAL_CHECKPOINT, REMOTE_COMPENSATION, DUAL_COMPENSATION, MANUAL]}
+        status: {type: string, enum: [RUNNING, PAUSED, SUCCEEDED, FAILED, COMPENSATING, COMPENSATED, COMPENSATION_FAILED]}
+        fields:
+          type: array
+          uniqueItems: true
+          maxItems: 512
+          items: {type: string, maxLength: 128}
+        propagateDeletions: {type: boolean}
+        maxBatches: {type: integer, minimum: 1, maximum: 100}
+        initialRevision: {type: integer, format: int64, minimum: 0}
+        lastCheckpointRevision: {type: integer, format: int64, minimum: 0}
+        failureCode: {type: [string, 'null'], maxLength: 64}
+        startedAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+        completedAt: {type: [string, 'null'], format: date-time}
+        compensationCheckpointRevision: {type: [integer, 'null'], format: int64, minimum: 1}
+    ConnectorSyncCheckpoint:
+      type: object
+      additionalProperties: false
+      description: Public checkpoint projection. The raw provider cursor is intentionally omitted.
+      required: [checkpointId, connectorKey, runId, revision, kind, cursorSha256, processedCount, changedCount, rejectedCount, createdAt]
+      properties:
+        checkpointId: {$ref: '#/components/schemas/UuidV7'}
+        connectorKey: {$ref: '#/components/schemas/ConnectorKey'}
+        runId: {$ref: '#/components/schemas/UuidV7'}
+        revision: {type: integer, format: int64, minimum: 1}
+        kind: {type: string, enum: [PROGRESS, COMPENSATION]}
+        cursorSha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+        processedCount: {type: integer, format: int64, minimum: 0}
+        changedCount: {type: integer, format: int64, minimum: 0}
+        rejectedCount: {type: integer, format: int64, minimum: 0}
+        createdAt: {type: string, format: date-time}
     ConnectorGovernancePolicy:
       type: object
       additionalProperties: false

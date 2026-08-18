@@ -63,6 +63,29 @@ record AuthorizationRequirement(
             return unregistered(normalized);
         }
 
+        if (normalized.equals("/api/v1/integrations/sync/runs") && verb.equals("GET")) {
+            return permission(PermissionCodes.INTEGRATIONS_SYNC_READ, AuthorizationScope.platform(), "integration-sync-run", "collection");
+        }
+        if (normalized.matches("^/api/v1/integrations/sync/[^/]+/checkpoints$") && verb.equals("GET")) {
+            String connectorKey = new io.infranexum.integrations.ConnectorKey(normalized.split("/")[5]).value();
+            return permission(PermissionCodes.INTEGRATIONS_SYNC_READ, AuthorizationScope.platform(), "integration-sync-checkpoint", connectorKey);
+        }
+        if (normalized.matches("^/api/v1/integrations/sync/[^/]+/execute$") && verb.equals("POST")) {
+            String connectorKey = new io.infranexum.integrations.ConnectorKey(normalized.split("/")[5]).value();
+            return permission(PermissionCodes.INTEGRATIONS_SYNC_EXECUTE, AuthorizationScope.platform(), "integration-sync", connectorKey);
+        }
+        if (normalized.matches("^/api/v1/integrations/sync/runs/[^/]+/resume$") && verb.equals("POST")) {
+            String runId = DomainIdentifier.parse(normalized.split("/")[6]).toString();
+            return permission(PermissionCodes.INTEGRATIONS_SYNC_EXECUTE, AuthorizationScope.platform(), "integration-sync-run", runId);
+        }
+        if (normalized.matches("^/api/v1/integrations/sync/runs/[^/]+/compensate$") && verb.equals("POST")) {
+            String runId = DomainIdentifier.parse(normalized.split("/")[6]).toString();
+            return permission(PermissionCodes.INTEGRATIONS_SYNC_COMPENSATE, AuthorizationScope.platform(), "integration-sync-run", runId);
+        }
+        if (normalized.startsWith("/api/v1/integrations/sync/")) {
+            return unregistered(normalized);
+        }
+
         if (normalized.equals("/api/v1/integrations/providers/jira-assets") && verb.equals("GET")) {
             return permission(PermissionCodes.INTEGRATIONS_CONNECTOR_READ, AuthorizationScope.platform(), "integration-provider", "jira-assets");
         }

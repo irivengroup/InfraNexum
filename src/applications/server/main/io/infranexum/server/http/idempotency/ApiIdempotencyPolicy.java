@@ -49,7 +49,10 @@ public final class ApiIdempotencyPolicy {
         rule("publishRsotSchemaProfile","POST","/api/v1/rsot/schema-profiles/"+UUID+"/publish"),
         rule("deprecateRsotSchemaProfile","POST","/api/v1/rsot/schema-profiles/"+UUID+"/deprecate"),
         rule("replayIntegrationDeadLetter","POST","/api/v1/integrations/dlq/"+UUID+"/replay"),
-        rule("resumeIntegrationConnector","POST","/api/v1/integrations/connectors/"+UUID+"/resume")
+        rule("resumeIntegrationConnector","POST","/api/v1/integrations/connectors/"+UUID+"/resume"),
+        rule("executeConnectorSynchronization","POST","/api/v1/integrations/sync/"+UUID+"/execute"),
+        rule("resumeConnectorSynchronization","POST","/api/v1/integrations/sync/runs/"+UUID+"/resume"),
+        rule("compensateConnectorSynchronization","POST","/api/v1/integrations/sync/runs/"+UUID+"/compensate")
     );
 
     public Optional<String> operation(HttpServletRequest request) {

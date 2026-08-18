@@ -10,6 +10,10 @@ import io.infranexum.adapters.servicenow.ServiceNowRateLimitedException;
 import io.infranexum.adapters.servicenow.ServiceNowUnavailableException;
 import io.infranexum.integrations.ConnectorDeliveryNotFoundException;
 import io.infranexum.integrations.ConnectorGovernanceNotFoundException;
+import io.infranexum.integrations.ConnectorSyncHandlerUnavailableException;
+import io.infranexum.integrations.ConnectorSyncNotFoundException;
+import io.infranexum.integrations.ConnectorSyncPolicyDeniedException;
+import io.infranexum.integrations.ConnectorSyncStateConflictException;
 import io.infranexum.integrations.ConnectorEndpointUnavailableException;
 import io.infranexum.integrations.ConnectorDeliveryStateConflictException;
 import io.infranexum.integrations.DuplicateDeliveryConflictException;
@@ -28,7 +32,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /** Canonical RFC 9457 translation for PGM-10-E05/E06 integration failures. */
-@RestControllerAdvice(assignableTypes={IntegrationController.class,JiraAssetsController.class,ServiceNowController.class,NotificationController.class,ConnectorGovernanceController.class})
+@RestControllerAdvice(assignableTypes={IntegrationController.class,JiraAssetsController.class,ServiceNowController.class,NotificationController.class,ConnectorGovernanceController.class,ConnectorSyncController.class})
 final class IntegrationExceptionHandler {
     private final ApiProblemSupport problems;
     IntegrationExceptionHandler(ApiProblemSupport problems){this.problems=Objects.requireNonNull(problems,"problems");}
@@ -36,6 +40,9 @@ final class IntegrationExceptionHandler {
     @ExceptionHandler(ConnectorEndpointUnavailableException.class) ResponseEntity<ApiProblem> endpoint(ConnectorEndpointUnavailableException failure,HttpServletRequest request){return problem(HttpStatus.NOT_FOUND,"INFRANEXUM_CONNECTOR_ENDPOINT_UNAVAILABLE","Connector endpoint is unavailable",request);}
     @ExceptionHandler(ConnectorDeliveryNotFoundException.class) ResponseEntity<ApiProblem> missing(ConnectorDeliveryNotFoundException failure,HttpServletRequest request){return problem(HttpStatus.NOT_FOUND,"INFRANEXUM_CONNECTOR_DELIVERY_NOT_FOUND","Connector delivery was not found",request);}
     @ExceptionHandler(ConnectorGovernanceNotFoundException.class) ResponseEntity<ApiProblem> governanceMissing(ConnectorGovernanceNotFoundException failure,HttpServletRequest request){return problem(HttpStatus.NOT_FOUND,"INFRANEXUM_CONNECTOR_GOVERNANCE_NOT_FOUND","Connector governance policy was not found",request);}
+    @ExceptionHandler(ConnectorSyncNotFoundException.class) ResponseEntity<ApiProblem> syncMissing(ConnectorSyncNotFoundException failure,HttpServletRequest request){return problem(HttpStatus.NOT_FOUND,"INFRANEXUM_CONNECTOR_SYNC_NOT_FOUND","Connector synchronization run or checkpoint was not found",request);}
+    @ExceptionHandler({ConnectorSyncStateConflictException.class,ConnectorSyncPolicyDeniedException.class}) ResponseEntity<ApiProblem> syncConflict(RuntimeException failure,HttpServletRequest request){return problem(HttpStatus.CONFLICT,"INFRANEXUM_CONNECTOR_SYNC_CONFLICT","Connector synchronization is not permitted in the current governed state",request);}
+    @ExceptionHandler(ConnectorSyncHandlerUnavailableException.class) ResponseEntity<ApiProblem> syncUnavailable(ConnectorSyncHandlerUnavailableException failure,HttpServletRequest request){return problem(HttpStatus.SERVICE_UNAVAILABLE,"INFRANEXUM_CONNECTOR_SYNC_HANDLER_UNAVAILABLE","No approved synchronization handler is registered for this connector",request);}
     @ExceptionHandler({DuplicateDeliveryConflictException.class,ConnectorDeliveryStateConflictException.class}) ResponseEntity<ApiProblem> conflict(RuntimeException failure,HttpServletRequest request){return problem(HttpStatus.CONFLICT,"INFRANEXUM_CONNECTOR_DELIVERY_CONFLICT","Connector delivery state conflicts with the requested operation",request);}
     @ExceptionHandler(OutboundNotificationNotFoundException.class) ResponseEntity<ApiProblem> notificationMissing(OutboundNotificationNotFoundException failure,HttpServletRequest request){return problem(HttpStatus.NOT_FOUND,"INFRANEXUM_NOTIFICATION_NOT_FOUND","Notification delivery or endpoint was not found",request);}
     @ExceptionHandler(OutboundNotificationStateConflictException.class) ResponseEntity<ApiProblem> notificationConflict(OutboundNotificationStateConflictException failure,HttpServletRequest request){return problem(HttpStatus.CONFLICT,"INFRANEXUM_NOTIFICATION_STATE_CONFLICT","Notification state conflicts with the requested operation",request);}

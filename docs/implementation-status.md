@@ -1,3 +1,21 @@
+# InfraNexum 2.0.0-alpha.0.116 — durable connector sync checkpoints and compensation runtime
+
+**Statut : PGM-10-E06 EN COURS / PGM-10-E05 FORMELLEMENT NON TERMINÉ. Nature : incrément fonctionnel provider-agnostique.** `alpha.0.116` complète le modèle d'autorité/direction/rollback de `alpha.0.114` par un vrai chemin d'exécution durable de synchronisation, sans activer de mutation Jira Assets ou ServiceNow.
+
+**Runtime :** un cycle de synchronisation possède un run durable, une direction gouvernée, une révision de checkpoint monotone, un curseur interne et son SHA-256 public. L'exécution progresse en batches bornés, peut être mise en pause puis reprise, refuse les runs concurrents sur un même connecteur et ne suppose jamais une livraison exactly-once. Les handlers doivent être idempotents lorsqu'un curseur durable est rejoué.
+
+**Compensation :** les stratégies `LOCAL_CHECKPOINT`, `REMOTE_COMPENSATION` et `DUAL_COMPENSATION` peuvent déclencher une compensation réelle via le handler approuvé. Une compensation réussie ajoute un nouveau checkpoint `COMPENSATION` restaurant le curseur initial; elle ne modifie jamais un checkpoint historique. Une compensation est refusée si le connecteur a déjà progressé au-delà de la révision du run concerné. `MANUAL` reste explicitement opérateur et `NONE_REQUIRED` n'autorise aucune fausse restauration.
+
+**Persistance/RBAC :** migrations PostgreSQL/Oracle `0038` pour `connector_sync_state`, `connector_sync_run`, `connector_sync_checkpoint`; migration `0039` pour `integrations.sync.read`, `integrations.sync.execute`, `integrations.sync.compensate`, attribuées au rôle système protégé `system.platform_admin`. En mode MEMORY, les beans de sync durable ne sont pas composés.
+
+**API/Web :** le contrat produit passe à 200 opérations. Les cinq routes Sync fournissent liste des runs, liste des checkpoints, execute, resume et compensate. Les mutations exigent `Idempotency-Key`; les lectures sont paginées. Les réponses publiques n'exposent jamais le curseur brut. Le Web n'affiche `Execute` que pour une future policy mutante réellement admise; Jira Assets et ServiceNow restent read-only et n'ont aucun handler mutateur enregistré.
+
+**Validation de développement avant gel :** Web 220/220, couverture 99,73 % lignes / 98,54 % branches / 100 % fonctions; API Contracts 48/48, 15 fragments / 200 opérations, dette 0/0/0/0; architecture fonctionnelle 204/204, méta-checker 29/29, Architecture-as-Code PASS; migrations 117/117; Eventing 10/10; Persistence 12/12; Capabilities 10/10; Entitlements 10/10; Audit 8/8; Toolchains 25/25; SDK 19/19; Compose 69/69; smokes Java dependency-free Integrations/Sync/JDBC/Policy/API Capability PASS. Ces chiffres seront rejoués après le versionnage final avant packaging.
+
+**Gates exacts encore requis :** JDK25/Maven/JUnit/JaCoCo >=98 % lignes+branches pour les nouveaux modules/tests, PostgreSQL 17/18 live, Docker PRO/PowerShell et provider réel autorisé. Aucun de ces gates n'est prétendu exécuté localement si la toolchain correspondante n'est pas disponible.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.115 — hosted Java verification corrective
 
 Status: **CORRECTIVE / NO ROADMAP ADVANCE**.

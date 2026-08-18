@@ -1,3 +1,19 @@
+# InfraNexum 2.0.0-alpha.0.116 — durable connector synchronization and compensation runtime
+
+**PGM-10-E06 remains EN COURS.** This increment turns the connector governance model delivered in `alpha.0.114` into a real provider-neutral synchronization execution boundary: durable runs, append-only checkpoints, bounded batch progression, pause/resume, active-run fencing and governed compensation. Jira Assets and ServiceNow remain strictly `FEDERATED_READ / EXTERNAL`; no mutating provider handler is registered until an explicit field-authority contract exists.
+
+The runtime does **not** assume exactly-once delivery. Handler execution must be idempotent for a repeated durable cursor. Every checkpoint is append-only and revisioned; a successful compensation creates a new `COMPENSATION` checkpoint restoring the prior cursor instead of rewriting history. Compensation is fenced against a newer connector revision so an older run cannot overwrite later progress.
+
+Persistence is provided for PostgreSQL and Oracle by migrations `0038` (sync state/runs/checkpoints) and `0039` (platform RBAC permissions `integrations.sync.read|execute|compensate`). Public API responses expose only cursor SHA-256, never the raw provider cursor. Five operations expose run history, checkpoint history, execute, resume and compensate under capability `integrations.connectors`, with mandatory authorization and idempotency on mutations.
+
+The Web Integrations workspace exposes the synchronization runtime and history. Execution remains disabled while no governed mutating connector exists. Resume and compensation require an explicit operator reason, and no provider credential or raw cursor reaches the browser.
+
+**PGM-10-E05 remains formally NON TERMINÉ** until exact hosted Temurin 25/Maven/JaCoCo and PostgreSQL 17/18 evidence passes. Exact JDK25/JaCoCo verification of the new sync JUnit suites must therefore be supplied by the hosted quality gates; local Java 21 smokes are auxiliary only.
+
+See `docs/integrations-connector-sync-runtime.md` and `docs/integrations-connector-governance.md`.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.115 — hosted Java quality-gate corrective
 
 `alpha.0.115` is a qualification corrective over `alpha.0.114`; it does **not** advance PGM-10-E06. The hosted Temurin/JDK 25 verification of `alpha.0.114` exposed four independent Java quality-gate defects that local dependency-free smokes could not certify: DDI JaCoCo line coverage at 96 %, an Integrations notification fixture that did not actually register the disabled endpoint it intended to test, JDBC independent-module coverage at 93 % lines / 83 % branches, and five Server Spring-context errors in the MEMORY test runtime.

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum RSOT Schema Registry API
-  version: 2.0.0-alpha.0.115
+  version: 2.0.0-alpha.0.116
   description: Versioned JSON Schema registry and composable schema profiles for PGM-06-E03.
 servers:
 - url: /

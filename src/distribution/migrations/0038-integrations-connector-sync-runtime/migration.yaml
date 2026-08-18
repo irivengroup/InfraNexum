@@ -1,0 +1,24 @@
+schema: infranexum.migration/v1
+id: 0038
+name: integrations-connector-sync-runtime
+owner_context: integrations
+dependencies:
+- '0037'
+preconditions:
+- outbound-notification-permissions-created
+postconditions:
+- durable-connector-sync-state-runs-checkpoints-created
+recovery: rerun-idempotent-sync-schema-after-correcting-database-connectivity
+rollback: drops-only-connector-sync-runtime-state-and-history
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 30
+checksums:
+  postgresql.sql: 6a87ee6233250a644c1f195748bfa260ade0c3211edf54c4a690ccbc42a5d61e
+  oracle.sql: 4af23b0b14279b9f13d7e8577a043e3e268f728e6a8d0f0945ff80a362cd8080
+  rollback/postgresql.sql: 3612bfb7914d7024fa1807bcd199f0edfb1866de600ac41a8ed8e86765c41713
+  rollback/oracle.sql: 23b270b275d1615b57628ebfa03be3cc448d39350f837401fe36a354da7ed40d
+  logical-model.json: cdc138508ab916f7781c70a8567f44ab3f4070536f37232b5ddbba6379345d4e
+  verify.sql.yaml: af3654650f99fb050cc3134162805d25457c9e5612edaf76b0ccd5541d80e045

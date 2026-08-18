@@ -1,0 +1,14 @@
+schema: infranexum.migration-verification/v1
+checks:
+- id: connector-sync-state-created
+  postgresql: "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='infranexum_integrations' AND table_name='connector_sync_state'"
+  oracle: "SELECT COUNT(*) FROM user_tables WHERE table_name='INFRANEXUM_SYNC_STATE'"
+  expected: 1
+- id: connector-sync-run-created
+  postgresql: "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='infranexum_integrations' AND table_name='connector_sync_run'"
+  oracle: "SELECT COUNT(*) FROM user_tables WHERE table_name='INFRANEXUM_SYNC_RUN'"
+  expected: 1
+- id: connector-sync-checkpoint-created
+  postgresql: "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='infranexum_integrations' AND table_name='connector_sync_checkpoint'"
+  oracle: "SELECT COUNT(*) FROM user_tables WHERE table_name='INFRANEXUM_SYNC_CHECKPOINT'"
+  expected: 1

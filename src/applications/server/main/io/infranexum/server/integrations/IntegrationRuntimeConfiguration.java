@@ -7,6 +7,7 @@ import io.infranexum.adapters.servicenow.JdkServiceNowTransport;
 import io.infranexum.adapters.servicenow.ServiceNowTransport;
 import io.infranexum.adapters.persistence.jdbc.JdbcConnectorInboxRepository;
 import io.infranexum.adapters.persistence.jdbc.JdbcOutboundNotificationRepository;
+import io.infranexum.adapters.persistence.jdbc.JdbcConnectorSyncRepository;
 import io.infranexum.adapters.persistence.jdbc.JdbcDatabaseDialect;
 import io.infranexum.core.audit.AuditJournal;
 import io.infranexum.core.contracts.ConfigurationException;
@@ -24,6 +25,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -152,6 +154,52 @@ public class IntegrationRuntimeConfiguration {
             @Qualifier("integrationIdentifiers") UuidV7Generator ids,
             @Qualifier("platformClock") Clock clock) {
         return new ConnectorGovernanceOperationsService(registry, planner, audit, ids, clock);
+    }
+
+    @Bean
+    @ConditionalOnExpression("\'${infranexum.persistence.mode:MEMORY}\' == \'POSTGRESQL\' || \'${infranexum.persistence.mode:MEMORY}\' == \'ORACLE\'")
+    ConnectorSyncRepository connectorSyncRepository(DataSource dataSource, PersistenceRuntimeProperties persistence) {
+        JdbcDatabaseDialect dialect = switch (persistence.mode()) {
+            case POSTGRESQL -> JdbcDatabaseDialect.POSTGRESQL;
+            case ORACLE -> JdbcDatabaseDialect.ORACLE;
+            case MEMORY -> throw new ConfigurationException("connector synchronization requires PostgreSQL or Oracle persistence");
+        };
+        return new JdbcConnectorSyncRepository(dataSource, dialect);
+    }
+
+    @Bean
+    ImmutableConnectorSyncHandlerRegistry connectorSyncHandlerRegistry(ObjectProvider<ConnectorSyncHandler> handlers) {
+        return new ImmutableConnectorSyncHandlerRegistry(handlers.orderedStream().toList());
+    }
+
+    @Bean
+    SmartInitializingSingleton connectorSyncHandlerValidator(
+            ImmutableConnectorSyncHandlerRegistry handlers, ConnectorGovernanceRegistry governance) {
+        return () -> {
+            for (ConnectorKey key : handlers.keys()) {
+                ConnectorGovernancePolicy policy = governance.require(key);
+                if (!policy.direction().mutating()) {
+                    throw new ConfigurationException("mutating synchronization handler registered for non-mutating connector: " + key.value());
+                }
+            }
+        };
+    }
+
+    @Bean
+    @ConditionalOnExpression("\'${infranexum.persistence.mode:MEMORY}\' == \'POSTGRESQL\' || \'${infranexum.persistence.mode:MEMORY}\' == \'ORACLE\'")
+    ConnectorSyncEngine connectorSyncEngine(
+            ConnectorGovernanceRegistry governance, ConnectorGovernancePlanner planner,
+            ConnectorSyncHandlerRegistry handlers, ConnectorSyncRepository repository,
+            @Qualifier("integrationIdentifiers") UuidV7Generator ids, @Qualifier("platformClock") Clock clock) {
+        return new ConnectorSyncEngine(governance, planner, handlers, repository, ids, clock);
+    }
+
+    @Bean
+    @ConditionalOnExpression("\'${infranexum.persistence.mode:MEMORY}\' == \'POSTGRESQL\' || \'${infranexum.persistence.mode:MEMORY}\' == \'ORACLE\'")
+    ConnectorSyncOperationsService connectorSyncOperationsService(
+            ConnectorSyncEngine engine, ConnectorSyncRepository repository, AuditJournal audit,
+            @Qualifier("integrationIdentifiers") UuidV7Generator ids, @Qualifier("platformClock") Clock clock, MeterRegistry meters) {
+        return new ConnectorSyncOperationsService(engine, repository, audit, ids, clock, meters);
     }
 
     @Bean
