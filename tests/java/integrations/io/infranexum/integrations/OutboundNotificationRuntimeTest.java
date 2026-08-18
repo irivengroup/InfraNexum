@@ -116,7 +116,8 @@ final class OutboundNotificationRuntimeTest {
         assertThrows(IllegalArgumentException.class, () -> publisher.publish("evt-20260817-0004", "a.b", "{}".getBytes(), List.of()));
         assertThrows(IllegalArgumentException.class, () -> publisher.publish("evt-20260817-0004", "a.b", "{}".getBytes(), List.of(KEY, KEY)));
         var disabled = new OutboundNotificationEndpoint(KEY, URI.create("https://example.test"), "env:X", Duration.ofSeconds(1), false);
-        assertThrows(IllegalArgumentException.class, () -> publisher.publish("evt-20260817-0004", "a.b", "{}".getBytes(), List.of(disabled.endpointKey())));
+        var disabledPublisher = publisher(repo, registry(disabled), new Observer(), 2);
+        assertThrows(IllegalArgumentException.class, () -> disabledPublisher.publish("evt-20260817-0004", "a.b", "{}".getBytes(), List.of(disabled.endpointKey())));
 
         byte[] original = "{}".getBytes();
         DomainIdentifier id = new DomainIdentifier(new UUID(0x0198000000007001L, 0x8000000000000001L));

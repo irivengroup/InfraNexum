@@ -92,7 +92,7 @@ test('ReDoc renderer initializes the certified local specification and reaches t
     assert.equal(kind, 'script');
   };
 
-  const specLoader = async () => ({ openapi: '3.1.0', info: { version: '2.0.0-alpha.0.114' }, paths: {} });
+  const specLoader = async () => ({ openapi: '3.1.0', info: { version: '2.0.0-alpha.0.115' }, paths: {} });
   assert.equal(await renderRedoc(documentObject, windowObject, assetLoader, specLoader), true);
   assert.equal(initializedSpec.openapi, '3.1.0');
   assert.equal(replaced, 1);

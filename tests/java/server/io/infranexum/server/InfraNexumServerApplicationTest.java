@@ -24,13 +24,12 @@ class InfraNexumServerApplicationTest {
     void defaultRuntimeDoesNotCreateAnOtlpMetricsExporter() {
         try (var context = new SpringApplicationBuilder(InfraNexumServerApplication.class)
                 .web(WebApplicationType.NONE)
-                .properties(
-                        "spring.main.banner-mode=off",
-                        "spring.main.register-shutdown-hook=false",
-                        "infranexum.entitlements.enabled=false",
-                        "infranexum.workers.enabled=false",
-                        "infranexum.persistence.mode=MEMORY")
-                .run()) {
+                .run(
+                        "--spring.main.banner-mode=off",
+                        "--spring.main.register-shutdown-hook=false",
+                        "--infranexum.entitlements.enabled=false",
+                        "--infranexum.workers.enabled=false",
+                        "--infranexum.persistence.mode=MEMORY")) {
             assertTrue(
                     context.getBeansOfType(OtlpMeterRegistry.class).isEmpty(),
                     "OTLP metrics export must be opt-in and absent from the default runtime");

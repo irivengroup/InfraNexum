@@ -103,6 +103,23 @@ class ServerRepositoryCompositionContractsTest(unittest.TestCase):
 
         self.assertEqual([], mismatches, "\n".join(mismatches))
 
+    def test_memory_runtime_does_not_compose_durable_rsot_boundaries(self) -> None:
+        object_controller = (self.SERVER / "io/infranexum/server/rsot/RsotObjectController.java").read_text(encoding="utf-8")
+        schema_controller = (self.SERVER / "io/infranexum/server/rsot/RsotSchemaController.java").read_text(encoding="utf-8")
+        runtime = (self.SERVER / "io/infranexum/server/rsot/RsotRuntimeConfiguration.java").read_text(encoding="utf-8")
+        condition = "${infranexum.persistence.mode:MEMORY}"
+        for text in (object_controller, schema_controller, runtime):
+            self.assertIn("ConditionalOnExpression", text)
+            self.assertIn(condition, text)
+            self.assertIn("POSTGRESQL", text)
+            self.assertIn("ORACLE", text)
+
+        application_test = (self.ROOT / "tests/java/server/io/infranexum/server/InfraNexumServerApplicationTest.java").read_text(encoding="utf-8")
+        self.assertIn('.run(', application_test)
+        self.assertIn('"--infranexum.entitlements.enabled=false"', application_test)
+        self.assertIn('"--infranexum.persistence.mode=MEMORY"', application_test)
+        self.assertNotIn('.properties(\n                        "spring.main.banner-mode=off"', application_test)
+
 
 if __name__ == "__main__":
     unittest.main()

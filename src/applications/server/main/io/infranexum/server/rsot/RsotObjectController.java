@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import io.infranexum.server.platform.PlatformCapabilityService;
 import java.util.List;
 import java.util.Objects;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Read-only HTTP boundary exposing canonical RSOT objects to governance and ITAM selectors. */
 @RestController
+@ConditionalOnExpression("\'${infranexum.persistence.mode:MEMORY}\' == \'POSTGRESQL\' || \'${infranexum.persistence.mode:MEMORY}\' == \'ORACLE\'")
 @RequestMapping("/api/v1/rsot/canonical-objects")
 public final class RsotObjectController {
     private final RsotQueryService queries;

@@ -209,6 +209,29 @@ final class IpamDomainCoverageTest {
         assertEquals("network not found", new IpamNotFoundException("network").getMessage());
     }
 
+    @Test
+    void coverageClosureExercisesIdempotencyRecordAndCidrCrossFamilyUtilities() {
+        DomainIdentifier result = id();
+        var record = new io.infranexum.ddi.ipam.ports.IpamIdempotencyRepository.Record(
+                "ddi-coverage-0001", "a".repeat(64), "network.create", result, NOW);
+        assertEquals("ddi-coverage-0001", record.key());
+        assertEquals(result, record.resultId());
+        assertEquals(NOW, record.createdAt());
+
+        IpCidr ipv4 = new IpCidr("192.0.2.1/24");
+        IpCidr ipv6 = new IpCidr("2001:db8::1/64");
+        assertFalse(ipv4.overlaps(ipv6));
+        assertFalse(ipv4.contains(ipv6));
+        assertThrows(IllegalArgumentException.class, () -> ipv4.containsAddress("2001:db8::1"));
+        assertThrows(IllegalArgumentException.class, () -> IpCidr.canonicalAddress("not-an-ip.invalid"));
+        assertThrows(IllegalArgumentException.class, () -> IpCidr.sortKey("not-an-ip.invalid"));
+        assertEquals(ipv4, new IpCidr("192.0.2.200/24"));
+        assertEquals(ipv4.hashCode(), new IpCidr("192.0.2.0/24").hashCode());
+        assertEquals(ipv4.value(), ipv4.toString());
+        assertTrue(ipv6.firstSortKey() != null);
+        assertTrue(ipv6.lastSortKey() != null);
+    }
+
     private static DomainIdentifier id() {
         return new UuidV7Generator(CLOCK, new SecureRandom(new byte[] {1, 2, 3, 4})).next();
     }

@@ -1,3 +1,15 @@
+# InfraNexum 2.0.0-alpha.0.115 — hosted Java verification corrective
+
+Status: **CORRECTIVE / NO ROADMAP ADVANCE**.
+
+Hosted `alpha.0.114` evidence under the target Java toolchain identified four defects that must be closed before PGM-10-E05 can be promoted: DDI module JaCoCo line coverage was 96 % against the mandatory 98 % minimum; `OutboundNotificationRuntimeTest` expected a disabled-endpoint rejection while its publisher registry still contained the enabled fixture; the independent JDBC adapter verify reached only 93 % lines / 83 % branches; and the independent Server verify reported five Spring context errors because durable RSOT boundaries were composed in MEMORY mode and one bootstrap test used low-precedence default properties.
+
+`alpha.0.115` corrects those causes without reducing coverage policy, disabling tests, excluding production classes or weakening runtime validation. DDI adds domain boundary coverage. Integrations registers the disabled endpoint in the test under assertion. JDBC adds a dedicated deterministic suite for `JdbcOutboundNotificationRepository`, including PostgreSQL/Oracle paths, lease fencing, retry/dead-letter state, Oracle unique-race recovery, replay/resume and transaction branches. Server conditions durable RSOT controllers/CLI on PostgreSQL/Oracle persistence and uses command-line overrides in executable bootstrap tests; a Spring context-runner regression protects the MEMORY composition boundary.
+
+Local status for the corrected snapshot: dependency-free DDI/Integrations/JDBC/JDBC-audit/RSOT/Policy/API-Capability smokes **PASS**; dedicated functional JUnit-compatible probes for the newly added DDI and JDBC coverage tests **PASS**. Exact Temurin 25 Maven/JUnit/JaCoCo verification for `alpha.0.115` is **NON EXÉCUTÉ locally** and must be established by the next hosted GitHub Actions run. PGM-10-E05 therefore remains formally open and PGM-10-E06 remains in progress.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.114 — PGM-10-E06 phase 4: Connector Governance
 
 **Statut : EN COURS / NON TERMINÉ. Nature : évolution fonctionnelle bornée.** Cette version préserve Jira Assets, ServiceNow, Notifications et la corrective Web/IAM `alpha.0.113`, puis rend exécutable la gouvernance commune des connecteurs exigée par la roadmap : autorité, direction de synchronisation, conflits, suppressions, autorité par champ et stratégie de rollback.

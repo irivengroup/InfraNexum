@@ -1,3 +1,15 @@
+# InfraNexum 2.0.0-alpha.0.115 — hosted Java quality-gate corrective
+
+`alpha.0.115` is a qualification corrective over `alpha.0.114`; it does **not** advance PGM-10-E06. The hosted Temurin/JDK 25 verification of `alpha.0.114` exposed four independent Java quality-gate defects that local dependency-free smokes could not certify: DDI JaCoCo line coverage at 96 %, an Integrations notification fixture that did not actually register the disabled endpoint it intended to test, JDBC independent-module coverage at 93 % lines / 83 % branches, and five Server Spring-context errors in the MEMORY test runtime.
+
+The corrective keeps every JaCoCo threshold at **98 % lines and branches**. DDI receives additional domain-contract coverage; the notification fail-closed test now exercises a registry containing the disabled endpoint; the durable outbound-notification JDBC repository receives deterministic PostgreSQL/Oracle coverage for admission, claims, fencing, retries, DLQ state, Oracle uniqueness races, replay/resume, counts, transaction restoration and failure-code bounds. No production fail-closed rule is weakened to satisfy a test.
+
+Server composition is corrected rather than mocked around: durable RSOT HTTP/CLI boundaries are not composed when `infranexum.persistence.mode=MEMORY`, while PostgreSQL/Oracle behavior remains unchanged. The executable-entrypoint test now supplies MEMORY/entitlement/worker overrides as command-line properties, so `application.yaml` cannot override the intended isolated test runtime through lower-precedence `SpringApplicationBuilder.properties(...)` defaults. A Spring `ApplicationContextRunner` regression explicitly verifies that MEMORY mode does not instantiate the durable RSOT controllers.
+
+Exact Temurin 25 Maven/JUnit/JaCoCo results for **this** `alpha.0.115` source snapshot remain an external CI gate until the corrected commit is rerun on GitHub Actions. Local Java 21 dependency-free smokes and deterministic JUnit-compatible coverage probes are preflight evidence only and are not reported as a replacement for that hosted gate.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.114 — PGM-10-E06 connector governance
 
 `alpha.0.114` advances PGM-10-E06 with a provider-neutral **Connector Governance** runtime over the existing Jira Assets and ServiceNow providers. Authority, synchronization direction, conflict strategy, deletion policy, field-level authority and rollback strategy are now executable Server policy rather than documentation-only metadata.
