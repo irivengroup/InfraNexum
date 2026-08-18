@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-/** Pure planner enforcing connector authority, direction, deletion and rollback contracts. */
+/** Pure planner enforcing connector authority, direction, deletion, rollback and execution-admission contracts. */
 public final class ConnectorGovernancePlanner {
     public ConnectorSyncPlan plan(ConnectorGovernancePolicy policy, ConnectorSyncPlanRequest request) {
         Objects.requireNonNull(policy, "policy");
@@ -18,6 +18,9 @@ public final class ConnectorGovernancePlanner {
         Set<String> governed = new HashSet<>();
         policy.fields().forEach(field -> governed.add(field.field()));
         if (request.direction().mutating()) {
+            if (!policy.executionEnabled()) {
+                reasons.add("mutating synchronization execution is disabled by connector policy");
+            }
             if (request.fields().isEmpty()) reasons.add("mutating synchronization requires explicit fields");
             for (String field : request.fields()) {
                 if (!governed.contains(field)) reasons.add("field is not governed: " + field);

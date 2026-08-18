@@ -21,12 +21,15 @@ public final class ConnectorSyncHandlerRegistrySmoke {
 
         ImmutableConnectorSyncHandlerRegistry registry = new ImmutableConnectorSyncHandlerRegistry(List.of(beta, alpha));
         assert registry.keys().equals(List.of(new ConnectorKey("alpha-sync"), new ConnectorKey("beta-sync")));
+        assert registry.contains(new ConnectorKey("alpha-sync"));
+        assert !registry.contains(new ConnectorKey("missing-sync"));
         assert registry.require(new ConnectorKey("alpha-sync")) == alpha;
 
         assert new ImmutableConnectorSyncHandlerRegistry(null).keys().isEmpty();
         expect(ConfigurationException.class, () -> new ImmutableConnectorSyncHandlerRegistry(List.of(alpha, alpha)));
         expect(NullPointerException.class, () -> new ImmutableConnectorSyncHandlerRegistry(Arrays.asList(alpha, null)));
         expect(ConnectorSyncHandlerUnavailableException.class, () -> registry.require(new ConnectorKey("missing-sync")));
+        expect(NullPointerException.class, () -> registry.contains(null));
 
         System.out.println("connector-sync-handler-registry-smoke: PASS typed-empty-list duplicate/null/missing fail-closed");
     }

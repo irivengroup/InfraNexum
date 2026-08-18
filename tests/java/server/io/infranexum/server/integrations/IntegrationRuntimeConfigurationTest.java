@@ -1,5 +1,7 @@
 package io.infranexum.server.integrations;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -14,8 +16,13 @@ import io.infranexum.core.contracts.ConfigurationException;
 import io.infranexum.core.contracts.RuntimeMode;
 import io.infranexum.integrations.ConnectorDelivery;
 import io.infranexum.integrations.ConnectorDeliveryHandler;
+import io.infranexum.integrations.ConnectorConflictStrategy;
+import io.infranexum.integrations.ConnectorDataAuthority;
+import io.infranexum.integrations.ConnectorDeletionPolicy;
 import io.infranexum.integrations.ConnectorInboxRepository;
 import io.infranexum.integrations.ConnectorKey;
+import io.infranexum.integrations.ConnectorRollbackStrategy;
+import io.infranexum.integrations.ConnectorSyncDirection;
 import io.infranexum.integrations.ConnectorSyncHandler;
 import io.infranexum.integrations.ConnectorSyncBatchContext;
 import io.infranexum.integrations.ConnectorSyncBatchResult;
@@ -59,6 +66,31 @@ class IntegrationRuntimeConfigurationTest {
                     assertTrue(properties.jiraAssets().connectors().isEmpty());
                     assertTrue(properties.serviceNow().connectors().isEmpty());
                     assertTrue(properties.notifications().endpoints().isEmpty());
+                    assertTrue(properties.governance().isEmpty());
+                });
+    }
+
+    @Test
+    void explicitPreparedGovernanceBindsThroughSpringConfigData() {
+        new ApplicationContextRunner()
+                .withInitializer(new ConfigDataApplicationContextInitializer())
+                .withUserConfiguration(IntegrationPropertiesBindingConfiguration.class)
+                .withPropertyValues(
+                        "infranexum.integrations.governance.jira-prod.direction=INBOUND",
+                        "infranexum.integrations.governance.jira-prod.authority=EXTERNAL",
+                        "infranexum.integrations.governance.jira-prod.conflict-strategy=PREFER_AUTHORITY",
+                        "infranexum.integrations.governance.jira-prod.deletion-policy=IGNORE",
+                        "infranexum.integrations.governance.jira-prod.rollback-strategy=LOCAL_CHECKPOINT",
+                        "infranexum.integrations.governance.jira-prod.execution-enabled=false",
+                        "infranexum.integrations.governance.jira-prod.fields.name=EXTERNAL")
+                .run(context -> {
+                    assertNull(context.getStartupFailure());
+                    IntegrationRuntimeProperties properties = context.getBean(IntegrationRuntimeProperties.class);
+                    assertEquals(1, properties.governance().size());
+                    var governance = properties.governance().get("jira-prod");
+                    assertEquals(ConnectorSyncDirection.INBOUND, governance.direction());
+                    assertEquals(ConnectorDataAuthority.EXTERNAL, governance.fields().get("name"));
+                    assertFalse(governance.executionEnabled());
                 });
     }
 
@@ -74,28 +106,51 @@ class IntegrationRuntimeConfigurationTest {
     }
 
     @Test
-    void connectorSyncRepositoryIsDurableOnlyAndHandlerValidatorRejectsReadOnlyProviders() {
+    void connectorSyncRepositoryIsDurableOnlyAndHandlerAdmissionIsBidirectionallyFailClosed() {
         DataSource dataSource = mock(DataSource.class);
-        assertInstanceOf(JdbcConnectorSyncRepository.class, configuration.connectorSyncRepository(dataSource, persistence(PersistenceMode.POSTGRESQL)));
-        assertInstanceOf(JdbcConnectorSyncRepository.class, configuration.connectorSyncRepository(dataSource, persistence(PersistenceMode.ORACLE)));
-        assertThrows(ConfigurationException.class, () -> configuration.connectorSyncRepository(dataSource, persistence(PersistenceMode.MEMORY)));
+        assertInstanceOf(JdbcConnectorSyncRepository.class, configuration.connectorSyncRepository(
+                dataSource, persistence(PersistenceMode.POSTGRESQL)));
+        assertInstanceOf(JdbcConnectorSyncRepository.class, configuration.connectorSyncRepository(
+                dataSource, persistence(PersistenceMode.ORACLE)));
+        assertThrows(ConfigurationException.class, () -> configuration.connectorSyncRepository(
+                dataSource, persistence(PersistenceMode.MEMORY)));
 
+        ConnectorKey key = new ConnectorKey("jira-prod");
         ConnectorSyncHandler jiraMutation = new ConnectorSyncHandler() {
-            @Override public ConnectorKey connectorKey() { return new ConnectorKey("jira-prod"); }
-            @Override public ConnectorSyncBatchResult synchronize(ConnectorSyncBatchContext context) { return ConnectorSyncBatchResult.applied(null, 0, 0, 0, true); }
-            @Override public ConnectorSyncCompensationResult compensate(ConnectorSyncCompensationContext context) { return ConnectorSyncCompensationResult.succeeded(); }
+            @Override public ConnectorKey connectorKey() { return key; }
+            @Override public ConnectorSyncBatchResult synchronize(ConnectorSyncBatchContext context) {
+                return ConnectorSyncBatchResult.applied(null, 0, 0, 0, true);
+            }
+            @Override public ConnectorSyncCompensationResult compensate(ConnectorSyncCompensationContext context) {
+                return ConnectorSyncCompensationResult.succeeded();
+            }
         };
         StaticListableBeanFactory handlersFactory = new StaticListableBeanFactory();
         handlersFactory.addBean("jiraMutation", jiraMutation);
-        var handlers = configuration.connectorSyncHandlerRegistry(handlersFactory.getBeanProvider(ConnectorSyncHandler.class));
-        var governance = new ConfiguredConnectorGovernanceRegistry(
-                Map.of(new ConnectorKey("jira-prod"), new io.infranexum.adapters.jiraassets.JiraAssetsSettings(new ConnectorKey("jira-prod"),"cloud","workspace","env:PATH",Duration.ofSeconds(5),true)),
-                Map.of());
-        assertThrows(ConfigurationException.class, configuration.connectorSyncHandlerValidator(handlers, governance)::afterSingletonsInstantiated);
-
+        var handlerRegistry = configuration.connectorSyncHandlerRegistry(
+                handlersFactory.getBeanProvider(ConnectorSyncHandler.class));
         StaticListableBeanFactory emptyFactory = new StaticListableBeanFactory();
-        configuration.connectorSyncHandlerValidator(
-                configuration.connectorSyncHandlerRegistry(emptyFactory.getBeanProvider(ConnectorSyncHandler.class)), governance).afterSingletonsInstantiated();
+        var emptyRegistry = configuration.connectorSyncHandlerRegistry(
+                emptyFactory.getBeanProvider(ConnectorSyncHandler.class));
+
+        var jira = Map.of(key, new io.infranexum.adapters.jiraassets.JiraAssetsSettings(
+                key, "cloud", "workspace", "env:PATH", Duration.ofSeconds(5), true));
+        var readOnly = new ConfiguredConnectorGovernanceRegistry(jira, Map.of());
+        assertThrows(ConfigurationException.class,
+                configuration.connectorSyncHandlerValidator(handlerRegistry, readOnly)::afterSingletonsInstantiated);
+        configuration.connectorSyncHandlerValidator(emptyRegistry, readOnly).afterSingletonsInstantiated();
+
+        var prepared = new ConfiguredConnectorGovernanceRegistry(
+                jira, Map.of(), Map.of(key, governance(false)));
+        configuration.connectorSyncHandlerValidator(emptyRegistry, prepared).afterSingletonsInstantiated();
+        assertThrows(ConfigurationException.class,
+                configuration.connectorSyncHandlerValidator(handlerRegistry, prepared)::afterSingletonsInstantiated);
+
+        var active = new ConfiguredConnectorGovernanceRegistry(
+                jira, Map.of(), Map.of(key, governance(true)));
+        assertThrows(ConfigurationException.class,
+                configuration.connectorSyncHandlerValidator(emptyRegistry, active)::afterSingletonsInstantiated);
+        configuration.connectorSyncHandlerValidator(handlerRegistry, active).afterSingletonsInstantiated();
     }
 
     @Test
@@ -152,7 +207,7 @@ class IntegrationRuntimeConfigurationTest {
                     inbox, mock(AuditJournal.class), observer, ids, CLOCK);
             var dispatcher = configuration.connectorInboxDispatcher(
                     inbox, endpointRegistry, handlerRegistry, observer, CLOCK,
-                    new ServerRuntimeProperties("server-a", RuntimeMode.REGIONAL, "eu-west", "paris", "2.0.0-alpha.0.121", "2.0.0-draft.21"),
+                    new ServerRuntimeProperties("server-a", RuntimeMode.REGIONAL, "eu-west", "paris", "2.0.0-alpha.0.122", "2.0.0-draft.21"),
                     properties);
 
             assertNotNull(webhook);
@@ -181,6 +236,14 @@ class IntegrationRuntimeConfigurationTest {
                         "jira-handler", "env:PATH", Duration.ofMinutes(5), true)),
                 new IntegrationRuntimeProperties.JiraAssetsProperties(2_097_152, Map.of()),
                 new IntegrationRuntimeProperties.ServiceNowProperties(2_097_152, Map.of()));
+    }
+
+    private static IntegrationRuntimeProperties.GovernanceProperties governance(boolean executionEnabled) {
+        return new IntegrationRuntimeProperties.GovernanceProperties(
+                ConnectorSyncDirection.INBOUND, ConnectorDataAuthority.EXTERNAL,
+                ConnectorConflictStrategy.PREFER_AUTHORITY, ConnectorDeletionPolicy.IGNORE,
+                ConnectorRollbackStrategy.LOCAL_CHECKPOINT, executionEnabled,
+                Map.of("name", ConnectorDataAuthority.EXTERNAL));
     }
 
     private static ConnectorDeliveryHandler handler(String name) {

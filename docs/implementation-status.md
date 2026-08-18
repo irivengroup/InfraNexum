@@ -1,3 +1,30 @@
+# InfraNexum 2.0.0-alpha.0.122 — prepared connector governance and execution admission
+
+## Scope
+
+`alpha.0.122` advances PGM-10-E06 at the governance boundary only. Existing Jira Assets and ServiceNow connector keys may receive a provider-neutral authority mapping (direction, authority, conflict/deletion policy, rollback strategy and field-level authorities). The provider name is resolved from the real configured provider and is not configurable in the mapping.
+
+`executionEnabled=false` defines a prepared policy. The planner rejects mutating execution, the Web Execute selector excludes it and no provider write occurs. `executionEnabled=true` is admitted only when the provider connector is enabled and a matching approved synchronization handler is registered. Startup validation is bidirectional and fail-closed: handler without an active policy or active policy without a handler aborts composition. No Jira Assets or ServiceNow mutating handler is registered by this release.
+
+The API adds `executionEnabled` to the existing governance response and audit metadata records `execution_enabled`. No endpoint, migration, capability or RBAC permission is added. Migrations remain through `0039`.
+
+## Validation locale exécutée
+
+- Web : 224/224 ; couverture 99,73 % lignes, 98,56 % branches, 100 % fonctions ; process smoke PASS.
+- API : 48/48 ; 15 fragments / 200 opérations ; dette idempotence/pagination/capability/permission = 0/0/0/0 ; projection OpenAPI 2/2.
+- Architecture : 206/206 tests fonctionnels + 29/29 tests du checker ; Architecture-as-Code sans violation.
+- Toolchains : 25/25 ; migrations : 117/117 ; Compose : 69/69.
+- Eventing 10/10, Persistence 12/12, Capabilities 10/10, Entitlements 10/10, Audit 8/8 ; checkers sans violation.
+- Java Integrations auxiliaire sur JDK21 : compilation stricte `-Xlint:all -Werror` et smokes runtime/governance/sync/handler registry réussis. Ce préflight ne remplace pas le gate JDK25/JaCoCo.
+
+## Roadmap status
+
+- **PGM-10-E05: NON TERMINÉ** — exact JDK25/JaCoCo/PostgreSQL 17/18 proof remains mandatory on this snapshot.
+- **PGM-10-E06: EN COURS** — prepared authority mapping and execution admission are implemented; durable alpha.0.116 synchronization/compensation is preserved; no provider mutator is active.
+- **OpenService:** not implemented because draft.21 does not define an authoritative provider contract sufficient for a production adapter.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.121 — deterministic DataTable geometry corrective
 
 ## Scope

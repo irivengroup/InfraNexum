@@ -63,7 +63,8 @@ final class ConnectorGovernanceOperationsService {
                         "configured_direction", policy.direction().name(),
                         "requested_direction", result.requestedDirection().name(),
                         "authority", policy.authority().name(),
-                        "rollback", policy.rollbackStrategy().name()),
+                        "rollback", policy.rollbackStrategy().name(),
+                        "execution_enabled", Boolean.toString(policy.executionEnabled())),
                 "ELEVATED"));
         return result;
     }

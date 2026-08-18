@@ -53,7 +53,7 @@ ${notificationSection()}`;
 }
 
 function governanceSection() {
-  return `<section class="mb-4" aria-labelledby="connector-governance-title"><div class="mb-2"><h3 id="connector-governance-title" class="h5 mb-1" data-i18n="integrations.governance.title">Connector governance</h3><p class="small text-body-secondary mb-0" data-i18n="integrations.governance.description">Authority · synchronization direction · conflicts · deletion policy · rollback contract</p></div><div class="table-responsive"><table class="table table-hover align-middle"><thead><tr><th data-i18n="integrations.connector">Connector</th><th data-i18n="integrations.provider">Provider</th><th data-i18n="integrations.direction">Direction</th><th data-i18n="integrations.authority">Authority</th><th data-i18n="integrations.governance.conflicts">Conflicts</th><th data-i18n="integrations.governance.deletions">Deletions</th><th data-i18n="integrations.governance.rollback">Rollback</th><th data-inx-action-column data-i18n="common.actions">Actions</th></tr></thead><tbody id="connector-governance-policies"></tbody></table></div><p id="connector-governance-page" class="small text-body-secondary mb-0" aria-live="polite"></p></section>`;
+  return `<section class="mb-4" aria-labelledby="connector-governance-title"><div class="mb-2"><h3 id="connector-governance-title" class="h5 mb-1" data-i18n="integrations.governance.title">Connector governance</h3><p class="small text-body-secondary mb-0" data-i18n="integrations.governance.description">Authority · synchronization direction · conflicts · deletion policy · rollback contract</p></div><div class="table-responsive"><table class="table table-hover align-middle"><thead><tr><th data-i18n="integrations.connector">Connector</th><th data-i18n="integrations.provider">Provider</th><th data-i18n="integrations.direction">Direction</th><th data-i18n="integrations.authority">Authority</th><th data-i18n="integrations.governance.conflicts">Conflicts</th><th data-i18n="integrations.governance.deletions">Deletions</th><th data-i18n="integrations.governance.rollback">Rollback</th><th data-i18n="integrations.governance.execution">Execution</th><th data-inx-action-column data-i18n="common.actions">Actions</th></tr></thead><tbody id="connector-governance-policies"></tbody></table></div><p id="connector-governance-page" class="small text-body-secondary mb-0" aria-live="polite"></p></section>`;
 }
 
 function syncSection() {
@@ -92,6 +92,7 @@ async function refreshGovernance(doc,client){
 function governanceRow(doc,client,item){
   const row=doc.createElement('tr');
   for(const v of [item.connectorKey,item.provider,item.direction,item.authority,item.conflictStrategy,item.deletionPolicy,item.rollbackStrategy])append(row,v);
+  append(row,item.executionEnabled===true?translate(localeFromDocument(doc),'common.enabled'):translate(localeFromDocument(doc),'common.disabled'));
   const actions=doc.createElement('td');
   const plan=button(doc,'integrations.governance.dryRun','btn btn-sm btn-outline-primary');
   plan.addEventListener('click',async()=>{
@@ -106,8 +107,12 @@ function governanceRow(doc,client,item){
   actions.appendChild(plan); row.appendChild(actions); return row;
 }
 
+export function isExecutableMutator(item){
+  return item?.mutating===true&&item?.executionEnabled===true&&['INBOUND','OUTBOUND','BIDIRECTIONAL'].includes(item?.direction);
+}
+
 async function refreshSync(doc,client,policies=[]){
-  const mutating=(Array.isArray(policies)?policies:[]).filter(item=>['INBOUND','OUTBOUND','BIDIRECTIONAL'].includes(item.direction));
+  const mutating=(Array.isArray(policies)?policies:[]).filter(isExecutableMutator);
   const select=doc.getElementById('connector-sync-connector'); const execute=doc.getElementById('connector-sync-execute-button'); const notice=doc.getElementById('connector-sync-readonly');
   if(select){select.replaceChildren(...mutating.map(item=>option(doc,item.connectorKey)));select.disabled=mutating.length===0;} if(execute)execute.disabled=mutating.length===0;if(notice)notice.hidden=mutating.length>0;
   const result=await client.runs({limit:50});const items=Array.isArray(result.payload)?result.payload:[];const tbody=doc.getElementById('connector-sync-runs');tbody?.replaceChildren(...items.map(item=>syncRunRow(doc,client,item,policies)));if(tbody?.closest)refreshEnterpriseDataTable(tbody.closest('table'));page(doc,'connector-sync-page',items,result.pagination);

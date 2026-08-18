@@ -140,7 +140,7 @@ public class IntegrationRuntimeConfiguration {
     @Bean
     ConnectorGovernanceRegistry connectorGovernanceRegistry(IntegrationRuntimeProperties properties) {
         return new ConfiguredConnectorGovernanceRegistry(
-                properties.jiraAssetsDefinitions(), properties.serviceNowDefinitions());
+                properties.jiraAssetsDefinitions(), properties.serviceNowDefinitions(), properties.governanceDefinitions());
     }
 
     @Bean
@@ -177,9 +177,23 @@ public class IntegrationRuntimeConfiguration {
             ImmutableConnectorSyncHandlerRegistry handlers, ConnectorGovernanceRegistry governance) {
         return () -> {
             for (ConnectorKey key : handlers.keys()) {
-                ConnectorGovernancePolicy policy = governance.require(key);
-                if (!policy.direction().mutating()) {
-                    throw new ConfigurationException("mutating synchronization handler registered for non-mutating connector: " + key.value());
+                ConnectorGovernancePolicy policy;
+                try {
+                    policy = governance.require(key);
+                } catch (ConnectorGovernanceNotFoundException missing) {
+                    throw new ConfigurationException(
+                            "synchronization handler has no configured connector governance policy: " + key.value());
+                }
+                if (!policy.direction().mutating() || !policy.executionEnabled()) {
+                    throw new ConfigurationException(
+                            "synchronization handler registered for connector without active mutating execution: " + key.value());
+                }
+            }
+            for (ConnectorGovernancePolicy policy : governance.policies()) {
+                if (policy.direction().mutating() && policy.executionEnabled() && !handlers.contains(policy.connectorKey())) {
+                    throw new ConfigurationException(
+                            "active mutating connector policy has no registered synchronization handler: "
+                                    + policy.connectorKey().value());
                 }
             }
         };

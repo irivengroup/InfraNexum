@@ -22,7 +22,7 @@ Each connector declares:
 - direction: `FEDERATED_READ`;
 - authority: `EXTERNAL`.
 
-The adapter depends only on the Integrations domain and Core contracts. It has no dependency on RSOT or ITAM. Any future import, reconciliation, write-back, ownership change or rollback contract is a separate PGM-10-E06 tranche and must not be inferred from this read-only surface.
+The adapter depends only on the Integrations domain and Core contracts. It has no dependency on RSOT or ITAM. `alpha.0.122` can prepare a provider-neutral authority/rollback mapping with execution disabled, but ServiceNow still has no approved mutating handler; import, reconciliation and write-back therefore remain unavailable.
 
 ## Authentication and secrets
 

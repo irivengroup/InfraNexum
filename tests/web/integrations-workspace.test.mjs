@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 
-import { initializeIntegrationsWorkspace, integrationsWorkspaceTemplate } from '../../src/applications/web/public/assets/integrations-workspace.mjs';
+import { initializeIntegrationsWorkspace, integrationsWorkspaceTemplate, isExecutableMutator } from '../../src/applications/web/public/assets/integrations-workspace.mjs';
 
 test('Integrations workspace is capability gated and exposes Jira Assets plus ServiceNow federated-read UI', async () => {
   const root = { attributes: {}, setAttribute(name, value) { this.attributes[name] = String(value); } };
@@ -15,7 +15,7 @@ test('Integrations workspace is capability gated and exposes Jira Assets plus Se
   for (const id of ['jira-assets-connectors', 'jira-assets-search', 'jira-assets-connector', 'jira-assets-aql', 'jira-assets-results', 'service-now-connectors', 'service-now-search', 'service-now-connector', 'service-now-query', 'service-now-results', 'connector-governance-policies', 'connector-governance-page', 'connector-sync-runs', 'connector-sync-checkpoints', 'connector-sync-execute', 'connector-sync-connector', 'connector-sync-direction', 'connector-sync-reason', 'notification-endpoints', 'notification-publish', 'notification-endpoint', 'notification-event-id', 'notification-event-type', 'notification-payload', 'notification-dlq']) {
     assert.match(template, new RegExp(`id="${id}"`));
   }
-  for (const key of ['integrations.connector', 'integrations.direction', 'integrations.authority', 'integrations.search.title']) {
+  for (const key of ['integrations.connector', 'integrations.direction', 'integrations.authority', 'integrations.governance.execution', 'integrations.search.title']) {
     assert.match(template, new RegExp(`data-i18n="${key}"`));
   }
   assert.match(template, /maxlength="4096"/);
@@ -40,4 +40,12 @@ test('Integrations workspace keeps providers read-only while exposing governed g
   assert.match(source, /client\.resume\(/);
   assert.doesNotMatch(source, /(?:jira|sn)\.(create|update|delete|import|synchronize|push|execute)\(/);
   assert.match(source, /FEDERATED_READ|mutating/);
+});
+
+test('Synchronization execution is admitted only for explicitly enabled mutating governance', () => {
+  assert.equal(isExecutableMutator({ direction: 'INBOUND', mutating: true, executionEnabled: true }), true);
+  assert.equal(isExecutableMutator({ direction: 'INBOUND', mutating: true, executionEnabled: false }), false);
+  assert.equal(isExecutableMutator({ direction: 'FEDERATED_READ', mutating: false, executionEnabled: false }), false);
+  assert.equal(isExecutableMutator({ direction: 'OUTBOUND', mutating: true }), false);
+  assert.equal(isExecutableMutator(null), false);
 });

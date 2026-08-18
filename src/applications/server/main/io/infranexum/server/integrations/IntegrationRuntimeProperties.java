@@ -5,12 +5,20 @@ import io.infranexum.adapters.jiraassets.JiraAssetsSettings;
 import io.infranexum.adapters.servicenow.ServiceNowSettings;
 import io.infranexum.core.events.ExponentialBackoffPolicy;
 import io.infranexum.core.events.RetryPolicy;
+import io.infranexum.integrations.ConnectorConflictStrategy;
+import io.infranexum.integrations.ConnectorDataAuthority;
+import io.infranexum.integrations.ConnectorDeletionPolicy;
+import io.infranexum.integrations.ConnectorFieldAuthority;
+import io.infranexum.integrations.ConnectorGovernancePolicy;
 import io.infranexum.integrations.ConnectorKey;
+import io.infranexum.integrations.ConnectorRollbackStrategy;
+import io.infranexum.integrations.ConnectorSyncDirection;
 import io.infranexum.integrations.ConnectorWebhookEndpoint;
 import io.infranexum.integrations.OutboundNotificationEndpoint;
 import java.net.URI;
 import java.time.Duration;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
@@ -36,7 +44,8 @@ public record IntegrationRuntimeProperties(
         Map<String, EndpointProperties> endpoints,
         JiraAssetsProperties jiraAssets,
         ServiceNowProperties serviceNow,
-        NotificationsProperties notifications) {
+        NotificationsProperties notifications,
+        Map<String, GovernanceProperties> governance) {
 
     /** Compatibility constructor for callers created before outbound notifications became configurable. */
     public IntegrationRuntimeProperties(
@@ -56,7 +65,29 @@ public record IntegrationRuntimeProperties(
             ServiceNowProperties serviceNow) {
         this(enabled, webhookMaxPayloadBytes, claimBatchSize, pollInterval, leaseDuration, maximumAttempts,
                 initialRetryDelay, maximumRetryDelay, jitterRatio, suspendAfterDeadLetters, suspensionDuration,
-                endpoints, jiraAssets, serviceNow, new NotificationsProperties(1_048_576, Map.of()));
+                endpoints, jiraAssets, serviceNow, new NotificationsProperties(1_048_576, Map.of()), Map.of());
+    }
+
+    /** Compatibility constructor for callers created before connector governance became configurable. */
+    public IntegrationRuntimeProperties(
+            boolean enabled,
+            int webhookMaxPayloadBytes,
+            int claimBatchSize,
+            Duration pollInterval,
+            Duration leaseDuration,
+            int maximumAttempts,
+            Duration initialRetryDelay,
+            Duration maximumRetryDelay,
+            double jitterRatio,
+            int suspendAfterDeadLetters,
+            Duration suspensionDuration,
+            Map<String, EndpointProperties> endpoints,
+            JiraAssetsProperties jiraAssets,
+            ServiceNowProperties serviceNow,
+            NotificationsProperties notifications) {
+        this(enabled, webhookMaxPayloadBytes, claimBatchSize, pollInterval, leaseDuration, maximumAttempts,
+                initialRetryDelay, maximumRetryDelay, jitterRatio, suspendAfterDeadLetters, suspensionDuration,
+                endpoints, jiraAssets, serviceNow, notifications, Map.of());
     }
 
     @ConstructorBinding
@@ -76,6 +107,19 @@ public record IntegrationRuntimeProperties(
         jiraAssets = Objects.requireNonNullElseGet(jiraAssets, () -> new JiraAssetsProperties(2_097_152, Map.of()));
         serviceNow = Objects.requireNonNullElseGet(serviceNow, () -> new ServiceNowProperties(2_097_152, Map.of()));
         notifications = Objects.requireNonNullElseGet(notifications, () -> new NotificationsProperties(1_048_576, Map.of()));
+        Map<String, GovernanceProperties> normalizedGovernance = new LinkedHashMap<>();
+        for (Map.Entry<String, GovernanceProperties> entry : Objects.requireNonNullElse(
+                governance, Map.<String, GovernanceProperties>of()).entrySet()) {
+            String key = new ConnectorKey(entry.getKey()).value();
+            if (normalizedGovernance.putIfAbsent(
+                    key, Objects.requireNonNull(entry.getValue(), "connector governance")) != null) {
+                throw new ConfigurationException("duplicate normalized connector governance policy: " + key);
+            }
+        }
+        if (normalizedGovernance.size() > 128) {
+            throw new ConfigurationException("at most 128 connector governance policies may be configured per Server runtime");
+        }
+        governance = Map.copyOf(normalizedGovernance);
     }
 
     RetryPolicy retryPolicy() {
@@ -110,6 +154,13 @@ public record IntegrationRuntimeProperties(
             result.put(connectorKey, new ServiceNowSettings(
                     connectorKey, value.instanceHost(), value.tableName(), value.bearerTokenReference(), value.requestTimeout(), value.enabled()));
         });
+        return Map.copyOf(result);
+    }
+
+
+    Map<ConnectorKey, GovernanceProperties> governanceDefinitions() {
+        Map<ConnectorKey, GovernanceProperties> result = new LinkedHashMap<>();
+        governance.forEach((key, value) -> result.put(new ConnectorKey(key), value));
         return Map.copyOf(result);
     }
 
@@ -194,6 +245,59 @@ public record IntegrationRuntimeProperties(
             boolean enabled) {
         public ServiceNowConnectorProperties {
             new ServiceNowSettings(new ConnectorKey("validation.connector"), instanceHost, tableName, bearerTokenReference, requestTimeout, enabled);
+        }
+    }
+
+    /**
+     * Explicit provider-independent authority mapping. A mutating mapping may be prepared with execution disabled;
+     * enabling execution is admitted only when the provider connector is enabled and an approved handler exists.
+     */
+    public record GovernanceProperties(
+            ConnectorSyncDirection direction,
+            ConnectorDataAuthority authority,
+            ConnectorConflictStrategy conflictStrategy,
+            ConnectorDeletionPolicy deletionPolicy,
+            ConnectorRollbackStrategy rollbackStrategy,
+            boolean executionEnabled,
+            Map<String, ConnectorDataAuthority> fields) {
+        public GovernanceProperties {
+            if (direction == null) throw new ConfigurationException("connector governance direction must be configured");
+            if (authority == null) throw new ConfigurationException("connector governance authority must be configured");
+            if (conflictStrategy == null) throw new ConfigurationException("connector governance conflictStrategy must be configured");
+            if (deletionPolicy == null) throw new ConfigurationException("connector governance deletionPolicy must be configured");
+            if (rollbackStrategy == null) throw new ConfigurationException("connector governance rollbackStrategy must be configured");
+            Map<String, ConnectorDataAuthority> normalized = new LinkedHashMap<>();
+            for (Map.Entry<String, ConnectorDataAuthority> entry : Objects.requireNonNullElse(
+                    fields, Map.<String, ConnectorDataAuthority>of()).entrySet()) {
+                ConnectorFieldAuthority field;
+                try {
+                    field = new ConnectorFieldAuthority(entry.getKey(), Objects.requireNonNull(entry.getValue(), "field authority"));
+                } catch (RuntimeException invalid) {
+                    throw new ConfigurationException("invalid connector governance field mapping: " + invalid.getMessage());
+                }
+                if (normalized.putIfAbsent(field.field(), field.authority()) != null) {
+                    throw new ConfigurationException("duplicate connector governance field mapping: " + field.field());
+                }
+            }
+            if (normalized.size() > 512) {
+                throw new ConfigurationException("at most 512 field authority mappings may be configured per connector");
+            }
+            fields = Map.copyOf(normalized);
+        }
+
+        ConnectorGovernancePolicy toPolicy(ConnectorKey connectorKey, String provider) {
+            List<ConnectorFieldAuthority> fieldAuthorities = fields.entrySet().stream()
+                    .sorted(Map.Entry.comparingByKey())
+                    .map(entry -> new ConnectorFieldAuthority(entry.getKey(), entry.getValue()))
+                    .toList();
+            try {
+                return new ConnectorGovernancePolicy(
+                        connectorKey, provider, direction, authority, conflictStrategy, deletionPolicy, rollbackStrategy,
+                        executionEnabled, fieldAuthorities);
+            } catch (IllegalArgumentException invalid) {
+                throw new ConfigurationException(
+                        "invalid connector governance policy for " + connectorKey.value() + ": " + invalid.getMessage());
+            }
         }
     }
 

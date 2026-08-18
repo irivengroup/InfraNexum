@@ -24,6 +24,10 @@ final class ImmutableConnectorSyncHandlerRegistry implements ConnectorSyncHandle
         this.handlers = Map.copyOf(indexed);
     }
 
+    boolean contains(ConnectorKey connectorKey) {
+        return handlers.containsKey(Objects.requireNonNull(connectorKey, "connectorKey"));
+    }
+
     @Override
     public ConnectorSyncHandler require(ConnectorKey connectorKey) {
         ConnectorSyncHandler handler = handlers.get(Objects.requireNonNull(connectorKey, "connectorKey"));

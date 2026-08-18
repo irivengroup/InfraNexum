@@ -18,15 +18,62 @@ import java.util.Objects;
 final class ConfiguredConnectorGovernanceRegistry implements ConnectorGovernanceRegistry {
     private final Map<ConnectorKey, ConnectorGovernancePolicy> policies;
 
+    /** Compatibility constructor preserving the historical read-only defaults. */
     ConfiguredConnectorGovernanceRegistry(
             Map<ConnectorKey, JiraAssetsSettings> jiraAssets,
             Map<ConnectorKey, ServiceNowSettings> serviceNow) {
+        this(jiraAssets, serviceNow, Map.of());
+    }
+
+    ConfiguredConnectorGovernanceRegistry(
+            Map<ConnectorKey, JiraAssetsSettings> jiraAssets,
+            Map<ConnectorKey, ServiceNowSettings> serviceNow,
+            Map<ConnectorKey, IntegrationRuntimeProperties.GovernanceProperties> governance) {
+        Map<ConnectorKey, IntegrationRuntimeProperties.GovernanceProperties> overrides =
+                Map.copyOf(Objects.requireNonNullElse(
+                        governance, Map.<ConnectorKey, IntegrationRuntimeProperties.GovernanceProperties>of()));
         Map<ConnectorKey, ConnectorGovernancePolicy> normalized = new LinkedHashMap<>();
-        Objects.requireNonNullElse(jiraAssets, Map.<ConnectorKey, JiraAssetsSettings>of()).forEach((key, settings) ->
-                add(normalized, key, ConnectorGovernancePolicy.externalFederatedRead(key, JiraAssetsSettings.PROVIDER)));
-        Objects.requireNonNullElse(serviceNow, Map.<ConnectorKey, ServiceNowSettings>of()).forEach((key, settings) ->
-                add(normalized, key, ConnectorGovernancePolicy.externalFederatedRead(key, ServiceNowSettings.PROVIDER)));
+        Map<ConnectorKey, String> configuredProviders = new LinkedHashMap<>();
+
+        Objects.requireNonNullElse(jiraAssets, Map.<ConnectorKey, JiraAssetsSettings>of()).forEach((key, settings) -> {
+            JiraAssetsSettings nonNull = Objects.requireNonNull(settings, "Jira Assets settings");
+            addProvider(configuredProviders, key, JiraAssetsSettings.PROVIDER);
+            add(normalized, key, policy(key, JiraAssetsSettings.PROVIDER, nonNull.enabled(), overrides.get(key)));
+        });
+        Objects.requireNonNullElse(serviceNow, Map.<ConnectorKey, ServiceNowSettings>of()).forEach((key, settings) -> {
+            ServiceNowSettings nonNull = Objects.requireNonNull(settings, "ServiceNow settings");
+            addProvider(configuredProviders, key, ServiceNowSettings.PROVIDER);
+            add(normalized, key, policy(key, ServiceNowSettings.PROVIDER, nonNull.enabled(), overrides.get(key)));
+        });
+
+        for (ConnectorKey key : overrides.keySet()) {
+            if (!configuredProviders.containsKey(key)) {
+                throw new ConfigurationException(
+                        "connector governance policy references an unknown provider connector: " + key.value());
+            }
+        }
         this.policies = Map.copyOf(normalized);
+    }
+
+    private static ConnectorGovernancePolicy policy(
+            ConnectorKey key,
+            String provider,
+            boolean providerEnabled,
+            IntegrationRuntimeProperties.GovernanceProperties override) {
+        if (override == null) return ConnectorGovernancePolicy.externalFederatedRead(key, provider);
+        if (override.executionEnabled() && !providerEnabled) {
+            throw new ConfigurationException(
+                    "connector governance execution cannot be enabled for a disabled provider connector: " + key.value());
+        }
+        return override.toPolicy(key, provider);
+    }
+
+    private static void addProvider(Map<ConnectorKey, String> target, ConnectorKey key, String provider) {
+        ConnectorKey nonNullKey = Objects.requireNonNull(key, "connectorKey");
+        if (target.putIfAbsent(nonNullKey, provider) != null) {
+            throw new ConfigurationException(
+                    "duplicate connector key across provider governance registry: " + nonNullKey.value());
+        }
     }
 
     private static void add(

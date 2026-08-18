@@ -40,6 +40,7 @@ class IntegrationConfigurationBindingArchitectureTest(unittest.TestCase):
         self.assertIn("assertTrue(properties.jiraAssets().connectors().isEmpty())", test_source)
         self.assertIn("assertTrue(properties.serviceNow().connectors().isEmpty())", test_source)
         self.assertIn("assertTrue(properties.notifications().endpoints().isEmpty())", test_source)
+        self.assertIn("assertTrue(properties.governance().isEmpty())", test_source)
 
 
 if __name__ == "__main__":

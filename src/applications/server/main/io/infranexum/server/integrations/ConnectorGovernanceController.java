@@ -78,13 +78,15 @@ final class ConnectorGovernanceController {
             String conflictStrategy,
             String deletionPolicy,
             String rollbackStrategy,
+            boolean executionEnabled,
             boolean mutating,
             List<FieldAuthorityResponse> fields) {
         static GovernancePolicyResponse from(ConnectorGovernancePolicy policy) {
             return new GovernancePolicyResponse(
                     policy.connectorKey().value(), policy.provider(), policy.direction().name(), policy.authority().name(),
                     policy.conflictStrategy().name(), policy.deletionPolicy().name(), policy.rollbackStrategy().name(),
-                    policy.direction().mutating(), policy.fields().stream().map(FieldAuthorityResponse::from).toList());
+                    policy.executionEnabled(), policy.direction().mutating(),
+                    policy.fields().stream().map(FieldAuthorityResponse::from).toList());
         }
     }
 

@@ -11,7 +11,7 @@
 - local persistence of remote objects: none;
 - remote deletion propagation: not applicable in this phase because no provider object is copied locally.
 
-This implements the INT-ADV-003 requirement for federated read without copy while preserving the INT-ADV-007 authority boundary. It does not claim bidirectional synchronization. Any later import or synchronization phase must define field-level authority, conflict handling, deletion semantics, checkpoints and rollback before activation.
+This implements the INT-ADV-003 requirement for federated read without copy while preserving the INT-ADV-007 authority boundary. It does not claim bidirectional synchronization. `alpha.0.122` can prepare a provider-neutral field-authority/rollback mapping with execution disabled; Jira Assets still has no approved mutating handler, so provider mutation remains impossible.
 
 ## Provider protocol
 
@@ -125,11 +125,11 @@ No RSOT/ITAM data rollback is required because this phase performs no local impo
 This candidate does not implement:
 
 - Jira Assets write-back;
-- field mappings or transformations;
+- provider-specific transformations or executable import mappings;
 - local object import;
 - bidirectional synchronization;
 - provider webhooks for Jira Assets;
-- field-level authority/conflict resolution;
+- executable provider-specific conflict resolution;
 - ServiceNow;
 - OpenService;
 - notification connectors.

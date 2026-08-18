@@ -1,3 +1,17 @@
+# InfraNexum 2.0.0-alpha.0.122 — prepared connector authority mapping and execution admission
+
+**InfraNexum — Infrastructure Control & Governance Platform**
+
+`alpha.0.122` advances **PGM-10-E06** without activating any provider mutation. Connector governance can now be declared per existing Jira Assets or ServiceNow connector with explicit synchronization direction, aggregate authority, conflict strategy, deletion policy, rollback strategy, field-level authority and an independent `executionEnabled` admission switch. Provider identity remains derived from the configured connector registry and cannot be spoofed by governance configuration.
+
+A mutating mapping with `executionEnabled=false` is a **prepared** policy: it can be inspected and dry-run planned, but the planner denies execution and the Web workspace never offers it to the generic Execute workflow. An **active** mutating policy requires `executionEnabled=true`, an enabled provider connector and a registered approved `ConnectorSyncHandler`; startup fails closed both when a handler has no active governance policy and when an active policy has no handler. Jira Assets and ServiceNow still register no mutating handler, so their provider behavior remains federated read-only in this increment.
+
+The governance API now exposes `executionEnabled`, dry-run audit metadata records the admission state, and the five-locale Web governance table displays it explicitly. No new route, capability, RBAC permission or database migration is introduced; migrations remain through `0039`. OpenService remains intentionally unimplemented because draft.21 does not provide an authoritative provider API/authentication/schema contract.
+
+**Roadmap status:** PGM-10-E05 remains formally **NON TERMINÉ** until the exact JDK25/Maven/JUnit/JaCoCo and PostgreSQL 17/18 gates execute successfully on this source snapshot. PGM-10-E06 remains **EN COURS**; durable checkpoints/synchronization/compensation from `alpha.0.116` are preserved and no Jira Assets or ServiceNow mutator is activated.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.121 — deterministic DataTable geometry corrective
 
 **InfraNexum — Infrastructure Control & Governance Platform**

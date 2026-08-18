@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum — Product API
-  version: 2.0.0-alpha.0.121
+  version: 2.0.0-alpha.0.122
   description: Generated complete product contract; installation availability remains capability-gated.
 servers:
 - url: /
@@ -12757,6 +12757,7 @@ components:
       - conflictStrategy
       - deletionPolicy
       - rollbackStrategy
+      - executionEnabled
       - mutating
       - fields
       properties:
@@ -12787,6 +12788,9 @@ components:
           - MANUAL
         rollbackStrategy:
           $ref: '#/components/schemas/integrations-connectors__ConnectorRollbackStrategy'
+        executionEnabled:
+          type: boolean
+          description: True only when synchronization execution is explicitly admitted by connector policy.
         mutating:
           type: boolean
         fields:

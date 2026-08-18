@@ -1,83 +1,94 @@
-# Connector governance — PGM-10-E06 phase 4
+# Connector governance — PGM-10-E06 execution admission
 
 ## Scope
 
-This phase makes the connector authority model an executable Server policy instead of leaving it only in SDK/provider documentation. It is deliberately provider-neutral and applies to the configured Jira Assets and ServiceNow connectors already present in InfraNexum.
+`2.0.0-alpha.0.122` extends the provider-neutral connector governance introduced in `alpha.0.114` and the durable synchronization/compensation runtime introduced in `alpha.0.116` with an explicit **execution admission** boundary.
 
-It does **not** execute mutating synchronization. It provides the policy registry, fail-closed planning boundary and operator-visible dry-run that must exist before any import, write-back or bidirectional synchronization can be implemented safely.
+A Jira Assets or ServiceNow connector can now carry a complete authority mapping for a future mutating flow without making that flow executable. This separates two states that were previously conflated:
 
-The current provider policies remain non-mutating:
+- **prepared**: direction, object authority, conflict policy, deletion policy, rollback strategy and field authorities are complete, but `executionEnabled=false`;
+- **active**: the same policy has `executionEnabled=true` and an approved `ConnectorSyncHandler` exists for the connector.
 
-| Provider | Direction | Authority | Conflict | Deletion | Rollback |
-|---|---|---|---|---|---|
-| Jira Assets | `FEDERATED_READ` | `EXTERNAL` | `REJECT` | `IGNORE` | `NONE_REQUIRED` |
-| ServiceNow | `FEDERATED_READ` | `EXTERNAL` | `REJECT` | `IGNORE` | `NONE_REQUIRED` |
+The default remains unchanged and backward compatible: every configured Jira Assets and ServiceNow connector without a governance override is `FEDERATED_READ / EXTERNAL / REJECT / IGNORE / NONE_REQUIRED`, with `executionEnabled=false`.
 
-Consequently, asking the dry-run planner to import data into InfraNexum, write data to the provider, propagate deletions or perform bidirectional synchronization is denied. This is intentional and fail-closed.
+No Jira Assets or ServiceNow mutating handler is delivered or registered by this increment. Consequently, setting `executionEnabled=true` for those providers in the current product causes Server startup to fail closed because no approved handler exists.
 
 ## Policy model
 
-Every governed connector has one immutable `ConnectorGovernancePolicy` composed of:
+Every governed connector has one immutable `ConnectorGovernancePolicy` containing:
 
-- provider identity and connector key;
+- connector key and provider identity;
 - `ConnectorSyncDirection`;
 - `ConnectorDataAuthority`;
 - `ConnectorConflictStrategy`;
 - `ConnectorDeletionPolicy`;
 - `ConnectorRollbackStrategy`;
-- optional field-level authority mappings.
+- `executionEnabled`;
+- zero or more `ConnectorFieldAuthority` entries.
 
-Supported synchronization directions are:
+`FEDERATED_READ` is non-mutating and requires external authority, ignored deletion propagation, `NONE_REQUIRED` rollback, no field mappings and `executionEnabled=false`.
 
-- `FEDERATED_READ`: provider data can be read without creating an InfraNexum copy;
-- `INBOUND`: a future mutating flow may change InfraNexum state from an external source;
-- `OUTBOUND`: a future mutating flow may change provider state from InfraNexum;
-- `BIDIRECTIONAL`: a future flow may mutate both sides.
+`INBOUND`, `OUTBOUND` and `BIDIRECTIONAL` are mutating directions. A mutating policy is valid only when field-level authority mappings and a compatible rollback strategy are complete. A valid mutating policy may nevertheless remain **prepared** with execution disabled.
 
-`FEDERATED_READ` is non-mutating. The other three directions are considered mutating and are subject to the stricter planning invariants below.
+## Configuration
 
-## Fail-closed invariants
+Governance is configured under `infranexum.integrations.governance`, keyed by an existing Jira Assets or ServiceNow connector key. Provider identity is deliberately **not** configurable in the governance block; the Server derives it from the provider registry so configuration cannot spoof a provider.
 
-A policy or plan is rejected when it is ambiguous or cannot be recovered safely.
+Example of a prepared inbound Jira Assets authority mapping:
 
-A federated-read policy requires:
+```yaml
+infranexum:
+  integrations:
+    jira-assets:
+      connectors:
+        jira-prod:
+          cloud-id: example-cloud
+          workspace-id: example-workspace
+          bearer-token-reference: file:/run/secrets/jira-assets-token
+          request-timeout: PT15S
+          enabled: true
+    governance:
+      jira-prod:
+        direction: INBOUND
+        authority: EXTERNAL
+        conflict-strategy: PREFER_AUTHORITY
+        deletion-policy: IGNORE
+        rollback-strategy: LOCAL_CHECKPOINT
+        execution-enabled: false
+        fields:
+          name: EXTERNAL
+          serial-number: EXTERNAL
+```
 
-- `EXTERNAL` authority;
-- `REJECT` or another explicitly configured conflict policy, with current providers using `REJECT`;
-- deletion policy `IGNORE`;
-- rollback `NONE_REQUIRED`;
-- no field-level mutation mapping.
+The example is intentionally **non-executable**. It prepares an explicit authority contract only. The field names must satisfy the canonical connector field-name contract and the map is bounded to 512 fields per connector. Governance cardinality is bounded to 128 policies per Server runtime.
 
-A mutating policy requires:
+Startup fails when:
 
-- explicit governed fields;
-- a rollback strategy other than `NONE_REQUIRED`;
-- local mutation to declare a strategy capable of restoring/checkpointing local state (`LOCAL_CHECKPOINT`, `DUAL_COMPENSATION` or `MANUAL`);
-- remote mutation to declare a strategy capable of compensating remote state (`REMOTE_COMPENSATION`, `DUAL_COMPENSATION` or `MANUAL`);
-- an explicit deletion policy if deletion propagation is requested.
+- a governance key does not identify a configured Jira Assets or ServiceNow connector;
+- a connector key is duplicated across provider registries;
+- a mutating policy lacks field mappings or a compatible rollback strategy;
+- federated read attempts to enable synchronization execution;
+- execution is enabled while the provider connector itself is disabled;
+- a synchronization handler is registered for a policy that is read-only or execution-disabled;
+- an execution-enabled mutating policy has no registered synchronization handler.
 
-The dry-run planner additionally denies:
+This bidirectional admission check prevents both orphan handlers and partially activated policies.
 
-- a requested direction that differs from the connector's configured direction;
-- mutating synchronization with no requested governed fields;
-- fields outside the connector's governed field set;
-- deletion propagation when the policy says `IGNORE`;
-- field mappings on a non-mutating federated-read request;
-- any mutating request whose rollback declaration is `NONE_REQUIRED`.
+## Planning and execution semantics
 
-A denial is a planning result, not a partial execution. No provider or local state is modified by the dry-run endpoint.
+`ConnectorGovernancePlanner` remains the mandatory gate before a durable synchronization run. A mutating plan is denied when `executionEnabled=false`, even when its field mappings and rollback strategy are otherwise valid. The denial reason is explicit:
 
-## Registry and connector identity
+```text
+mutating synchronization execution is disabled by connector policy
+```
 
-The Server builds one `ConfiguredConnectorGovernanceRegistry` from the provider definitions already loaded by `IntegrationRuntimeProperties`.
+This makes a prepared policy observable without turning configuration into an implicit provider mutation switch.
 
-Connector keys are globally unique across the governance registry. If Jira Assets and ServiceNow are configured with the same connector key, Server composition fails rather than allowing an ambiguous policy lookup.
+Once execution is legitimately admitted in a future provider tranche, the existing `ConnectorSyncEngine` continues to provide the `alpha.0.116` durability guarantees: bounded batches, idempotent replay expectations, active-run fencing, append-only checkpoints, pause/resume and governed compensation. No exactly-once guarantee is inferred.
 
-The registry is deterministic: policies are returned ordered by connector key and unknown keys fail with the public connector-governance not-found problem contract.
+## API and Web behavior
 
-## API and authorization
-
-All governance routes require capability `integrations.connectors` and existing permission `integrations.connector.read` at PLATFORM scope:
+The governance API remains:
 
 ```text
 GET  /api/v1/integrations/governance
@@ -85,67 +96,41 @@ GET  /api/v1/integrations/governance/{connectorKey}
 POST /api/v1/integrations/governance/{connectorKey}/sync-plan
 ```
 
-The collection is offset-paginated. The sync-plan operation is repeatable and does not mutate product/provider state, therefore it does not introduce a mutation idempotency contract.
+`ConnectorGovernancePolicy` responses now include the required boolean `executionEnabled`. The API remains protected by capability `integrations.connectors` and the existing connector-read permission; no new mutation endpoint, RBAC permission or capability is introduced by this increment.
 
-Dry-run planning is audited using the actor and correlation context. Audit metadata is intentionally bounded to governance metadata such as provider, configured/requested direction, authority and rollback strategy; provider bearer tokens and other credentials are excluded.
+The Integrations workspace shows the execution-admission state in the governance table. The generic Sync **Execute** control is populated only from policies that simultaneously satisfy:
 
-Unregistered verbs and paths remain deny-by-default in the Server authorization resolver.
+- `mutating=true`;
+- `executionEnabled=true`;
+- direction `INBOUND`, `OUTBOUND` or `BIDIRECTIONAL`.
 
-## Web behavior
+A prepared mapping therefore remains visible and dry-runnable but cannot activate the browser execution workflow. Jira Assets and ServiceNow provider sections themselves remain federated-read-only and contain no create/update/delete/import/sync provider call.
 
-The Integrations workspace exposes a **Connector Governance** section when `integrations.connectors` is available. For each configured connector it shows:
+All new UI text is available in DE/EN/ES/FR/IT.
 
-- connector key;
-- provider;
-- synchronization direction;
-- authority;
-- conflict strategy;
-- deletion policy;
-- rollback strategy;
-- a dry-run action.
+## Security and audit
 
-The Web client uses the authenticated same-origin session and CSRF protection for the dry-run POST. It never receives Jira/ServiceNow bearer tokens, secret references or provider Authorization headers.
+Provider identity is derived from the configured provider connector rather than accepted from the authority mapping. Secrets remain external through `env:` or absolute `file:` references and are never returned by the governance API.
 
-The UI is translated through the existing DE/EN/ES/FR/IT catalogue.
+Governance dry-run audit metadata records the bounded `execution_enabled` state in addition to provider, configured/requested direction, authority and rollback. No provider credential or remote object payload is written to that metadata.
 
-## Current rollback semantics
+## Rollback
 
-`ConnectorRollbackStrategy` is a **governance declaration and admission precondition** in this phase. It is not yet an execution engine.
+For `alpha.0.122`, rollback of this change is configuration-safe because no new database migration exists:
 
-For the existing `FEDERATED_READ` providers, `NONE_REQUIRED` is correct because no local or remote object is mutated. For a future mutating provider policy, declaring a rollback strategy is mandatory before the planner can admit the direction, but the actual checkpoint, compensation, verification and operator rollback workflow must be implemented and tested in the later mutating-sync tranche before such a policy can be activated.
+1. remove the connector entry under `infranexum.integrations.governance`, or restore `FEDERATED_READ` defaults;
+2. restart the Server;
+3. verify the governance API returns `executionEnabled=false` and the default federated-read policy;
+4. verify the Web Sync execution selector contains no Jira Assets or ServiceNow mutator.
 
-This distinction prevents a documentation-only rollback label from being mistaken for production rollback capability.
+Removing a prepared governance block does not require RSOT/ITAM data rollback because the prepared state cannot execute mutations.
 
 ## OpenService boundary
 
-PGM-10-E06 names **OpenService**, but the `draft.21` material available to this implementation still does not identify an authoritative OpenService product/API, endpoint model, authentication contract or business schema. Connector Governance therefore remains provider-neutral and does not fabricate an OpenService adapter.
+PGM-10-E06 still names **OpenService**, but `draft.21` does not provide an authoritative product/API endpoint, authentication or business-schema contract. This increment does not fabricate one. A future OpenService adapter must enter through the same governance and handler-admission contracts after its provider definition becomes authoritative.
 
-An OpenService implementation requires an authoritative product decision/provider contract. Until that exists, InfraNexum can provide the governance framework into which that connector will later register, but cannot claim the provider itself as implemented.
+## Status
 
-## Operational verification
+PGM-10-E06 remains **EN COURS**. This increment delivers configurable authority mapping plus explicit execution admission, but activates no provider mutator.
 
-For a non-production deployment:
-
-1. Configure zero Jira/ServiceNow connectors and verify the Server starts with an empty governance collection.
-2. Configure one Jira Assets connector and one ServiceNow connector with distinct keys.
-3. Verify the governance collection returns deterministic `FEDERATED_READ / EXTERNAL / REJECT / IGNORE / NONE_REQUIRED` policies.
-4. Verify an unauthorized actor cannot list/read/plan governance.
-5. Dry-run `FEDERATED_READ` with no fields/deletion propagation and verify `ALLOW`.
-6. Dry-run `INBOUND`, `OUTBOUND` and `BIDIRECTIONAL` against those connectors and verify `DENY` with bounded reasons.
-7. Request deletion propagation and verify denial while deletion policy is `IGNORE`.
-8. Configure duplicate connector keys across providers in a test environment and verify Server composition fails closed.
-9. Verify audit records exist for dry-run operations but contain no provider credentials.
-10. Verify the browser network trace contains no provider Authorization header, bearer token or secret reference.
-
-## Remaining PGM-10-E06 work
-
-This phase satisfies the **runtime authority/sync-direction policy and rollback-strategy admission model**. PGM-10-E06 remains **EN COURS** because the following are not delivered here:
-
-- actual mutating synchronization execution;
-- durable synchronization checkpoints;
-- compensation/rollback execution and verification;
-- controlled deletion propagation;
-- provider-specific field mappings for mutating flows;
-- an OpenService adapter based on an authoritative provider contract.
-
-No claim of bidirectional synchronization or executable connector rollback is made by this release.
+PGM-10-E05 remains formally **NON TERMINÉ** until the exact target JDK25/JaCoCo/PostgreSQL 17/18 gates succeed on the release snapshot.
