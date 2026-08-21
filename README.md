@@ -1,3 +1,22 @@
+# InfraNexum 2.0.0-alpha.0.125 — ReDoc bootstrap/runtime corrective
+
+> **alpha.0.125 corrective:** fixes the ReDoc bootstrap dependency-wiring defect that passed the Swagger asset loader as the ReDoc iframe factory, eliminates Promise leakage in documentation errors, handles ReDoc callback/promise failures explicitly, and introduces a phase-aware iframe handshake with pinned official Redocly loading plus bounded jsDelivr fallback. The certified OpenAPI contract remains local and accessible independently of the presentation engine.
+
+## ReDoc reliability boundary
+
+- `initializeApiDocumentation()` keeps Swagger asset loading and ReDoc frame creation as distinct dependencies.
+- ReDoc frame lifecycle is explicit: `boot` → `contract` → `renderer` → `render` → `ready`/`error`.
+- The frame has a short boot deadline and a separate rendering deadline; renderer loading no longer races the parent initialization timeout.
+- ReDoc 2.5.3 callback errors and returned Promise rejections are both fail-closed.
+- Renderer failures are normalized and never expose `[object Promise]` or raw object stringification.
+- The frame loads the pinned official Redocly distribution first and falls back to the same pinned version on jsDelivr. Failed/timeout script elements are removed before the next candidate.
+- The authenticated InfraNexum shell CSP remains unchanged; only the isolated ReDoc frame permits the two pinned renderer fallback origins and inline style injection required by ReDoc's styling runtime.
+
+The local OpenAPI 3.1 contract remains the source of truth. If all renderer candidates are unavailable, the raw local contract remains accessible and the error state is explicit.
+
+
+---
+
 # InfraNexum 2.0.0-alpha.0.124 — business-form focus root-cause corrective
 
 > **alpha.0.124 corrective:** route state is stored in `data-current-route`; only real `a[data-route]` navigation controls are event-bound. This removes the root `<html>` click handler that stole focus from business-form fields after mouse release. The previous `business-form-focus.mjs` workaround has been removed.

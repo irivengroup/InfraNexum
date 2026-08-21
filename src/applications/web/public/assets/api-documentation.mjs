@@ -6,10 +6,15 @@ export const SWAGGER_UI_VERSION = '5.32.13';
 export const REDOC_VERSION = '2.5.3';
 const SWAGGER_SCRIPT = `https://cdn.jsdelivr.net/npm/swagger-ui-dist@${SWAGGER_UI_VERSION}/swagger-ui-bundle.js`;
 const SWAGGER_STYLE = `https://cdn.jsdelivr.net/npm/swagger-ui-dist@${SWAGGER_UI_VERSION}/swagger-ui.css`;
-export const REDOC_SCRIPT_URL = `https://cdn.jsdelivr.net/npm/redoc@${REDOC_VERSION}/bundles/redoc.standalone.js`;
+export const REDOC_SCRIPT_URL = `https://cdn.redoc.ly/redoc/v${REDOC_VERSION}/bundles/redoc.standalone.js`;
+export const REDOC_SCRIPT_FALLBACK_URLS = Object.freeze([
+  `https://cdn.jsdelivr.net/npm/redoc@${REDOC_VERSION}/bundles/redoc.standalone.js`,
+]);
 export const REDOC_FRAME_URL = '/assets/redoc-frame.html';
 export const REDOC_FRAME_MESSAGE_SOURCE = 'infranexum-redoc-frame';
-const ASSET_TIMEOUT_MS = 15_000;
+const ASSET_TIMEOUT_MS = 10_000;
+const REDOC_FRAME_BOOT_TIMEOUT_MS = 8_000;
+const REDOC_FRAME_RENDER_TIMEOUT_MS = 40_000;
 const REDOC_MIN_HEIGHT = 576;
 const REDOC_MAX_HEIGHT = 2_000_000;
 const redocBridges = new WeakMap();
@@ -17,13 +22,18 @@ const initialized = new Set();
 
 /**
  * Lazy, bounded documentation renderers. The OpenAPI contract is always local;
- * only the presentation libraries are loaded from pinned upstream distributions.
- * If the renderer cannot load, the raw local contract remains available.
+ * presentation libraries are loaded only from pinned upstream distributions.
+ * If a renderer cannot load, the raw local contract remains available.
  */
-export function initializeApiDocumentation(documentObject = document, windowObject = globalThis.window, assetLoader = loadExternalAsset) {
+export function initializeApiDocumentation(
+  documentObject = document,
+  windowObject = globalThis.window,
+  assetLoader = loadExternalAsset,
+  redocFrameFactory = createRedocFrame,
+) {
   const render = (route) => {
     if (route === 'swagger') void renderSwagger(documentObject, windowObject, assetLoader);
-    if (route === 'redoc') void renderRedoc(documentObject, windowObject, assetLoader);
+    if (route === 'redoc') void renderRedoc(documentObject, windowObject, redocFrameFactory);
   };
   documentObject?.addEventListener?.('infranexum:route-change', (event) => render(event?.detail?.route));
   render(documentObject?.documentElement?.getAttribute?.('data-current-route'));
@@ -33,7 +43,7 @@ export function initializeApiDocumentation(documentObject = document, windowObje
       const host = documentObject?.getElementById?.('redoc-ui');
       detachRedocBridge(host, windowObject);
       host?.replaceChildren?.();
-      void renderRedoc(documentObject, windowObject);
+      void renderRedoc(documentObject, windowObject, redocFrameFactory);
     }
   });
   return Object.freeze({ render });
@@ -106,10 +116,20 @@ export function redocFrameConfiguration(documentObject) {
 function waitForRedocFrame(documentObject, windowObject, host, frame) {
   return new Promise((resolve) => {
     let settled = false;
+    let booted = false;
+    let bootTimer;
+    let renderTimer;
+    const dispose = () => {
+      windowObject?.clearTimeout?.(bootTimer);
+      windowObject?.clearTimeout?.(renderTimer);
+      windowObject?.removeEventListener?.('message', onMessage);
+      frame?.removeEventListener?.('error', onFrameError);
+    };
     const finish = (ok, error) => {
       if (settled) return;
       settled = true;
-      windowObject?.clearTimeout?.(timer);
+      dispose();
+      if (host) redocBridges.delete(host);
       if (ok) {
         initialized.add('redoc');
         setReady(documentObject, 'redoc');
@@ -118,6 +138,14 @@ function waitForRedocFrame(documentObject, windowObject, host, frame) {
       }
       resolve(ok);
     };
+    const armRenderDeadline = () => {
+      windowObject?.clearTimeout?.(renderTimer);
+      renderTimer = windowObject?.setTimeout?.(
+        () => finish(false, new Error('ReDoc rendering did not complete before the deadline')),
+        REDOC_FRAME_RENDER_TIMEOUT_MS,
+      );
+    };
+    const onFrameError = () => finish(false, new Error('ReDoc frame could not be loaded'));
     const onMessage = (event) => {
       if (!isTrustedRedocFrameMessage(event, frame, windowObject)) return;
       const payload = event.data;
@@ -126,17 +154,33 @@ function waitForRedocFrame(documentObject, windowObject, host, frame) {
         if (height !== null) frame.setAttribute?.('height', String(height));
         return;
       }
+      if (payload.type === 'boot') {
+        booted = true;
+        windowObject?.clearTimeout?.(bootTimer);
+        armRenderDeadline();
+        return;
+      }
+      if (payload.type === 'phase') {
+        if (!booted) {
+          booted = true;
+          windowObject?.clearTimeout?.(bootTimer);
+        }
+        armRenderDeadline();
+        return;
+      }
       if (payload.type === 'ready') finish(true);
-      if (payload.type === 'error') finish(false, new Error(safeMessage({ message: payload.message }) || 'ReDoc rendering failed'));
+      if (payload.type === 'error') {
+        const message = normalizeDisplayMessage(payload.message, 'ReDoc rendering failed');
+        finish(false, new Error(message));
+      }
     };
-    const timer = windowObject?.setTimeout?.(() => finish(false, new Error('ReDoc frame initialization timed out')), ASSET_TIMEOUT_MS);
+    bootTimer = windowObject?.setTimeout?.(
+      () => finish(false, new Error('ReDoc frame did not start')),
+      REDOC_FRAME_BOOT_TIMEOUT_MS,
+    );
     windowObject?.addEventListener?.('message', onMessage);
-    redocBridges.set(host, {
-      dispose() {
-        windowObject?.clearTimeout?.(timer);
-        windowObject?.removeEventListener?.('message', onMessage);
-      },
-    });
+    frame?.addEventListener?.('error', onFrameError, { once: true });
+    redocBridges.set(host, { dispose });
   });
 }
 
@@ -235,21 +279,54 @@ export function redocConfiguration(documentObject) {
   });
 }
 
+export async function loadExternalAssetCandidates(documentObject, windowObject, urls, kind) {
+  let lastError = new Error('documentation renderer asset unavailable');
+  for (const url of urls) {
+    try {
+      return await loadExternalAsset(documentObject, windowObject, url, kind);
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(normalizeDisplayMessage(error, 'documentation renderer asset unavailable'));
+    }
+  }
+  throw lastError;
+}
+
 export function loadExternalAsset(documentObject, windowObject, url, kind) {
   if (!['script', 'style'].includes(kind)) return Promise.reject(new TypeError(`unsupported asset kind ${kind}`));
   const selector = `[data-inx-doc-asset="${url}"]`;
   const existing = documentObject?.querySelector?.(selector);
   if (existing?.getAttribute?.('data-inx-loaded') === 'true') return Promise.resolve(existing);
   return new Promise((resolve, reject) => {
+    let settled = false;
     const element = existing ?? documentObject?.createElement?.(kind === 'style' ? 'link' : 'script');
     if (!element) { reject(new Error('document asset creation unavailable')); return; }
     element.setAttribute?.('data-inx-doc-asset', url);
     if (kind === 'style') { element.rel = 'stylesheet'; element.href = url; }
     else { element.src = url; element.async = true; element.defer = true; }
-    const clear = () => windowObject?.clearTimeout?.(timer);
-    element.onload = () => { clear(); element.setAttribute?.('data-inx-loaded', 'true'); resolve(element); };
-    element.onerror = () => { clear(); reject(new Error(`documentation renderer asset unavailable: ${url}`)); };
-    const timer = windowObject?.setTimeout?.(() => reject(new Error(`documentation renderer asset timeout: ${url}`)), ASSET_TIMEOUT_MS);
+    let timer;
+    const cleanup = (removeFailed = false) => {
+      windowObject?.clearTimeout?.(timer);
+      element.onload = null;
+      element.onerror = null;
+      if (removeFailed) element.remove?.();
+    };
+    const finish = (ok, error) => {
+      if (settled) return;
+      settled = true;
+      cleanup(!ok);
+      if (ok) {
+        element.setAttribute?.('data-inx-loaded', 'true');
+        resolve(element);
+      } else {
+        reject(error);
+      }
+    };
+    element.onload = () => finish(true);
+    element.onerror = () => finish(false, new Error(`documentation renderer asset unavailable: ${url}`));
+    timer = windowObject?.setTimeout?.(
+      () => finish(false, new Error(`documentation renderer asset timeout: ${url}`)),
+      ASSET_TIMEOUT_MS,
+    );
     if (!existing) documentObject?.head?.appendChild?.(element);
   });
 }
@@ -273,7 +350,15 @@ function setState(documentObject, renderer, state, key) {
   status.textContent = translate(localeFromDocument(documentObject), key);
   if (state === 'ready') status.hidden = true;
 }
+export function normalizeDisplayMessage(value, fallback = '') {
+  const candidate = value instanceof Error ? value.message : value?.message ?? value;
+  if (candidate && typeof candidate.then === 'function') return fallback;
+  if (candidate && typeof candidate === 'object') return fallback;
+  const text = String(candidate ?? '').replace(/https?:\/\/\S+/g, '').trim();
+  if (!text || /^\[object (?:Promise|Object)\]$/.test(text)) return fallback;
+  return text.length > 180 ? `${text.slice(0, 177)}…` : text;
+}
+
 function safeMessage(error) {
-  const value = String(error?.message ?? '').replace(/https?:\/\/\S+/g, '').trim();
-  return value.length > 180 ? `${value.slice(0, 177)}…` : value;
+  return normalizeDisplayMessage(error, '');
 }

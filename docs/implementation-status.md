@@ -1,3 +1,25 @@
+# InfraNexum 2.0.0-alpha.0.125 — ReDoc bootstrap/runtime corrective
+
+## 2.0.0-alpha.0.125
+
+**Statut : corrective Web/documentation de non-régression ; aucune avancée fonctionnelle de roadmap.**
+
+La cause principale de l'indisponibilité ReDoc était un défaut de câblage introduit lors de l'isolation iframe : `initializeApiDocumentation()` transmettait le loader d'assets Swagger comme troisième argument de `renderRedoc()`, alors que ce paramètre était devenu une factory d'iframe. Le loader retourne une Promise ; celle-ci pouvait donc être traitée comme un frame, expliquant le couple `ReDoc frame initialization timed out` / `[object Promise]`.
+
+La correction sépare les deux dépendances, ajoute un handshake de phase borné, traite correctement le callback d'erreur documenté par `Redoc.init()`, observe aussi une éventuelle Promise rejetée, nettoie les assets en échec et normalise les diagnostics. Le contrat OpenAPI certifié reste local et indépendant du moteur de présentation.
+
+### Validation alpha.0.125
+
+- **EXÉCUTÉ — tests ReDoc ciblés :** 12/12, incluant le câblage bootstrap réel, callback d'erreur, Promise rejetée, fallback séquentiel et interdiction de `[object Promise]`.
+- **EXÉCUTÉ — Web complet :** 232/232 ; couverture 99,73 % lignes, 98,56 % branches, 100 % fonctions ; process smoke réussi.
+- **NON EXÉCUTÉ — téléchargement/rendu du bundle CDN réel dans ce runner :** le shell d'exécution ne dispose pas de résolution DNS sortante. Les URLs Redocly/jsDelivr sont versionnées 2.5.3 et la chaîne de fallback est couverte par tests avec des assets contrôlés. La validation opérateur reste `curl`/navigateur depuis un environnement disposant de la politique réseau de production.
+- **EXÉCUTÉ — API/architecture/toolchains/Compose :** API 48/48, 15 fragments / 201 opérations / dette 0 ; architecture ciblée 11/11 et Architecture-as-Code à zéro violation ; Toolchains 25/25 et zéro violation ; Compose 69/69.
+- **EXÉCUTÉ — Source Integrity / Archive Compatibility unitaires :** Source Integrity 45/45 à 100 %, snapshot staged 1566 fichiers suivis / 1565 checksums / 1564 chemins canoniques, zéro violation ; Archive Compatibility 12/12 à 100 %.
+
+PGM-10-E05 reste **NON TERMINÉ** jusqu'aux gates exacts JDK25/JaCoCo/PostgreSQL 17/18. PGM-10-E06 reste **EN COURS** et aucun provider mutateur n'est activé.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.124 — business-form focus root-cause corrective
 
 ## 2.0.0-alpha.0.124

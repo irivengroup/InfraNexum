@@ -1,7 +1,7 @@
 import http from 'node:http';
 
 const SHELL_CONTENT_SECURITY_POLICY = "default-src 'self'; base-uri 'none'; connect-src 'self' https:; font-src 'self'; form-action 'self'; frame-ancestors 'none'; frame-src 'self'; img-src 'self' data:; object-src 'none'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://cdn.jsdelivr.net";
-const REDOC_FRAME_CONTENT_SECURITY_POLICY = "default-src 'none'; base-uri 'none'; connect-src 'self'; font-src 'self' data:; form-action 'none'; frame-ancestors 'self'; frame-src 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'";
+const REDOC_FRAME_CONTENT_SECURITY_POLICY = "default-src 'none'; base-uri 'none'; connect-src 'self'; font-src 'self' data:; form-action 'none'; frame-ancestors 'self'; frame-src 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' https://cdn.redoc.ly https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'";
 const REDOC_FRAME_PATH = '/assets/redoc-frame.html';
 const SECURITY_HEADERS = Object.freeze({
   'Cross-Origin-Opener-Policy': 'same-origin',

@@ -1,10 +1,12 @@
 import {
   OPENAPI_RENDER_SPEC_URL,
   REDOC_FRAME_MESSAGE_SOURCE,
+  REDOC_SCRIPT_FALLBACK_URLS,
   REDOC_SCRIPT_URL,
   containsRedocFatalError,
   loadCertifiedOpenApi,
   loadExternalAsset,
+  loadExternalAssetCandidates,
   redocConfiguration,
 } from './api-documentation.mjs';
 
@@ -23,16 +25,26 @@ export async function initializeRedocFrame(
   if (!root) throw new Error('ReDoc frame root is unavailable');
   applyRequestedTheme(documentObject, windowObject);
 
+  postFrameMessage(windowObject, 'boot', { version: '2.5.3' });
   try {
+    postFrameMessage(windowObject, 'phase', { phase: 'contract' });
     const specification = await specLoader(windowObject, OPENAPI_RENDER_SPEC_URL);
-    await assetLoader(documentObject, windowObject, REDOC_SCRIPT_URL, 'script');
+    postFrameMessage(windowObject, 'phase', { phase: 'renderer' });
+    if (assetLoader === loadExternalAsset) {
+      await loadExternalAssetCandidates(
+        documentObject,
+        windowObject,
+        [REDOC_SCRIPT_URL, ...REDOC_SCRIPT_FALLBACK_URLS],
+        'script',
+      );
+    } else {
+      await assetLoader(documentObject, windowObject, REDOC_SCRIPT_URL, 'script');
+    }
     const redoc = windowObject?.Redoc ?? globalThis.Redoc;
     if (!redoc || typeof redoc.init !== 'function') throw new Error('ReDoc bundle did not expose Redoc.init');
     root.replaceChildren?.();
-    await new Promise((resolve, reject) => {
-      try { redoc.init(specification, redocConfiguration(documentObject), root, resolve); }
-      catch (error) { reject(error); }
-    });
+    postFrameMessage(windowObject, 'phase', { phase: 'render' });
+    await initializeRenderer(redoc, specification, redocConfiguration(documentObject), root);
     if (containsRedocFatalError(root)) throw new Error('ReDoc reported an embedded rendering failure');
     installHeightReporter(documentObject, windowObject, root);
     postFrameMessage(windowObject, 'ready');
@@ -43,6 +55,30 @@ export async function initializeRedocFrame(
     postFrameMessage(windowObject, 'error', { message: safeFrameMessage(error) });
     return false;
   }
+}
+
+export function initializeRenderer(redoc, specification, configuration, root) {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const finish = (error) => {
+      if (settled) return;
+      settled = true;
+      if (error) {
+        if (error instanceof Error) reject(error);
+        else reject(new Error(safeFrameMessage(error)));
+      } else {
+        resolve();
+      }
+    };
+    try {
+      const result = redoc.init(specification, configuration, root, finish);
+      if (result && typeof result.then === 'function') {
+        result.catch((error) => finish(error));
+      }
+    } catch (error) {
+      finish(error);
+    }
+  });
 }
 
 export function applyRequestedTheme(documentObject, windowObject) {
@@ -77,7 +113,11 @@ function postFrameMessage(windowObject, type, detail = {}) {
 }
 
 function safeFrameMessage(error) {
-  const value = String(error?.message ?? 'ReDoc rendering failed').replace(/https?:\/\/\S+/g, '').trim();
+  const candidate = error instanceof Error ? error.message : error?.message ?? error;
+  if (candidate && typeof candidate.then === 'function') return 'ReDoc rendering failed';
+  if (candidate && typeof candidate === 'object') return 'ReDoc rendering failed';
+  const value = String(candidate ?? 'ReDoc rendering failed').replace(/https?:\/\/\S+/g, '').trim();
+  if (!value || /^\[object (?:Promise|Object)\]$/.test(value)) return 'ReDoc rendering failed';
   return value.length > 180 ? `${value.slice(0, 177)}…` : value;
 }
 
