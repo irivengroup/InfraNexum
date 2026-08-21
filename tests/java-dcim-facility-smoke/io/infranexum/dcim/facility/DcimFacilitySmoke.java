@@ -115,6 +115,20 @@ public final class DcimFacilitySmoke {
         require(events.outboxSnapshot().stream().anyMatch(record -> "dcim.room.status_changed.v1".equals(record.event().eventType().value())), "room status event missing");
         require(events.outboxSnapshot().stream().anyMatch(record -> "dcim.room.locked.v1".equals(record.event().eventType().value())), "room locked event missing");
 
+        Repository automaticRepository = new Repository();
+        Idempotency automaticIdempotency = new Idempotency();
+        UuidV7Generator automaticIds = new UuidV7Generator(CLOCK, new SecureRandom(new byte[] {8, 1, 0, 5}));
+        FacilityApplicationService automaticService = new FacilityApplicationService(
+                automaticRepository, automaticIdempotency, new Limits(true, 10L), new Scope(organization, subdivision),
+                new InMemoryEventStore(), automaticIds, CLOCK);
+        CreateFacilityCommand automaticCommand = site(organization, subdivision, null, "Paris automatic site");
+        FacilityCommandContext automaticContext = context(actor, correlation, "dcim-site-auto-001", "Register automatically coded site");
+        FacilityNode automaticSite = automaticService.create(automaticCommand, automaticContext);
+        FacilityNode automaticReplay = automaticService.create(automaticCommand, automaticContext);
+        require(automaticReplay.id().equals(automaticSite.id()) && automaticReplay.code().equals(automaticSite.code()),
+                "automatic code must survive exact idempotent replay");
+        require(automaticSite.code().value().startsWith("PARIS-AUTOMATIC-SITE-"), "automatic site code must be memorable");
+
         service.create(site(organization, subdivision, "PAR02", "Paris secondary site"),
                 context(actor, correlation, "dcim-site-create-004", "Register second site"));
         expect(FacilityQuotaException.class, () -> service.create(site(organization, subdivision, "PAR03", "Paris overflow site"),

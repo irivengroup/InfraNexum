@@ -48,7 +48,7 @@ final class ItamPartnerApiModels {
     record CreatePartnerRequest(
             @NotBlank String governingOrganizationId,
             String governingSubdivisionId,
-            @NotBlank @Size(min = 3, max = 32) String code,
+            @Size(min = 3, max = 32) String code,
             @NotBlank @Size(min = 2, max = 255) String legalName,
             @NotBlank @Size(min = 2, max = 255) String displayName,
             @NotBlank @Pattern(regexp = "[A-Za-z]{2}") String countryCode,

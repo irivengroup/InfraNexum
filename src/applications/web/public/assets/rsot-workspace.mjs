@@ -130,8 +130,7 @@ export function rsotWorkspaceTemplate() {
         <div data-inx-crud-form="create" data-inx-crud-title-key="rsot.profileCreate">
           <form id="rsot-profile-form" class="border rounded-3 p-3 p-xl-4 bg-body-tertiary row g-3">
             <h3 data-i18n="rsot.profileCreate">Create profile</h3>
-            <div class="col-md-6"><label class="form-label" for="rsot-profile-code" data-i18n="rsot.profileCode">Profile code</label><input id="rsot-profile-code" name="code" class="form-control" maxlength="160" required /></div>
-            <div class="col-md-6"><label class="form-label" for="rsot-profile-version" data-i18n="common.version">Version</label><input id="rsot-profile-version" name="version" class="form-control" value="1.0.0" maxlength="64" required /></div>
+            <div class="col-12"><label class="form-label" for="rsot-profile-version" data-i18n="common.version">Version</label><input id="rsot-profile-version" name="version" class="form-control" value="1.0.0" maxlength="64" required /></div>
             <div class="col-12"><label class="form-label" for="rsot-profile-owner" data-i18n="rsot.owner">Owner</label><input id="rsot-profile-owner" name="owner" class="form-control" maxlength="160" required /></div>
             <div class="col-12"><label class="form-label" for="rsot-profile-schemas" data-i18n="rsot.profileSchemas">Schemas</label><select id="rsot-profile-schemas" name="schemaIds" class="form-select" multiple size="8" required></select></div>
             <div class="col-12"><button class="btn btn-primary" type="submit" data-i18n="common.create">Create</button></div>
@@ -209,7 +208,7 @@ function wireProfileActions(documentObject, client, state) {
     execute: async (form) => {
       const schemaIds = selectedValues(documentObject.getElementById('rsot-profile-schemas'));
       if (!schemaIds.length) throw new Error(translate(localeFromDocument(documentObject), 'rsot.profileSchemaRequired'));
-      await client.createProfile({ code: field(form, 'code'), owner: field(form, 'owner'), version: field(form, 'version'), schemaIds });
+      await client.createProfile({ owner: field(form, 'owner'), version: field(form, 'version'), schemaIds });
       await loadProfiles(documentObject, client, state);
     },
     onWorking: () => setWorkspaceStatus(documentObject, 'rsot-status', 'workspace.saving'),

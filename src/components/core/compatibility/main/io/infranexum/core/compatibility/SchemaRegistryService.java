@@ -5,6 +5,7 @@ import io.infranexum.core.audit.AuditJournal;
 import io.infranexum.core.audit.AuditScope;
 import io.infranexum.core.contracts.ContractVersion;
 import io.infranexum.core.contracts.DomainIdentifier;
+import io.infranexum.core.contracts.MemorableCodeGenerator;
 import io.infranexum.core.contracts.UuidV7Generator;
 import io.infranexum.core.events.EventEnvelope;
 import io.infranexum.core.events.EventSource;
@@ -39,6 +40,7 @@ public final class SchemaRegistryService {
     private final UuidV7Generator ids;
     private final Clock clock;
     private final SchemaRegistryFeaturePolicy features;
+    private final MemorableCodeGenerator codes = new MemorableCodeGenerator();
 
     public SchemaRegistryService(
             SchemaRegistryRepository repository,
@@ -156,7 +158,12 @@ public final class SchemaRegistryService {
         Objects.requireNonNull(command, "command");
         Objects.requireNonNull(context, "context");
         ContractVersion version = ContractVersion.parse(command.version());
-        if (repository.findProfileVersion(command.code(), version.toString()).isPresent()) {
+        String requestedCode = optionalCode(command.code());
+        DomainIdentifier profileId = ids.next();
+        String profileCode = requestedCode == null
+                ? codes.generate(command.owner() + " " + version, profileId, 160).toLowerCase(java.util.Locale.ROOT)
+                : requestedCode;
+        if (repository.findProfileVersion(profileCode, version.toString()).isPresent()) {
             throw new SchemaRegistryException("SCHEMA_PROFILE_VERSION_CONFLICT", "profile code and version already exist");
         }
         List<DomainIdentifier> schemaIds = List.copyOf(Objects.requireNonNull(command.schemaIds(), "schemaIds"));
@@ -169,8 +176,8 @@ public final class SchemaRegistryService {
             }
         }
         Instant now = clock.instant();
-        SchemaProfile profile = new SchemaProfile(ids.next(), command.code(), command.owner(), version, RegistryStatus.DRAFT,
-                members, profileChecksum(command.code(), version.toString(), members), 1L, now, now, null, null, null, null);
+        SchemaProfile profile = new SchemaProfile(profileId, profileCode, command.owner(), version, RegistryStatus.DRAFT,
+                members, profileChecksum(profileCode, version.toString(), members), 1L, now, now, null, null, null, null);
         return execute(transaction -> {
             repository.insertProfile(profile);
             transaction.append(event("rsot.schema.profile.created.v1", profile.id(), context, now, profilePayload(profile)));
@@ -297,6 +304,12 @@ public final class SchemaRegistryService {
         if (current != expected) {
             throw new SchemaRegistryException("SCHEMA_REVISION_CONFLICT", "registry revision changed");
         }
+    }
+
+    private static String optionalCode(String value) {
+        if (value == null) return null;
+        String normalized = value.strip();
+        return normalized.isEmpty() ? null : normalized;
     }
 
     private static void validatePage(int offset, int limit) {

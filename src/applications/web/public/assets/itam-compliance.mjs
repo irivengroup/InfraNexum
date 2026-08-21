@@ -55,8 +55,8 @@ export class ItamComplianceClient {
   suspendSupportAuthorization(id, version, reason, key) { return this.lifecycle('support-authorizations', id, 'suspend', version, reason, key); }
 
   warrantyTypes(organizationId, { offset = 0, limit = 50 } = {}) { return this.request(`/v1/itam/warranty-types?organization_id=${encodeURIComponent(uuid(organizationId, 'organizationId'))}&offset=${boundedOffset(offset)}&limit=${integer(limit, 'limit', 1, 200)}`); }
-  createWarrantyType(organizationId, code, displayName, reason, key) {
-    return this.request('/v1/itam/warranty-types', { method: 'POST', body: { organizationId: uuid(organizationId, 'organizationId'), code: text(code, 'code', 2, 64), displayName: text(displayName, 'displayName', 2, 160), reason: validatedReason(reason) }, idempotencyKey: key });
+  createWarrantyType(organizationId, displayName, reason, key) {
+    return this.request('/v1/itam/warranty-types', { method: 'POST', body: { organizationId: uuid(organizationId, 'organizationId'), displayName: text(displayName, 'displayName', 2, 160), reason: validatedReason(reason) }, idempotencyKey: key });
   }
   alerts(assetId, { asOf, horizonDays = 180, offset = 0, limit = 50 } = {}) {
     const horizon = integer(horizonDays, 'horizonDays', 1, 3650);

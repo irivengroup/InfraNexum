@@ -30,6 +30,20 @@ class DcimPhysicalInfrastructureArchitectureTest(unittest.TestCase):
         ):
             self.assertIn(token, service)
 
+    def test_equipment_taxonomy_is_complete_and_rackability_is_explicit(self) -> None:
+        category_source = (self.DOMAIN / "domain/EquipmentCategory.java").read_text(encoding="utf-8")
+        type_source = (self.DOMAIN / "domain/EquipmentType.java").read_text(encoding="utf-8")
+        category_block = category_source.split("{", 1)[1].split(";", 1)[0]
+        categories = [value.strip() for value in category_block.replace("\n", " ").split(",") if value.strip()]
+        import re
+        equipment_types = re.findall(r"\b[A-Z][A-Z0-9_]*\(EquipmentCategory\.", type_source)
+        rack_mountable = re.findall(r"\b[A-Z][A-Z0-9_]*\(EquipmentCategory\.[A-Z_]+, true\)", type_source)
+        self.assertEqual(15, len(categories))
+        self.assertEqual(97, len(equipment_types))
+        self.assertEqual(38, len(rack_mountable))
+        for token in ("PHYSICAL_SERVER", "VIRTUAL_MACHINE", "STORAGE_ARRAY", "LASER_PRINTER", "SSD_NVME", "RAM_DIMM", "RACK_PDU", "ENVIRONMENT_SENSOR", "IP_PHONE", "VIDEOCONFERENCE_CODEC"):
+            self.assertIn(token, type_source)
+
     def test_storage_keeps_authority_boundaries_and_serializes_competing_allocations(self) -> None:
         pg = (self.MIGRATION / "postgresql.sql").read_text(encoding="utf-8").lower()
         oracle = (self.MIGRATION / "oracle.sql").read_text(encoding="utf-8").lower()
@@ -56,8 +70,8 @@ class DcimPhysicalInfrastructureArchitectureTest(unittest.TestCase):
         for item in spec["paths"].values():
             operations.extend(value for key, value in item.items() if key in {"get", "post", "patch", "put", "delete"})
         self.assertEqual("3.1.0", spec["openapi"])
-        self.assertEqual(14, len(operations))
-        self.assertEqual(14, len({op["operationId"] for op in operations}))
+        self.assertEqual(15, len(operations))
+        self.assertEqual(15, len({op["operationId"] for op in operations}))
         self.assertTrue(all(op["x-infranexum-capability"] == "dcim.physical" for op in operations))
         self.assertIn("x-tagGroups", spec)
 
@@ -67,6 +81,8 @@ class DcimPhysicalInfrastructureArchitectureTest(unittest.TestCase):
         config = (self.WEB / "runtime/config.mjs").read_text(encoding="utf-8")
         for governed in (
             "manufacturerPartnerId",
+            "equipmentAId",
+            "equipmentBId",
             "rackId",
             "modelId",
             "rsotObjectId",
@@ -81,6 +97,10 @@ class DcimPhysicalInfrastructureArchitectureTest(unittest.TestCase):
             self.assertIn(token, workspace)
         self.assertIn("If-Match", client)
         self.assertIn("Idempotency-Key", client)
+        self.assertIn("taxonomy(org)", client)
+        for token in ("category", "equipmentType", "manufacturerReference", "readPortTemplates", "lengthMeters", "cableType"):
+            self.assertIn(token, workspace)
+        self.assertNotIn("inp('code'", workspace)
         self.assertIn("dcimPhysicalEnabled", config)
 
     def test_itam_asset_reference_uses_the_current_ownership_contract(self) -> None:

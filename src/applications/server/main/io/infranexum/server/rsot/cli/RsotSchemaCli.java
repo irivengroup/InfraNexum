@@ -210,9 +210,10 @@ public final class RsotSchemaCli {
             case "create" -> {
                 require(actor, PermissionCodes.RSOT_SCHEMA_CREATE, correlation, "rsot_schema_profile", "collection");
                 List<DomainIdentifier> schemaIds = args.requiredCsv("schema-ids").stream().map(DomainIdentifier::parse).toList();
-                if (args.flag("dry-run")) yield dryRun(args, "create schema profile " + args.required("code") + "@" + args.required("version"));
+                String requestedCode = args.optional("code", null);
+                if (args.flag("dry-run")) yield dryRun(args, "create schema profile " + (requestedCode == null ? "<auto>" : requestedCode) + "@" + args.required("version"));
                 yield render(args, profileMap(registry.createProfile(new CreateProfileCommand(
-                        args.required("code"), args.required("owner"), args.required("version"), schemaIds), context)));
+                        requestedCode, args.required("owner"), args.required("version"), schemaIds), context)));
             }
             case "list" -> {
                 require(actor, PermissionCodes.RSOT_SCHEMA_READ, correlation, "rsot_schema_profile", "collection");

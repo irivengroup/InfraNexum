@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum DCIM Physical API
-  version: 2.0.0-alpha.0.122
+  version: 2.0.0-alpha.0.123
   description: PGM-07-E05 rack occupancy, equipment footprints, physical ports and point-to-point cabling.
 tags:
 - name: DCIM / Physical / Models
@@ -99,6 +99,29 @@ paths:
       x-infranexum-permission:
         mode: permission
         code: dcim.model.create
+  /api/v1/dcim/equipment-taxonomy:
+    get:
+      tags:
+      - DCIM / Physical / Models
+      operationId: getDcimEquipmentTaxonomy
+      x-infranexum-capability: dcim.physical
+      summary: Get governed equipment categories, dependent types and cable types
+      security:
+      - sessionCookie: []
+      parameters:
+      - $ref: '#/components/parameters/OrganizationId'
+      responses:
+        '200':
+          description: Equipment and cable taxonomy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EquipmentTaxonomy'
+        '403':
+          $ref: '#/components/responses/Problem'
+      x-infranexum-permission:
+        mode: permission
+        code: dcim.model.read
   /api/v1/dcim/equipment-models/{id}/status:
     post:
       tags:
@@ -663,13 +686,8 @@ components:
       required:
       - organizationId
       - manufacturerPartnerId
-      - code
       - displayName
       - formFactor
-      - rackUnits
-      - widthMm
-      - depthMm
-      - portTemplates
       - reason
       properties:
         organizationId:
@@ -680,33 +698,47 @@ components:
           type: string
           minLength: 3
           maxLength: 64
+          description: Optional compatibility override. Normal UI creation omits this field and InfraNexum generates a memorable code.
         displayName:
           type: string
           minLength: 3
           maxLength: 128
+        category:
+          type: string
+          description: Equipment category. Use the equipment-taxonomy endpoint to discover supported values.
+        equipmentType:
+          type: string
+          description: Equipment type constrained by category. Use the equipment-taxonomy endpoint to discover supported pairs.
+        manufacturerReference:
+          type:
+          - string
+          - 'null'
+          maxLength: 160
         formFactor:
           type: string
           maxLength: 32
         rackUnits:
           type: integer
-          minimum: 1
+          minimum: 0
           maximum: 100
+          description: Required and positive for rack-mountable types; zero is valid for non-rack objects.
         widthMm:
           type: integer
-          minimum: 1
+          minimum: 0
           maximum: 5000
         depthMm:
           type: integer
-          minimum: 1
+          minimum: 0
           maximum: 5000
         weightKg:
           type:
           - number
           - 'null'
-          exclusiveMinimum: 0
+          minimum: 0
         portTemplates:
           type: array
-          minItems: 1
+          maxItems: 64
+          description: Zero or more port families. Each family may define a different kind/media/connector and count.
           items:
             $ref: '#/components/schemas/PortTemplate'
         description:
@@ -723,7 +755,6 @@ components:
       - organizationId
       - subdivisionId
       - roomId
-      - code
       - displayName
       - heightU
       - widthMm
@@ -738,6 +769,7 @@ components:
           $ref: '#/components/schemas/Uuid'
         code:
           type: string
+          description: Optional compatibility override. Normal UI creation omits this field and InfraNexum generates a memorable code.
         displayName:
           type: string
         heightU:
@@ -863,8 +895,55 @@ components:
         label:
           type: string
           maxLength: 128
+        cableType:
+          type: string
+          description: Cable type from the equipment-taxonomy cableTypes collection.
+        lengthMeters:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 100000
+        manufacturerPartnerId:
+          oneOf:
+          - $ref: '#/components/schemas/Uuid'
+          - type: 'null'
+        manufacturerReference:
+          type:
+          - string
+          - 'null'
+          maxLength: 160
+          description: Requires manufacturerPartnerId when provided.
         reason:
           $ref: '#/components/schemas/Reason'
+    EquipmentTaxonomy:
+      type: object
+      required: [categories, cableTypes]
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/EquipmentCategory'
+        cableTypes:
+          type: array
+          items:
+            type: string
+    EquipmentCategory:
+      type: object
+      required: [value, types]
+      properties:
+        value:
+          type: string
+        types:
+          type: array
+          items:
+            $ref: '#/components/schemas/EquipmentType'
+    EquipmentType:
+      type: object
+      required: [value, rackMountable]
+      properties:
+        value:
+          type: string
+        rackMountable:
+          type: boolean
     EquipmentModel:
       type: object
       required:
@@ -873,6 +952,9 @@ components:
       - manufacturerPartnerId
       - code
       - displayName
+      - category
+      - equipmentType
+      - rackMountable
       - formFactor
       - rackUnits
       - widthMm
@@ -891,6 +973,16 @@ components:
           type: string
         displayName:
           type: string
+        category:
+          type: string
+        equipmentType:
+          type: string
+        rackMountable:
+          type: boolean
+        manufacturerReference:
+          type:
+          - string
+          - 'null'
         formFactor:
           type: string
         rackUnits:
@@ -1061,6 +1153,8 @@ components:
       - label
       - media
       - connector
+      - cableType
+      - lengthMeters
       - status
       - version
       properties:
@@ -1080,6 +1174,19 @@ components:
           type: string
         connector:
           type: string
+        cableType:
+          type: string
+        lengthMeters:
+          type: number
+          exclusiveMinimum: 0
+        manufacturerPartnerId:
+          oneOf:
+          - $ref: '#/components/schemas/Uuid'
+          - type: 'null'
+        manufacturerReference:
+          type:
+          - string
+          - 'null'
         status:
           type: string
         version:

@@ -113,6 +113,28 @@ final class DcimPhysicalDomainCoverageTest {
     }
 
     @Test
+    void taxonomySupportsDatacenterAndOfficeObjectsAndRejectsInvalidPairs() {
+        for (EquipmentCategory category : EquipmentCategory.values()) {
+            assertFalse(EquipmentType.forCategory(category).isEmpty(), () -> "missing type for " + category);
+            assertFalse(category.wireValue().isBlank());
+        }
+        assertTrue(EquipmentType.PHYSICAL_SERVER.rackMountable());
+        assertFalse(EquipmentType.VIRTUAL_MACHINE.rackMountable());
+        assertEquals(EquipmentCategory.PRINTING, EquipmentType.MULTIFUNCTION_PRINTER.category());
+        assertEquals(EquipmentCategory.MEMORY, EquipmentType.RAM_RDIMM.category());
+        assertEquals(EquipmentCategory.DISK, EquipmentType.SSD_NVME.category());
+        assertEquals(CableType.FIBER_SINGLE_MODE, CableType.parse("fiber_single_mode"));
+        assertThrows(IllegalArgumentException.class, () -> EquipmentModel.draft(
+                ID, ORG, ACTOR, "BAD", "Wrong pair", EquipmentCategory.STORAGE, EquipmentType.PHYSICAL_SERVER, null,
+                "rack", 1, 482, 800, BigDecimal.ONE, List.of(), null, ACTOR, "invalid taxonomy", NOW));
+        EquipmentModel vm = EquipmentModel.draft(
+                ID, ORG, ACTOR, "VM-01", "Virtual machine", EquipmentCategory.SERVER, EquipmentType.VIRTUAL_MACHINE, "VM-REF",
+                "virtual", 0, 0, 0, BigDecimal.ZERO, List.of(), null, ACTOR, "create vm", NOW);
+        assertEquals(0, vm.rackUnits());
+        assertEquals("VM-REF", vm.manufacturerReference());
+    }
+
+    @Test
     void rackEquipmentAndCableLifecycleBranchesAreFailClosed() {
         Rack rack = Rack.draft(ID, ORG, SUB, ROOM, "R01", "Rack one", 42, 600, 1200, ACTOR, "create rack", NOW);
         assertAll(

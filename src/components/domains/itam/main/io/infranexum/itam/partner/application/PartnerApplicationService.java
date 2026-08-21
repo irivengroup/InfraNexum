@@ -2,6 +2,7 @@ package io.infranexum.itam.partner.application;
 
 import io.infranexum.core.contracts.ContractVersion;
 import io.infranexum.core.contracts.DomainIdentifier;
+import io.infranexum.core.contracts.MemorableCodeGenerator;
 import io.infranexum.core.contracts.UuidV7Generator;
 import io.infranexum.core.events.EventEnvelope;
 import io.infranexum.core.events.EventSource;
@@ -43,6 +44,7 @@ public final class PartnerApplicationService {
     private final TransactionalEventStore events;
     private final UuidV7Generator ids;
     private final Clock clock;
+    private final MemorableCodeGenerator codes = new MemorableCodeGenerator();
 
     public PartnerApplicationService(
             PartnerRepository partners, PartnerIdempotencyRepository idempotency, PartnerFeaturePolicy features,
@@ -61,21 +63,25 @@ public final class PartnerApplicationService {
         requireEnabled();
         Objects.requireNonNull(command.governingOrganizationId(), "governingOrganizationId");
         validateScope(command.governingOrganizationId(), command.governingSubdivisionId());
-        PartnerCode code = new PartnerCode(command.code());
+        String requestedCode = optionalCode(command.code());
+        PartnerCode explicitCode = requestedCode == null ? null : new PartnerCode(requestedCode);
         Set<PartnerRole> roles = parseRoles(command.roles());
-        Partner prototype = Partner.draft(ids.next(), command.governingOrganizationId(), command.governingSubdivisionId(),
-                code, command.legalName(), command.displayName(), command.countryCode(), roles,
-                Objects.requireNonNull(command.validFrom(), "validFrom"), command.validUntil(), command.officialWebsite(),
-                command.supportPortal(), safeList(command.aliases()), safeList(command.externalIds()),
-                safeList(command.accreditations()), safeList(command.contacts()), context.actorId(), context.reason(), clock.instant());
         String fingerprint = fingerprint("create", command.governingOrganizationId(), command.governingSubdivisionId(),
-                code, prototype.legalName(), prototype.displayName(), prototype.countryCode(), roles, prototype.validFrom(),
-                prototype.validUntil(), prototype.officialWebsite(), prototype.supportPortal(), prototype.aliases(),
-                prototype.externalIds(), prototype.accreditations(), prototype.contacts());
+                explicitCode == null ? "<auto>" : explicitCode.value(), command.legalName(), command.displayName(),
+                command.countryCode(), roles, Objects.requireNonNull(command.validFrom(), "validFrom"), command.validUntil(),
+                command.officialWebsite(), command.supportPortal(), safeList(command.aliases()), safeList(command.externalIds()),
+                safeList(command.accreditations()), safeList(command.contacts()));
 
         return execute(transaction -> {
             Optional<PartnerIdempotencyRepository.Record> prior = idempotency.find(context.idempotencyKey());
             if (prior.isPresent()) return replay(prior.orElseThrow(), fingerprint, "create");
+            DomainIdentifier id = ids.next();
+            PartnerCode code = explicitCode == null ? new PartnerCode(codes.generate(command.displayName(), id, 32)) : explicitCode;
+            Partner prototype = Partner.draft(id, command.governingOrganizationId(), command.governingSubdivisionId(),
+                    code, command.legalName(), command.displayName(), command.countryCode(), roles,
+                    command.validFrom(), command.validUntil(), command.officialWebsite(), command.supportPortal(),
+                    safeList(command.aliases()), safeList(command.externalIds()), safeList(command.accreditations()),
+                    safeList(command.contacts()), context.actorId(), context.reason(), clock.instant());
             if (partners.count() >= features.partnerLimit()) throw new PartnerQuotaException();
             if (partners.existsByCode(prototype.governingOrganizationId(), prototype.code())) {
                 throw new PartnerConflictException("PARTNER_CODE_CONFLICT", "partner code already exists in governing organization");
@@ -185,6 +191,12 @@ public final class PartnerApplicationService {
             if (cause instanceof IllegalArgumentException invalid) throw invalid;
             throw failure;
         }
+    }
+
+    private static String optionalCode(String value) {
+        if (value == null) return null;
+        String normalized = value.strip();
+        return normalized.isEmpty() ? null : normalized;
     }
 
     private static Set<PartnerRole> parseRoles(Set<String> values) {

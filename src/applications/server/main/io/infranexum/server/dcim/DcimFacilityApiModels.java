@@ -19,7 +19,7 @@ final class DcimFacilityApiModels {
             @NotBlank String organizationId,
             @NotBlank String subdivisionId,
             String parentId,
-            @NotBlank @Pattern(regexp = "[A-Za-z0-9][A-Za-z0-9_-]{2,63}") String code,
+            @Pattern(regexp = "[A-Za-z0-9][A-Za-z0-9_-]{2,63}") String code,
             @NotBlank @Size(min = 3, max = 128) String displayName,
             @Size(max = 128) String addressLine1,
             @Size(max = 128) String addressLine2,

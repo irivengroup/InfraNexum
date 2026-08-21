@@ -35,7 +35,7 @@ final class ItamComplianceApiModels {
             @NotBlank @Size(max=160) String serviceLevel,@NotNull LocalDate startsOn,@NotNull LocalDate endsOn,
             @NotBlank @Size(min=2,max=240) String proofReference,@NotBlank @Size(min=2,max=1024) String reason) {}
     record ReasonRequest(@NotBlank @Size(min=2,max=1024) String reason) {}
-    record WarrantyTypeRequest(@NotBlank String organizationId,@NotBlank @Size(min=2,max=64) String code,@NotBlank @Size(min=2,max=160) String displayName,
+    record WarrantyTypeRequest(@NotBlank String organizationId,@Size(min=2,max=64) String code,@NotBlank @Size(min=2,max=160) String displayName,
             @NotBlank @Size(min=2,max=1024) String reason) {}
 
     record WarrantyResponse(String id,String assetId,String manufacturerPartnerId,String warrantyTypeId,String coverageLevel,

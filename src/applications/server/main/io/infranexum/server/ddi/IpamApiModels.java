@@ -5,7 +5,7 @@ import jakarta.validation.constraints.*;
 import java.time.Instant;
 
 final class IpamApiModels {private IpamApiModels(){}
- record CreateVrfRequest(@NotBlank String organizationId,@NotBlank @Size(max=64) String code,@NotBlank @Size(max=160) String displayName,@Size(max=128) String routeDistinguisher,@NotBlank @Size(min=2,max=1024) String reason){}
+ record CreateVrfRequest(@NotBlank String organizationId,@Size(max=64) String code,@NotBlank @Size(max=160) String displayName,@Size(max=128) String routeDistinguisher,@NotBlank @Size(min=2,max=1024) String reason){}
  record CreateVlanRequest(@NotBlank String organizationId,String siteId,@Min(1) @Max(4094) Integer vlanId,@Min(1) @Max(16777215) Long vni,@NotBlank @Size(max=160) String name,@NotBlank @Size(min=2,max=1024) String reason){}
  record CreateNetworkRequest(@NotBlank String organizationId,String subdivisionId,String siteId,@NotBlank String vrfId,String vlanId,String parentNetworkId,@NotBlank String kind,@NotBlank @Size(max=64) String cidr,@Size(max=160) String usage,@Size(max=64) String trustLevel,@NotBlank @Size(min=2,max=1024) String reason){}
  record UpdateNetworkRequest(String vlanId,@Size(max=160) String usage,@Size(max=64) String trustLevel,@NotBlank @Size(min=2,max=1024) String reason){}

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum DCIM Physical Facilities API
-  version: 2.0.0-alpha.0.122
+  version: 2.0.0-alpha.0.123
   description: PGM-07-E04 governed physical hierarchy for sites, buildings, floors, rooms and technical zones.
 servers:
 - url: /
@@ -1008,7 +1008,6 @@ components:
       required:
       - organizationId
       - subdivisionId
-      - code
       - displayName
       - addressLine1
       - postalCode
@@ -1024,6 +1023,7 @@ components:
         code:
           type: string
           pattern: ^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$
+          description: Optional compatibility override; InfraNexum normally generates the code from displayName.
         displayName:
           type: string
           minLength: 3
@@ -1129,7 +1129,6 @@ components:
       - organizationId
       - subdivisionId
       - parentId
-      - code
       - displayName
       - floorCount
       - reason
@@ -1143,6 +1142,7 @@ components:
         code:
           type: string
           pattern: ^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$
+          description: Optional compatibility override; InfraNexum normally generates the code from displayName.
         displayName:
           type: string
           minLength: 3
@@ -1210,7 +1210,6 @@ components:
       - organizationId
       - subdivisionId
       - parentId
-      - code
       - displayName
       - levelNumber
       - reason
@@ -1224,6 +1223,7 @@ components:
         code:
           type: string
           pattern: ^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$
+          description: Optional compatibility override; InfraNexum normally generates the code from displayName.
         displayName:
           type: string
           minLength: 3
@@ -1285,7 +1285,6 @@ components:
       - organizationId
       - subdivisionId
       - parentId
-      - code
       - displayName
       - areaM2
       - reason
@@ -1299,6 +1298,7 @@ components:
         code:
           type: string
           pattern: ^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$
+          description: Optional compatibility override; InfraNexum normally generates the code from displayName.
         displayName:
           type: string
           minLength: 3
@@ -1362,7 +1362,6 @@ components:
       - organizationId
       - subdivisionId
       - parentId
-      - code
       - displayName
       - zoneType
       - reason
@@ -1376,6 +1375,7 @@ components:
         code:
           type: string
           pattern: ^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$
+          description: Optional compatibility override; InfraNexum normally generates the code from displayName.
         displayName:
           type: string
           minLength: 3

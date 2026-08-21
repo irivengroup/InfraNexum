@@ -280,7 +280,7 @@ public final class ItamComplianceCli {
             case "create" -> {
                 String reason = args.required("reason"); require(actor, PermissionCodes.ITAM_SUPPORT_CATALOG_MANAGE, organization, correlation, "warranty-type", "collection", reason);
                 if (args.flag("dry-run")) yield render(args, dryRun("warranty-type-create", organization));
-                WarrantyType type = compliance.createWarrantyType(args.required("code"), args.required("display-name"), context(args, actor, correlation, reason));
+                WarrantyType type = compliance.createWarrantyType(args.optional("code", null), args.required("display-name"), context(args, actor, correlation, reason));
                 yield render(args, warrantyTypeMap(type));
             }
             default -> throw new IllegalArgumentException("unknown warranty-type operation: " + args.operation());

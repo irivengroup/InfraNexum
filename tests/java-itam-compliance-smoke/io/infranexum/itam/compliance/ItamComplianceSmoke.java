@@ -78,10 +78,11 @@ public final class ItamComplianceSmoke {
         References references = new References(manufacturer, publisher, supportProvider, organization, subdivision, repository);
         ComplianceApplicationService service = service(assets, repository, idempotency, references, events, ids, true, 4);
 
-        WarrantyType type = service.createWarrantyType("manufacturer_standard", "Manufacturer standard warranty",
+        WarrantyType type = service.createWarrantyType(null, "Manufacturer standard warranty",
                 context(actor, correlation, "warranty-type-0001", "Governed warranty catalogue initialization"));
         require(type.active(), "warranty type must be active");
-        WarrantyType typeReplay = service.createWarrantyType("manufacturer_standard", "Manufacturer standard warranty",
+        require(type.code().startsWith("MANUFACTURER_STANDARD_WARRANTY_"), "warranty type code must be generated from display name while preserving the ITAM code contract");
+        WarrantyType typeReplay = service.createWarrantyType(null, "Manufacturer standard warranty",
                 context(actor, correlation, "warranty-type-0001", "Governed warranty catalogue initialization"));
         require(typeReplay.id().equals(type.id()), "warranty-type idempotent replay failed");
 

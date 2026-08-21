@@ -289,7 +289,7 @@ java-dcim-facility-smoke:
 	$(JAVAC) -Xlint:all -Werror -d "$$build_dir" \
 		$(COMPONENT_ROOT)/core/contracts/main/io/infranexum/core/contracts/*.java \
 		$(COMPONENT_ROOT)/core/events/main/io/infranexum/core/events/*.java \
-		$(COMPONENT_ROOT)/domains/dcim/main/io/infranexum/dcim/facility/domain/*.java \
+			$(COMPONENT_ROOT)/domains/dcim/main/io/infranexum/dcim/facility/domain/*.java \
 		$(COMPONENT_ROOT)/domains/dcim/main/io/infranexum/dcim/facility/ports/*.java \
 		$(COMPONENT_ROOT)/domains/dcim/main/io/infranexum/dcim/facility/application/*.java \
 		$(TEST_ROOT)/java-dcim-facility-smoke/io/infranexum/dcim/facility/DcimFacilitySmoke.java; \

@@ -207,7 +207,7 @@ class IntegrationRuntimeConfigurationTest {
                     inbox, mock(AuditJournal.class), observer, ids, CLOCK);
             var dispatcher = configuration.connectorInboxDispatcher(
                     inbox, endpointRegistry, handlerRegistry, observer, CLOCK,
-                    new ServerRuntimeProperties("server-a", RuntimeMode.REGIONAL, "eu-west", "paris", "2.0.0-alpha.0.122", "2.0.0-draft.21"),
+                    new ServerRuntimeProperties("server-a", RuntimeMode.REGIONAL, "eu-west", "paris", "2.0.0-alpha.0.123", "2.0.0-draft.21"),
                     properties);
 
             assertNotNull(webhook);

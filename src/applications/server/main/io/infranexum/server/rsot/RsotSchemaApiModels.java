@@ -29,7 +29,7 @@ final class RsotSchemaApiModels {
     record DeprecateRequest(@NotBlank @Size(max = 128) String sunsetAt, @NotBlank @Size(max = 500) String reason) {}
 
     record CreateProfileRequest(
-            @NotBlank @Size(max = 160) String code,
+            @Size(max = 160) String code,
             @NotBlank @Size(max = 160) String owner,
             @NotBlank @Size(max = 64) String version,
             @NotEmpty @Size(max = 128) List<@NotBlank String> schemaIds) {}

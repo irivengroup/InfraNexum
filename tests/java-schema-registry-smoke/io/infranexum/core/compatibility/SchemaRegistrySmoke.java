@@ -57,9 +57,11 @@ public final class SchemaRegistrySmoke {
         require("ADR-9001".equals(second.breakingApprovalReference()), "breaking approval was not persisted");
 
         SchemaProfile profileDraft = service.createProfile(
-                new CreateProfileCommand("server.standard", "team.rsot", "1.0.0", List.of(first.id(), second.id())), context);
+                new CreateProfileCommand(null, "team.rsot", "1.0.0", List.of(first.id(), second.id())), context);
         SchemaProfile profile = service.publishProfile(profileDraft.id(), 1, context);
         require(profile.status() == RegistryStatus.PUBLISHED && profile.members().size() == 2, "profile publication failed");
+        require(profile.code().matches("[a-z][a-z0-9.-]{2,159}"), "generated profile code must preserve RSOT lowercase contract");
+        require(profile.code().startsWith("team-rsot-1-0-0-"), "generated profile code must remain memorable");
 
         RegisteredSchema deprecated = service.deprecate(first.id(), 2, NOW.plusSeconds(7200), "superseded by 2.0.0", context);
         require(deprecated.status() == RegistryStatus.DEPRECATED, "schema deprecation failed");

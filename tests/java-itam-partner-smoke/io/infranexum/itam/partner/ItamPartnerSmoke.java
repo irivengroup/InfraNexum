@@ -56,11 +56,12 @@ public final class ItamPartnerSmoke {
                 ids,
                 CLOCK);
 
-        CreatePartnerCommand command = command(organization, subdivision, "VEND-001", "Acme Infrastructure SAS", "Acme");
+        CreatePartnerCommand command = command(organization, subdivision, null, "Acme Infrastructure SAS", "Acme");
         PartnerCommandContext createContext = context(actor, correlation, "create-acme-0001", "Initial ITAM Partner registration");
         Partner draft = service.create(command, createContext);
         require(draft.authorizationStatus() == PartnerAuthorizationStatus.DRAFT, "partner must start as draft");
         require(draft.version() == 1, "draft version must start at one");
+        require(draft.code().value().startsWith("ACME-"), "partner code must be generated from display name");
         require(draft.roles().contains(PartnerRole.MANUFACTURER), "manufacturer role was not preserved");
         require(draft.identityTokens().stream().anyMatch(value -> value.startsWith("external:")), "external identity token missing");
 
@@ -128,8 +129,8 @@ public final class ItamPartnerSmoke {
                 "https://partner.example.test",
                 "https://support.example.test",
                 List.of(displayName + " France"),
-                List.of(new PartnerExternalId("duns", code + "-EXT")),
-                List.of(new PartnerAccreditation("ISO27001", "ISO", LocalDate.of(2026, 1, 1), LocalDate.of(2027, 12, 31), "evidence:" + code)),
+                List.of(new PartnerExternalId("duns", (code == null ? displayName : code) + "-EXT")),
+                List.of(new PartnerAccreditation("ISO27001", "ISO", LocalDate.of(2026, 1, 1), LocalDate.of(2027, 12, 31), "evidence:" + (code == null ? displayName : code))),
                 List.of());
     }
 

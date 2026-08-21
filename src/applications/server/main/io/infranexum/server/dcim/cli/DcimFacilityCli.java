@@ -153,12 +153,12 @@ public final class DcimFacilityCli {
                 "dcim-" + kind.wireValue(), "collection", reason);
         CreateFacilityCommand command = new CreateFacilityCommand(
                 kind, organization, DomainIdentifier.parse(requiredText(root,"subdivisionId")), optionalId(root,"parentId"),
-                requiredText(root,"code"), requiredText(root,"displayName"), optionalText(root,"addressLine1"), optionalText(root,"addressLine2"),
+                optionalText(root,"code"), requiredText(root,"displayName"), optionalText(root,"addressLine1"), optionalText(root,"addressLine2"),
                 optionalText(root,"postalCode"), optionalText(root,"city"), optionalText(root,"countryCode"), optionalText(root,"timezone"),
                 decimal(root,"latitude"), decimal(root,"longitude"), integer(root,"floorCount"), integer(root,"levelNumber"),
                 decimal(root,"areaM2"), decimal(root,"levelHeightM"), decimal(root,"capacityKw"), optionalText(root,"accessRestriction"),
                 optionalText(root,"zoneType"), optionalText(root,"description"));
-        if (args.flag("dry-run")) return render(args, Map.of("dryRun", true, "operation", "create", "kind", kind.wireValue(), "code", command.code()));
+        if (args.flag("dry-run")) return render(args, Map.of("dryRun", true, "operation", "create", "kind", kind.wireValue(), "code", command.code()==null?"auto":command.code()));
         return render(args, facilityMap(facilities.create(command, context(args, actor, correlation, reason))));
     }
 

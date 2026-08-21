@@ -1,0 +1,10 @@
+schema: infranexum.migration-verification/v1
+checks:
+- id: dcim-equipment-taxonomy-columns
+  postgresql: "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='infranexum_dcim' AND table_name='equipment_model' AND column_name IN ('equipment_category','equipment_type','manufacturer_reference')"
+  oracle: "SELECT COUNT(*) FROM user_tab_columns WHERE table_name='INFRANEXUM_DCIM_MODEL' AND column_name IN ('EQUIPMENT_CATEGORY','EQUIPMENT_TYPE','MANUFACTURER_REFERENCE')"
+  expected: 3
+- id: dcim-cable-metadata-columns
+  postgresql: "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='infranexum_dcim' AND table_name='cable_connection' AND column_name IN ('cable_type','length_meters','manufacturer_partner_id','manufacturer_reference')"
+  oracle: "SELECT COUNT(*) FROM user_tab_columns WHERE table_name='INFRANEXUM_DCIM_CABLE' AND column_name IN ('CABLE_TYPE','LENGTH_METERS','MANUFACTURER_PARTNER_ID','MANUFACTURER_REFERENCE')"
+  expected: 4

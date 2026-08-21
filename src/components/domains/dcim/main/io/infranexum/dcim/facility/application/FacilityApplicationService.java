@@ -8,6 +8,7 @@ import io.infranexum.core.events.EventSource;
 import io.infranexum.core.events.EventType;
 import io.infranexum.core.events.TransactionExecutionException;
 import io.infranexum.core.events.TransactionalEventStore;
+import io.infranexum.core.contracts.MemorableCodeGenerator;
 import io.infranexum.dcim.facility.domain.FacilityCode;
 import io.infranexum.dcim.facility.domain.FacilityConflictException;
 import io.infranexum.dcim.facility.domain.FacilityKind;
@@ -39,6 +40,7 @@ public final class FacilityApplicationService {
     private final TransactionalEventStore events;
     private final UuidV7Generator ids;
     private final Clock clock;
+    private final MemorableCodeGenerator codes = new MemorableCodeGenerator();
 
     public FacilityApplicationService(FacilityRepository facilities, FacilityIdempotencyRepository idempotency,
             FacilityFeaturePolicy features, FacilityScopePolicy scopes, TransactionalEventStore events,
@@ -53,22 +55,24 @@ public final class FacilityApplicationService {
         Objects.requireNonNull(command.kind(),"kind"); Objects.requireNonNull(command.organizationId(),"organizationId"); Objects.requireNonNull(command.subdivisionId(),"subdivisionId");
         scopes.requireActiveScope(command.organizationId(), command.subdivisionId());
         Parent parent = resolveParent(command);
-        FacilityCode code = new FacilityCode(command.code());
-        FacilityNode prototype = FacilityNode.draft(ids.next(), command.kind(), command.organizationId(), command.subdivisionId(),
-                command.parentId(), parent.scopeId(), code, command.displayName(), command.addressLine1(), command.addressLine2(),
-                command.postalCode(), command.city(), command.countryCode(), command.timezone(), command.latitude(), command.longitude(), command.floorCount(), command.levelNumber(), command.areaM2(),
-                command.levelHeightM(), command.capacityKw(), command.accessRestriction(), command.zoneType(), command.description(),
-                context.actorId(), context.reason(), clock.instant());
-        String fingerprint=fingerprint("create", command.kind(), command.organizationId(), command.subdivisionId(), command.parentId(), code,
-                prototype.displayName(), prototype.addressLine1(), prototype.addressLine2(), prototype.postalCode(), prototype.city(),
-                prototype.countryCode(), prototype.timezone(), prototype.latitude(), prototype.longitude(),
-                prototype.floorCount(), prototype.levelNumber(), prototype.areaM2(), prototype.levelHeightM(), prototype.capacityKw(),
-                prototype.accessRestriction(), prototype.zoneType(), prototype.description());
+        String requestedCode = command.code() == null || command.code().isBlank() ? null : new FacilityCode(command.code()).value();
+        // The idempotency fingerprint must never contain a generated identifier/code: an exact retry must replay the first result.
+        String fingerprint=fingerprint("create", command.kind(), command.organizationId(), command.subdivisionId(), command.parentId(), requestedCode,
+                command.displayName(), command.addressLine1(), command.addressLine2(), command.postalCode(), command.city(),
+                command.countryCode(), command.timezone(), command.latitude(), command.longitude(), command.floorCount(), command.levelNumber(), command.areaM2(),
+                command.levelHeightM(), command.capacityKw(), command.accessRestriction(), command.zoneType(), command.description());
         return execute(tx -> {
             Optional<FacilityIdempotencyRepository.Record> prior=idempotency.find(context.idempotencyKey());
             if(prior.isPresent()) return replay(prior.orElseThrow(),fingerprint,"create");
             if(facilities.count(command.kind())>=features.limit(command.kind())) throw new FacilityQuotaException(command.kind());
+            DomainIdentifier facilityId = ids.next();
+            FacilityCode code = new FacilityCode(requestedCode == null ? codes.generate(command.displayName(), facilityId) : requestedCode);
             if(facilities.existsByScopeCode(command.kind(), parent.scopeId(), code)) throw new FacilityConflictException("DCIM_CODE_DUPLICATE","facility code already exists in parent scope");
+            FacilityNode prototype = FacilityNode.draft(facilityId, command.kind(), command.organizationId(), command.subdivisionId(),
+                    command.parentId(), parent.scopeId(), code, command.displayName(), command.addressLine1(), command.addressLine2(),
+                    command.postalCode(), command.city(), command.countryCode(), command.timezone(), command.latitude(), command.longitude(), command.floorCount(), command.levelNumber(), command.areaM2(),
+                    command.levelHeightM(), command.capacityKw(), command.accessRestriction(), command.zoneType(), command.description(),
+                    context.actorId(), context.reason(), clock.instant());
             facilities.insert(prototype); tx.append(event("dcim."+command.kind().wireValue()+".created.v1",prototype,context));
             idempotency.insert(new FacilityIdempotencyRepository.Record(context.idempotencyKey(),fingerprint,"create",prototype.id(),prototype.createdAt()));
             return prototype;

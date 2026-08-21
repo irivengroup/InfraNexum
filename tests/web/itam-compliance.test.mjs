@@ -35,8 +35,8 @@ test('software license client refuses raw secret key material', async () => {
 test('support authorization and catalog operations retain organization scope', async () => {
   let calls = []; const client = new ItamComplianceClient(configuration, { fetchFunction: async (url, options) => { calls.push({ url, options }); return response([]); }, cookieProvider });
   await client.warrantyTypes(organizationId); assert.equal(calls.at(-1).url, `/api/v1/itam/warranty-types?organization_id=${organizationId}&offset=0&limit=50`);
-  await client.createWarrantyType(organizationId, 'standard', 'Standard warranty', 'Govern catalog', 'catalog-key-0001');
-  assert.deepEqual(JSON.parse(calls.at(-1).options.body), { organizationId, code: 'standard', displayName: 'Standard warranty', reason: 'Govern catalog' });
+  await client.createWarrantyType(organizationId, 'Standard warranty', 'Govern catalog', 'catalog-key-0001');
+  assert.deepEqual(JSON.parse(calls.at(-1).options.body), { organizationId, displayName: 'Standard warranty', reason: 'Govern catalog' });
   await client.suspendSupportAuthorization(recordId, 2, 'Authorization suspended', 'support-key-0001');
   assert.equal(calls.at(-1).url, `/api/v1/itam/support-authorizations/${recordId}/suspend`);
 });

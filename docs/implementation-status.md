@@ -1,4 +1,24 @@
-# InfraNexum 2.0.0-alpha.0.122 — prepared connector governance and execution admission
+# InfraNexum 2.0.0-alpha.0.123 — DCIM equipment catalogue and business-form corrective
+
+## 2.0.0-alpha.0.123
+
+**Statut : corrective Web métier + extension DCIM intégrée ; PGM-10-E05 reste NON TERMINÉ et PGM-10-E06 reste EN COURS.**
+
+Cette tranche rétablit le focus des champs éditables des formulaires métier authentifiés sans modifier le login ni la recherche. DCIM ajoute une taxonomie centralisée catégorie/type, la génération serveur des codes, les modèles multi-ports, les références constructeur et un câblage explicite équipement/port avec longueur et type de câble. La migration additive 0040 conserve les lignes existantes via des valeurs par défaut compatibles et son rollback refuse toute perte de métadonnées nouvelles.
+
+## Validation alpha.0.123
+
+- **EXÉCUTÉ — Web :** 228/228 ; couverture 99,73 % lignes, 98,56 % branches, 100 % fonctions ; process smoke réussi.
+- **EXÉCUTÉ — navigateur :** Chromium headless via CDP avec le module `business-form-focus.mjs` réellement livré ; état initial `activeElement=app-shell`, puis clic + frappe `A` donnent `activeElement=business`, valeur `A`, conteneur principal non focalisé. Login et recherche restent exclus par contrat et tests unitaires.
+- **EXÉCUTÉ — API :** 48/48 ; 15 fragments / 201 opérations ; dette idempotence/pagination/capability/permission = 0/0/0/0 ; projection Swagger/ReDoc régénérée.
+- **EXÉCUTÉ — migrations :** 118/118 ; migration 0040 PostgreSQL/Oracle cataloguée ; validateur à zéro violation.
+- **EXÉCUTÉ — Java auxiliaire :** DCIM Facilities, DCIM Physical, RSOT Schema Registry, ITAM Partner, ITAM Compliance et DDI/IPAM smokes réussis sous Java 21 avec les invariants de génération automatique de codes.
+- **EXÉCUTÉ — architecture :** 207/207 tests fonctionnels + 29/29 tests du méta-checker exécutés par lots ; Architecture-as-Code à zéro violation. Le fractionnement évite uniquement le timeout du mode monolithique et ne modifie aucune assertion.
+- **EXÉCUTÉ — Toolchains / Compose :** 25/25 et zéro violation / 69/69.
+
+Les gates exacts JDK25/JaCoCo/PostgreSQL 17/18 restent séparés et ne peuvent pas être remplacés par ces préflights.
+
+## Historique — 2.0.0-alpha.0.122 — prepared connector governance and execution admission
 
 ## Scope
 

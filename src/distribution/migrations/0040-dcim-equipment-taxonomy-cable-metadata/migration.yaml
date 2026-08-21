@@ -1,0 +1,24 @@
+schema: infranexum.migration/v1
+id: '0040'
+name: dcim-equipment-taxonomy-cable-metadata
+owner_context: dcim
+dependencies:
+- 0039
+preconditions:
+- dcim-rack-equipment-cabling-created
+postconditions:
+- dcim-equipment-taxonomy-and-cable-metadata-available
+recovery: rerun-additive-ddl-after-correcting-database-connectivity
+rollback: fail-closed-when-new-taxonomy-or-cable-metadata-would-be-lost
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 30
+checksums:
+  postgresql.sql: cd5b77fa8a4c49f52b6f489d0f138bae45b5dc6693c7d629c1a3cd1639c0e48e
+  oracle.sql: acd9c570b02d26c6ad70f6f61656096ad9b32cdd9d263e11e3bc15439a91ec7e
+  rollback/postgresql.sql: db17f45c00446ad4aff92a051ef4f93be89de4b15550575b30524727bf92ce8f
+  rollback/oracle.sql: a54c16a7c3cae8d21de898358aa7d00af22ca9e04b596312435d6b726cec5b7f
+  logical-model.json: f8a58fe64e5abe6a3343b0ac5462a5a57a24d7d022127bedfd53489cd28b2ea9
+  verify.sql.yaml: 571eaf79018368bd881405aed81c930ef22ba00a85db8f550a6cc58acbd7c1d1

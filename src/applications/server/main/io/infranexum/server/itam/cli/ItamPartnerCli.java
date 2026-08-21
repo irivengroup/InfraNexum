@@ -213,7 +213,7 @@ public final class ItamPartnerCli {
                     optionalText(value, "email"), optionalText(value, "phone"), optionalText(value, "uri")));
         }
         return new CreatePartnerCommand(
-                organization, optionalId(root, "governingSubdivisionId"), requiredText(root, "code"), requiredText(root, "legalName"),
+                organization, optionalId(root, "governingSubdivisionId"), optionalText(root, "code"), requiredText(root, "legalName"),
                 requiredText(root, "displayName"), requiredText(root, "countryCode"), Set.copyOf(roles),
                 LocalDate.parse(requiredText(root, "validFrom")), optionalDate(root, "validUntil"), optionalText(root, "officialWebsite"),
                 optionalText(root, "supportPortal"), List.copyOf(aliases), List.copyOf(externalIds), List.copyOf(accreditations), List.copyOf(contacts));

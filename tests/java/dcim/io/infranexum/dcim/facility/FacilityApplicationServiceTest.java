@@ -85,6 +85,18 @@ final class FacilityApplicationServiceTest {
     }
 
     @Test
+    void automaticallyGeneratedCodeRemainsStableAcrossIdempotentReplay() {
+        CreateFacilityCommand automatic = site(null);
+        FacilityCommandContext context = context("dcim-site-auto-001", "Register automatically coded site");
+        FacilityNode first = service.create(automatic, context);
+        FacilityNode replay = service.create(automatic, context);
+        assertEquals(first.id(), replay.id());
+        assertEquals(first.code(), replay.code());
+        assertTrue(first.code().value().startsWith("PRIMARY-SITE-"));
+        assertCode("IDEMPOTENCY_CONFLICT", () -> service.create(site("OTHER01"), context));
+    }
+
+    @Test
     void parentMustBeActiveCorrectKindAndSameGovernanceScope() {
         FacilityNode draftSite = service.create(site("PAR01"), context("dcim-site-create-001", "Register site"));
         assertCode("DCIM_PARENT_INACTIVE", () -> service.create(building(draftSite.id(), "BLD01"), context("dcim-building-create-001", "Inactive parent")));

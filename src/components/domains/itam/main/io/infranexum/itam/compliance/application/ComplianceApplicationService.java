@@ -2,6 +2,7 @@ package io.infranexum.itam.compliance.application;
 
 import io.infranexum.core.contracts.ContractVersion;
 import io.infranexum.core.contracts.DomainIdentifier;
+import io.infranexum.core.contracts.MemorableCodeGenerator;
 import io.infranexum.core.contracts.OffsetPage;
 import io.infranexum.core.contracts.PaginationConstraints;
 import io.infranexum.core.contracts.UuidV7Generator;
@@ -45,6 +46,7 @@ public final class ComplianceApplicationService {
     private final TransactionalEventStore events;
     private final UuidV7Generator ids;
     private final Clock clock;
+    private final MemorableCodeGenerator codes = new MemorableCodeGenerator();
     private final int[] alertThresholds;
 
     public ComplianceApplicationService(AssetRepository assets,ComplianceRepository repository,
@@ -220,11 +222,11 @@ public final class ComplianceApplicationService {
     }
 
     public WarrantyType createWarrantyType(String code,String displayName,ComplianceCommandContext context){
-        requireEnabled();Objects.requireNonNull(context,"context");WarrantyType type=new WarrantyType(ids.next(),code,displayName,true,clock.instant(),context.actorId());
-        String fp=fingerprint("warranty-type-create",code,displayName);
+        requireEnabled();Objects.requireNonNull(context,"context");String requested=optionalCode(code);String fp=fingerprint("warranty-type-create",requested==null?"<auto>":requested,displayName);
         return execute(tx->{Optional<ComplianceIdempotencyRepository.Record> prior=idempotency.find(context.idempotencyKey());if(prior.isPresent()){
                 ComplianceIdempotencyRepository.Record record=prior.orElseThrow();if(!record.operation().equals("warranty-type-create")||!record.payloadSha256().equals(fp))throw idem();
                 return repository.warrantyTypes(false).stream().filter(v->v.id().equals(record.recordId())).findFirst().orElseThrow(ComplianceNotFoundException::new);}
+            DomainIdentifier id=ids.next();String generated=requested==null?codes.generate(displayName,id).replace('-','_'):requested;WarrantyType type=new WarrantyType(id,generated,displayName,true,clock.instant(),context.actorId());
             repository.insertWarrantyType(type);idempotency.insert(new ComplianceIdempotencyRepository.Record(context.idempotencyKey(),fp,"warranty-type-create","warranty_type",type.id(),clock.instant()));return type;});
     }
 
@@ -307,6 +309,8 @@ public final class ComplianceApplicationService {
     private static void addUpcoming(List<ComplianceAlert> out,ComplianceAlertKind kind,DomainIdentifier recordId,DomainIdentifier assetId,LocalDate due,LocalDate asOf,int horizon,int[] thresholds){long days=ChronoUnit.DAYS.between(asOf,due);if(days<0||days>horizon)return;int threshold=thresholds[thresholds.length-1];for(int candidate:thresholds)if(days<=candidate)threshold=candidate;out.add(new ComplianceAlert(kind,recordId,assetId,due,days,threshold));}
     private static void addDue(List<ComplianceAlert> out,ComplianceAlertKind kind,DomainIdentifier recordId,DomainIdentifier assetId,LocalDate due,LocalDate asOf,int[] thresholds){long days=ChronoUnit.DAYS.between(asOf,due);for(int threshold:thresholds)if(days==threshold){out.add(new ComplianceAlert(kind,recordId,assetId,due,days,threshold));return;}}
 
+
+    private static String optionalCode(String value){if(value==null)return null;String normalized=value.strip();return normalized.isEmpty()?null:normalized;}
 
     private static int[] validatedThresholds(int[] values){
         Objects.requireNonNull(values,"alertThresholds");if(values.length<1||values.length>32)throw new IllegalArgumentException("alertThresholds must contain between 1 and 32 values");

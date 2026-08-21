@@ -29,9 +29,9 @@ class ApiAuthorizationMetadataPhase5Tests(unittest.TestCase):
                         result.append((method, path, operation))
         return result
 
-    def test_all_200_operations_have_registry_backed_capability_and_structured_authorization(self) -> None:
+    def test_all_201_operations_have_registry_backed_capability_and_structured_authorization(self) -> None:
         operations = self.operations()
-        self.assertEqual(200, len(operations))
+        self.assertEqual(201, len(operations))
         with (ROOT / "src/components/core/capabilities/resources/io/infranexum/core/capabilities/capability-catalog.csv").open(
             encoding="utf-8", newline=""
         ) as stream:
@@ -66,7 +66,7 @@ class ApiAuthorizationMetadataPhase5Tests(unittest.TestCase):
         self.assertEqual(
             Counter(
                 {
-                    "permission": 178,
+                    "permission": 179,
                     "platform-admin": 9,
                     "conditional": 4,
                     "authenticated-self": 3,
