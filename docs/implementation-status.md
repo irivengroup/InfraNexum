@@ -1,4 +1,27 @@
-# InfraNexum 2.0.0-alpha.0.123 — DCIM equipment catalogue and business-form corrective
+# InfraNexum 2.0.0-alpha.0.124 — business-form focus root-cause corrective
+
+## 2.0.0-alpha.0.124
+
+**Statut : corrective Web de non-régression ; aucune avancée fonctionnelle de roadmap.**
+
+Cette tranche corrige la cause racine du défaut de saisie des formulaires métier. L'élément racine `<html>` utilisait `data-route` comme état de route courant tandis que `initializeAdminShell()` branchait les événements de navigation sur tous les éléments `[data-route]`. Chaque clic relâché dans la page remontait donc jusqu'à `<html>`, réappliquait la route et exécutait `main.focus()`. Le champ restait saisissable uniquement pendant `pointerdown`, avant l'émission de `click`.
+
+La correction sépare désormais l'état (`data-current-route`) des contrôles (`a[data-route]`). Le module palliatif `business-form-focus.mjs` est supprimé. Seuls les vrais liens de navigation peuvent déplacer volontairement le focus vers `<main>` après changement de route. Login et recherche ne sont pas modifiés.
+
+### Validation alpha.0.124
+
+- **EXÉCUTÉ — reproduction Chromium :** ancien binding `[data-route]` => après clic relâché `activeElement=main`, saisie vide ; binding corrigé `a[data-route]` + état `data-current-route` => `activeElement=business`, frappe `A` conservée.
+- **EXÉCUTÉ — Web :** 227/227 ; couverture 99,73 % lignes, 98,56 % branches, 100 % fonctions ; process smoke réussi.
+- **EXÉCUTÉ — test Web ciblé :** le root de route n'acquiert aucun listener `click`; un vrai lien de navigation conserve le transfert de focus après navigation.
+- **EXÉCUTÉ — API :** 48/48 ; 15 fragments / 201 opérations ; dette 0/0/0/0.
+- **EXÉCUTÉ — architecture ciblée :** 13/13 contrats Web/routage + Architecture-as-Code à zéro violation. La suite architecture monolithique n'est pas rerun intégralement sur ce runner car son méta-scan dépasse la fenêtre d'exécution ; les composants hors Web sont inchangés depuis alpha.0.123.
+- **EXÉCUTÉ — Toolchains / Compose :** 25/25 et zéro violation / 69/69.
+- **EXÉCUTÉ — Source Integrity :** 45/45 puis strict staged snapshot à zéro violation, 1566 fichiers suivis / 1565 checksums / 1564 chemins canoniques.
+- **EXÉCUTÉ — Archive Compatibility unitaire :** 12/12. Le ZIP final est contrôlé séparément après construction.
+
+PGM-10-E05 reste **NON TERMINÉ** jusqu'aux gates exacts JDK25/JaCoCo/PostgreSQL 17/18. PGM-10-E06 reste **EN COURS** et aucun provider mutateur n'est activé.
+
+---
 
 ## 2.0.0-alpha.0.123
 

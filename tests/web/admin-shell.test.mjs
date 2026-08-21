@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   applyRoute,
+  initializeAdminShell,
   buildCommands,
   filterCommands,
   normalizeRoute,
@@ -27,16 +28,22 @@ class Element {
     this.hidden = false;
     this.textContent = '';
     this.classList = new ClassList(attributes.class ?? '');
+    this.listeners = new Map();
+    this.focusCalls = 0;
   }
   getAttribute(name) { return this.attributes[name] ?? null; }
   setAttribute(name, value) { this.attributes[name] = String(value); }
   removeAttribute(name) { delete this.attributes[name]; }
   scrollIntoView() { this.scrolled = true; }
-  click() { this.clicked = true; }
+  click() { this.clicked = true; this.emit('click'); }
+  addEventListener(type, listener) { const items = this.listeners.get(type) ?? []; items.push(listener); this.listeners.set(type, items); }
+  removeEventListener(type, listener) { this.listeners.set(type, (this.listeners.get(type) ?? []).filter((item) => item !== listener)); }
+  emit(type, event = {}) { for (const listener of this.listeners.get(type) ?? []) listener({ target: this, preventDefault() {}, ...event }); }
+  focus() { this.focusCalls += 1; }
 }
 
 function shellDocument({ organizations = false, access = false, rsot = false, itam = false, dcim = false, integrations = false } = {}) {
-  const root = new Element({ lang: 'en', 'data-route': 'overview' });
+  const root = new Element({ lang: 'en', 'data-current-route': 'overview' });
   const overviewView = new Element();
   const workspace = new Element({ 'data-capability-enabled': String(organizations) });
   const accessWorkspace = new Element({ 'data-capability-enabled': String(access) });
@@ -63,6 +70,7 @@ function shellDocument({ organizations = false, access = false, rsot = false, it
   const theme = new Element();
   const preferences = new Element();
   const notifications = new Element();
+  const main = new Element();
   const byId = new Map([
     ['overview-view', overviewView],
     ['organization-workspace', workspace],
@@ -83,12 +91,13 @@ function shellDocument({ organizations = false, access = false, rsot = false, it
     ['theme-toggle', theme],
     ['preferences-trigger', preferences],
     ['notification-trigger', notifications],
+    ['main', main],
   ]);
   return {
     documentElement: root,
     title: '',
     getElementById: (id) => byId.get(id),
-    querySelectorAll: (selector) => selector === '[data-route]' ? [overviewLink, organizationsLink, accessLink, rsotLink, itamLink, dcimLink, integrationsLink] : [],
+    querySelectorAll: (selector) => selector === 'a[data-route]' ? [overviewLink, organizationsLink, accessLink, rsotLink, itamLink, dcimLink, integrationsLink] : selector === '[data-route]' ? [root, overviewLink, organizationsLink, accessLink, rsotLink, itamLink, dcimLink, integrationsLink] : [],
     overviewView,
     workspace,
     accessWorkspace,
@@ -109,6 +118,8 @@ function shellDocument({ organizations = false, access = false, rsot = false, it
     theme,
     preferences,
     notifications,
+    main,
+    root,
   };
 }
 
@@ -123,6 +134,27 @@ function windowFixture(hash = '') {
     matchMedia: () => ({ matches: true }),
   };
 }
+
+
+test('route state is not wired as a navigation control and cannot steal focus from business fields', () => {
+  const documentObject = shellDocument({ dcim: true });
+  const windowObject = windowFixture('#/dcim');
+  initializeAdminShell(documentObject, windowObject);
+
+  assert.equal(documentObject.documentElement.getAttribute('data-current-route'), 'dcim');
+  assert.equal(documentObject.documentElement.listeners.get('click')?.length ?? 0, 0);
+  assert.equal(documentObject.main.focusCalls, 0);
+
+  // A click bubbling to the document root must not be interpreted as route navigation.
+  documentObject.documentElement.emit('click', { target: new Element({ type: 'text' }) });
+  assert.equal(documentObject.main.focusCalls, 0);
+  assert.equal(documentObject.documentElement.getAttribute('data-current-route'), 'dcim');
+
+  // Real navigation controls retain the deliberate post-navigation focus transfer.
+  documentObject.overviewLink.emit('click');
+  assert.equal(documentObject.main.focusCalls, 1);
+  assert.equal(documentObject.documentElement.getAttribute('data-current-route'), 'overview');
+});
 
 test('route parser accepts only known administration routes', () => {
   assert.equal(normalizeRoute('organizations'), 'organizations');

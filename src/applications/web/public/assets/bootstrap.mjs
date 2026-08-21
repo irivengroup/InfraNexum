@@ -1,6 +1,5 @@
 import { initializeAdminShell, setDcimAvailability, setDdiAvailability, setIntegrationsAvailability, setIdentityAccessAvailability, setItamAvailability, setOrganizationAvailability, setRsotAvailability } from './admin-shell.mjs';
 import { initializeApiDocumentation } from './api-documentation.mjs';
-import { initializeBusinessFormFocus } from './business-form-focus.mjs';
 import { initializeLocalAuthentication } from './auth.mjs';
 import { initializeIdentityAccess } from './identity-access.mjs';
 import { initializePolicyAuthorization } from './policy-authorization.mjs';
@@ -390,7 +389,6 @@ if (typeof document !== 'undefined') {
   let notificationCenter = null;
   try { preferenceController = initializePreferences(document); } catch { /* non-critical */ }
   try { initializeStableSelects(document); } catch { /* native selects remain as safe fallback */ }
-  try { initializeBusinessFormFocus(document); } catch { /* native input focus remains as safe fallback */ }
   try { initializeTemporalPickers(document); } catch { /* native temporal inputs remain as safe fallback */ }
   try { notificationCenter = initializeNotificationCenter(document); } catch { /* non-critical */ }
   try { initializeApiDocumentation(document, globalThis.window); } catch { /* raw local OpenAPI remains available */ }

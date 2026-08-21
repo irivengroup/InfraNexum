@@ -2,7 +2,7 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.123",
+  "version": "2.0.0-alpha.0.124",
   "profile": "alpha123-dcim-equipment-catalogue-business-form-corrective",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
@@ -652,23 +652,23 @@
   "source_layout": "All production solution spaces are contained below src/; Java, Go and Web tests are repository-level under tests/; canonical relative paths are limited to 120 characters and path components to 80 characters.",
   "source_integrity": {
     "canonical_inventory": "source-inventory.json",
-    "git_blob_checksums": 1567,
-    "tracked_files": 1568,
-    "source_recorded_files": 1566,
+    "git_blob_checksums": 1565,
+    "tracked_files": 1566,
+    "source_recorded_files": 1564,
     "staged_snapshot_required": true,
     "pre_commit_hook": ".githooks/pre-commit",
-    "inventory_paths": 1566
+    "inventory_paths": 1564
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.123",
-    "archive_entries": 1568,
+    "prefix": "infranexum-2.0.0-alpha.0.124",
+    "archive_entries": 1566,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
-    "source_recorded_files": 1567,
+    "source_recorded_files": 1565,
     "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
-    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.123-validation-evidence.zip"
+    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.124-validation-evidence.zip"
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.123-validation-evidence.zip",
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.124-validation-evidence.zip",
   "runtime_validation": {
     "web_local_runtime_alpha058": "EXECUTED_38_OF_38_LINE_99_67_BRANCH_98_33_FUNCTION_100_PROCESS_SMOKE_PASS_LOCAL_NODE22_BOOTSTRAP5_3_6_PROFESSIONAL_ADMIN_DASHBOARD_THEME_TOGGLE_TRUTHFUL_KPI_SAME_ORIGIN_ORGANIZATION_UI",
     "architecture_functional_alpha058": "EXECUTED_57_OF_57",
@@ -1626,5 +1626,23 @@
   "git_blob_checksums_alpha123": 1567,
   "source_integrity_prepack_alpha123": "EXECUTED_45_OF_45_COVERAGE100_ZERO_VIOLATIONS_CANONICAL_INVENTORY_1566_PATHS",
   "source_integrity_alpha123": "EXECUTED_STRICT_STAGED_SNAPSHOT_1568_TRACKED_PATHS_1567_GIT_BLOB_CHECKSUMS_1566_CANONICAL_INVENTORY_ZERO_VIOLATIONS",
-  "archive_compatibility_unit_alpha123": "EXECUTED_12_OF_12_COVERAGE100_ZERO_VIOLATIONS"
+  "archive_compatibility_unit_alpha123": "EXECUTED_12_OF_12_COVERAGE100_ZERO_VIOLATIONS",
+  "corrective_alpha124": "IMPLEMENTED_ROOT_ROUTE_STATE_NAVIGATION_SEPARATION_REMOVED_BUSINESS_FORM_FOCUS_WORKAROUND_NO_ROADMAP_ADVANCE",
+  "web_local_runtime_alpha124": "EXECUTED_LOCAL_NODE22_16_0_227_OF_227_LINE99_73_BRANCH98_56_FUNCTION100_PROCESS_SMOKE_PASS",
+  "browser_focus_alpha124": "EXECUTED_CHROMIUM_HEADLESS_OLD_ROOT_DATA_ROUTE_CLICK_RELEASE_ACTIVE_MAIN_EMPTY_INPUT_FIXED_DATA_CURRENT_ROUTE_PLUS_ANCHOR_ROUTE_ACTIVE_INPUT_VALUE_A",
+  "api_contracts_alpha124": "EXECUTED_48_OF_48_15_FRAGMENTS_201_OPERATIONS_ZERO_VIOLATIONS_DEBT_0_0_0_0",
+  "architecture_targeted_alpha124": "EXECUTED_13_OF_13_WEB_ROUTING_FUNCTIONAL_PARITY_TESTS_PLUS_ARCHITECTURE_AS_CODE_ZERO_VIOLATIONS_FULL_MONOLITHIC_ARCHITECTURE_NOT_RERUN_DUE_RUNNER_TIMEOUT",
+  "toolchains_alpha124": "EXECUTED_25_OF_25_ZERO_VIOLATIONS",
+  "compose_contract_alpha124": "EXECUTED_69_OF_69",
+  "pgm10e05_alpha124": "FORMALLY_NON_TERMINE_EXACT_JDK25_MAVEN_JUNIT_JACOCO_AND_POSTGRESQL17_18_GATES_NOT_EXECUTED_ON_LOCAL_RUNNER",
+  "pgm10e06_alpha124": "EN_COURS_ALPHA122_GOVERNANCE_ADMISSION_AND_ALPHA116_DURABLE_SYNC_PRESERVED_NO_MUTATING_PROVIDER_HANDLER",
+  "maven_target_jdk25_alpha124": "NON_EXECUTED_LOCAL_JDK21_TARGET_JDK25_REQUIRED",
+  "postgresql_live_alpha124": "NON_EXECUTED_LOCAL_NO_POSTGRESQL_NO_DOCKER_TARGET_17_18_REQUIRED",
+  "web_target_node24_alpha124": "NON_EXECUTED_LOCAL_NODE22_16_0_TARGET_NODE24_18_1_PNPM11_17_0_REQUIRED",
+  "source_inventory_paths_alpha124": 1564,
+  "packaging_tracked_files_alpha124": 1566,
+  "git_blob_checksums_alpha124": 1565,
+  "source_integrity_prepack_alpha124": "EXECUTED_45_OF_45_ZERO_VIOLATIONS_CANONICAL_INVENTORY_1564_PATHS",
+  "source_integrity_alpha124": "EXECUTED_STRICT_STAGED_SNAPSHOT_1566_TRACKED_PATHS_1565_GIT_BLOB_CHECKSUMS_1564_CANONICAL_INVENTORY_ZERO_VIOLATIONS",
+  "archive_compatibility_unit_alpha124": "EXECUTED_12_OF_12_ZERO_VIOLATIONS"
 }

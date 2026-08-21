@@ -1,4 +1,6 @@
-# InfraNexum 2.0.0-alpha.0.123 — DCIM equipment catalogue and business-form corrective
+# InfraNexum 2.0.0-alpha.0.124 — business-form focus root-cause corrective
+
+> **alpha.0.124 corrective:** route state is stored in `data-current-route`; only real `a[data-route]` navigation controls are event-bound. This removes the root `<html>` click handler that stole focus from business-form fields after mouse release. The previous `business-form-focus.mjs` workaround has been removed.
 
 **InfraNexum — Infrastructure Control & Governance Platform**
 

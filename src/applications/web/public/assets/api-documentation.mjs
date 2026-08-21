@@ -26,9 +26,9 @@ export function initializeApiDocumentation(documentObject = document, windowObje
     if (route === 'redoc') void renderRedoc(documentObject, windowObject, assetLoader);
   };
   documentObject?.addEventListener?.('infranexum:route-change', (event) => render(event?.detail?.route));
-  render(documentObject?.documentElement?.getAttribute?.('data-route'));
+  render(documentObject?.documentElement?.getAttribute?.('data-current-route'));
   documentObject?.addEventListener?.('infranexum:theme-change', () => {
-    if (documentObject?.documentElement?.getAttribute?.('data-route') === 'redoc') {
+    if (documentObject?.documentElement?.getAttribute?.('data-current-route') === 'redoc') {
       initialized.delete('redoc');
       const host = documentObject?.getElementById?.('redoc-ui');
       detachRedocBridge(host, windowObject);

@@ -1,5 +1,8 @@
 import { localeFromDocument, setLocalizedText, translate } from './i18n.mjs';
 
+const ROUTE_STATE_ATTRIBUTE = 'data-current-route';
+const ROUTE_CONTROL_SELECTOR = 'a[data-route]';
+
 const ROUTES = Object.freeze({
   overview: Object.freeze({ viewId: 'overview-view', labelKey: 'nav.overview', titleKey: 'topbar.dashboard' }),
   organizations: Object.freeze({ viewId: 'organization-workspace', labelKey: 'nav.organizations', titleKey: 'topbar.organizations' }),
@@ -133,14 +136,14 @@ export function applyRoute(
     const view = documentObject?.getElementById?.(definition.viewId);
     if (view) view.hidden = name !== route;
   }
-  for (const link of documentObject?.querySelectorAll?.('[data-route]') ?? []) {
+  for (const link of documentObject?.querySelectorAll?.(ROUTE_CONTROL_SELECTOR) ?? []) {
     const selected = link.getAttribute?.('data-route') === route;
     link.classList?.toggle?.('active', selected);
     if (selected) link.setAttribute?.('aria-current', 'page');
     else link.removeAttribute?.('aria-current');
   }
 
-  documentObject?.documentElement?.setAttribute?.('data-route', route);
+  documentObject?.documentElement?.setAttribute?.(ROUTE_STATE_ATTRIBUTE, route);
   const definition = ROUTES[route];
   setLocalizedText(documentObject, 'breadcrumb-current', definition.labelKey);
   setLocalizedText(documentObject, 'topbar-page-title', definition.titleKey);
@@ -178,7 +181,7 @@ export function initializeAdminShell(documentObject = document, windowObject = g
   const initialRoute = routeForHash(windowObject?.location?.hash ?? '');
   applyRoute(documentObject, initialRoute, windowObject, { replaceHash: initialRoute === 'overview' && Boolean(windowObject?.location?.hash) });
 
-  for (const link of documentObject?.querySelectorAll?.('[data-route]') ?? []) {
+  for (const link of documentObject?.querySelectorAll?.(ROUTE_CONTROL_SELECTOR) ?? []) {
     link.addEventListener?.('click', (event) => {
       if (link.getAttribute?.('aria-disabled') === 'true') return;
       event?.preventDefault?.();
@@ -435,7 +438,7 @@ function identityAccessAvailable(documentObject) {
 }
 
 function currentRoute(documentObject) {
-  return normalizeRoute(documentObject?.documentElement?.getAttribute?.('data-route') ?? 'overview');
+  return normalizeRoute(documentObject?.documentElement?.getAttribute?.(ROUTE_STATE_ATTRIBUTE) ?? 'overview');
 }
 
 function reducedMotion(windowObject) {

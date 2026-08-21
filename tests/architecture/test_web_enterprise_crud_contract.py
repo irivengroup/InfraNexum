@@ -22,6 +22,18 @@ class WebEnterpriseCrudContractTests(unittest.TestCase):
         self.assertIn('id="swagger-workspace"', html)
         self.assertIn('id="redoc-workspace"', html)
 
+
+    def test_route_state_cannot_be_bound_as_navigation_and_steal_form_focus(self) -> None:
+        html = (PUBLIC / "index.html").read_text(encoding="utf-8")
+        shell = (ASSETS / "admin-shell.mjs").read_text(encoding="utf-8")
+        bootstrap = (ASSETS / "bootstrap.mjs").read_text(encoding="utf-8")
+        self.assertIn('data-current-route="overview"', html)
+        self.assertNotIn('<html lang="en" data-bs-theme="light" data-route=', html)
+        self.assertIn("const ROUTE_CONTROL_SELECTOR = 'a[data-route]'", shell)
+        self.assertIn("const ROUTE_STATE_ATTRIBUTE = 'data-current-route'", shell)
+        self.assertNotIn("business-form-focus.mjs", bootstrap)
+        self.assertFalse((ASSETS / "business-form-focus.mjs").exists())
+
     def test_identity_access_tabs_share_product_header_treatment(self) -> None:
         css = (ASSETS / "infranexum-theme.css").read_text(encoding="utf-8")
         self.assertIn('#identity-access-workspace .nav-underline[role="tablist"]', css)
