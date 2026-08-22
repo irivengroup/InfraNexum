@@ -1,17 +1,18 @@
 {
   "name": "@infranexum/web-runtime",
-  "version": "2.0.0-alpha.0.125",
+  "version": "2.0.0-alpha.0.126",
   "private": true,
   "type": "module",
   "description": "Immutable InfraNexum Web runtime host with validated public configuration and health probes.",
   "packageManager": "pnpm@11.17.0",
   "engines": {
-    "node": ">=24.18.1 <25"
+    "node": ">=24.19.0 <25"
   },
   "scripts": {
     "start": "node runtime/main.mjs",
-    "test": "node --test --experimental-test-coverage --test-coverage-lines=98 --test-coverage-branches=98 --test-coverage-functions=98 --test-coverage-include='runtime/config.mjs' --test-coverage-include='runtime/logger.mjs' --test-coverage-include='runtime/static-assets.mjs' --test-coverage-include='runtime/web-application.mjs' ../../../tests/web/*.test.mjs",
+    "test": "node --test --experimental-test-coverage --test-coverage-lines=98 --test-coverage-branches=98 --test-coverage-functions=98 --test-coverage-include='runtime/config.mjs' --test-coverage-include='runtime/logger.mjs' --test-coverage-include='runtime/static-assets.mjs' --test-coverage-include='runtime/vendor-assets.mjs' --test-coverage-include='runtime/web-application.mjs' ../../../tests/web/*.test.mjs",
     "smoke": "node ../../../tests/web/smoke.mjs",
-    "verify": "pnpm run test && pnpm run smoke"
+    "verify": "pnpm run test && pnpm run vendor-check && pnpm run smoke",
+    "vendor-check": "node runtime/vendor-assets-check.mjs public"
   }
 }

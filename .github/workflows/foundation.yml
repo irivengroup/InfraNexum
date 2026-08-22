@@ -111,13 +111,13 @@ jobs:
       - uses: pnpm/setup@5d160c5bc68a09337ad0d5654e237e03253b5879 # v1
         with:
           version: '11.17.0'
-          runtime: node@24.18.1
+          runtime: node@24.19.0
           cache: true
           cache-dependency-path: src/applications/web/pnpm-lock.yaml
           install: false
       - name: Verify exact Web toolchains
         run: |
-          test "$(node --version)" = "v24.18.1"
+          test "$(node --version)" = "v24.19.0"
           test "$(pnpm --version)" = "11.17.0"
       - name: Verify empty dependency graph and immutable lockfile
         working-directory: src/applications/web

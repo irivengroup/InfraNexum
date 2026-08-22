@@ -2,7 +2,7 @@
 FROM ubuntu:noble-20260730.1
 
 ARG TARGETARCH
-ARG NODE_VERSION=24.18.1
+ARG NODE_VERSION=24.19.0
 
 # Node.js is downloaded from the upstream release archive and verified against
 # the published SHA-256 values. Only the runtime prerequisites are retained.

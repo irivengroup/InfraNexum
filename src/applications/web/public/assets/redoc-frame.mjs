@@ -1,12 +1,11 @@
 import {
   OPENAPI_RENDER_SPEC_URL,
   REDOC_FRAME_MESSAGE_SOURCE,
-  REDOC_SCRIPT_FALLBACK_URLS,
   REDOC_SCRIPT_URL,
+  REDOC_VERSION,
   containsRedocFatalError,
   loadCertifiedOpenApi,
   loadExternalAsset,
-  loadExternalAssetCandidates,
   redocConfiguration,
 } from './api-documentation.mjs';
 
@@ -25,30 +24,21 @@ export async function initializeRedocFrame(
   if (!root) throw new Error('ReDoc frame root is unavailable');
   applyRequestedTheme(documentObject, windowObject);
 
-  postFrameMessage(windowObject, 'boot', { version: '2.5.3' });
+  postFrameMessage(windowObject, 'boot', { version: REDOC_VERSION });
   try {
     postFrameMessage(windowObject, 'phase', { phase: 'contract' });
     const specification = await specLoader(windowObject, OPENAPI_RENDER_SPEC_URL);
     postFrameMessage(windowObject, 'phase', { phase: 'renderer' });
-    if (assetLoader === loadExternalAsset) {
-      await loadExternalAssetCandidates(
-        documentObject,
-        windowObject,
-        [REDOC_SCRIPT_URL, ...REDOC_SCRIPT_FALLBACK_URLS],
-        'script',
-      );
-    } else {
-      await assetLoader(documentObject, windowObject, REDOC_SCRIPT_URL, 'script');
-    }
+    await assetLoader(documentObject, windowObject, REDOC_SCRIPT_URL, 'script');
     const redoc = windowObject?.Redoc ?? globalThis.Redoc;
     if (!redoc || typeof redoc.init !== 'function') throw new Error('ReDoc bundle did not expose Redoc.init');
     root.replaceChildren?.();
     postFrameMessage(windowObject, 'phase', { phase: 'render' });
     await initializeRenderer(redoc, specification, redocConfiguration(documentObject), root);
     if (containsRedocFatalError(root)) throw new Error('ReDoc reported an embedded rendering failure');
-    installHeightReporter(documentObject, windowObject, root);
+    installHeightReporter(windowObject, root);
     postFrameMessage(windowObject, 'ready');
-    reportHeight(documentObject, windowObject);
+    reportHeight(root, windowObject);
     return true;
   } catch (error) {
     root.textContent = '';
@@ -88,22 +78,36 @@ export function applyRequestedTheme(documentObject, windowObject) {
   return theme;
 }
 
-export function reportHeight(documentObject, windowObject) {
+export function reportHeight(root, windowObject) {
+  if (!root) return 0;
+  const rectHeight = Number(root.getBoundingClientRect?.().height ?? 0);
   const height = Math.max(
-    Number(documentObject?.documentElement?.scrollHeight ?? 0),
-    Number(documentObject?.body?.scrollHeight ?? 0),
+    Number(root.scrollHeight ?? 0),
+    Number(root.offsetHeight ?? 0),
+    Number.isFinite(rectHeight) ? rectHeight : 0,
   );
-  if (height > 0) postFrameMessage(windowObject, 'resize', { height });
-  return height;
+  if (height > 0) postFrameMessage(windowObject, 'resize', { height: Math.ceil(height) });
+  return height > 0 ? Math.ceil(height) : 0;
 }
 
-function installHeightReporter(documentObject, windowObject, root) {
-  const resizeObserver = windowObject?.ResizeObserver;
-  if (typeof resizeObserver !== 'function') return null;
-  const observer = new resizeObserver(() => reportHeight(documentObject, windowObject));
-  observer.observe(root);
-  windowObject?.addEventListener?.('pagehide', () => observer.disconnect(), { once: true });
-  return observer;
+export function installHeightReporter(windowObject, root) {
+  const report = () => reportHeight(root, windowObject);
+  const resizeObserver = typeof windowObject?.ResizeObserver === 'function'
+    ? new windowObject.ResizeObserver(report)
+    : null;
+  const mutationObserver = typeof windowObject?.MutationObserver === 'function'
+    ? new windowObject.MutationObserver(report)
+    : null;
+
+  resizeObserver?.observe(root);
+  mutationObserver?.observe(root, { childList: true, subtree: true, attributes: true, characterData: true });
+
+  const dispose = () => {
+    resizeObserver?.disconnect?.();
+    mutationObserver?.disconnect?.();
+  };
+  windowObject?.addEventListener?.('pagehide', dispose, { once: true });
+  return Object.freeze({ resizeObserver, mutationObserver, dispose });
 }
 
 function postFrameMessage(windowObject, type, detail = {}) {

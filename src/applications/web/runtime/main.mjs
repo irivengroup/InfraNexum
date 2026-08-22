@@ -6,6 +6,7 @@ import process from 'node:process';
 import { WebRuntimeConfiguration } from './config.mjs';
 import { JsonLogger } from './logger.mjs';
 import { StaticAssetStore } from './static-assets.mjs';
+import { VendorAssetIntegrityVerifier } from './vendor-assets.mjs';
 import { WebApplication } from './web-application.mjs';
 
 /** Composition root: validates configuration before constructing runtime dependencies. */
@@ -24,7 +25,8 @@ export async function createWebApplication({ environment = process.env, sink = p
   });
   const logger = new JsonLogger({ sink });
   const assets = new StaticAssetStore(configuration.staticRoot);
-  return new WebApplication({ configuration, assets, logger });
+  const vendorVerifier = new VendorAssetIntegrityVerifier(configuration.staticRoot);
+  return new WebApplication({ configuration, assets, logger, vendorVerifier });
 }
 
 export async function run(environment = process.env) {

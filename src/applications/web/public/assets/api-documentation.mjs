@@ -6,17 +6,14 @@ export const SWAGGER_UI_VERSION = '5.32.13';
 export const REDOC_VERSION = '2.5.3';
 const SWAGGER_SCRIPT = `https://cdn.jsdelivr.net/npm/swagger-ui-dist@${SWAGGER_UI_VERSION}/swagger-ui-bundle.js`;
 const SWAGGER_STYLE = `https://cdn.jsdelivr.net/npm/swagger-ui-dist@${SWAGGER_UI_VERSION}/swagger-ui.css`;
-export const REDOC_SCRIPT_URL = `https://cdn.redoc.ly/redoc/v${REDOC_VERSION}/bundles/redoc.standalone.js`;
-export const REDOC_SCRIPT_FALLBACK_URLS = Object.freeze([
-  `https://cdn.jsdelivr.net/npm/redoc@${REDOC_VERSION}/bundles/redoc.standalone.js`,
-]);
+export const REDOC_SCRIPT_URL = `/assets/vendor/redoc/${REDOC_VERSION}/redoc.standalone.js`;
+// Kept as a stable export for downstream imports; ReDoc has no runtime network fallback.
+export const REDOC_SCRIPT_FALLBACK_URLS = Object.freeze([]);
 export const REDOC_FRAME_URL = '/assets/redoc-frame.html';
 export const REDOC_FRAME_MESSAGE_SOURCE = 'infranexum-redoc-frame';
 const ASSET_TIMEOUT_MS = 10_000;
 const REDOC_FRAME_BOOT_TIMEOUT_MS = 8_000;
 const REDOC_FRAME_RENDER_TIMEOUT_MS = 40_000;
-const REDOC_MIN_HEIGHT = 576;
-const REDOC_MAX_HEIGHT = 2_000_000;
 const redocBridges = new WeakMap();
 const initialized = new Set();
 
@@ -102,7 +99,6 @@ export function createRedocFrame(documentObject, configuration = {}) {
   frame.referrerPolicy = 'no-referrer';
   frame.setAttribute?.('sandbox', 'allow-scripts allow-same-origin');
   frame.setAttribute?.('scrolling', 'no');
-  frame.setAttribute?.('height', String(REDOC_MIN_HEIGHT));
   return frame;
 }
 
@@ -117,26 +113,41 @@ function waitForRedocFrame(documentObject, windowObject, host, frame) {
   return new Promise((resolve) => {
     let settled = false;
     let booted = false;
+    let contentHeight = 0;
     let bootTimer;
     let renderTimer;
+
+    const applyHeight = () => {
+      const viewportHeight = normalizeViewportHeight(windowObject);
+      const height = Math.max(contentHeight, viewportHeight);
+      if (height <= 0) return;
+      const value = String(Math.ceil(height));
+      frame.setAttribute?.('height', value);
+      if (frame.style) frame.style.height = `${value}px`;
+    };
     const dispose = () => {
       windowObject?.clearTimeout?.(bootTimer);
       windowObject?.clearTimeout?.(renderTimer);
       windowObject?.removeEventListener?.('message', onMessage);
+      windowObject?.removeEventListener?.('resize', onViewportResize);
       frame?.removeEventListener?.('error', onFrameError);
     };
     const finish = (ok, error) => {
       if (settled) return;
       settled = true;
-      dispose();
-      if (host) redocBridges.delete(host);
+      windowObject?.clearTimeout?.(bootTimer);
+      windowObject?.clearTimeout?.(renderTimer);
+      frame?.removeEventListener?.('error', onFrameError);
       if (ok) {
         initialized.add('redoc');
         setReady(documentObject, 'redoc');
-      } else {
-        setUnavailable(documentObject, 'redoc', error);
+        resolve(true);
+        return;
       }
-      resolve(ok);
+      dispose();
+      if (host) redocBridges.delete(host);
+      setUnavailable(documentObject, 'redoc', error);
+      resolve(false);
     };
     const armRenderDeadline = () => {
       windowObject?.clearTimeout?.(renderTimer);
@@ -146,12 +157,16 @@ function waitForRedocFrame(documentObject, windowObject, host, frame) {
       );
     };
     const onFrameError = () => finish(false, new Error('ReDoc frame could not be loaded'));
+    const onViewportResize = () => applyHeight();
     const onMessage = (event) => {
       if (!isTrustedRedocFrameMessage(event, frame, windowObject)) return;
       const payload = event.data;
       if (payload.type === 'resize') {
-        const height = normalizeRedocFrameHeight(payload.height);
-        if (height !== null) frame.setAttribute?.('height', String(height));
+        const height = normalizeRedocContentHeight(payload.height);
+        if (height !== null) {
+          contentHeight = height;
+          applyHeight();
+        }
         return;
       }
       if (payload.type === 'boot') {
@@ -179,8 +194,10 @@ function waitForRedocFrame(documentObject, windowObject, host, frame) {
       REDOC_FRAME_BOOT_TIMEOUT_MS,
     );
     windowObject?.addEventListener?.('message', onMessage);
+    windowObject?.addEventListener?.('resize', onViewportResize);
     frame?.addEventListener?.('error', onFrameError, { once: true });
     redocBridges.set(host, { dispose });
+    applyHeight();
   });
 }
 
@@ -190,10 +207,15 @@ function isTrustedRedocFrameMessage(event, frame, windowObject) {
   return !expectedOrigin || expectedOrigin === 'null' || event.origin === expectedOrigin;
 }
 
-function normalizeRedocFrameHeight(value) {
+function normalizeRedocContentHeight(value) {
   const height = Number(value);
   if (!Number.isFinite(height) || height <= 0) return null;
-  return Math.min(REDOC_MAX_HEIGHT, Math.max(REDOC_MIN_HEIGHT, Math.ceil(height)));
+  return Math.ceil(height);
+}
+
+function normalizeViewportHeight(windowObject) {
+  const height = Number(windowObject?.innerHeight ?? 0);
+  return Number.isFinite(height) && height > 0 ? Math.ceil(height) : 0;
 }
 
 function detachRedocBridge(host, windowObject) {

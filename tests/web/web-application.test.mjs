@@ -7,7 +7,9 @@ import test from 'node:test';
 import { WebRuntimeConfiguration } from '../../src/applications/web/runtime/config.mjs';
 import { JsonLogger } from '../../src/applications/web/runtime/logger.mjs';
 import { StaticAssetStore } from '../../src/applications/web/runtime/static-assets.mjs';
+import { VendorAssetIntegrityVerifier } from '../../src/applications/web/runtime/vendor-assets.mjs';
 import { WebApplication } from '../../src/applications/web/runtime/web-application.mjs';
+import { writeSyntheticRedocVendor } from './vendor-fixture.mjs';
 
 class Sink { chunks = []; write(value) { this.chunks.push(value); } }
 
@@ -17,6 +19,7 @@ async function createFixture(overrides = {}) {
   await writeFile(path.join(root, 'index.html'), '<!doctype html><title>InfraNexum</title>');
   await writeFile(path.join(root, 'assets', 'app.12345678.js'), 'export {};');
   await writeFile(path.join(root, 'assets', 'redoc-frame.html'), '<!doctype html><main id="redoc-frame-root"></main>');
+  await writeSyntheticRedocVendor(root);
   const configuration = WebRuntimeConfiguration.fromEnvironment({
     INFRANEXUM_WEB_LISTEN_ADDRESS: '127.0.0.1:0',
     INFRANEXUM_WEB_STATIC_ROOT: root,
@@ -24,12 +27,13 @@ async function createFixture(overrides = {}) {
     INFRANEXUM_WEB_API_BASE_URL: 'http://127.0.0.1:9090/api',
     INFRANEXUM_WEB_SHUTDOWN_TIMEOUT_MS: '1000',
     ...overrides,
-  }, { version: '2.0.0-alpha.0.125', baseDirectory: root });
+  }, { version: '2.0.0-alpha.0.126', baseDirectory: root });
   const sink = new Sink();
   const application = new WebApplication({
     configuration,
     assets: new StaticAssetStore(configuration.staticRoot),
     logger: new JsonLogger({ sink, clock: () => new Date('2026-08-03T12:00:00Z') }),
+    vendorVerifier: new VendorAssetIntegrityVerifier(configuration.staticRoot),
   });
   return { application, sink, root };
 }
@@ -42,9 +46,11 @@ test('application validates composition root dependencies', () => {
   const valid = { publicConfiguration() {} };
   const assets = { initialize() {}, read() {} };
   const logger = { info() {}, error() {} };
-  assert.throws(() => new WebApplication({ configuration: null, assets, logger }), /configuration/);
-  assert.throws(() => new WebApplication({ configuration: valid, assets: null, logger }), /asset store/);
-  assert.throws(() => new WebApplication({ configuration: valid, assets, logger: null }), /logger/);
+  const vendorVerifier = { verify() {} };
+  assert.throws(() => new WebApplication({ configuration: null, assets, logger, vendorVerifier }), /configuration/);
+  assert.throws(() => new WebApplication({ configuration: valid, assets: null, logger, vendorVerifier }), /asset store/);
+  assert.throws(() => new WebApplication({ configuration: valid, assets, logger: null, vendorVerifier }), /logger/);
+  assert.throws(() => new WebApplication({ configuration: valid, assets, logger, vendorVerifier: null }), /vendorVerifier/);
 });
 
 test('application exposes health, build, public configuration and static assets securely', async (context) => {
@@ -69,7 +75,7 @@ test('application exposes health, build, public configuration and static assets 
     schema: 'infranexum.web-runtime-config/v1',
     product: 'InfraNexum',
     component: 'web',
-    version: '2.0.0-alpha.0.125',
+    version: '2.0.0-alpha.0.126',
     architectureBaseline: '2.0.0-draft.21',
     environment: 'test',
     apiBaseUrl: 'http://127.0.0.1:9090/api',
@@ -92,7 +98,7 @@ test('application exposes health, build, public configuration and static assets 
   assert.deepEqual(await build.json(), {
     product: 'InfraNexum',
     component: 'WEB',
-    version: '2.0.0-alpha.0.125',
+    version: '2.0.0-alpha.0.126',
     architectureBaseline: '2.0.0-draft.21',
     environment: 'test',
   });
@@ -159,12 +165,13 @@ test('application reports failed startup when assets are unavailable', async () 
     INFRANEXUM_WEB_LISTEN_ADDRESS: '127.0.0.1:0',
     INFRANEXUM_WEB_STATIC_ROOT: '/path/that/does/not/exist',
     INFRANEXUM_WEB_ENVIRONMENT: 'test',
-  }, { version: '2.0.0-alpha.0.125' });
+  }, { version: '2.0.0-alpha.0.126' });
   const sink = new Sink();
   const application = new WebApplication({
     configuration,
     assets: new StaticAssetStore(configuration.staticRoot),
     logger: new JsonLogger({ sink }),
+    vendorVerifier: { async verify() {} },
   });
   await assert.rejects(() => application.start(), /ENOENT/);
   assert.equal(application.state, 'failed');
@@ -177,7 +184,7 @@ test('application translates unexpected asset errors to a stable 500 contract', 
   const configuration = WebRuntimeConfiguration.fromEnvironment({
     INFRANEXUM_WEB_LISTEN_ADDRESS: '127.0.0.1:0',
     INFRANEXUM_WEB_ENVIRONMENT: 'test',
-  }, { version: '2.0.0-alpha.0.125' });
+  }, { version: '2.0.0-alpha.0.126' });
   const sink = new Sink();
   const application = new WebApplication({
     configuration,
@@ -186,6 +193,7 @@ test('application translates unexpected asset errors to a stable 500 contract', 
       async read() { throw new Error('storage unavailable'); },
     },
     logger: new JsonLogger({ sink }),
+    vendorVerifier: { async verify() {} },
   });
   context.after(() => application.stop());
   const base = await application.start();

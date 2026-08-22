@@ -20,7 +20,7 @@ import {
   validateCertifiedOpenApi,
   swaggerConfiguration,
 } from '../../src/applications/web/public/assets/api-documentation.mjs';
-import { initializeRedocFrame, initializeRenderer } from '../../src/applications/web/public/assets/redoc-frame.mjs';
+import { initializeRedocFrame, initializeRenderer, installHeightReporter, reportHeight } from '../../src/applications/web/public/assets/redoc-frame.mjs';
 
 const root = path.resolve(import.meta.dirname, '..', '..');
 const read = (relative) => readFile(path.join(root, relative), 'utf8');
@@ -95,10 +95,9 @@ test('documentation renderers are version-pinned, read the local certified contr
   assert.equal(OPENAPI_SPEC_URL, '/assets/generated/infranexum-openapi.yaml');
   assert.equal(OPENAPI_RENDER_SPEC_URL, '/assets/generated/infranexum-openapi.json');
   assert.equal(REDOC_FRAME_URL, '/assets/redoc-frame.html');
-  assert.equal(REDOC_SCRIPT_URL, 'https://cdn.redoc.ly/redoc/v2.5.3/bundles/redoc.standalone.js');
-  assert.deepEqual([...REDOC_SCRIPT_FALLBACK_URLS], [
-    'https://cdn.jsdelivr.net/npm/redoc@2.5.3/bundles/redoc.standalone.js',
-  ]);
+  assert.equal(REDOC_SCRIPT_URL, '/assets/vendor/redoc/2.5.3/redoc.standalone.js');
+  assert.deepEqual([...REDOC_SCRIPT_FALLBACK_URLS], []);
+  assert.doesNotMatch(REDOC_SCRIPT_URL, /^https?:\/\//);
   const swagger = swaggerConfiguration();
   assert.equal(swagger.url, OPENAPI_SPEC_URL);
   assert.equal(swagger.deepLinking, true);
@@ -127,12 +126,13 @@ test('documentation CSP isolates ReDoc inline styling without weakening the auth
   assert.match(shell, /frame-src 'self'/);
   assert.match(redoc, /frame-ancestors 'self'/);
   assert.match(redoc, /style-src 'self' 'unsafe-inline'/);
-  assert.match(redoc, /script-src 'self' https:\/\/cdn\.redoc\.ly https:\/\/cdn\.jsdelivr\.net/);
+  assert.match(redoc, /script-src 'self';/);
+  assert.doesNotMatch(redoc, /cdn\.redoc\.ly|cdn\.jsdelivr\.net/);
   assert.doesNotMatch(redoc, /connect-src[^;]*https:/);
 });
 
 
-test('ReDoc shell renderer creates an isolated auto-sized frame and reaches ready state only after its handshake', async () => {
+test('ReDoc shell renderer tracks intrinsic content and viewport for its whole lifetime', async () => {
   const attributes = new Map();
   const status = {
     className: '', hidden: false, textContent: '',
@@ -143,7 +143,10 @@ test('ReDoc shell renderer creates an isolated auto-sized frame and reaches read
   const frameAttributes = new Map();
   const frame = {
     contentWindow,
+    style: {},
     setAttribute: (name, value) => frameAttributes.set(name, value),
+    addEventListener: () => {},
+    removeEventListener: () => {},
   };
   let appended = null;
   const host = { replaceChildren: (child) => { appended = child ?? null; } };
@@ -152,11 +155,12 @@ test('ReDoc shell renderer creates an isolated auto-sized frame and reaches read
     getElementById: (id) => ({ 'redoc-ui': host, 'redoc-docs-status': status, 'redoc-raw-spec': raw }[id] ?? null),
     createElement: (name) => name === 'iframe' ? frame : null,
   };
-  let messageHandler = null;
+  const handlers = new Map();
   const windowObject = {
+    innerHeight: 900,
     location: { origin: 'https://infranexum.example' },
-    addEventListener: (name, handler) => { if (name === 'message') messageHandler = handler; },
-    removeEventListener: () => {},
+    addEventListener: (name, handler) => handlers.set(name, handler),
+    removeEventListener: (name, handler) => { if (handlers.get(name) === handler) handlers.delete(name); },
     setTimeout: () => 17,
     clearTimeout: () => {},
   };
@@ -168,14 +172,17 @@ test('ReDoc shell renderer creates an isolated auto-sized frame and reaches read
   assert.equal(frame.src, `${REDOC_FRAME_URL}?theme=dark`);
   assert.equal(frameAttributes.get('sandbox'), 'allow-scripts allow-same-origin');
   assert.equal(frameAttributes.get('scrolling'), 'no');
-  assert.equal(frameAttributes.get('height'), '576');
+  assert.equal(frameAttributes.get('height'), '900');
+  assert.equal(frame.style.height, '900px');
 
+  const messageHandler = handlers.get('message');
   messageHandler({
     origin: 'https://infranexum.example',
     source: contentWindow,
-    data: { source: REDOC_FRAME_MESSAGE_SOURCE, type: 'resize', height: 1280.2 },
+    data: { source: REDOC_FRAME_MESSAGE_SOURCE, type: 'resize', height: 640.2 },
   });
-  assert.equal(frameAttributes.get('height'), '1281');
+  assert.equal(frameAttributes.get('height'), '900');
+
   messageHandler({
     origin: 'https://infranexum.example',
     source: contentWindow,
@@ -194,20 +201,36 @@ test('ReDoc shell renderer creates an isolated auto-sized frame and reaches read
   assert.equal(await rendering, true);
   assert.equal(attributes.get('data-state'), 'ready');
   assert.equal(status.hidden, true);
-});
 
+  // The message bridge deliberately remains active after ready so expanded sections resize the shell.
+  assert.equal(handlers.get('message'), messageHandler);
+  messageHandler({
+    origin: 'https://infranexum.example',
+    source: contentWindow,
+    data: { source: REDOC_FRAME_MESSAGE_SOURCE, type: 'resize', height: 2_500_000.2 },
+  });
+  assert.equal(frameAttributes.get('height'), '2500001');
+  assert.equal(frame.style.height, '2500001px');
+
+  windowObject.innerHeight = 2_600_000;
+  handlers.get('resize')();
+  assert.equal(frameAttributes.get('height'), '2600000');
+  windowObject.innerHeight = 700;
+  handlers.get('resize')();
+  assert.equal(frameAttributes.get('height'), '2500001');
+});
 
 test('ReDoc frame loads the certified local contract and pinned renderer inside its isolated document', async () => {
   const htmlAttributes = new Map();
-  const root = { textContent: 'loading', replaceChildren: () => {} };
+  const root = { textContent: 'loading', scrollHeight: 900, offsetHeight: 880, getBoundingClientRect: () => ({ height: 870 }), replaceChildren: () => {} };
   const messages = [];
   const documentObject = {
     documentElement: {
-      scrollHeight: 900,
+      scrollHeight: 99_999,
       getAttribute: (name) => name === 'data-bs-theme' ? htmlAttributes.get(name) ?? 'light' : null,
       setAttribute: (name, value) => htmlAttributes.set(name, value),
     },
-    body: { scrollHeight: 850 },
+    body: { scrollHeight: 88_888 },
     getElementById: (id) => id === 'redoc-frame-root' ? root : null,
   };
   let initializedSpec = null;
@@ -229,7 +252,7 @@ test('ReDoc frame loads the certified local contract and pinned renderer inside 
   };
   const specLoader = async (_window, url) => {
     assert.equal(url, OPENAPI_RENDER_SPEC_URL);
-    return { openapi: '3.1.0', info: { version: '2.0.0-alpha.0.125' }, paths: {} };
+    return { openapi: '3.1.0', info: { version: '2.0.0-alpha.0.126' }, paths: {} };
   };
 
   assert.equal(await initializeRedocFrame(documentObject, windowObject, assetLoader, specLoader), true);
@@ -243,6 +266,52 @@ test('ReDoc frame loads the certified local contract and pinned renderer inside 
   assert.ok(messages.some(({ payload }) => payload.type === 'resize' && payload.height === 900));
   assert.ok(messages.every(({ payload }) => payload.source === REDOC_FRAME_MESSAGE_SOURCE));
   assert.ok(messages.every(({ origin }) => origin === 'https://infranexum.example'));
+});
+
+
+test('ReDoc height reporter measures only its intrinsic root and observes resize plus mutations', () => {
+  const messages = [];
+  const observed = [];
+  const disconnected = [];
+  class ResizeObserver {
+    constructor(callback) { this.callback = callback; }
+    observe(target) { observed.push(['resize', target]); }
+    disconnect() { disconnected.push('resize'); }
+  }
+  class MutationObserver {
+    constructor(callback) { this.callback = callback; }
+    observe(target, options) { observed.push(['mutation', target, options]); }
+    disconnect() { disconnected.push('mutation'); }
+  }
+  const root = {
+    scrollHeight: 1200,
+    offsetHeight: 1180,
+    getBoundingClientRect: () => ({ height: 1190.4 }),
+  };
+  let pagehide = null;
+  const windowObject = {
+    location: { origin: 'https://infranexum.example' },
+    parent: { postMessage: (payload) => messages.push(payload) },
+    ResizeObserver,
+    MutationObserver,
+    addEventListener: (name, handler) => { if (name === 'pagehide') pagehide = handler; },
+  };
+
+  const reporter = installHeightReporter(windowObject, root);
+  assert.equal(observed.length, 2);
+  assert.equal(observed[0][0], 'resize');
+  assert.equal(observed[1][0], 'mutation');
+  assert.equal(observed[1][2].subtree, true);
+  assert.equal(reportHeight(root, windowObject), 1200);
+  assert.equal(messages.at(-1).height, 1200);
+
+  root.scrollHeight = 2_700_000;
+  reporter.resizeObserver.callback();
+  assert.equal(messages.at(-1).height, 2_700_000);
+  reporter.mutationObserver.callback();
+  assert.equal(messages.at(-1).height, 2_700_000);
+  pagehide();
+  assert.deepEqual(disconnected.sort(), ['mutation', 'resize']);
 });
 
 
@@ -282,7 +351,7 @@ test('documentation errors never expose Promise object stringification to users'
   assert.equal(normalizeDisplayMessage(new Error('renderer unavailable'), 'fallback'), 'renderer unavailable');
 });
 
-test('ReDoc asset candidates fall back sequentially and remove a failed script before retrying', async () => {
+test('generic external asset candidates fall back sequentially and remove a failed script before retrying', async () => {
   const appended = [];
   const removed = [];
   const createScript = () => {

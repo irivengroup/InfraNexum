@@ -1,4 +1,22 @@
-# InfraNexum 2.0.0-alpha.0.125 — ReDoc bootstrap/runtime corrective
+# InfraNexum 2.0.0-alpha.0.126 — offline ReDoc vendor corrective
+
+## 2.0.0-alpha.0.126
+
+**Statut : corrective Web/documentation et supply-chain ; aucune activation de provider mutateur.**
+
+ReDoc 2.5.3 est désormais réellement vendorisé dans `assets/vendor/redoc/2.5.3`. Le runtime ne contacte aucune origine Internet pour ReDoc et refuse de démarrer si le bundle, sa taille exacte, son SHA-256, sa licence MIT, sa notice ou le manifeste local sont absents ou incohérents. Le bundle intégré contient les marqueurs `ReDoc Version: 2.5.3` et `Commit: 1b2591e`. La hauteur du frame reste `max(hauteur intrinsèque ReDoc, viewport)`, sans plafond et avec observation dynamique après `ready`.
+
+- **EXÉCUTÉ — Node contractuel :** Node 24.19.0, compatible `>=24.18.1 <25`.
+- **EXÉCUTÉ — vendor gate :** PASS sur le vendor tree réel.
+- **EXÉCUTÉ — Web :** 245/245 ; couverture 99,78 % lignes / 98,60 % branches / 100 % fonctions.
+- **EXÉCUTÉ — smoke Web :** PASS.
+- **EXÉCUTÉ — Source Integrity :** 45/45, 100 %, 0 violation.
+- **EXÉCUTÉ — Architecture-as-Code :** PASS.
+- **EXÉCUTÉ — Toolchains :** 25/25, 0 violation.
+- **EXÉCUTÉ — Archive Compatibility unitaire :** 12/12, 100 %.
+- **NON EXÉCUTÉ — qualification PGM-10-E05 :** JDK25/JaCoCo/PostgreSQL 17/18 restent requis séparément.
+
+PGM-10-E05 reste **NON TERMINÉ**. PGM-10-E06 reste **EN COURS** et aucun provider mutateur n’est activé.
 
 ## 2.0.0-alpha.0.125
 

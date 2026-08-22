@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 
-.PHONY: sdk-test sdk-check api-contract-test api-contract-check compose-contract-test compose-config compose-build compose-up compose-down compose-smoke compose-backup compose-restore compose-rollback compose-reset compose-logs postgresql-test-schema archive-compatibility-test archive-compatibility-check source-integrity-test source-integrity-check source-integrity-precommit source-integrity-hook-install source-integrity-update source-checksum-update architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-api-capability-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke java-observability-smoke java-rsot-smoke java-schema-registry-smoke java-itam-partner-smoke java-itam-asset-smoke java-itam-compliance-smoke java-dcim-facility-smoke java-dcim-physical-smoke java-ddi-ipam-smoke java-integrations-smoke java-policy-smoke agent-vet agent-test agent-build web-test web-smoke web-verify java-module-verify java-test verify-foundation verify clean-generated
+.PHONY: sdk-test sdk-check api-contract-test api-contract-check compose-contract-test compose-config compose-build compose-up compose-down compose-smoke compose-backup compose-restore compose-rollback compose-reset compose-logs postgresql-test-schema archive-compatibility-test archive-compatibility-check source-integrity-test source-integrity-check source-integrity-precommit source-integrity-hook-install source-integrity-update source-checksum-update architecture-test architecture-check toolchain-test toolchain-check migration-test migration-check eventing-test eventing-check persistence-test persistence-check capabilities-test capabilities-check entitlements-test entitlements-check audit-test audit-check java-contract-smoke java-eventing-smoke java-audit-smoke java-jdbc-smoke java-jdbc-workers-smoke java-capabilities-smoke java-api-capability-smoke java-entitlements-smoke java-entitlement-runtime-smoke java-activation-operations-smoke java-workers-smoke java-observability-smoke java-rsot-smoke java-schema-registry-smoke java-itam-partner-smoke java-itam-asset-smoke java-itam-compliance-smoke java-dcim-facility-smoke java-dcim-physical-smoke java-ddi-ipam-smoke java-integrations-smoke java-policy-smoke agent-vet agent-test agent-build redoc-vendor-tool-test redoc-vendor-acquire redoc-vendor-check web-test web-smoke web-verify java-module-verify java-test verify-foundation verify clean-generated
 
 PYTHON ?= python3
 GO ?= go
@@ -475,10 +475,19 @@ agent-build:
 	cd $(AGENT_ROOT); \
 	GOTOOLCHAIN=$${GOTOOLCHAIN:-auto} CGO_ENABLED=0 $(GO) build -trimpath -ldflags="-s -w -X main.version=$$version" -o "$(CURDIR)/bin/infranexum-agent" ./cmd/infranexum-agent
 
+redoc-vendor-tool-test:
+	@$(call PY_COVERAGE,tools.vendor_redoc,$(TEST_ROOT)/vendor_redoc,$(REPORT_ROOT)/redoc-vendor-tool-coverage.txt)
+
+redoc-vendor-acquire:
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(REPOSITORY_ROOT) $(PYTHON) $(TOOLS_ROOT)/vendor_redoc.py --static-root $(WEB_ROOT)/public
+
+redoc-vendor-check:
+	cd $(WEB_ROOT); node runtime/vendor-assets-check.mjs public
+
 web-test:
 	@mkdir -p $(REPORT_ROOT); \
 	cd $(WEB_ROOT); \
-	node --test --experimental-test-coverage --test-coverage-lines=98 --test-coverage-branches=98 --test-coverage-functions=98 --test-coverage-include='runtime/config.mjs' --test-coverage-include='runtime/logger.mjs' --test-coverage-include='runtime/static-assets.mjs' --test-coverage-include='runtime/web-application.mjs' ../../../tests/web/*.test.mjs \
+	node --test --experimental-test-coverage --test-coverage-lines=98 --test-coverage-branches=98 --test-coverage-functions=98 --test-coverage-include='runtime/config.mjs' --test-coverage-include='runtime/logger.mjs' --test-coverage-include='runtime/static-assets.mjs' --test-coverage-include='runtime/vendor-assets.mjs' --test-coverage-include='runtime/web-application.mjs' ../../../tests/web/*.test.mjs \
 		| tee "$(REPORT_ROOT_ABS)/web-coverage.txt"
 
 web-smoke:
@@ -486,7 +495,7 @@ web-smoke:
 	cd $(WEB_ROOT); \
 	node ../../../tests/web/smoke.mjs | tee "$(REPORT_ROOT_ABS)/web-smoke.json"
 
-web-verify: web-test web-smoke
+web-verify: redoc-vendor-tool-test redoc-vendor-check web-test web-smoke
 
 compose-contract-test:
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(REPOSITORY_ROOT) $(PYTHON) -m unittest discover -s $(TEST_ROOT)/deployment -p 'test_*.py'

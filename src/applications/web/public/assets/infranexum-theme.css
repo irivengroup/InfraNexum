@@ -1438,7 +1438,8 @@ input[data-inx-temporal].inx-temporal-native::-webkit-calendar-picker-indicator 
 .inx-docs-header h2, .inx-docs-header p { color: inherit !important; }
 .inx-docs-header p:last-child { color: #d8e8f8 !important; max-width: 58rem; }
 .inx-docs-status { margin-bottom: 0; }
-.inx-swagger-host, .inx-redoc-host { min-height: 36rem; background: var(--inx-surface); }
+.inx-swagger-host { min-height: 36rem; background: var(--inx-surface); }
+.inx-redoc-host { background: var(--inx-surface); }
 .inx-api-docs .swagger-ui { color: var(--inx-ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 .inx-api-docs .swagger-ui .topbar { display: none; }
 .inx-api-docs .swagger-ui .info { margin: 1.5rem 0; }
@@ -1467,7 +1468,8 @@ input[data-inx-temporal].inx-temporal-native::-webkit-calendar-picker-indicator 
   display: block;
   width: 100%;
   min-width: 0;
-  min-height: 36rem;
+  height: auto;
+  max-height: none;
   border: 0;
   background: var(--inx-surface);
 }

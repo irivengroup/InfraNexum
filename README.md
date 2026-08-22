@@ -1,19 +1,8 @@
-# InfraNexum 2.0.0-alpha.0.125 — ReDoc bootstrap/runtime corrective
+# InfraNexum 2.0.0-alpha.0.126 — offline ReDoc vendor corrective
 
-> **alpha.0.125 corrective:** fixes the ReDoc bootstrap dependency-wiring defect that passed the Swagger asset loader as the ReDoc iframe factory, eliminates Promise leakage in documentation errors, handles ReDoc callback/promise failures explicitly, and introduces a phase-aware iframe handshake with pinned official Redocly loading plus bounded jsDelivr fallback. The certified OpenAPI contract remains local and accessible independently of the presentation engine.
+> **alpha.0.126 corrective:** ReDoc 2.5.3 is fully self-hosted from `/assets/vendor/redoc/2.5.3/redoc.standalone.js`; the Web startup verifies the local manifest, SHA-256, exact bundle size, MIT license and bundled notices before opening the HTTP listener. ReDoc runtime CSP is `script-src 'self'`, with no CDN fallback or runtime Internet dependency. The iframe height follows `max(intrinsic ReDoc content, viewport)` without arbitrary cap and keeps resize reporting active after `ready`.
 
-## ReDoc reliability boundary
-
-- `initializeApiDocumentation()` keeps Swagger asset loading and ReDoc frame creation as distinct dependencies.
-- ReDoc frame lifecycle is explicit: `boot` → `contract` → `renderer` → `render` → `ready`/`error`.
-- The frame has a short boot deadline and a separate rendering deadline; renderer loading no longer races the parent initialization timeout.
-- ReDoc 2.5.3 callback errors and returned Promise rejections are both fail-closed.
-- Renderer failures are normalized and never expose `[object Promise]` or raw object stringification.
-- The frame loads the pinned official Redocly distribution first and falls back to the same pinned version on jsDelivr. Failed/timeout script elements are removed before the next candidate.
-- The authenticated InfraNexum shell CSP remains unchanged; only the isolated ReDoc frame permits the two pinned renderer fallback origins and inline style injection required by ReDoc's styling runtime.
-
-The local OpenAPI 3.1 contract remains the source of truth. If all renderer candidates are unavailable, the raw local contract remains accessible and the error state is explicit.
-
+**Validated on Node 24.19.0:** ReDoc vendor gate PASS; Web 245/245; coverage 99.78% lines / 98.60% branches / 100% functions; process smoke PASS; Source Integrity 45/45 at 100% with zero violations; Architecture-as-Code PASS; Toolchains 25/25 with zero violations; Archive Compatibility unit suite 12/12 at 100%. PGM-10-E05 remains NON TERMINÉ pending exact JDK25/JaCoCo/PostgreSQL 17/18 qualification; PGM-10-E06 remains EN COURS and no mutating provider is enabled.
 
 ---
 

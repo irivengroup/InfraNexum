@@ -191,7 +191,7 @@ class ToolchainCheckerTest(unittest.TestCase):
     def test_ci_web_bootstrap_is_exact_and_legacy_free(self) -> None:
         workflow_path = self.root / ".github/workflows/foundation.yml"
         workflow = workflow_path.read_text(encoding="utf-8")
-        workflow = workflow.replace("runtime: node@24.18.1", "runtime: node@24")
+        workflow = workflow.replace("runtime: node@24.19.0", "runtime: node@24")
         workflow += "\n# actions/setup-node@legacy\n# corepack prepare pnpm@latest --activate\n"
         workflow_path.write_text(workflow, encoding="utf-8")
         self.assertTrue({"CHECK-TOOLCHAIN-027", "CHECK-TOOLCHAIN-028"} <= self.ids())

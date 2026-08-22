@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.125",
-  "profile": "alpha125-redoc-bootstrap-runtime-corrective",
+  "version": "2.0.0-alpha.0.126",
+  "profile": "alpha126-offline-redoc-vendor-corrective",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -660,15 +660,15 @@
     "inventory_paths": 1564
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.125",
+    "prefix": "infranexum-2.0.0-alpha.0.126",
     "archive_entries": 1566,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
     "source_recorded_files": 1565,
     "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
-    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.125-validation-evidence.zip"
+    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.126-validation-evidence.zip"
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.125-validation-evidence.zip",
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.126-validation-evidence.zip",
   "runtime_validation": {
     "web_local_runtime_alpha058": "EXECUTED_38_OF_38_LINE_99_67_BRANCH_98_33_FUNCTION_100_PROCESS_SMOKE_PASS_LOCAL_NODE22_BOOTSTRAP5_3_6_PROFESSIONAL_ADMIN_DASHBOARD_THEME_TOGGLE_TRUTHFUL_KPI_SAME_ORIGIN_ORGANIZATION_UI",
     "architecture_functional_alpha058": "EXECUTED_57_OF_57",

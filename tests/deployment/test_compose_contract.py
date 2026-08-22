@@ -62,7 +62,7 @@ class ComposeContractTest(unittest.TestCase):
     def test_web_cluster_is_two_private_nodes_behind_loopback_router(self) -> None:
         for name in WEB:
             service = self.services[name]
-            self.assertEqual("infranexum/web:${INFRANEXUM_VERSION:-2.0.0-alpha.0.125}", service["image"])
+            self.assertEqual("infranexum/web:${INFRANEXUM_VERSION:-2.0.0-alpha.0.126}", service["image"])
             self.assertEqual("service_healthy", service["depends_on"]["server"]["condition"])
             self.assertNotIn("ports", service)
             self.assertEqual("local", service["environment"]["INFRANEXUM_WEB_ENVIRONMENT"])
@@ -254,7 +254,7 @@ class ComposeContractTest(unittest.TestCase):
 
     def test_web_runtime_image_is_pinned_verified_and_non_root(self) -> None:
         dockerfile = (DOCKER / "web.Dockerfile").read_text(encoding="utf-8")
-        self.assertIn("ARG NODE_VERSION=24.18.1", dockerfile)
+        self.assertIn("ARG NODE_VERSION=24.19.0", dockerfile)
         self.assertIn("d6c664df3f3f61458e8c277585571328522d705166723a7c7823a9253a4d15a0", dockerfile)
         self.assertIn("7201e3a09dc825bac57867c81913e2b8f0ef87d04cb9082af4cda82f6ff3d88c", dockerfile)
         self.assertIn("sha256sum --check --strict", dockerfile)
@@ -488,7 +488,7 @@ case "$url" in
     [ -z "$output" ] || printf '%s' "$body" > "$output"
     if [ -n "$writeout" ]; then printf '%s' '401'; else printf '%s' "$body"; fi ;;
   */health/ready) printf '%s' '{"status":"UP"}' ;;
-  */runtime-config.json) printf '%s' '{"component":"web","version":"2.0.0-alpha.0.125","apiBaseUrl":"/api"}' ;;
+  */runtime-config.json) printf '%s' '{"component":"web","version":"2.0.0-alpha.0.126","apiBaseUrl":"/api"}' ;;
   *) echo "unexpected curl URL: $url" >&2; exit 70 ;;
 esac
 '''), encoding="utf-8")
@@ -659,7 +659,7 @@ case "$url" in
     [ -z "$output" ] || printf '%s' "$body" > "$output"
     if [ -n "$writeout" ]; then printf '%s' '401'; else printf '%s' "$body"; fi ;;
   */health/ready) printf '%s' '{"status":"UP"}' ;;
-  */runtime-config.json) printf '%s' '{"component":"web","version":"2.0.0-alpha.0.125","apiBaseUrl":"/api"}' ;;
+  */runtime-config.json) printf '%s' '{"component":"web","version":"2.0.0-alpha.0.126","apiBaseUrl":"/api"}' ;;
   *) echo "unexpected curl URL: $url" >&2; exit 70 ;;
 esac
 '''), encoding="utf-8")
