@@ -42,7 +42,7 @@ final class ConnectorSyncEngineTest {
 
     @Test void executesMultipleBatchesAndDeduplicatesRunAdmission(){
         InMemoryConnectorSyncRepository repo=new InMemoryConnectorSyncRepository();AtomicInteger calls=new AtomicInteger();
-        ConnectorSyncHandler handler=handler(ctx->{int n=calls.incrementAndGet();return ConnectorSyncBatchResult.applied("cursor-"+n,2,1,1,n==2);},c->ConnectorSyncCompensationResult.succeeded());
+        ConnectorSyncHandler handler=handler(ctx->{int n=calls.incrementAndGet();assertEquals(Set.of("name"),ctx.fields());assertFalse(ctx.propagateDeletions());return ConnectorSyncBatchResult.applied("cursor-"+n,2,1,1,n==2);},c->ConnectorSyncCompensationResult.succeeded());
         ConnectorSyncEngine engine=engine(policy(ConnectorRollbackStrategy.LOCAL_CHECKPOINT),handler,repo);
         ConnectorSyncExecutionRequest request=request(10);
         ConnectorSyncRun result=engine.execute(KEY,request,"sync-exec-0001",ACTOR,CORR);

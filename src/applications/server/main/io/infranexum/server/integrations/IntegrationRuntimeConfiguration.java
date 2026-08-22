@@ -168,8 +168,22 @@ public class IntegrationRuntimeConfiguration {
     }
 
     @Bean
-    ImmutableConnectorSyncHandlerRegistry connectorSyncHandlerRegistry(ObjectProvider<ConnectorSyncHandler> handlers) {
-        return new ImmutableConnectorSyncHandlerRegistry(handlers.orderedStream().toList());
+    ConfiguredJiraAssetsSyncHandlerCatalog jiraAssetsSyncHandlerCatalog(
+            IntegrationRuntimeProperties properties,
+            ConfiguredJiraAssetsConnectorRegistry connectors,
+            ConnectorGovernanceRegistry governance,
+            DataSource dataSource,
+            PersistenceRuntimeProperties persistence) {
+        return new ConfiguredJiraAssetsSyncHandlerCatalog(
+                properties.jiraAssetsMutationDefinitions(), connectors, governance, dataSource, persistence);
+    }
+
+    @Bean
+    ImmutableConnectorSyncHandlerRegistry connectorSyncHandlerRegistry(
+            ObjectProvider<ConnectorSyncHandler> handlers, ConfiguredJiraAssetsSyncHandlerCatalog jiraHandlers) {
+        java.util.List<ConnectorSyncHandler> values = new java.util.ArrayList<>(handlers.orderedStream().toList());
+        values.addAll(jiraHandlers.handlers());
+        return new ImmutableConnectorSyncHandlerRegistry(values);
     }
 
     @Bean

@@ -11,7 +11,7 @@ A Jira Assets or ServiceNow connector can now carry a complete authority mapping
 
 The default remains unchanged and backward compatible: every configured Jira Assets and ServiceNow connector without a governance override is `FEDERATED_READ / EXTERNAL / REJECT / IGNORE / NONE_REQUIRED`, with `executionEnabled=false`.
 
-No Jira Assets or ServiceNow mutating handler is delivered or registered by this increment. Consequently, setting `executionEnabled=true` for those providers in the current product causes Server startup to fail closed because no approved handler exists.
+A Jira Assets mutating handler is now registered only through `ConfiguredJiraAssetsSyncHandlerCatalog` when a configured Jira mutation mapping matches an active policy exactly. ServiceNow still has no mutating handler. Therefore an execution-enabled ServiceNow policy, or a Jira policy whose direction/authority/conflict/deletion/rollback/field set does not match the provider mapping, fails Server startup closed.
 
 ## Policy model
 
@@ -34,7 +34,7 @@ Every governed connector has one immutable `ConnectorGovernancePolicy` containin
 
 Governance is configured under `infranexum.integrations.governance`, keyed by an existing Jira Assets or ServiceNow connector key. Provider identity is deliberately **not** configurable in the governance block; the Server derives it from the provider registry so configuration cannot spoof a provider.
 
-Example of a prepared inbound Jira Assets authority mapping:
+Example of an executable outbound Jira Assets authority mapping:
 
 ```yaml
 infranexum:
@@ -47,20 +47,28 @@ infranexum:
           bearer-token-reference: file:/run/secrets/jira-assets-token
           request-timeout: PT15S
           enabled: true
+          mutation:
+            object-type-id: "23"
+            identity-attribute-name: "InfraNexum ID"
+            identity-source-field: id
+            batch-size: 50
+            attribute-ids:
+              id: "135"
+              asset_type: "144"
     governance:
       jira-prod:
-        direction: INBOUND
-        authority: EXTERNAL
+        direction: OUTBOUND
+        authority: INFRANEXUM
         conflict-strategy: PREFER_AUTHORITY
         deletion-policy: IGNORE
-        rollback-strategy: LOCAL_CHECKPOINT
-        execution-enabled: false
+        rollback-strategy: MANUAL
+        execution-enabled: true
         fields:
-          name: EXTERNAL
-          serial-number: EXTERNAL
+          id: INFRANEXUM
+          asset_type: INFRANEXUM
 ```
 
-The example is intentionally **non-executable**. It prepares an explicit authority contract only. The field names must satisfy the canonical connector field-name contract and the map is bounded to 512 fields per connector. Governance cardinality is bounded to 128 policies per Server runtime.
+The example is executable only because the provider mapping and governance are exact. The IDs are illustrative deployment values. Jira mutation currently requires `identity-source-field=id`, `deletion-policy=IGNORE` and `rollback-strategy=MANUAL`; every configured mutation field must be governed by `INFRANEXUM`. Field names satisfy the canonical connector field-name contract and governance cardinality remains bounded.
 
 Startup fails when:
 
@@ -84,7 +92,7 @@ mutating synchronization execution is disabled by connector policy
 
 This makes a prepared policy observable without turning configuration into an implicit provider mutation switch.
 
-Once execution is legitimately admitted in a future provider tranche, the existing `ConnectorSyncEngine` continues to provide the `alpha.0.116` durability guarantees: bounded batches, idempotent replay expectations, active-run fencing, append-only checkpoints, pause/resume and governed compensation. No exactly-once guarantee is inferred.
+Once Jira execution is legitimately admitted, the existing `ConnectorSyncEngine` provides the `alpha.0.116` durability guarantees: bounded batches, idempotent replay expectations, active-run fencing, append-only checkpoints, pause/resume and governed compensation. No exactly-once guarantee is inferred. The Jira handler receives the exact governed field set and deletion-propagation flag in its batch context and refuses any mismatch.
 
 ## API and Web behavior
 
@@ -104,7 +112,7 @@ The Integrations workspace shows the execution-admission state in the governance
 - `executionEnabled=true`;
 - direction `INBOUND`, `OUTBOUND` or `BIDIRECTIONAL`.
 
-A prepared mapping therefore remains visible and dry-runnable but cannot activate the browser execution workflow. Jira Assets and ServiceNow provider sections themselves remain federated-read-only and contain no create/update/delete/import/sync provider call.
+A prepared mapping therefore remains visible and dry-runnable but cannot activate execution. Jira Assets provider-specific pages remain federated-read-only; provider mutation is reached only through the generic governed Sync workflow. ServiceNow remains read-only.
 
 All new UI text is available in DE/EN/ES/FR/IT.
 
@@ -116,14 +124,13 @@ Governance dry-run audit metadata records the bounded `execution_enabled` state 
 
 ## Rollback
 
-For `alpha.0.122`, rollback of this change is configuration-safe because no new database migration exists:
+For the phase-6 Jira mutator, disabling future execution is configuration-safe, while already written provider objects require the configured manual recovery workflow. Migration `0041` is only an additive ITAM continuation index and contains no business-data rewrite:
 
-1. remove the connector entry under `infranexum.integrations.governance`, or restore `FEDERATED_READ` defaults;
-2. restart the Server;
-3. verify the governance API returns `executionEnabled=false` and the default federated-read policy;
-4. verify the Web Sync execution selector contains no Jira Assets or ServiceNow mutator.
-
-Removing a prepared governance block does not require RSOT/ITAM data rollback because the prepared state cannot execute mutations.
+1. set `execution-enabled=false`, remove the Jira `mutation` block, or restore `FEDERATED_READ` defaults;
+2. restart the Server and verify the Jira handler is absent from the sync registry;
+3. retain synchronization checkpoints for audit/recovery;
+4. correct any already-written Jira objects through the approved manual compensation procedure;
+5. roll back migration `0041` only if the index itself must be removed; no ITAM row changes are required.
 
 ## OpenService boundary
 
@@ -131,6 +138,6 @@ PGM-10-E06 still names **OpenService**, but `draft.21` does not provide an autho
 
 ## Status
 
-PGM-10-E06 remains **EN COURS**. This increment delivers configurable authority mapping plus explicit execution admission, but activates no provider mutator.
+PGM-10-E06 remains **EN COURS**. The first mutating provider path is now Jira Assets OUTBOUND under exact governance. ServiceNow mutation, Jira inbound/bidirectional flows, controlled remote deletion and OpenService remain unavailable until their contracts are explicitly defined and implemented.
 
 PGM-10-E05 remains formally **NON TERMINÉ** until the exact target JDK25/JaCoCo/PostgreSQL 17/18 gates succeed on the release snapshot.

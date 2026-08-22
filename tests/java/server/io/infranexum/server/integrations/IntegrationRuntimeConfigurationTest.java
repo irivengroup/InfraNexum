@@ -127,11 +127,13 @@ class IntegrationRuntimeConfigurationTest {
         };
         StaticListableBeanFactory handlersFactory = new StaticListableBeanFactory();
         handlersFactory.addBean("jiraMutation", jiraMutation);
+        var emptyJiraCatalog = new ConfiguredJiraAssetsSyncHandlerCatalog(
+                Map.of(), null, null, null, null);
         var handlerRegistry = configuration.connectorSyncHandlerRegistry(
-                handlersFactory.getBeanProvider(ConnectorSyncHandler.class));
+                handlersFactory.getBeanProvider(ConnectorSyncHandler.class), emptyJiraCatalog);
         StaticListableBeanFactory emptyFactory = new StaticListableBeanFactory();
         var emptyRegistry = configuration.connectorSyncHandlerRegistry(
-                emptyFactory.getBeanProvider(ConnectorSyncHandler.class));
+                emptyFactory.getBeanProvider(ConnectorSyncHandler.class), emptyJiraCatalog);
 
         var jira = Map.of(key, new io.infranexum.adapters.jiraassets.JiraAssetsSettings(
                 key, "cloud", "workspace", "env:PATH", Duration.ofSeconds(5), true));
@@ -207,7 +209,7 @@ class IntegrationRuntimeConfigurationTest {
                     inbox, mock(AuditJournal.class), observer, ids, CLOCK);
             var dispatcher = configuration.connectorInboxDispatcher(
                     inbox, endpointRegistry, handlerRegistry, observer, CLOCK,
-                    new ServerRuntimeProperties("server-a", RuntimeMode.REGIONAL, "eu-west", "paris", "2.0.0-alpha.0.127", "2.0.0-draft.21"),
+                    new ServerRuntimeProperties("server-a", RuntimeMode.REGIONAL, "eu-west", "paris", "2.0.0-alpha.0.128", "2.0.0-draft.21"),
                     properties);
 
             assertNotNull(webhook);

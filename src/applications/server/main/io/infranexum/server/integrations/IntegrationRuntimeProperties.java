@@ -146,6 +146,19 @@ public record IntegrationRuntimeProperties(
         return Map.copyOf(result);
     }
 
+    Map<ConnectorKey, io.infranexum.adapters.jiraassets.JiraAssetsMutationSettings> jiraAssetsMutationDefinitions() {
+        Map<ConnectorKey, io.infranexum.adapters.jiraassets.JiraAssetsMutationSettings> result = new LinkedHashMap<>();
+        jiraAssets.connectors().forEach((key, value) -> {
+            if (value.mutation() == null) return;
+            ConnectorKey connectorKey = new ConnectorKey(key);
+            JiraAssetsMutationProperties mutation = value.mutation();
+            result.put(connectorKey, new io.infranexum.adapters.jiraassets.JiraAssetsMutationSettings(
+                    connectorKey, mutation.objectTypeId(), mutation.identityAttributeName(), mutation.identitySourceField(),
+                    mutation.attributeIds(), mutation.batchSize()));
+        });
+        return Map.copyOf(result);
+    }
+
 
     Map<ConnectorKey, ServiceNowSettings> serviceNowDefinitions() {
         Map<ConnectorKey, ServiceNowSettings> result = new LinkedHashMap<>();
@@ -212,9 +225,31 @@ public record IntegrationRuntimeProperties(
             String workspaceId,
             String bearerTokenReference,
             Duration requestTimeout,
-            boolean enabled) {
+            boolean enabled,
+            JiraAssetsMutationProperties mutation) {
+        /** Compatibility constructor for read-only connector definitions predating provider mutation admission. */
+        public JiraAssetsConnectorProperties(
+                String cloudId, String workspaceId, String bearerTokenReference, Duration requestTimeout, boolean enabled) {
+            this(cloudId, workspaceId, bearerTokenReference, requestTimeout, enabled, null);
+        }
+
         public JiraAssetsConnectorProperties {
             new JiraAssetsSettings(new ConnectorKey("validation.connector"), cloudId, workspaceId, bearerTokenReference, requestTimeout, enabled);
+            if (mutation != null) mutation.validate();
+        }
+    }
+
+    /** Explicit Jira object type and attribute mapping required before outbound mutation can be registered. */
+    public record JiraAssetsMutationProperties(
+            String objectTypeId,
+            String identityAttributeName,
+            String identitySourceField,
+            Map<String, String> attributeIds,
+            int batchSize) {
+        private void validate() {
+            new io.infranexum.adapters.jiraassets.JiraAssetsMutationSettings(
+                    new ConnectorKey("validation.connector"), objectTypeId, identityAttributeName, identitySourceField,
+                    attributeIds, batchSize);
         }
     }
 

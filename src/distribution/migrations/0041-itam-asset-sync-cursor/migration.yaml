@@ -1,0 +1,24 @@
+schema: infranexum.migration/v1
+id: '0041'
+name: itam-asset-sync-cursor
+owner_context: itam
+dependencies:
+- '0040'
+preconditions:
+- itam-asset-lifecycle-created
+postconditions:
+- itam-outbound-keyset-cursor-index-available
+recovery: rerun-additive-index-ddl-after-correcting-database-connectivity
+rollback: drop-sync-cursor-index-without-changing-itam-data
+transactional:
+  postgresql: true
+  oracle: false
+lock: global-migration-lock
+estimated_duration_seconds: 60
+checksums:
+  postgresql.sql: ce79b008f5c67d46bf25c2a880058026b5b8134faaca7d618564fc88689ef778
+  oracle.sql: 5ac441e0230d3b397c8d152de5bcf90ada8f9c6efa0386870ccb27c16101ceef
+  rollback/postgresql.sql: 35745d162092494558a1cfb2ec74c7db9dd16d3197f4e19f545c6a949ccf16d8
+  rollback/oracle.sql: 525e86c8f3980d48ab55aef3eedd94b33e476bbcf8cf37b1abfd9a047f9153b9
+  logical-model.json: 2fa0ef345977123d19eacc1087ee3034db930a1355d96a86d4d8c69cb4e8f414
+  verify.sql.yaml: 9c70808d2e0ff2b496bd0dca5e9ec3e653fd718e75c4b7a8d487515ebb04e95c

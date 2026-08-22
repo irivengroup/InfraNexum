@@ -91,7 +91,8 @@ public final class ConnectorSyncEngine {
         for (int batch = 1; batch <= run.maxBatches(); batch++) {
             ConnectorSyncBatchResult result = Objects.requireNonNull(
                     handler.synchronize(new ConnectorSyncBatchContext(
-                            run.runId(), run.connectorKey(), run.direction(), currentCursor, currentRevision, batch)),
+                            run.runId(), run.connectorKey(), run.direction(), currentCursor, currentRevision, batch,
+                            run.fields(), run.propagateDeletions())),
                     "connector sync handler result");
             if (result.outcome() == ConnectorSyncBatchResult.Outcome.FAILED) {
                 if (result.compensationRequired()) {

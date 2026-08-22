@@ -13,8 +13,8 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-/** Governed Jira Assets Cloud federated-read connector for PGM-10-E06 phase 1. */
-public final class JiraAssetsConnector {
+/** Governed Jira Assets Cloud connector supporting federated reads and explicitly admitted object upserts. */
+public final class JiraAssetsConnector implements JiraAssetsMutationPort {
     private static final int MAX_AQL_LENGTH = 4_096;
     private static final int MAX_TEXT_LENGTH = 1_024;
     private static final int MAX_OFFSET = 1_000_000;
@@ -68,6 +68,99 @@ public final class JiraAssetsConnector {
         JiraAssetsTransport.Response response = execute(uri, "POST", body, true);
         requireSuccessful(response);
         return parsePage(response.body(), offset, limit);
+    }
+
+
+    /** Finds at most one remote object for a deterministic identity AQL. */
+    @Override
+    public java.util.Optional<RemoteObject> findUnique(String aql) {
+        ObjectPage page = search(aql, 0, 2);
+        if (page.total() > 1 || page.items().size() > 1) throw new JiraAssetsIdentityConflictException();
+        return page.items().isEmpty() ? java.util.Optional.empty() : java.util.Optional.of(page.items().getFirst());
+    }
+
+    /** Creates one Jira Assets object using explicit provider attribute identifiers. */
+    @Override
+    public RemoteMutationObject create(String objectTypeId, Map<String, String> attributes) {
+        return writeObject(null, objectTypeId, attributes, "POST", 201);
+    }
+
+    /** Updates one Jira Assets object using explicit provider attribute identifiers. */
+    @Override
+    public RemoteMutationObject update(String objectId, String objectTypeId, Map<String, String> attributes) {
+        if (objectId == null || !objectId.equals(objectId.strip()) || !objectId.matches("^[A-Za-z0-9-]{1,128}$")) {
+            throw new IllegalArgumentException("Jira Assets objectId is invalid");
+        }
+        return writeObject(objectId, objectTypeId, attributes, "PUT", 200);
+    }
+
+    private RemoteMutationObject writeObject(
+            String objectId, String objectTypeId, Map<String, String> attributes, String method, int expectedStatus) {
+        requireEnabled();
+        String normalizedType = providerId(objectTypeId, "objectTypeId");
+        Map<String, String> normalizedAttributes = normalizeMutationAttributes(attributes);
+        List<Map<String, Object>> payloadAttributes = new ArrayList<>();
+        normalizedAttributes.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry ->
+                payloadAttributes.add(Map.of(
+                        "objectTypeAttributeId", entry.getKey(),
+                        "objectAttributeValues", List.of(Map.of("value", entry.getValue())))));
+        byte[] body;
+        try {
+            body = json.writeValueAsBytes(Map.of("objectTypeId", normalizedType, "attributes", payloadAttributes));
+        } catch (JacksonException failure) {
+            throw new JiraAssetsProtocolException("Jira Assets mutation request encoding failed", failure);
+        }
+        URI uri = URI.create(rootUrl + (objectId == null ? "/object/create" : "/object/" + objectId));
+        JiraAssetsTransport.Response response = execute(uri, method, body, true);
+        requireWriteSuccessful(response, expectedStatus);
+        return parseMutationObject(response.body());
+    }
+
+    private static Map<String, String> normalizeMutationAttributes(Map<String, String> attributes) {
+        Objects.requireNonNull(attributes, "attributes");
+        if (attributes.isEmpty() || attributes.size() > 64) {
+            throw new IllegalArgumentException("Jira Assets mutation requires 1..64 attributes");
+        }
+        Map<String, String> normalized = new LinkedHashMap<>();
+        for (Map.Entry<String, String> entry : attributes.entrySet()) {
+            String id = providerId(entry.getKey(), "attribute id");
+            String value = entry.getValue();
+            if (value == null || !value.equals(value.strip()) || value.isEmpty() || value.length() > 4096
+                    || value.chars().anyMatch(Character::isISOControl)) {
+                throw new IllegalArgumentException("Jira Assets mutation attribute value is invalid");
+            }
+            if (normalized.putIfAbsent(id, value) != null) {
+                throw new IllegalArgumentException("duplicate Jira Assets mutation attribute id");
+            }
+        }
+        return Map.copyOf(normalized);
+    }
+
+    private static String providerId(String value, String field) {
+        if (value == null || !value.equals(value.strip()) || !value.matches("^[A-Za-z0-9-]{1,128}$")) {
+            throw new IllegalArgumentException("Jira Assets " + field + " is invalid");
+        }
+        return value;
+    }
+
+    private static void requireWriteSuccessful(JiraAssetsTransport.Response response, int expectedStatus) {
+        int status = response.statusCode();
+        if (status == expectedStatus) return;
+        if (status == 401 || status == 403) throw new JiraAssetsAuthenticationException();
+        if (status == 429) throw new JiraAssetsRateLimitedException();
+        if (status >= 500) throw new JiraAssetsUnavailableException("Jira Assets provider is unavailable");
+        throw new JiraAssetsProtocolException("Jira Assets rejected the mutation request with HTTP " + status);
+    }
+
+    private RemoteMutationObject parseMutationObject(byte[] payload) {
+        final JsonNode root;
+        try {
+            root = json.readTree(payload);
+        } catch (JacksonException failure) {
+            throw new JiraAssetsProtocolException("Jira Assets returned invalid mutation JSON", failure);
+        }
+        if (root == null || !root.isObject()) throw new JiraAssetsProtocolException("Jira Assets returned an invalid mutation object");
+        return new RemoteMutationObject(requiredText(root, "id"));
     }
 
     private JiraAssetsTransport.Response execute(URI uri, String method, byte[] body, boolean jsonBody) {
@@ -158,8 +251,11 @@ public final class JiraAssetsConnector {
 
     private static String normalizeAql(String aql) {
         if (aql == null) throw new IllegalArgumentException("aql is required");
+        if (aql.length() > MAX_AQL_LENGTH || aql.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException("aql must contain 1..4096 printable characters");
+        }
         String normalized = aql.strip();
-        if (normalized.isEmpty() || normalized.length() > MAX_AQL_LENGTH || normalized.chars().anyMatch(Character::isISOControl)) {
+        if (normalized.isEmpty()) {
             throw new IllegalArgumentException("aql must contain 1..4096 printable characters");
         }
         return normalized;
@@ -174,6 +270,9 @@ public final class JiraAssetsConnector {
 
     /** Minimized remote object projection; attributes remain at the provider until explicitly modeled later. */
     public record RemoteObject(String id, String globalId, String objectKey, String label, String objectTypeId, String objectTypeName) {}
+
+    /** Minimized response from a successful create/update operation. */
+    public record RemoteMutationObject(String id) {}
 
     /** Provider page preserving remote pagination while exposing a stable next-offset contract. */
     public record ObjectPage(List<RemoteObject> items, int startAt, int maxResults, int total, Integer nextOffset) {

@@ -132,7 +132,55 @@ class JiraAssetsConnectorTest {
         assertThrows(JiraAssetsProtocolException.class, () -> connector(tooManyValues).search("x", 0, 1));
     }
 
-    private static JiraAssetsConnector connector(RecordingTransport transport) {
+
+    @Test
+    void governedWritesUseCreateAndUpdateContractsAndIdentityLookupIsUnique() {
+        SequencedTransport transport = new SequencedTransport(List.of(
+                response(200, "{\"startAt\":0,\"maxResults\":2,\"total\":0,\"values\":[]}"),
+                response(201, "{\"id\":\"101\"}"),
+                response(200, "{\"id\":\"101\"}")));
+        JiraAssetsConnector connector = connector(transport);
+
+        assertTrue(connector.findUnique("objectTypeId = \"23\" AND \"InfraNexum ID\" = \"018f\"").isEmpty());
+        assertEquals("101", connector.create("23", Map.of("144", "HARDWARE", "135", "018f")).id());
+        assertEquals("101", connector.update("101", "23", Map.of("135", "018f", "144", "HARDWARE")).id());
+
+        assertEquals("POST", transport.requests.get(0).method());
+        assertTrue(transport.requests.get(0).uri().getPath().endsWith("/v1/object/aql"));
+        assertEquals("POST", transport.requests.get(1).method());
+        assertTrue(transport.requests.get(1).uri().getPath().endsWith("/v1/object/create"));
+        assertEquals("PUT", transport.requests.get(2).method());
+        assertTrue(transport.requests.get(2).uri().getPath().endsWith("/v1/object/101"));
+        var create = JSON.readTree(transport.requests.get(1).body());
+        assertEquals("23", create.get("objectTypeId").textValue());
+        assertEquals("135", create.get("attributes").get(0).get("objectTypeAttributeId").textValue());
+        assertEquals("018f", create.get("attributes").get(0).get("objectAttributeValues").get(0).get("value").textValue());
+
+        SequencedTransport conflict = new SequencedTransport(List.of(response(200,
+                "{\"startAt\":0,\"maxResults\":2,\"total\":2,\"values\":["
+                        + "{\"id\":\"1\",\"globalId\":\"g1\",\"objectKey\":\"A-1\",\"label\":\"A\",\"objectType\":{\"id\":\"23\",\"name\":\"Asset\"}},"
+                        + "{\"id\":\"2\",\"globalId\":\"g2\",\"objectKey\":\"A-2\",\"label\":\"B\",\"objectType\":{\"id\":\"23\",\"name\":\"Asset\"}}]}")));
+        assertThrows(JiraAssetsIdentityConflictException.class,
+                () -> connector(conflict).findUnique("objectTypeId = \"23\""));
+    }
+
+    @Test
+    void mutationInputsAndProviderStatusesFailClosedBeforeReturningPartialSuccess() {
+        assertThrows(IllegalArgumentException.class, () -> connector(new RecordingTransport(response(201, "{\"id\":\"1\"}")))
+                .create("23/unsafe", Map.of("135", "x")));
+        assertThrows(IllegalArgumentException.class, () -> connector(new RecordingTransport(response(201, "{\"id\":\"1\"}")))
+                .create("23", Map.of("135", " x ")));
+        assertThrows(IllegalArgumentException.class, () -> connector(new RecordingTransport(response(200, "{\"id\":\"1\"}")))
+                .update("bad/id", "23", Map.of("135", "x")));
+        assertThrows(JiraAssetsRateLimitedException.class, () -> connector(new RecordingTransport(response(429, "{}")))
+                .create("23", Map.of("135", "x")));
+        assertThrows(JiraAssetsUnavailableException.class, () -> connector(new RecordingTransport(response(503, "{}")))
+                .update("101", "23", Map.of("135", "x")));
+        assertThrows(JiraAssetsProtocolException.class, () -> connector(new RecordingTransport(response(200, "{}")))
+                .create("23", Map.of("135", "x")));
+    }
+
+    private static JiraAssetsConnector connector(JiraAssetsTransport transport) {
         return new JiraAssetsConnector(SETTINGS, transport,
                 reference -> "abcdefghijklmnopqrstuvwxyz0123456789".getBytes(StandardCharsets.UTF_8), JSON);
     }
@@ -143,6 +191,19 @@ class JiraAssetsConnectorTest {
 
     private static JiraAssetsTransport.Response response(int status, String body) {
         return new JiraAssetsTransport.Response(status, Map.of(), body.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static final class SequencedTransport implements JiraAssetsTransport {
+        private final java.util.ArrayDeque<JiraAssetsTransport.Response> responses;
+        private final List<JiraAssetsTransport.Request> requests = new ArrayList<>();
+        private SequencedTransport(List<JiraAssetsTransport.Response> responses) {
+            this.responses = new java.util.ArrayDeque<>(responses);
+        }
+        @Override public JiraAssetsTransport.Response execute(JiraAssetsTransport.Request request) {
+            requests.add(request);
+            if (responses.isEmpty()) throw new AssertionError("unexpected Jira Assets request");
+            return responses.removeFirst();
+        }
     }
 
     private static final class RecordingTransport implements JiraAssetsTransport {

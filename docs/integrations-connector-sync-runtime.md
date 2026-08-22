@@ -2,7 +2,7 @@
 
 ## Scope
 
-This phase turns Connector Governance into an executable, provider-neutral synchronization runtime. It provides durable runs, revisioned checkpoints, bounded batch execution, pause/resume, active-run fencing and governed compensation. It does **not** activate mutating synchronization for Jira Assets or ServiceNow: their current policies remain `FEDERATED_READ / EXTERNAL`, and no mutating handler is registered for either provider.
+The provider-neutral synchronization runtime provides durable runs, revisioned checkpoints, bounded batch execution, pause/resume, active-run fencing and governed compensation. PGM-10-E06 phase 6 adds the first provider implementation on top of it: an ITAM → Jira Assets OUTBOUND upsert handler admitted only by exact Jira mutation mapping and `INFRANEXUM/PREFER_AUTHORITY/IGNORE/MANUAL` governance. ServiceNow remains without a mutating handler.
 
 The runtime implements the roadmap requirements for cursor-based resume, idempotence, deduplication and checkpoints without claiming exactly-once execution.
 
@@ -59,12 +59,7 @@ A successful compensation appends a new `COMPENSATION` checkpoint whose cursor r
 
 `ConnectorSyncHandlerRegistry` is the only execution bridge to provider-specific mutation code. Startup validation rejects a registered handler whose connector governance policy is not mutating.
 
-Consequently, the current production configuration has no mutating handler for:
-
-- Jira Assets;
-- ServiceNow.
-
-Both providers remain federated read-only. A future handler can be registered only after its direction, field authority, conflict strategy, deletion semantics and rollback strategy are explicitly governed and tested.
+`ConfiguredJiraAssetsSyncHandlerCatalog` is the only current provider-specific mutating catalog. It registers a handler only when the Jira provider is enabled, an explicit mutation mapping exists, persistence is PostgreSQL/Oracle, execution is enabled and direction/authority/conflict/deletion/rollback/field mappings match exactly. ServiceNow remains federated read-only and has no mutating catalog.
 
 ## API and RBAC
 
@@ -94,7 +89,7 @@ Execute, resume and compensate are audited with actor and correlation context. O
 
 ## Web behavior
 
-The Integrations workspace displays synchronization runs and checkpoint hashes. Mutating execution is enabled only for connectors whose governance direction is `INBOUND`, `OUTBOUND` or `BIDIRECTIONAL`; with the current Jira Assets and ServiceNow policies, the UI remains explicitly read-only.
+The Integrations workspace displays synchronization runs and checkpoint hashes. Mutating execution is offered only for policies whose direction is mutating and whose execution admission is enabled. A correctly configured Jira OUTBOUND policy can therefore execute through the generic Sync UI; provider-specific Jira and ServiceNow workspaces remain read-only.
 
 Resume and compensation require the operator reason field. Browser requests are same-origin, CSRF-protected for mutations and use `Idempotency-Key`. Provider bearer tokens, secret references and raw cursors never reach the browser.
 
@@ -106,7 +101,7 @@ The synchronization repository, engine, operations service and HTTP controller a
 
 A safe test plan is:
 
-1. start with zero mutating handlers and verify Jira Assets/ServiceNow execution is unavailable;
+1. start with no Jira mutation mapping and verify Jira Assets/ServiceNow execution is unavailable;
 2. verify run/checkpoint collections are authorization-gated and secret-free;
 3. in a test-only approved handler, execute multiple batches and verify monotonic checkpoints;
 4. interrupt after a checkpoint and verify resume continues from the persisted cursor;
@@ -119,6 +114,6 @@ A safe test plan is:
 
 ## Remaining PGM-10-E06 work
 
-This phase delivers the durable execution/checkpoint/compensation engine, but PGM-10-E06 remains **EN COURS**. Remaining work includes provider-specific mutating field-authority contracts and handlers where explicitly authorized, controlled deletion propagation, end-to-end live provider certification, and OpenService once an authoritative provider/API contract exists.
+The runtime plus the first governed Jira OUTBOUND handler are implemented, but PGM-10-E06 remains **EN COURS**. Remaining work includes Jira inbound/bidirectional contracts if required, ServiceNow mutation only after explicit authority/rollback design, controlled remote deletion propagation, end-to-end live provider certification, and OpenService once an authoritative provider/API contract exists.
 
 PGM-10-E05 also remains formally open until its exact hosted JDK25/JaCoCo and PostgreSQL 17/18 gates are proven.

@@ -1,3 +1,21 @@
+# InfraNexum 2.0.0-alpha.0.128 — PGM-10-E06 phase 6: governed ITAM → Jira Assets outbound upsert
+
+**Statut : NON TERMINÉ.** Cette tranche active le premier handler fournisseur mutateur uniquement derrière le moteur de gouvernance et de synchronisation livré dans les phases précédentes. La source canonique reste ITAM ; Jira Assets n'est jamais admis comme autorité pour ce flux.
+
+**Implémentation :** lecture ITAM incrémentale par tuple stable `(updated_at, UUID)` ; migration additive `0041` PostgreSQL/Oracle pour l'index de continuation ; projection limitée aux champs gouvernés ; mapping Jira strict `champ ITAM -> attributeId` ; résolution AQL d'une identité distante unique ; création si aucun objet n'existe, mise à jour si exactement un objet existe, conflit fail-closed au-delà ; transport HTTP `PUT` ajouté au port Jira. L'enregistrement du handler exige simultanément `OUTBOUND`, `INFRANEXUM`, `PREFER_AUTHORITY`, `IGNORE`, `MANUAL`, `executionEnabled=true` et l'égalité exacte entre les champs gouvernés et le mapping fournisseur. Les suppressions distantes ne sont pas propagées. Un `429/5xx` reste rejouable via le checkpoint durable ; une erreur permanente après écriture demande une compensation manuelle. ServiceNow reste sans handler mutateur et OpenService n'est pas inventé faute de contrat fournisseur faisant autorité dans `draft.21`.
+
+**EXÉCUTÉ — JDK25/Maven/JUnit :** Oracle JDK **25.0.4.1 LTS**, Maven **3.9.16** et repository offline ; reactor **22/22 `test-compile` SUCCESS**. Exécution Jupiter isolée module par module : **879 tests découverts, 855 réussis, 0 échec, 24 abortés conditionnellement** car ils exigent PostgreSQL live. Les deux assertions DCIM de baseline incompatibles avec le comportement déjà implémenté (pagination de trois ports et modèles sans template de port) ont été réalignées sans modification du domaine.
+
+**ÉCHOUÉ — JaCoCo Java :** le seuil inchangé **98 % lignes + 98 % branches** n'est pas atteint. Le premier module `core-contracts` mesure environ **84 % lignes / 68 % branches** ; les mesures des modules directement touchés restent également sous 98 %. Le seuil n'est ni abaissé ni exclu. `mvn verify` reste donc rouge même si les tests fonctionnels exécutés réussissent.
+
+**NON EXÉCUTÉ — PostgreSQL 17/18 live :** ce runner ne fournit ni `psql`, ni Docker, ni instance PostgreSQL autorisée. Les **24** tests JDBC live sont donc explicitement abortés par leur précondition et ne sont pas comptés comme réussis. La CI PostgreSQL 17/18 reste obligatoire.
+
+**EXÉCUTÉ — autres gates :** Web **249/249**, couverture **99,78 % lignes / 98,60 % branches / 100 % fonctions**, smoke `passed`; Compose **69/69**; Agent Go **1.26.5** `vet` + `test -race`, couverture **98,4 %**, build statique réussi; migrations **118/118**, zéro violation; toolchains **25/25**, zéro violation; SDK Python **19/19**, couverture **99 %**, wheel reproductible; API plain unit **48/48**, checker direct **15 fragments / 201 opérations / dette 0/0/0/0**; Architecture-as-Code `PASS` sur le snapshot nettoyé. La campagne API/Architecture instrumentée complète post-bump dépasse la fenêtre de ce runner ; les contrôles fonctionnels et checkers correspondants restent verts; Source Integrity strict **45/45**, couverture **100 %**, **0 violation**, avec **1 595 fichiers suivis / 1 594 checksums Git / 1 593 chemins canoniques**; Archive Compatibility **12/12**, couverture **100 %**, **0 violation** sur l’archive Git du snapshot committé.
+
+**Roadmap :** PGM-10-E05 reste formellement **NON TERMINÉ** tant que JaCoCo 98/98 et PostgreSQL 17/18 live ne passent pas. PGM-10-E06 reste **EN COURS** : Jira Assets possède désormais un flux OUTBOUND gouverné, mais ServiceNow n'a pas de mutation activée et OpenService attend toujours un contrat produit/API/authentification/schéma faisant autorité.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.127 — ReDoc/DCIM/Integrations Web corrective
 
 ## 2.0.0-alpha.0.127

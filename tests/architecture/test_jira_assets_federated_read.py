@@ -1,4 +1,4 @@
-"""Architecture regressions for PGM-10-E06 Jira Assets federated read."""
+"""Architecture regressions for governed Jira Assets read and outbound synchronization."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ import yaml
 
 
 class JiraAssetsFederatedReadArchitectureTest(unittest.TestCase):
-    """Keep the Jira Assets slice read-only, secret-safe, bounded and capability-gated."""
+    """Keep Jira federated read safe while admitting only explicitly governed outbound writes."""
 
     ROOT = Path(__file__).resolve().parents[2]
     ADAPTER = ROOT / "src/components/adapters/jira-assets"
@@ -34,29 +34,37 @@ class JiraAssetsFederatedReadArchitectureTest(unittest.TestCase):
         self.assertNotIn("infranexum-domain-rsot", adapter_pom)
         self.assertNotIn("infranexum-domain-itam", adapter_pom)
 
-    def test_provider_boundary_is_fixed_https_redirect_free_and_bounded(self) -> None:
+    def test_provider_boundary_is_fixed_https_redirect_free_bounded_and_supports_governed_put(self) -> None:
         connector = (self.ADAPTER / "main/io/infranexum/adapters/jiraassets/JiraAssetsConnector.java").read_text(encoding="utf-8")
         transport = (self.ADAPTER / "main/io/infranexum/adapters/jiraassets/JdkJiraAssetsTransport.java").read_text(encoding="utf-8")
         request_contract = (self.ADAPTER / "main/io/infranexum/adapters/jiraassets/JiraAssetsTransport.java").read_text(encoding="utf-8")
 
         self.assertIn('"https://api.atlassian.com/ex/jira/"', connector)
         self.assertIn('"/object/aql?startAt="', connector)
+        self.assertIn('"/object/create"', connector)
+        self.assertIn('"/object/" + objectId', connector)
         self.assertNotIn("navlist/aql", connector)
         self.assertIn("includeAttributes=false", connector)
         self.assertIn("HttpClient.Redirect.NEVER", transport)
         self.assertIn("DEFAULT_MAX_RESPONSE_BYTES = 2_097_152", transport)
         self.assertIn("maximumResponseBytes + 1", transport)
+        self.assertIn('method.equals("PUT")', request_contract)
         self.assertIn('!"https".equalsIgnoreCase(uri.getScheme())', request_contract)
         self.assertIn('!"api.atlassian.com".equalsIgnoreCase(uri.getHost())', request_contract)
 
-    def test_governance_is_external_authority_federated_read_only(self) -> None:
+    def test_read_defaults_remain_external_while_mutation_requires_explicit_mapping(self) -> None:
         settings = (self.ADAPTER / "main/io/infranexum/adapters/jiraassets/JiraAssetsSettings.java").read_text(encoding="utf-8")
+        mutation = (self.ADAPTER / "main/io/infranexum/adapters/jiraassets/JiraAssetsMutationSettings.java").read_text(encoding="utf-8")
         connector = (self.ADAPTER / "main/io/infranexum/adapters/jiraassets/JiraAssetsConnector.java").read_text(encoding="utf-8")
+        handler = (self.ADAPTER / "main/io/infranexum/adapters/jiraassets/JiraAssetsSyncHandler.java").read_text(encoding="utf-8")
 
         self.assertIn('DIRECTION = "FEDERATED_READ"', settings)
         self.assertIn('AUTHORITY = "EXTERNAL"', settings)
         self.assertIn('startsWith("env:")', settings)
         self.assertIn('startsWith("file:")', settings)
+        self.assertIn('identitySourceField must be id', mutation)
+        self.assertIn('settings.attributeIds()', handler)
+        self.assertIn('ConnectorSyncDirection.OUTBOUND', handler)
         self.assertIn("Arrays.fill(credential, (byte) 0)", connector)
         self.assertIn("record RemoteObject(String id, String globalId, String objectKey, String label, String objectTypeId, String objectTypeName)", connector)
         self.assertNotIn("record RemoteObject(String id, String globalId, String objectKey, String label, String attributes", connector)

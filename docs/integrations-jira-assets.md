@@ -1,40 +1,46 @@
-# Jira Assets integration — PGM-10-E06 phase 1
+# Jira Assets integration — PGM-10-E06 phase 6
 
 ## Scope and authority
 
-`2.0.0-alpha.0.108` introduced the first provider-specific slice of PGM-10-E06. The connector is deliberately **federated read only**:
+Jira Assets remains **federated read by default**. A connector without an explicit mutation mapping and matching active governance policy is still `FEDERATED_READ / EXTERNAL / REJECT / IGNORE / NONE_REQUIRED` with synchronization execution disabled.
 
-- provider: `jira-assets`;
-- direction: `FEDERATED_READ`;
-- authority: `EXTERNAL`;
-- local write authority: none;
-- local persistence of remote objects: none;
-- remote deletion propagation: not applicable in this phase because no provider object is copied locally.
+Phase 6 adds one deliberately narrow mutating path: **ITAM asset → Jira Assets upsert**. It is admitted only when all of the following are true for the same connector key:
 
-This implements the INT-ADV-003 requirement for federated read without copy while preserving the INT-ADV-007 authority boundary. It does not claim bidirectional synchronization. `alpha.0.122` can prepare a provider-neutral field-authority/rollback mapping with execution disabled; Jira Assets still has no approved mutating handler, so provider mutation remains impossible.
+- provider connector is enabled;
+- a Jira mutation mapping exists;
+- governance `direction=OUTBOUND`;
+- object authority is `INFRANEXUM`;
+- conflict strategy is `PREFER_AUTHORITY`;
+- deletion policy is `IGNORE`;
+- rollback strategy is `MANUAL`;
+- `execution-enabled=true`;
+- every governed field is `INFRANEXUM`-authoritative;
+- the governed field set exactly equals the configured Jira attribute mapping.
+
+Any mismatch fails Server composition. ServiceNow has no mutating handler in this phase. OpenService is not fabricated because the current roadmap sources name it without defining an authoritative provider/API contract.
 
 ## Provider protocol
 
-The native adapter targets Jira Service Management Assets Cloud through the fixed Atlassian API host `https://api.atlassian.com`.
+The adapter is restricted to `https://api.atlassian.com`. Federated read uses `POST /object/aql` and projects only minimal object metadata. The governed outbound path uses the provider object endpoints:
 
-Health uses the object-schema list API with a one-item page. Object search uses the current `POST /object/aql` contract with `startAt`, `maxResults` and `includeAttributes=false`. The deprecated navlist AQL route is intentionally not used.
+- `POST /object/create` for a missing remote identity;
+- `PUT /object/{id}` for an existing unique remote identity.
 
-Only the following remote object metadata is projected to callers:
+Before every write, InfraNexum searches by the immutable local asset UUID. The configured `identity-source-field` is therefore restricted to `id`; arbitrary operator-selected free-text identity fields are not accepted at this boundary.
 
-- object id;
-- global id;
-- object key;
-- label;
-- object type id;
-- object type name.
+The mutation payload contains `objectTypeId` and provider attribute IDs from explicit configuration. Provider attribute IDs, object type IDs and local field names are validated before any remote request. Remote provider attributes are still not exposed through the federated-read API.
 
-Provider attributes are intentionally excluded. This minimizes transferred data and prevents an implicit field-authority model from appearing before it is specified.
+## Incremental source and checkpoint semantics
 
-The connector expects an authorization token whose effective Jira scopes permit the operations used. The schema health operation requires Assets schema read access; AQL search requires Assets object read access. Token issuance/consent remains an operator responsibility and must follow the Atlassian application model selected for the deployment.
+The outbound source reads `infranexum_itam.asset` through a stable keyset ordered by `(updated_at, id)`. Migration `0041-itam-asset-sync-cursor` adds the supporting PostgreSQL/Oracle index without changing asset data.
+
+The durable cursor is `updated_at|UUIDv7`. The source never uses offset pagination and projects only the governed fields required by the Jira mapping. A successful batch returns the last `(updated_at, id)` pair to the provider-neutral synchronization engine, which persists the normal revisioned checkpoint.
+
+Deletion propagation is intentionally unsupported for this first mutator. A batch context with `propagateDeletions=true` is rejected by the handler, and a deleted outbound record is never converted into a Jira delete operation.
 
 ## Configuration
 
-The Server configuration is externalized under `infranexum.integrations.jira-assets`. No connector is configured by default.
+No Jira connector or mutation mapping is configured by default. A complete example is:
 
 ```yaml
 infranexum:
@@ -43,95 +49,75 @@ infranexum:
     jira-assets:
       maximum-response-bytes: 2097152
       connectors:
-        jira-assets.prod:
-          cloud-id: "<atlassian-cloud-id>"
-          workspace-id: "<assets-workspace-id>"
-          bearer-token-reference: "file:/run/secrets/jira_assets_oauth_token"
+        jira-prod:
+          cloud-id: example-cloud
+          workspace-id: example-workspace
+          bearer-token-reference: file:/run/secrets/jira-assets-token
           request-timeout: PT15S
           enabled: true
+          mutation:
+            object-type-id: "23"
+            identity-attribute-name: "InfraNexum ID"
+            identity-source-field: id
+            batch-size: 50
+            attribute-ids:
+              id: "135"
+              asset_type: "144"
+    governance:
+      jira-prod:
+        direction: OUTBOUND
+        authority: INFRANEXUM
+        conflict-strategy: PREFER_AUTHORITY
+        deletion-policy: IGNORE
+        rollback-strategy: MANUAL
+        execution-enabled: true
+        fields:
+          id: INFRANEXUM
+          asset_type: INFRANEXUM
 ```
 
-The angle-bracket values above are configuration examples, not shipped defaults. Real identifiers and tokens must be provided outside source control. `bearer-token-reference` accepts only `env:NAME` or `file:/absolute/path`.
+The identifiers are examples only. Real tenant identifiers, object type IDs, attribute IDs and tokens belong to deployment configuration, never source control. `bearer-token-reference` accepts only `env:NAME` or `file:/absolute/path`.
 
-For the Web, publication is independently controlled with:
-
-```text
-INFRANEXUM_WEB_INTEGRATIONS_CONNECTORS_ENABLED=true
-```
-
-The browser receives only the boolean capability publication. Jira tenant identifiers and provider credentials remain Server-side.
+The field mapping is exact: adding a governed field without a corresponding Jira attribute, or configuring an attribute that is not governed, prevents startup rather than silently dropping data.
 
 ## Security boundaries
 
 The adapter enforces:
 
-- absolute HTTPS URI;
-- exact egress host `api.atlassian.com`;
-- no HTTP redirect following;
-- GET/POST methods only;
-- request timeout in `(0 s, 60 s]`;
-- default response limit 2 MiB, configurable up to 8 MiB;
-- AQL length 1..4,096 printable characters;
-- offset 0..1,000,000 and page size 1..200;
-- defensive copies around transport buffers;
-- external secret resolution only;
-- zeroing of the resolved bearer-token byte buffer after each request;
-- generic public errors for authentication, throttling, provider unavailability and protocol failures.
+- absolute HTTPS and exact egress host `api.atlassian.com`;
+- redirects disabled;
+- only GET/POST/PUT transport methods;
+- bounded request timeout and response size;
+- bounded AQL length and printable content, with control characters rejected before whitespace normalization;
+- external secret resolution only and zeroing of resolved bearer-token buffers;
+- bounded mutation mapping and provider identifiers;
+- UUIDv7 local identity for write reconciliation;
+- no browser/provider credential crossover;
+- generic public provider errors that do not reflect remote payloads.
 
-The Web client uses the authenticated InfraNexum session and CSRF token for POST AQL requests. It never constructs an Atlassian `Authorization` header.
+The Web continues to call only InfraNexum APIs using same-origin session and CSRF protections. It never constructs an Atlassian `Authorization` header.
 
-## API surface
+## Failure, retry and rollback behavior
 
-The Server publishes:
+InfraNexum does not claim exactly-once provider execution. The upsert is designed for safe replay: after an uncertain outcome, the next attempt searches the immutable local UUID before deciding create versus update.
 
-- `GET /api/v1/integrations/providers/jira-assets?offset=&limit=` — configured connector catalogue;
-- `GET /api/v1/integrations/providers/jira-assets/{connectorKey}/health` — provider health probe;
-- `POST /api/v1/integrations/providers/jira-assets/{connectorKey}/objects/search?offset=&limit=` — federated AQL search.
+- `429`, provider `5xx` and transport unavailability are retryable; the run pauses and **does not** request compensation, even if earlier records in that batch were written.
+- permanent provider or mapping failures fail the run; if an earlier record was already written, `compensationRequired=true`.
+- because this phase is governed with `rollback-strategy=MANUAL`, no automatic remote inverse mutation is fabricated. Operator compensation is explicit.
+- remote deletion is never attempted.
 
-All three operations require:
+The rollback procedure for an operational incident is to disable execution or the connector, preserve the durable checkpoints, inspect Jira objects by the InfraNexum identity attribute, and perform the approved manual correction. Revoking the provider token remains appropriate when retiring the integration.
 
-- capability `integrations.connectors`;
-- permission `integrations.connector.read`.
+## API and Web surface
 
-The two collection/search operations expose the standard InfraNexum offset-pagination contract. The AQL POST is semantically read-only and repeatable; it is CSRF-protected for browser sessions but does not require a mutation idempotency key.
+The existing provider-specific HTTP surface remains read-only:
 
-## Failure and offline behavior
+- `GET /api/v1/integrations/providers/jira-assets`;
+- `GET /api/v1/integrations/providers/jira-assets/{connectorKey}/health`;
+- `POST /api/v1/integrations/providers/jira-assets/{connectorKey}/objects/search`.
 
-A provider failure never causes a local fallback write or stale implicit synchronization:
+Outbound mutation is not exposed as a new Jira-specific endpoint. It runs only through the generic governed synchronization operations (`execute`, `resume`, `compensate`) and their existing RBAC/idempotency boundary.
 
-- 401/403 -> authentication failure;
-- 429 -> rate-limited failure;
-- 5xx/network interruption -> unavailable failure;
-- malformed/unexpected payload -> protocol failure;
-- disabled connector -> unavailable failure.
+## Remaining PGM-10-E06 work
 
-No automatic retry loop is introduced in this synchronous federated-read phase. The operator/caller receives an explicit failure and may retry according to the calling workflow. This avoids converting provider throttling or an outage into unbounded load.
-
-An air-gapped deployment can keep the adapter installed while leaving every Jira Assets connector disabled/unconfigured. The absence of SaaS reachability therefore does not prevent InfraNexum startup.
-
-## Rollback
-
-Rollback is configuration-only because this phase persists no Jira object locally:
-
-1. set the affected connector `enabled: false`, or remove its connector definition;
-2. restart/reload according to the normal Server configuration deployment procedure;
-3. verify the connector is absent/disabled through the catalogue and that no Jira Assets requests are emitted;
-4. revoke the provider token at the issuer when retiring the integration.
-
-No RSOT/ITAM data rollback is required because this phase performs no local import or mutation.
-
-## Non-goals of phase 1
-
-This candidate does not implement:
-
-- Jira Assets write-back;
-- provider-specific transformations or executable import mappings;
-- local object import;
-- bidirectional synchronization;
-- provider webhooks for Jira Assets;
-- executable provider-specific conflict resolution;
-- ServiceNow;
-- OpenService;
-- notification connectors.
-
-Those capabilities remain subsequent PGM-10-E06 work and must reuse the existing connector SDK/runtime governance rather than bypass it.
+This phase does not implement bidirectional Jira synchronization, inbound Jira import, provider webhooks, remote deletion propagation, ServiceNow mutation or OpenService. Those require their own explicit authority, identity, conflict and rollback contracts before a mutating handler can be registered.

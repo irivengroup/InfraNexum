@@ -81,3 +81,5 @@ entries:
   path: 0039-identity-access-integration-sync-permissions/migration.yaml
 - id: '0040'
   path: 0040-dcim-equipment-taxonomy-cable-metadata/migration.yaml
+- id: '0041'
+  path: 0041-itam-asset-sync-cursor/migration.yaml

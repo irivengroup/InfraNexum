@@ -40,7 +40,7 @@ public final class JdkJiraAssetsTransport implements JiraAssetsTransport {
         request.headers().forEach(builder::header);
         byte[] body = request.body();
         if (request.method().equals("GET")) builder.GET();
-        else builder.POST(HttpRequest.BodyPublishers.ofByteArray(body));
+        else builder.method(request.method(), HttpRequest.BodyPublishers.ofByteArray(body));
         try {
             HttpResponse<InputStream> response = sender.send(builder.build());
             try (InputStream stream = Objects.requireNonNull(response.body(), "response body")) {

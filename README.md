@@ -1,3 +1,19 @@
+# InfraNexum 2.0.0-alpha.0.128 — PGM-10-E06 governed ITAM → Jira Assets synchronization
+
+**InfraNexum — Infrastructure Control & Governance Platform**
+
+`alpha.0.128` advances PGM-10-E06 with the first provider mutation path admitted by the existing connector-governance runtime. Jira Assets remains federated/read-only by default; mutation is registered only when the active connector policy and the provider mapping agree exactly.
+
+- **Source and checkpoint:** canonical ITAM assets are read incrementally using the durable `(updated_at, UUID)` continuation tuple; paired migration `0041` adds the supporting PostgreSQL/Oracle index without changing asset semantics.
+- **Jira Assets:** a governed identity attribute is queried by bounded AQL; zero matches create an object, one match updates it, and duplicate identities fail closed. `POST /object/create` and `PUT /object/{id}` are the only mutating provider operations in this tranche.
+- **Governance:** execution requires `OUTBOUND + INFRANEXUM + PREFER_AUTHORITY + IGNORE + MANUAL`, `executionEnabled=true`, and an exact equality between governed fields and the configured Jira attribute mapping. Remote deletion is never propagated.
+- **Recovery:** transient `429/5xx` failures are replayable through the durable batch/checkpoint runtime; permanent failures after an acknowledged write require manual compensation rather than an invented provider rollback.
+- **Boundaries:** ServiceNow remains read-only. OpenService is not invented because the `draft.21` roadmap does not define an authoritative provider API/authentication/schema contract. No public API operation, capability or RBAC permission is added.
+
+The functional Java suite executes under JDK 25 with the offline dependency repository; the unchanged Java JaCoCo 98% line/branch gate and live PostgreSQL 17/18 qualification remain release gates. Detailed evidence is recorded in `docs/implementation-status.md` and `src/distribution/release-manifest.json`. PGM-10-E05 therefore remains formally **NON TERMINÉ**, and PGM-10-E06 remains **EN COURS**.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.127 — ReDoc/DCIM/Integrations Web corrective
 
 **InfraNexum — Infrastructure Control & Governance Platform**

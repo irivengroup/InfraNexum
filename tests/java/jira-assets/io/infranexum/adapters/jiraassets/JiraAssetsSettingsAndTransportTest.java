@@ -60,6 +60,8 @@ class JiraAssetsSettingsAndTransportTest {
         byte[] copy = request.body();
         copy[1] = 9;
         assertArrayEquals(new byte[] {1, 2}, request.body());
+        assertDoesNotThrow(() -> new JiraAssetsTransport.Request(
+                URI.create("https://api.atlassian.com/path"), "PUT", Map.of(), new byte[] {5}, Duration.ofSeconds(1)));
 
         byte[] responseBody = {3, 4};
         JiraAssetsTransport.Response response = new JiraAssetsTransport.Response(200, Map.of("x", List.of("y")), responseBody);

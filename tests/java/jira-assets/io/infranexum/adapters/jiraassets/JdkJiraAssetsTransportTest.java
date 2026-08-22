@@ -25,7 +25,7 @@ class JdkJiraAssetsTransportTest {
     }
 
     @Test
-    void sendsGetAndPostAndBuffersWithinConfiguredLimit() {
+    void sendsGetPostAndPutAndBuffersWithinConfiguredLimit() {
         HttpRequest[] sent = new HttpRequest[1];
         JdkJiraAssetsTransport transport = new JdkJiraAssetsTransport(req -> {
             sent[0] = req;
@@ -43,6 +43,9 @@ class JdkJiraAssetsTransportTest {
         }, 10);
         post.execute(request("POST", new byte[] {1, 2, 3}));
         assertEquals("POST", sent[0].method());
+        assertTrue(sent[0].bodyPublisher().isPresent());
+        post.execute(request("PUT", new byte[] {4, 5}));
+        assertEquals("PUT", sent[0].method());
         assertTrue(sent[0].bodyPublisher().isPresent());
     }
 

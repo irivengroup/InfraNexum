@@ -101,7 +101,7 @@ final class DcimPhysicalDomainCoverageTest {
         assertThrows(IllegalArgumentException.class, () -> model(1, 482, 800, null, List.of(template), null));
         assertThrows(IllegalArgumentException.class, () -> model(1, 482, 800, BigDecimal.ZERO, List.of(template), null));
         assertThrows(NullPointerException.class, () -> model(1, 482, 800, BigDecimal.ONE, null, null));
-        assertThrows(IllegalArgumentException.class, () -> model(1, 482, 800, BigDecimal.ONE, List.of(), null));
+        assertTrue(model(1, 482, 800, BigDecimal.ONE, List.of(), null).portTemplates().isEmpty());
         PortTemplate huge = new PortTemplate("p", 512, PortKind.OTHER, "other", "other");
         assertThrows(IllegalArgumentException.class,
                 () -> model(1, 482, 800, BigDecimal.ONE, List.of(huge, huge, huge, huge, huge), null));

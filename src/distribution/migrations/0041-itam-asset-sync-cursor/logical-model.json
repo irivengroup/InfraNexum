@@ -1,0 +1,1 @@
+{"context":"itam","objects":[{"name":"asset","authority":"itam","indexes":["updated_at,id"]}],"invariants":["outbound synchronization cursor orders by updated_at then UUID","migration is additive and does not change ITAM asset authority","rollback removes only the synchronization performance index"]}

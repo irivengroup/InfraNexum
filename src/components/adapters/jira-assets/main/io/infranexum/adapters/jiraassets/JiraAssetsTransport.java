@@ -23,7 +23,7 @@ public interface JiraAssetsTransport {
             if (!uri.isAbsolute() || !"https".equalsIgnoreCase(uri.getScheme()) || !"api.atlassian.com".equalsIgnoreCase(uri.getHost())) {
                 throw new IllegalArgumentException("Jira Assets transport is restricted to https://api.atlassian.com");
             }
-            if (!(method.equals("GET") || method.equals("POST"))) throw new IllegalArgumentException("unsupported Jira Assets HTTP method");
+            if (!(method.equals("GET") || method.equals("POST") || method.equals("PUT"))) throw new IllegalArgumentException("unsupported Jira Assets HTTP method");
         }
         @Override public byte[] body() { return Arrays.copyOf(body, body.length); }
     }

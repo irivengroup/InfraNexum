@@ -1,0 +1,6 @@
+schema: infranexum.migration-verification/v1
+checks:
+- id: itam-asset-sync-cursor-index
+  postgresql: "SELECT COUNT(*) FROM pg_indexes WHERE schemaname='infranexum_itam' AND tablename='asset' AND indexname='ix_inx_itam_asset_sync_cursor'"
+  oracle: "SELECT COUNT(*) FROM user_indexes WHERE table_name='INFRANEXUM_ITAM_ASSET' AND index_name='IX_INX_ITAM_ASSET_SYNC'"
+  expected: 1

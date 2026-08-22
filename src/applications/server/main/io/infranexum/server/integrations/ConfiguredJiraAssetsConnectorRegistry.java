@@ -29,8 +29,11 @@ final class ConfiguredJiraAssetsConnectorRegistry {
     }
 
     JiraAssetsConnector require(String connectorKey) {
-        ConnectorKey key = new ConnectorKey(connectorKey);
-        JiraAssetsConnector connector = connectors.get(key);
+        return require(new ConnectorKey(connectorKey));
+    }
+
+    JiraAssetsConnector require(ConnectorKey key) {
+        JiraAssetsConnector connector = connectors.get(Objects.requireNonNull(key, "connectorKey"));
         if (connector == null) throw new ConnectorEndpointUnavailableException("Jira Assets connector is not configured");
         return connector;
     }
