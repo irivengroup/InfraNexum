@@ -14,7 +14,7 @@ export async function writeSyntheticRedocVendor(staticRoot, overrides = {}) {
   const directory = path.join(staticRoot, REDOC_VENDOR_RELATIVE_DIRECTORY);
   await mkdir(directory, { recursive: true });
 
-  const prefix = Buffer.from(`/*! fixture */\nconst marker = [" ReDoc Version: ","${REDOC_VENDOR_VERSION}"," Commit: ","${REDOC_VENDOR_COMMIT}"];\nwindow.Redoc = {};\n`, 'utf8');
+  const prefix = Buffer.from(`/*! ReDoc Version: ${REDOC_VENDOR_VERSION}\n * Commit: ${REDOC_VENDOR_COMMIT}\n */\nwindow.Redoc = {};\n`, 'utf8');
   const bundle = Buffer.alloc(REDOC_VENDOR_BUNDLE_SIZE, 0x20);
   prefix.copy(bundle, 0);
   const license = Buffer.from('MIT License\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files.\n', 'utf8');

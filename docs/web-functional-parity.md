@@ -90,4 +90,4 @@ The Web parity gate verifies, at minimum:
 - browser assets contain no NUL bytes;
 - full Web tests and process smoke pass without lowering coverage thresholds.
 
-The exact JDK25/Maven, Node 24.18.1, Go 1.26.5, Docker Desktop PRO/HA and live PostgreSQL/Oracle gates remain separate promotion requirements when the delivery runner cannot execute them.
+The exact JDK25/Maven, Node 24.19.0, Go 1.26.5, Docker Desktop PRO/HA and live PostgreSQL/Oracle gates remain separate promotion requirements when the delivery runner cannot execute them.

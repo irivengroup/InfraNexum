@@ -3,8 +3,8 @@
   "files": [
     {
       "path": "redoc.standalone.js",
-      "sha256": "51c3bdf98abcd24d2e826ee5d3d75835923a7b6fbe3d846c3475aaccddfa1ada",
-      "size": 1097270
+      "sha256": "6538a52f97b821cff30db782749869f46bc20e1b0939c3a9d699981a5402346f",
+      "size": 1097271
     },
     {
       "path": "LICENSE",
@@ -18,12 +18,6 @@
     }
   ],
   "schema": "infranexum.vendor.redoc/v1",
-  "source": {
-    "bundleInput": "user-provided redoc.standalone.js",
-    "licenseNoticeUrl": "https://cdn.jsdelivr.net/npm/redoc@2.5.3/bundles/redoc.standalone.js.LICENSE.txt",
-    "runtimeNetworkRequired": false,
-    "sourceArchive": "user-provided redoc-2.5.3.zip"
-  },
   "upstreamCommit": "1b2591e",
   "version": "2.5.3"
 }

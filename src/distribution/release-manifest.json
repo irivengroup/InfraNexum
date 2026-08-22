@@ -3,7 +3,7 @@
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
   "version": "2.0.0-alpha.0.126",
-  "profile": "alpha126-offline-redoc-vendor-corrective",
+  "profile": "alpha126-redoc-offline-vendor-and-node-runtime-corrective",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -22,7 +22,7 @@
     },
     {
       "id": "infranexum-web",
-      "status": "alpha125-redoc-bootstrap-dependency-wiring-fixed-phase-aware-frame-handshake-safe-error-normalization-pinned-redoc2.5.3-official-primary-jsdelivr-fallback; alpha124-business-form-focus-and-alpha123-dcim-correctives-preserved"
+      "status": "alpha126-redoc2.5.3-fully-vendored-local-only-csp-self-dynamic-unbounded-height-integrity-gated-before-http-listener-node24.19.0-upstream-sha256-pinned-amd64-arm64; alpha125-bootstrap-runtime-fix-alpha124-business-form-focus-and-alpha123-dcim-correctives-preserved"
     },
     {
       "id": "connector-sdk-v1",

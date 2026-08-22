@@ -255,8 +255,8 @@ class ComposeContractTest(unittest.TestCase):
     def test_web_runtime_image_is_pinned_verified_and_non_root(self) -> None:
         dockerfile = (DOCKER / "web.Dockerfile").read_text(encoding="utf-8")
         self.assertIn("ARG NODE_VERSION=24.19.0", dockerfile)
-        self.assertIn("d6c664df3f3f61458e8c277585571328522d705166723a7c7823a9253a4d15a0", dockerfile)
-        self.assertIn("7201e3a09dc825bac57867c81913e2b8f0ef87d04cb9082af4cda82f6ff3d88c", dockerfile)
+        self.assertIn("14b342e71204f811bde6153be8e04b62aef63c236fef92b55f9c83154b409647", dockerfile)
+        self.assertIn("01443c1e1a29e531ccad5a46fefa6df490d2189c49f7955904aecdbb0fe86fdc", dockerfile)
         self.assertIn("sha256sum --check --strict", dockerfile)
         self.assertIn("USER 10002:10002", dockerfile)
         self.assertIn('CMD ["node", "runtime/main.mjs"]', dockerfile)

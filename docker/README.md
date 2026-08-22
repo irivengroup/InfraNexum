@@ -18,7 +18,7 @@ Developer health diagnostics deliberately distinguish two superuser connections.
 ## Dockerfiles
 
 - `server.Dockerfile`: reproducible Java 25 build and non-root Server runtime.
-- `web.Dockerfile`: checksum-verified Node.js 24.18.1 amd64/arm64 runtime, non-root Web process and immutable application payload.
+- `web.Dockerfile`: checksum-verified Node.js 24.19.0 amd64/arm64 runtime, non-root Web process and immutable application payload.
 - `postgres-tools.Dockerfile`: pinned PostgreSQL tooling image containing secret initialization, HA bootstrap, migration and rollback scripts.
 - `patroni-postgres.Dockerfile`: PostgreSQL 17.10 + Patroni 4.1.4 HA node for the PRO developer topology.
 

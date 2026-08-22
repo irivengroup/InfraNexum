@@ -32,7 +32,10 @@ class FakeFetcher:
 
 
 def bundle(version: str = vendor_redoc.REDOC_VERSION, commit: str = vendor_redoc.REDOC_COMMIT) -> bytes:
-    prefix = f'/*! fixture */\nconst marker = [" ReDoc Version: ","{version}"," Commit: ","{commit}"];\nwindow.Redoc = {{}};\n'.encode()
+    # Mirror the real minified ReDoc layout: labels and values are separate
+    # literals, and the identity block lives well beyond the file header.
+    prefix = b"window.Redoc = {};\n" + (b"x" * (64 * 1024))
+    prefix += f'"ReDoc Version:","{version}","Commit:","{commit}"\n'.encode()
     body = bytearray(b" " * vendor_redoc.REDOC_BUNDLE_SIZE)
     body[: len(prefix)] = prefix
     return bytes(body)

@@ -152,7 +152,7 @@ test('vendor verifier rejects vendor directories that escape through a symlinked
 test('vendor verifier rejects bundle size substitution even with a matching manifest hash', async (context) => {
   const { root, directory } = await fixture();
   context.after(() => rm(root, { recursive: true, force: true }));
-  const bytes = Buffer.from('/*! fixture */\nconst marker = [" ReDoc Version: ","2.5.3"," Commit: ","1b2591e"];\nwindow.Redoc = {};\n');
+  const bytes = Buffer.from('/*! ReDoc Version: 2.5.3\n * Commit: 1b2591e\n */\nwindow.Redoc = {};\n');
   await writeFile(path.join(directory, 'redoc.standalone.js'), bytes);
   await syncEntry(directory, 'redoc.standalone.js', bytes);
   await rejectsCode(() => new VendorAssetIntegrityVerifier(root).verify(), 'WEB_VENDOR_REDOC_SIZE_MISMATCH');
@@ -174,7 +174,7 @@ test('vendor verifier rejects bundle identity markers even when size and SHA-256
   context.after(() => rm(root, { recursive: true, force: true }));
   const bundlePath = path.join(directory, 'redoc.standalone.js');
   const bundle = Buffer.alloc(REDOC_VENDOR_BUNDLE_SIZE, 0x20);
-  Buffer.from('/*! fixture */\nconst marker = [" ReDoc Version: ","2.5.2"," Commit: ","deadbee"];\n').copy(bundle);
+  Buffer.from('/*! ReDoc Version: 2.5.2\n * Commit: deadbee\n */\n').copy(bundle);
   await writeFile(bundlePath, bundle);
   await syncEntry(directory, 'redoc.standalone.js', bundle);
   await rejectsCode(() => new VendorAssetIntegrityVerifier(root).verify(), 'WEB_VENDOR_REDOC_IDENTITY_MISMATCH');

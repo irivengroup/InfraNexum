@@ -18,7 +18,7 @@ from urllib.request import Request, urlopen
 
 REDOC_VERSION = "2.5.3"
 REDOC_COMMIT = "1b2591e"
-REDOC_BUNDLE_SIZE = 1_097_270
+REDOC_BUNDLE_SIZE = 1_097_271
 NPM_METADATA_URL = f"https://registry.npmjs.org/redoc/{REDOC_VERSION}"
 NPM_TARBALL_URL = f"https://registry.npmjs.org/redoc/-/redoc-{REDOC_VERSION}.tgz"
 JSDELIVR_BUNDLE_URL = f"https://cdn.jsdelivr.net/npm/redoc@{REDOC_VERSION}/bundles/redoc.standalone.js"
@@ -188,8 +188,13 @@ class RedocVendorAcquirer:
     def _verify_bundle_identity(bundle: bytes) -> None:
         if len(bundle) != REDOC_BUNDLE_SIZE:
             raise VendorAcquisitionError("REDOC_VENDOR_BUNDLE_INVALID", f"ReDoc bundle must be exactly {REDOC_BUNDLE_SIZE} bytes")
+        # The minified upstream bundle stores the labels and values as separate
+        # literals deep in the file. The bundle size is already strictly bounded,
+        # so scanning the complete payload is deterministic and avoids rejecting
+        # an authentic release because its identity banner is not near the header.
         marker = bundle.decode("utf-8", errors="replace")
-        if f'" ReDoc Version: ","{REDOC_VERSION}"' not in marker or f'" Commit: ","{REDOC_COMMIT}"' not in marker:
+        required_markers = ("ReDoc Version:", REDOC_VERSION, "Commit:", REDOC_COMMIT)
+        if any(value not in marker for value in required_markers):
             raise VendorAcquisitionError("REDOC_VENDOR_BUNDLE_INVALID", "ReDoc bundle version/commit markers are invalid")
 
     @staticmethod

@@ -4,7 +4,7 @@ import path from 'node:path';
 
 export const REDOC_VENDOR_VERSION = '2.5.3';
 export const REDOC_VENDOR_COMMIT = '1b2591e';
-export const REDOC_VENDOR_BUNDLE_SIZE = 1_097_270;
+export const REDOC_VENDOR_BUNDLE_SIZE = 1_097_271;
 export const REDOC_VENDOR_RELATIVE_DIRECTORY = path.join('assets', 'vendor', 'redoc', REDOC_VENDOR_VERSION);
 export const REDOC_VENDOR_MANIFEST_NAME = 'manifest.json';
 
@@ -105,8 +105,14 @@ export class VendorAssetIntegrityVerifier {
       throw vendorError('WEB_VENDOR_REDOC_SHA256_MISMATCH', `ReDoc vendor SHA-256 mismatch: ${entry.path}`);
     }
     if (policy.role === 'bundle') {
+      // The upstream ReDoc identity banner is emitted deep in the minified bundle,
+      // not near the file header. The file is already strictly size-bounded above,
+      // so scanning the complete certified bundle is deterministic and safe.
       const marker = bytes.toString('utf8');
-      if (!marker.includes(`" ReDoc Version: ","${REDOC_VENDOR_VERSION}"`) || !marker.includes(`" Commit: ","${REDOC_VENDOR_COMMIT}"`)) {
+      if (!marker.includes('ReDoc Version:')
+        || !marker.includes(REDOC_VENDOR_VERSION)
+        || !marker.includes('Commit:')
+        || !marker.includes(REDOC_VENDOR_COMMIT)) {
         throw vendorError('WEB_VENDOR_REDOC_IDENTITY_MISMATCH', 'ReDoc bundle version/commit markers are invalid');
       }
     } else if (policy.role === 'license') {

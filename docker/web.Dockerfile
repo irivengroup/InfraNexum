@@ -10,8 +10,8 @@ RUN apt-get update \
     && apt-get install --yes --no-install-recommends ca-certificates curl xz-utils libstdc++6 \
     && rm -rf /var/lib/apt/lists/* \
     && case "${TARGETARCH}" in \
-         amd64) node_arch="x64"; expected="d6c664df3f3f61458e8c277585571328522d705166723a7c7823a9253a4d15a0" ;; \
-         arm64) node_arch="arm64"; expected="7201e3a09dc825bac57867c81913e2b8f0ef87d04cb9082af4cda82f6ff3d88c" ;; \
+         amd64) node_arch="x64"; expected="14b342e71204f811bde6153be8e04b62aef63c236fef92b55f9c83154b409647" ;; \
+         arm64) node_arch="arm64"; expected="01443c1e1a29e531ccad5a46fefa6df490d2189c49f7955904aecdbb0fe86fdc" ;; \
          *) echo "Unsupported Docker architecture: ${TARGETARCH}" >&2; exit 64 ;; \
        esac \
     && archive="node-v${NODE_VERSION}-linux-${node_arch}.tar.xz" \

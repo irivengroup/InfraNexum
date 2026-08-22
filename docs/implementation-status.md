@@ -1,42 +1,21 @@
-# InfraNexum 2.0.0-alpha.0.126 — offline ReDoc vendor corrective
+# InfraNexum 2.0.0-alpha.0.126 — ReDoc offline vendor + Node 24.19.0 corrective
 
 ## 2.0.0-alpha.0.126
 
-**Statut : corrective Web/documentation et supply-chain ; aucune activation de provider mutateur.**
+**Statut : corrective Web/documentation/runtime ; aucune activation de provider mutateur.**
 
-ReDoc 2.5.3 est désormais réellement vendorisé dans `assets/vendor/redoc/2.5.3`. Le runtime ne contacte aucune origine Internet pour ReDoc et refuse de démarrer si le bundle, sa taille exacte, son SHA-256, sa licence MIT, sa notice ou le manifeste local sont absents ou incohérents. Le bundle intégré contient les marqueurs `ReDoc Version: 2.5.3` et `Commit: 1b2591e`. La hauteur du frame reste `max(hauteur intrinsèque ReDoc, viewport)`, sans plafond et avec observation dynamique après `ready`.
+ReDoc 2.5.3 est désormais vendorisé localement sous `assets/vendor/redoc/2.5.3` avec bundle, licence MIT, notice de licences et manifeste SHA-256. Le runtime vérifie ce vendor tree avant d'ouvrir le listener HTTP. ReDoc n'utilise aucun CDN au runtime ; la CSP de son iframe est `script-src 'self'`. Le redimensionnement suit `max(hauteur intrinsèque, viewport)` sans plafond arbitraire, avec `ResizeObserver`, `MutationObserver` et bridge `postMessage` conservé après `ready`.
 
-- **EXÉCUTÉ — Node contractuel :** Node 24.19.0, compatible `>=24.18.1 <25`.
-- **EXÉCUTÉ — vendor gate :** PASS sur le vendor tree réel.
-- **EXÉCUTÉ — Web :** 245/245 ; couverture 99,78 % lignes / 98,60 % branches / 100 % fonctions.
-- **EXÉCUTÉ — smoke Web :** PASS.
-- **EXÉCUTÉ — Source Integrity :** 45/45, 100 %, 0 violation.
-- **EXÉCUTÉ — Architecture-as-Code :** PASS.
-- **EXÉCUTÉ — Toolchains :** 25/25, 0 violation.
-- **EXÉCUTÉ — Archive Compatibility unitaire :** 12/12, 100 %.
-- **NON EXÉCUTÉ — qualification PGM-10-E05 :** JDK25/JaCoCo/PostgreSQL 17/18 restent requis séparément.
+Node.js est aligné sur **24.19.0** dans le catalogue toolchain, `.node-version`, `.tool-versions`, GitHub Actions, Docker et Compose. Les archives Linux sont épinglées sur les SHA-256 officiels : x64 `14b342e71204f811bde6153be8e04b62aef63c236fef92b55f9c83154b409647`, arm64 `01443c1e1a29e531ccad5a46fefa6df490d2189c49f7955904aecdbb0fe86fdc`.
 
-PGM-10-E05 reste **NON TERMINÉ**. PGM-10-E06 reste **EN COURS** et aucun provider mutateur n’est activé.
+**EXÉCUTÉ — ReDoc vendor-check : PASS.** **EXÉCUTÉ — Web Node 24.19.0 : 245/245, couverture 99,78 % lignes / 98,60 % branches / 100 % fonctions.** **EXÉCUTÉ — Docker + Toolchains contractuels : 94/94.** **EXÉCUTÉ — outil vendor : 14/14, 99 % branches incluses.** **EXÉCUTÉ — Source Integrity : 45/45 à 100 %, 0 violation.** **EXÉCUTÉ — Architecture-as-Code : PASS.** **EXÉCUTÉ — Toolchains : 25/25, 0 violation.** **EXÉCUTÉ — Archive Compatibility unitaire : 12/12 à 100 %.**
 
-## 2.0.0-alpha.0.125
+Le bundle fourni faisait 1 097 270 octets sans LF terminal ; après restauration déterministe du LF final, il correspond à la taille upstream observée de **1 097 271 octets**, conserve les marqueurs ReDoc `2.5.3` / commit `1b2591e`, et son SHA-256 local est `6538a52f97b821cff30db782749869f46bc20e1b0939c3a9d699981a5402346f`.
 
-**Statut : corrective Web/documentation de non-régression ; aucune avancée fonctionnelle de roadmap.**
-
-La cause principale de l'indisponibilité ReDoc était un défaut de câblage introduit lors de l'isolation iframe : `initializeApiDocumentation()` transmettait le loader d'assets Swagger comme troisième argument de `renderRedoc()`, alors que ce paramètre était devenu une factory d'iframe. Le loader retourne une Promise ; celle-ci pouvait donc être traitée comme un frame, expliquant le couple `ReDoc frame initialization timed out` / `[object Promise]`.
-
-La correction sépare les deux dépendances, ajoute un handshake de phase borné, traite correctement le callback d'erreur documenté par `Redoc.init()`, observe aussi une éventuelle Promise rejetée, nettoie les assets en échec et normalise les diagnostics. Le contrat OpenAPI certifié reste local et indépendant du moteur de présentation.
-
-### Validation alpha.0.125
-
-- **EXÉCUTÉ — tests ReDoc ciblés :** 12/12, incluant le câblage bootstrap réel, callback d'erreur, Promise rejetée, fallback séquentiel et interdiction de `[object Promise]`.
-- **EXÉCUTÉ — Web complet :** 232/232 ; couverture 99,73 % lignes, 98,56 % branches, 100 % fonctions ; process smoke réussi.
-- **NON EXÉCUTÉ — téléchargement/rendu du bundle CDN réel dans ce runner :** le shell d'exécution ne dispose pas de résolution DNS sortante. Les URLs Redocly/jsDelivr sont versionnées 2.5.3 et la chaîne de fallback est couverte par tests avec des assets contrôlés. La validation opérateur reste `curl`/navigateur depuis un environnement disposant de la politique réseau de production.
-- **EXÉCUTÉ — API/architecture/toolchains/Compose :** API 48/48, 15 fragments / 201 opérations / dette 0 ; architecture ciblée 11/11 et Architecture-as-Code à zéro violation ; Toolchains 25/25 et zéro violation ; Compose 69/69.
-- **EXÉCUTÉ — Source Integrity / Archive Compatibility unitaires :** Source Integrity 45/45 à 100 %, snapshot staged 1566 fichiers suivis / 1565 checksums / 1564 chemins canoniques, zéro violation ; Archive Compatibility 12/12 à 100 %.
-
-PGM-10-E05 reste **NON TERMINÉ** jusqu'aux gates exacts JDK25/JaCoCo/PostgreSQL 17/18. PGM-10-E06 reste **EN COURS** et aucun provider mutateur n'est activé.
+PGM-10-E05 reste **NON TERMINÉ** tant que les gates exacts JDK25/JaCoCo/PostgreSQL 17/18 ne sont pas fermés. PGM-10-E06 reste **EN COURS**, sans provider mutateur activé.
 
 ---
+
 
 # InfraNexum 2.0.0-alpha.0.124 — business-form focus root-cause corrective
 
