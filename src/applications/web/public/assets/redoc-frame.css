@@ -1,4 +1,4 @@
-/* ReDoc is isolated from the InfraNexum shell; this file only owns frame chrome. */
+/* ReDoc is isolated from the InfraNexum shell; this file owns only frame layout. */
 html,
 body {
   margin: 0;
@@ -16,4 +16,53 @@ html[data-bs-theme="dark"] body {
   width: 100%;
   min-width: 0;
   overflow: visible;
+}
+
+/* ReDoc 2.5.3 normally pins its menu to 100vh and renders every operation in a
+ * continuous article. InfraNexum instead keeps the menu intrinsic and shows one
+ * selected article at a time. This makes the iframe grow/shrink with menu
+ * expansion while long active content is still allowed to raise the natural
+ * height, so no text or sample is vertically truncated. */
+#redoc-frame-root[data-inx-redoc-managed="true"] .redoc-wrap {
+  align-items: flex-start;
+  min-height: 0 !important;
+}
+
+#redoc-frame-root[data-inx-redoc-managed="true"] .menu-content {
+  position: relative !important;
+  inset: auto !important;
+  top: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  align-self: flex-start;
+}
+
+#redoc-frame-root[data-inx-redoc-managed="true"] .menu-content .scrollbar-container {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+#redoc-frame-root[data-inx-redoc-managed="true"] .menu-content .ps__rail-x,
+#redoc-frame-root[data-inx-redoc-managed="true"] .menu-content .ps__rail-y {
+  display: none !important;
+}
+
+#redoc-frame-root[data-inx-redoc-managed="true"] .api-content {
+  contain: none !important;
+  overflow: visible !important;
+  min-height: 0 !important;
+}
+
+#redoc-frame-root[data-inx-redoc-managed="true"] .api-content [data-inx-redoc-managed-hidden="true"],
+[data-inx-redoc-managed="true"] .api-content [hidden] {
+  display: none !important;
+}
+
+#redoc-frame-root[data-inx-redoc-managed="true"] .api-content pre,
+#redoc-frame-root[data-inx-redoc-managed="true"] .api-content code {
+  max-height: none !important;
 }

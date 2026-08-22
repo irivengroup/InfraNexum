@@ -1,6 +1,6 @@
 schema: infranexum.openapi-catalogue/v1
 product: InfraNexum — Infrastructure Control & Governance Platform
-version: 2.0.0-alpha.0.126
+version: 2.0.0-alpha.0.127
 fragments:
 - file: local-auth.yaml
   component: IAM

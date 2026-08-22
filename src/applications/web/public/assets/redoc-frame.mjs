@@ -36,6 +36,7 @@ export async function initializeRedocFrame(
     postFrameMessage(windowObject, 'phase', { phase: 'render' });
     await initializeRenderer(redoc, specification, redocConfiguration(documentObject), root);
     if (containsRedocFatalError(root)) throw new Error('ReDoc reported an embedded rendering failure');
+    installManagedRedocLayout(documentObject, windowObject, root);
     installHeightReporter(windowObject, root);
     postFrameMessage(windowObject, 'ready');
     reportHeight(root, windowObject);
@@ -76,6 +77,105 @@ export function applyRequestedTheme(documentObject, windowObject) {
   const theme = new URL(href, 'http://infranexum.invalid').searchParams.get('theme') === 'dark' ? 'dark' : 'light';
   documentObject?.documentElement?.setAttribute?.('data-bs-theme', theme);
   return theme;
+}
+
+/**
+ * Converts ReDoc's continuous document into a bounded, tab-like reference view.
+ * The menu remains fully expandable while the article column contains only the
+ * selected ReDoc item, preventing the iframe from inheriting the cumulative
+ * height of every operation in the OpenAPI contract.
+ */
+export function installManagedRedocLayout(documentObject, windowObject, root) {
+  const menu = root?.querySelector?.('.menu-content');
+  const api = root?.querySelector?.('.api-content');
+  if (!menu || !api) return Object.freeze({ managed: false, activate: () => false, dispose: () => {} });
+
+  root.setAttribute?.('data-inx-redoc-managed', 'true');
+  const contentFor = (id) => {
+    const normalized = String(id ?? '').trim();
+    if (!normalized) return null;
+    const candidate = documentObject?.getElementById?.(normalized);
+    return candidate && api.contains?.(candidate) !== false ? candidate : null;
+  };
+  const managedVisibility = new Map();
+  const rememberVisibility = (node) => {
+    if (!node || managedVisibility.has(node)) return;
+    managedVisibility.set(node, {
+      hidden: Boolean(node.hidden),
+      ariaHidden: node.getAttribute?.('aria-hidden') ?? null,
+    });
+  };
+  const restoreVisibility = () => {
+    for (const [node, state] of managedVisibility) {
+      node.hidden = state.hidden;
+      if (state.ariaHidden === null) node.removeAttribute?.('aria-hidden');
+      else node.setAttribute?.('aria-hidden', state.ariaHidden);
+      node.removeAttribute?.('data-inx-redoc-managed-hidden');
+    }
+    managedVisibility.clear();
+  };
+  const hideSibling = (node) => {
+    rememberVisibility(node);
+    node.hidden = true;
+    node.setAttribute?.('aria-hidden', 'true');
+    node.setAttribute?.('data-inx-redoc-managed-hidden', 'true');
+  };
+  const activate = (id) => {
+    const target = contentFor(id);
+    if (!target) return false;
+
+    // ReDoc nests operations below tag/section wrappers. Hide siblings at every
+    // ancestor level so an operation selection does not leave the rest of its
+    // tag visible, while selecting a parent tag still exposes that complete tag.
+    restoreVisibility();
+    let branch = target;
+    while (branch && branch !== api) {
+      const parent = branch.parentElement;
+      if (!parent) return false;
+      for (const sibling of parent.children ?? []) {
+        if (sibling !== branch) hideSibling(sibling);
+      }
+      branch = parent;
+    }
+    if (branch !== api) {
+      restoreVisibility();
+      return false;
+    }
+    target.hidden = false;
+    target.setAttribute?.('aria-hidden', 'false');
+    target.setAttribute?.('data-inx-redoc-active', 'true');
+    root.setAttribute?.('data-inx-redoc-active-id', String(id));
+    reportHeight(root, windowObject);
+    return true;
+  };
+  const itemFromEvent = (event) => event?.target?.closest?.('[data-item-id]');
+  const onActivate = (event) => {
+    const item = itemFromEvent(event);
+    if (!item || menu.contains?.(item) === false) return;
+    activate(item.getAttribute?.('data-item-id'));
+  };
+  const onKeyDown = (event) => {
+    if (event?.key !== 'Enter' && event?.key !== ' ') return;
+    onActivate(event);
+  };
+  menu.addEventListener?.('click', onActivate, true);
+  menu.addEventListener?.('keydown', onKeyDown, true);
+
+  const requestedId = decodeURIComponent(String(windowObject?.location?.hash ?? '').replace(/^#/, ''));
+  const items = [...(menu.querySelectorAll?.('[data-item-id]') ?? [])];
+  const requestedItem = requestedId
+    ? items.find((item) => item.getAttribute?.('data-item-id') === requestedId)
+    : null;
+  const initial = requestedItem ?? items.find((item) => contentFor(item.getAttribute?.('data-item-id')));
+  if (initial) activate(initial.getAttribute?.('data-item-id'));
+
+  const dispose = () => {
+    menu.removeEventListener?.('click', onActivate, true);
+    menu.removeEventListener?.('keydown', onKeyDown, true);
+    restoreVisibility();
+  };
+  windowObject?.addEventListener?.('pagehide', dispose, { once: true });
+  return Object.freeze({ managed: true, activate, dispose });
 }
 
 export function reportHeight(root, windowObject) {

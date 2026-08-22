@@ -37,6 +37,11 @@ export async function initializeDcimWorkspace(documentObject = document, configu
   applyTranslations(documentObject,localeFromDocument(documentObject));
   initializeCountrySelects(documentObject,localeFromDocument(documentObject));
   initializeStableSelects(documentObject);
+  // Location panels are rendered by this workspace (unlike the separately mounted
+  // physical extension), so they must receive the CRUD controller explicitly.
+  for (const panel of workspace.querySelectorAll?.('[data-dcim-panel][data-inx-crud-panel]') ?? []) {
+    wireCrudPanel(documentObject, panel);
+  }
   const client=new DcimFacilityClient(configuration,{fetchFunction});
   const physicalPromise=initializeDcimPhysicalWorkspace(documentObject,configuration,fetchFunction);
   const state={ organizations:[], subdivisions:[], sites:[], buildings:[], floors:[], rooms:[], zones:[], selected:new Map(), activeResource:'sites' };

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: InfraNexum ITAM Warranty, Support and License API
-  version: 2.0.0-alpha.0.126
+  version: 2.0.0-alpha.0.127
   description: PGM-07-E03 contractual governance. Warranty, support-provider authorization, third-party support coverage, software-license
     metadata, immutable revision evidence and deterministic deadline alerts.
 servers:

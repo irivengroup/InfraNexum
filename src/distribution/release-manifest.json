@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.126",
-  "profile": "alpha126-redoc-offline-vendor-and-node-runtime-corrective",
+  "version": "2.0.0-alpha.0.127",
+  "profile": "alpha127-redoc-dcim-integrations-web-corrective",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -22,7 +22,7 @@
     },
     {
       "id": "infranexum-web",
-      "status": "alpha126-redoc2.5.3-fully-vendored-local-only-csp-self-dynamic-unbounded-height-integrity-gated-before-http-listener-node24.19.0-upstream-sha256-pinned-amd64-arm64; alpha125-bootstrap-runtime-fix-alpha124-business-form-focus-and-alpha123-dcim-correctives-preserved"
+      "status": "alpha127-redoc-managed-active-section-dynamic-grow-shrink-height-dcim-location-crud-wired-iam-dcim-integrations-tab-contract; alpha126-offline-redoc-vendor-and-node24.19.0-runtime-preserved"
     },
     {
       "id": "connector-sdk-v1",
@@ -652,23 +652,23 @@
   "source_layout": "All production solution spaces are contained below src/; Java, Go and Web tests are repository-level under tests/; canonical relative paths are limited to 120 characters and path components to 80 characters.",
   "source_integrity": {
     "canonical_inventory": "source-inventory.json",
-    "git_blob_checksums": 1565,
-    "tracked_files": 1566,
-    "source_recorded_files": 1564,
+    "git_blob_checksums": 1575,
+    "tracked_files": 1576,
+    "source_recorded_files": 1574,
     "staged_snapshot_required": true,
     "pre_commit_hook": ".githooks/pre-commit",
-    "inventory_paths": 1564
+    "inventory_paths": 1574
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.126",
-    "archive_entries": 1566,
+    "prefix": "infranexum-2.0.0-alpha.0.127",
+    "archive_entries": 1576,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
-    "source_recorded_files": 1565,
+    "source_recorded_files": 1575,
     "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
-    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.126-validation-evidence.zip"
+    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.127-validation-evidence.zip"
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.126-validation-evidence.zip",
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.127-validation-evidence.zip",
   "runtime_validation": {
     "web_local_runtime_alpha058": "EXECUTED_38_OF_38_LINE_99_67_BRANCH_98_33_FUNCTION_100_PROCESS_SMOKE_PASS_LOCAL_NODE22_BOOTSTRAP5_3_6_PROFESSIONAL_ADMIN_DASHBOARD_THEME_TOGGLE_TRUTHFUL_KPI_SAME_ORIGIN_ORGANIZATION_UI",
     "architecture_functional_alpha058": "EXECUTED_57_OF_57",
@@ -1100,7 +1100,22 @@
     "toolchains_alpha112": "EXECUTED_25_OF_25_ZERO_VIOLATIONS",
     "connector_sdk_alpha112": "EXECUTED_19_OF_19_COVERAGE99_REPRODUCIBLE_WHEEL",
     "java_dependency_free_alpha112": "EXECUTED_LOCAL_JAVA21_JDBC_JDBC_AUDIT_INTEGRATIONS_OUTBOUND_NOTIFICATION_POLICY_API_CAPABILITY_191_OPERATIONS_PASS",
-    "source_integrity_tests_alpha112": "EXECUTED_45_OF_45_COVERAGE100_ZERO_VIOLATIONS"
+    "source_integrity_tests_alpha112": "EXECUTED_45_OF_45_COVERAGE100_ZERO_VIOLATIONS",
+    "corrective_alpha127": "IMPLEMENTED_REDOC_MANAGED_ACTIVE_SECTION_DYNAMIC_HEIGHT_DCIM_LOCATION_CRUD_WIRING_SHARED_IAM_DCIM_INTEGRATIONS_TAB_UX_NO_ROADMAP_ADVANCE",
+    "web_local_runtime_alpha127": "EXECUTED_249_OF_249_LINE99_78_BRANCH98_60_FUNCTION100_PROCESS_SMOKE_PASS",
+    "redoc_vendor_alpha127": "EXECUTED_VENDOR_CHECK_PASS_TOOL_TESTS_14_OF_14_99_PERCENT",
+    "pgm10e05_alpha127": "FORMALLY_NON_TERMINE_EXACT_JDK25_JACOCO_AND_POSTGRESQL17_18_GATES_STILL_REQUIRED",
+    "pgm10e06_alpha127": "EN_COURS_EXISTING_GOVERNANCE_AND_DURABLE_SYNC_PRESERVED_NO_MUTATING_PROVIDER_ACTIVATED",
+    "source_inventory_paths_alpha127": 1574,
+    "packaging_tracked_files_alpha127": 1576,
+    "git_blob_checksums_alpha127": 1575,
+    "source_integrity_alpha127": "EXECUTED_45_OF_45_100_PERCENT_STRICT_STAGED_SNAPSHOT_1576_TRACKED_PATHS_1575_GIT_BLOB_CHECKSUMS_1574_CANONICAL_INVENTORY_ZERO_VIOLATIONS",
+    "api_contract_unit_alpha127": "EXECUTED_48_OF_48_98_PERCENT_NO_API_BEHAVIOR_CHANGE_PRODUCT_SPEC_EMISSION_RUNNER_TIMEOUT_NOT_CLAIMED",
+    "compose_contract_alpha127": "EXECUTED_69_OF_69",
+    "toolchains_alpha127": "EXECUTED_25_OF_25_99_PERCENT_ZERO_VIOLATIONS",
+    "architecture_check_alpha127": "EXECUTED_PASS_ZERO_VIOLATIONS",
+    "api_contracts_alpha127": "EXECUTED_UNIT_48_OF_48_98_PERCENT_DIRECT_CHECK_15_FRAGMENTS_201_OPERATIONS_DEBT_0_0_0_0_PRODUCT_SPEC_EMISSION_RUNNER_TIMEOUT_NOT_CLAIMED",
+    "archive_compatibility_alpha127": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS"
   },
   "runtime_validation_note": "alpha.0.123 corrects editable focus in authenticated business CRUD forms while explicitly leaving login and search controls unchanged; adds the DCIM equipment taxonomy, rack-mountability invariants, server-side memorable code generation, repeatable heterogeneous model ports, explicit equipment/port cable endpoints and cable/manufacturer metadata through paired migration 0040. Dependency-free DCIM/JDBC smokes and local contract tests are required for this snapshot; exact JDK25/JaCoCo/PostgreSQL 17/18 gates remain pending, so PGM-10-E05 stays NON_TERMINE. PGM-10-E06 remains EN_COURS and no mutating provider is enabled.",
   "pgm08e01_ddi_ipam_alpha083": "EXECUTED_DOMAIN_JDBC_API_CLI_WEB_MIGRATION_ARCHITECTURE_AND_OFFLINE_SMOKE_TARGET_JDK25_MAVEN_AND_LIVE_DATABASES_PENDING",

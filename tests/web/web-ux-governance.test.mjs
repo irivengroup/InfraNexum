@@ -73,6 +73,19 @@ test('+ New remains functional for controls injected after CRUD initialization',
   assert.match(crud, /CRUD_HANDLED_EVENTS = new WeakSet\(\)/);
 });
 
+test('DCIM Location CRUD panels are wired so their + New controls open the editor', async () => {
+  const dcim = await read('assets/dcim-workspace.mjs');
+  assert.match(dcim, /querySelectorAll\?\.\('\[data-dcim-panel\]\[data-inx-crud-panel\]'\)/);
+  assert.match(dcim, /for \(const panel[\s\S]*wireCrudPanel\(documentObject, panel\)/);
+});
+
+test('IAM, DCIM and Integrations contextual menus share one visual tab contract', async () => {
+  const theme = await read('assets/infranexum-theme.css');
+  assert.match(theme, /:is\(#identity-access-workspace,\s*#dcim-workspace,\s*#integrations-workspace\)[\s\S]*\[role="tablist"\]/);
+  assert.match(theme, /:is\(#identity-access-workspace,\s*#dcim-workspace,\s*#integrations-workspace\)[\s\S]*\.nav-link\.active/);
+  assert.match(theme, /#dcim-workspace \[data-dcim-nav-group\] > p[\s\S]*min-height:\s*1\.7rem[\s\S]*border-radius:\s*\.42rem/);
+});
+
 test('IAM list actions collapse related operations into contextual edit facets', async () => {
   const iam = await read('assets/identity-access.mjs');
   const users = functionBody(iam, 'userCells');

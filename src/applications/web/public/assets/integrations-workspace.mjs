@@ -1,5 +1,6 @@
 import { applyTranslations, localeFromDocument, translate } from './i18n.mjs';
 import { initializeEnterpriseDataTables, refreshEnterpriseDataTable } from './enterprise-crud.mjs';
+import { bindTabSet } from './web-workspace-utils.mjs';
 import { JiraAssetsClient } from './jira-assets.mjs';
 import { NotificationClient } from './integration-notifications.mjs';
 import { ConnectorGovernanceClient } from './connector-governance.mjs';
@@ -16,6 +17,7 @@ export async function initializeIntegrationsWorkspace(documentObject = document,
 
   root.innerHTML = template();
   applyTranslations(documentObject, localeFromDocument(documentObject));
+  bindTabSet(documentObject, '[data-integrations-tab]', '[data-integrations-panel]', 'data-integrations-tab');
   const jira = new JiraAssetsClient(configuration, { fetchFunction });
   const serviceNow = new ServiceNowClient(configuration, { fetchFunction });
   const notifications = new NotificationClient(configuration, { fetchFunction });
@@ -43,13 +45,40 @@ export function integrationsWorkspaceTemplate() { return template(); }
 function template() {
   return `<header class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4"><div><p class="small text-uppercase fw-bold text-primary mb-1" data-i18n="integrations.eyebrow">Integrations</p><h2 id="integrations-workspace-title" data-i18n="integrations.title">Connector providers</h2><p data-i18n="integrations.description">Governed external providers with explicit authority and sync direction.</p></div><button id="integrations-refresh" class="btn btn-outline-primary" type="button" data-i18n="common.refresh">Refresh</button></header>
 <p id="integrations-status" class="alert alert-info py-2" role="status" aria-live="polite" data-state="info" data-i18n="integrations.status.loading">Loading connectors…</p>
-${governanceSection()}
-${syncSection()}
-${providerSection('jira-assets','integrations.jira.title','integrations.jira.federated')}
-<section class="border rounded p-3 bg-body-tertiary mb-4"><h3 class="h5" data-i18n="integrations.search.title">Federated AQL read</h3><p class="small text-body-secondary" data-i18n="integrations.search.description">Query Jira Assets without copying provider attributes.</p><form id="jira-assets-search" class="row g-3"><div class="col-md-4"><label class="form-label" for="jira-assets-connector" data-i18n="integrations.connector">Connector</label><select id="jira-assets-connector" class="form-select" required></select></div><div class="col-md-6"><label class="form-label" for="jira-assets-aql" data-i18n="integrations.aql">AQL</label><input id="jira-assets-aql" class="form-control" maxlength="4096" required autocomplete="off" placeholder="objectType = Server"></div><div class="col-md-2 d-flex align-items-end"><button class="btn btn-primary w-100" type="submit" data-i18n="integrations.search">Search</button></div></form><div class="table-responsive mt-3"><table class="table table-hover align-middle"><thead><tr><th data-i18n="integrations.objectKey">Object key</th><th data-i18n="integrations.label">Label</th><th data-i18n="integrations.objectType">Object type</th><th data-i18n="integrations.remoteId">Remote ID</th></tr></thead><tbody id="jira-assets-results"></tbody></table></div><p id="jira-assets-page" class="small text-body-secondary mb-0" aria-live="polite"></p></section>
-${providerSection('service-now','integrations.servicenow.title','integrations.servicenow.federated')}
-<section class="border rounded p-3 bg-body-tertiary mb-4"><h3 class="h5" data-i18n="integrations.servicenow.searchTitle">Federated CMDB read</h3><p class="small text-body-secondary" data-i18n="integrations.servicenow.searchDescription">Search the selected ServiceNow CMDB without copying provider attributes.</p><form id="service-now-search" class="row g-3"><div class="col-md-4"><label class="form-label" for="service-now-connector" data-i18n="integrations.connector">Connector</label><select id="service-now-connector" class="form-select" required></select></div><div class="col-md-6"><label class="form-label" for="service-now-query" data-i18n="integrations.servicenow.query">CI name</label><input id="service-now-query" class="form-control" maxlength="256" required autocomplete="off" placeholder="server"></div><div class="col-md-2 d-flex align-items-end"><button class="btn btn-primary w-100" type="submit" data-i18n="integrations.search">Search</button></div></form><div class="table-responsive mt-3"><table class="table table-hover align-middle"><thead><tr><th data-i18n="integrations.servicenow.name">Name</th><th data-i18n="integrations.servicenow.class">Class</th><th data-i18n="integrations.remoteId">Remote ID</th><th data-i18n="integrations.servicenow.updated">Updated</th></tr></thead><tbody id="service-now-results"></tbody></table></div><p id="service-now-page" class="small text-body-secondary mb-0" aria-live="polite"></p></section>
-${notificationSection()}`;
+<div class="row g-4">
+  <aside class="col-lg-3" aria-label="Integrations navigation">
+    <nav class="nav nav-pills flex-column gap-1" role="tablist" aria-orientation="vertical">
+      ${integrationTab('governance','integrations.governance.title',true)}
+      ${integrationTab('sync','integrations.sync.title')}
+      ${integrationTab('jira-assets','integrations.jira.title')}
+      ${integrationTab('service-now','integrations.servicenow.title')}
+      ${integrationTab('notifications','integrations.notifications.title')}
+    </nav>
+  </aside>
+  <div class="col-lg-9 inx-min-w-0">
+    ${integrationPanel('governance', governanceSection(), true)}
+    ${integrationPanel('sync', syncSection())}
+    ${integrationPanel('jira-assets', `${providerSection('jira-assets','integrations.jira.title','integrations.jira.federated')}${jiraSearchSection()}`)}
+    ${integrationPanel('service-now', `${providerSection('service-now','integrations.servicenow.title','integrations.servicenow.federated')}${serviceNowSearchSection()}`)}
+    ${integrationPanel('notifications', notificationSection())}
+  </div>
+</div>`;
+}
+
+function integrationTab(name, key, active = false) {
+  return `<button class="nav-link text-start${active ? ' active' : ''}" type="button" role="tab" aria-selected="${active}" tabindex="${active ? '0' : '-1'}" data-integrations-tab="${name}" data-i18n="${key}">${name}</button>`;
+}
+
+function integrationPanel(name, content, active = false) {
+  return `<section class="tab-pane${active ? ' active show' : ''}" role="tabpanel" data-integrations-panel="${name}"${active ? ' aria-hidden="false"' : ' hidden aria-hidden="true"'}>${content}</section>`;
+}
+
+function jiraSearchSection() {
+  return `<section class="border rounded p-3 bg-body-tertiary mb-4"><h3 class="h5" data-i18n="integrations.search.title">Federated AQL read</h3><p class="small text-body-secondary" data-i18n="integrations.search.description">Query Jira Assets without copying provider attributes.</p><form id="jira-assets-search" class="row g-3"><div class="col-md-4"><label class="form-label" for="jira-assets-connector" data-i18n="integrations.connector">Connector</label><select id="jira-assets-connector" class="form-select" required></select></div><div class="col-md-6"><label class="form-label" for="jira-assets-aql" data-i18n="integrations.aql">AQL</label><input id="jira-assets-aql" class="form-control" maxlength="4096" required autocomplete="off" placeholder="objectType = Server"></div><div class="col-md-2 d-flex align-items-end"><button class="btn btn-primary w-100" type="submit" data-i18n="integrations.search">Search</button></div></form><div class="table-responsive mt-3"><table class="table table-hover align-middle"><thead><tr><th data-i18n="integrations.objectKey">Object key</th><th data-i18n="integrations.label">Label</th><th data-i18n="integrations.objectType">Object type</th><th data-i18n="integrations.remoteId">Remote ID</th></tr></thead><tbody id="jira-assets-results"></tbody></table></div><p id="jira-assets-page" class="small text-body-secondary mb-0" aria-live="polite"></p></section>`;
+}
+
+function serviceNowSearchSection() {
+  return `<section class="border rounded p-3 bg-body-tertiary mb-4"><h3 class="h5" data-i18n="integrations.servicenow.searchTitle">Federated CMDB read</h3><p class="small text-body-secondary" data-i18n="integrations.servicenow.searchDescription">Search the selected ServiceNow CMDB without copying provider attributes.</p><form id="service-now-search" class="row g-3"><div class="col-md-4"><label class="form-label" for="service-now-connector" data-i18n="integrations.connector">Connector</label><select id="service-now-connector" class="form-select" required></select></div><div class="col-md-6"><label class="form-label" for="service-now-query" data-i18n="integrations.servicenow.query">CI name</label><input id="service-now-query" class="form-control" maxlength="256" required autocomplete="off" placeholder="server"></div><div class="col-md-2 d-flex align-items-end"><button class="btn btn-primary w-100" type="submit" data-i18n="integrations.search">Search</button></div></form><div class="table-responsive mt-3"><table class="table table-hover align-middle"><thead><tr><th data-i18n="integrations.servicenow.name">Name</th><th data-i18n="integrations.servicenow.class">Class</th><th data-i18n="integrations.remoteId">Remote ID</th><th data-i18n="integrations.servicenow.updated">Updated</th></tr></thead><tbody id="service-now-results"></tbody></table></div><p id="service-now-page" class="small text-body-secondary mb-0" aria-live="polite"></p></section>`;
 }
 
 function governanceSection() {

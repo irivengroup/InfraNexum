@@ -1,3 +1,31 @@
+# InfraNexum 2.0.0-alpha.0.127 — ReDoc/DCIM/Integrations Web corrective
+
+## 2.0.0-alpha.0.127
+
+**Statut : corrective Web/UX ; aucune avancée de roadmap et aucun provider mutateur activé.**
+
+ReDoc utilise désormais une vue gérée : le menu latéral garde une hauteur naturelle et suit son dépliement/repliement, tandis que la zone documentaire ne conserve visible que l'élément API actif. Le frame parent accepte les variations de hauteur dans les deux sens après le démarrage ; le minimum artificiel lié au viewport est supprimé et les contenus actifs ne sont pas tronqués.
+
+DCIM câble explicitement tous les panneaux du contexte **Location** au contrôleur CRUD partagé, ce qui rétablit l'action `+ New`. Son menu contextuel applique désormais le même contrat visuel que **Identity & Access**. La page **Integrations** est réorganisée en onglets verticaux sur le même modèle, sans renommer ni retirer les formulaires et flux existants : Governance, Synchronization, Jira Assets, ServiceNow et Notifications.
+
+Le fichier `business-form-focus.mjs`, supprimé volontairement en alpha.0.124 après correction de la cause racine du focus, reste absent. Une copie encore suivie/stagée dans un checkout Git est un résidu à supprimer ; elle ne doit pas être réintroduite dans l'inventaire canonique.
+
+### Validation alpha.0.127
+
+- **EXÉCUTÉ — tests ciblés ReDoc/DCIM/Integrations/CRUD :** 45/45.
+- **EXÉCUTÉ — Web :** 249/249 ; couverture 99,78 % lignes, 98,60 % branches, 100 % fonctions.
+- **EXÉCUTÉ — Web smoke :** process smoke réussi.
+- **EXÉCUTÉ — ReDoc vendor :** contrôle du bundle local 2.5.3 réussi ; outil vendor 14/14, couverture 99 %.
+- **EXÉCUTÉ — Compose :** 69/69.
+- **EXÉCUTÉ — Toolchains :** 25/25, couverture 99 %, 0 violation.
+- **EXÉCUTÉ — Architecture-as-Code :** 0 violation.
+- **EXÉCUTÉ — API :** tests du checker 48/48 à 98 % ; validation directe 15 fragments / 201 opérations, dette idempotence/pagination/capability/permission = 0/0/0/0. L’émission auxiliaire `openapi-product.yaml` a dépassé la limite du runner et n’est pas revendiquée comme exécutée ; aucun contrat fonctionnel API n’est modifié par cette corrective.
+- **EXÉCUTÉ — Source Integrity strict :** 45/45 à 100 %, staged snapshot et checksums Git cohérents, 0 violation. **EXÉCUTÉ — Archive Compatibility :** archive Git du snapshot committé, 0 violation.
+
+PGM-10-E05 reste **NON TERMINÉ** jusqu'aux gates exacts JDK25/JaCoCo/PostgreSQL 17/18. PGM-10-E06 reste **EN COURS** ; aucun provider mutateur n'est activé.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.126 — ReDoc offline vendor + Node 24.19.0 corrective
 
 ## 2.0.0-alpha.0.126

@@ -118,8 +118,10 @@ function waitForRedocFrame(documentObject, windowObject, host, frame) {
     let renderTimer;
 
     const applyHeight = () => {
-      const viewportHeight = normalizeViewportHeight(windowObject);
-      const height = Math.max(contentHeight, viewportHeight);
+      // Before the frame reports an intrinsic size, the viewport is a safe boot
+      // fallback. Afterwards the renderer owns the height so menu collapse can
+      // actually shrink the documentation page instead of retaining 100vh.
+      const height = contentHeight > 0 ? contentHeight : normalizeViewportHeight(windowObject);
       if (height <= 0) return;
       const value = String(Math.ceil(height));
       frame.setAttribute?.('height', value);

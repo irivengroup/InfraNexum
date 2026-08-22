@@ -20,7 +20,7 @@ import {
   validateCertifiedOpenApi,
   swaggerConfiguration,
 } from '../../src/applications/web/public/assets/api-documentation.mjs';
-import { initializeRedocFrame, initializeRenderer, installHeightReporter, reportHeight } from '../../src/applications/web/public/assets/redoc-frame.mjs';
+import { initializeRedocFrame, initializeRenderer, installHeightReporter, installManagedRedocLayout, reportHeight } from '../../src/applications/web/public/assets/redoc-frame.mjs';
 
 const root = path.resolve(import.meta.dirname, '..', '..');
 const read = (relative) => readFile(path.join(root, relative), 'utf8');
@@ -132,7 +132,7 @@ test('documentation CSP isolates ReDoc inline styling without weakening the auth
 });
 
 
-test('ReDoc shell renderer tracks intrinsic content and viewport for its whole lifetime', async () => {
+test('ReDoc shell follows managed intrinsic height and can grow or shrink after ready', async () => {
   const attributes = new Map();
   const status = {
     className: '', hidden: false, textContent: '',
@@ -181,7 +181,8 @@ test('ReDoc shell renderer tracks intrinsic content and viewport for its whole l
     source: contentWindow,
     data: { source: REDOC_FRAME_MESSAGE_SOURCE, type: 'resize', height: 640.2 },
   });
-  assert.equal(frameAttributes.get('height'), '900');
+  assert.equal(frameAttributes.get('height'), '641');
+  assert.equal(frame.style.height, '641px');
 
   messageHandler({
     origin: 'https://infranexum.example',
@@ -202,22 +203,28 @@ test('ReDoc shell renderer tracks intrinsic content and viewport for its whole l
   assert.equal(attributes.get('data-state'), 'ready');
   assert.equal(status.hidden, true);
 
-  // The message bridge deliberately remains active after ready so expanded sections resize the shell.
+  // ReDoc keeps reporting after ready: expanding or collapsing its menu may grow or shrink the shell.
   assert.equal(handlers.get('message'), messageHandler);
   messageHandler({
     origin: 'https://infranexum.example',
     source: contentWindow,
-    data: { source: REDOC_FRAME_MESSAGE_SOURCE, type: 'resize', height: 2_500_000.2 },
+    data: { source: REDOC_FRAME_MESSAGE_SOURCE, type: 'resize', height: 1210 },
   });
-  assert.equal(frameAttributes.get('height'), '2500001');
-  assert.equal(frame.style.height, '2500001px');
+  assert.equal(frameAttributes.get('height'), '1210');
+  messageHandler({
+    origin: 'https://infranexum.example',
+    source: contentWindow,
+    data: { source: REDOC_FRAME_MESSAGE_SOURCE, type: 'resize', height: 522 },
+  });
+  assert.equal(frameAttributes.get('height'), '522');
 
-  windowObject.innerHeight = 2_600_000;
+  // Once an intrinsic height is known, a viewport resize must not reintroduce a minimum-height ratchet.
+  windowObject.innerHeight = 2600;
   handlers.get('resize')();
-  assert.equal(frameAttributes.get('height'), '2600000');
+  assert.equal(frameAttributes.get('height'), '522');
   windowObject.innerHeight = 700;
   handlers.get('resize')();
-  assert.equal(frameAttributes.get('height'), '2500001');
+  assert.equal(frameAttributes.get('height'), '522');
 });
 
 test('ReDoc frame loads the certified local contract and pinned renderer inside its isolated document', async () => {
@@ -252,7 +259,7 @@ test('ReDoc frame loads the certified local contract and pinned renderer inside 
   };
   const specLoader = async (_window, url) => {
     assert.equal(url, OPENAPI_RENDER_SPEC_URL);
-    return { openapi: '3.1.0', info: { version: '2.0.0-alpha.0.126' }, paths: {} };
+    return { openapi: '3.1.0', info: { version: '2.0.0-alpha.0.127' }, paths: {} };
   };
 
   assert.equal(await initializeRedocFrame(documentObject, windowObject, assetLoader, specLoader), true);
@@ -268,6 +275,98 @@ test('ReDoc frame loads the certified local contract and pinned renderer inside 
   assert.ok(messages.every(({ origin }) => origin === 'https://infranexum.example'));
 });
 
+
+test('ReDoc managed layout keeps exactly one API section visible and follows menu activation', () => {
+  const makeContent = (id) => ({
+    id,
+    hidden: false,
+    parentElement: null,
+    attributes: new Map(),
+    setAttribute(name, value) { this.attributes.set(name, String(value)); },
+    getAttribute(name) { return this.attributes.get(name) ?? null; },
+    removeAttribute(name) { this.attributes.delete(name); },
+  });
+  const sectionA = makeContent('section-a');
+  const sectionB = makeContent('section-b');
+  const operationA = makeContent('operation-a');
+  const operationB = makeContent('operation-b');
+  const siblingA = makeContent('operation-a-sibling');
+  const siblingB = makeContent('operation-b-sibling');
+  sectionA.children = [operationA, siblingA];
+  sectionB.children = [operationB, siblingB];
+  operationA.parentElement = sectionA;
+  siblingA.parentElement = sectionA;
+  operationB.parentElement = sectionB;
+  siblingB.parentElement = sectionB;
+  const api = {
+    children: [sectionA, sectionB],
+    contains: (node) => [sectionA, sectionB, operationA, operationB, siblingA, siblingB].includes(node),
+  };
+  sectionA.parentElement = api;
+  sectionB.parentElement = api;
+
+  const makeItem = (id) => ({
+    getAttribute: (name) => name === 'data-item-id' ? id : null,
+    closest(selector) { return selector === '[data-item-id]' ? this : null; },
+  });
+  const itemA = makeItem('operation-a');
+  const itemB = makeItem('operation-b');
+  const handlers = new Map();
+  const menu = {
+    querySelectorAll: () => [itemA, itemB],
+    contains: (node) => [itemA, itemB].includes(node),
+    addEventListener: (name, handler) => handlers.set(name, handler),
+    removeEventListener: (name, handler) => { if (handlers.get(name) === handler) handlers.delete(name); },
+  };
+  const attributes = new Map();
+  const root = {
+    scrollHeight: 800,
+    offsetHeight: 780,
+    getBoundingClientRect: () => ({ height: 790 }),
+    querySelector: (selector) => selector === '.menu-content' ? menu : selector === '.api-content' ? api : null,
+    setAttribute: (name, value) => attributes.set(name, String(value)),
+  };
+  const documentObject = {
+    getElementById: (id) => ({ 'operation-a': operationA, 'operation-b': operationB }[id] ?? null),
+  };
+  const messages = [];
+  const windowObject = {
+    location: { origin: 'https://infranexum.example', hash: '' },
+    parent: { postMessage: (payload) => messages.push(payload) },
+    addEventListener: () => {},
+  };
+
+  const controller = installManagedRedocLayout(documentObject, windowObject, root);
+  assert.equal(controller.managed, true);
+  assert.equal(attributes.get('data-inx-redoc-managed'), 'true');
+  assert.equal(attributes.get('data-inx-redoc-active-id'), 'operation-a');
+  assert.equal(sectionA.hidden, false);
+  assert.equal(operationA.hidden, false);
+  assert.equal(operationA.attributes.get('aria-hidden'), 'false');
+  assert.equal(operationA.attributes.get('data-inx-redoc-active'), 'true');
+  assert.equal(siblingA.hidden, true);
+  assert.equal(siblingA.attributes.get('data-inx-redoc-managed-hidden'), 'true');
+  assert.equal(sectionB.hidden, true);
+  assert.equal(sectionB.attributes.get('aria-hidden'), 'true');
+
+  handlers.get('click')({ target: itemB });
+  assert.equal(attributes.get('data-inx-redoc-active-id'), 'operation-b');
+  assert.equal(sectionA.hidden, true);
+  assert.equal(sectionA.attributes.get('aria-hidden'), 'true');
+  assert.equal(sectionB.hidden, false);
+  assert.equal(operationB.hidden, false);
+  assert.equal(operationB.attributes.get('data-inx-redoc-active'), 'true');
+  assert.equal(siblingB.hidden, true);
+  assert.equal(siblingB.attributes.get('data-inx-redoc-managed-hidden'), 'true');
+  assert.ok(messages.some((payload) => payload.type === 'resize'));
+});
+
+test('ReDoc managed stylesheet removes fixed menu height and hides inactive API sections', async () => {
+  const css = await read('src/applications/web/public/assets/redoc-frame.css');
+  assert.match(css, /data-inx-redoc-managed="true"[\s\S]*\.menu-content[\s\S]*height:\s*auto\s*!important/);
+  assert.match(css, /\.api-content[\s\S]*data-inx-redoc-managed-hidden[\s\S]*display:\s*none\s*!important/);
+  assert.match(css, /max-height:\s*none\s*!important/);
+});
 
 test('ReDoc height reporter measures only its intrinsic root and observes resize plus mutations', () => {
   const messages = [];

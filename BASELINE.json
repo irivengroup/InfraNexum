@@ -1,11 +1,12 @@
 {
   "schema": "infranexum.source-baseline/v1",
   "product": "InfraNexum — Infrastructure Control & Governance Platform",
-  "implementation_version": "2.0.0-alpha.0.126",
+  "implementation_version": "2.0.0-alpha.0.127",
   "architecture_baseline": "2.0.0-draft.21",
   "roadmap_baseline": "2.0.0-draft.21",
   "architecture_archive_sha256": "372cf19929f8ea3b7586c3af3e7c5004e590cf746ff2d6d59d4d0b88912aea64",
   "implemented_scope": [
+    "alpha.0.127 Web/UX corrective: ReDoc is converted from a cumulative continuous contract page to a managed active-section view; its menu has natural expandable/collapsible height, inactive API sections are hidden, and the parent iframe follows intrinsic height in both directions without a viewport ratchet or text truncation. DCIM Location panels are explicitly wired to the shared enterprise CRUD controller so + New opens the editor; DCIM contextual navigation now shares the IAM tab visual contract. Integrations is reorganized as the same vertical tab workspace pattern while preserving governance, synchronization, Jira Assets, ServiceNow and notification flows and their existing IDs. The obsolete business-form-focus.mjs workaround remains absent as required by alpha.0.124; source integrity must remove any stale tracked copy rather than reintroduce it. No API operation, migration, permission, capability or provider mutation is added. PGM-10-E05 remains NON TERMINÉ pending exact JDK25/JaCoCo/PostgreSQL 17/18 gates; PGM-10-E06 remains EN COURS with no mutating provider.",
     "alpha.0.126 ReDoc offline/vendor and Web runtime corrective: vendors ReDoc 2.5.3 locally under assets/vendor/redoc/2.5.3 with MIT license, bundled third-party license notice and deterministic SHA-256 manifest; the Web composition root verifies the vendor tree fail-closed before opening the HTTP listener. ReDoc runtime loading is local-only with frame CSP script-src self, no CDN fallback, intrinsic-root ResizeObserver plus MutationObserver reporting, persistent parent postMessage handling after ready, and iframe height equal to max(intrinsic content, viewport) without arbitrary max-height or nested vertical scrolling. Node.js Web runtime is aligned on 24.19.0 across toolchain catalogue, CI, Compose and Docker; linux-x64 and linux-arm64 archives are pinned to the official Node.js SHA-256 values. The certified OpenAPI 3.1 contract remains local and independently accessible. No API operation, migration, permission, capability or provider mutation is added. PGM-10-E05 remains NON TERMINÉ pending exact JDK25/JaCoCo/PostgreSQL 17/18 gates; PGM-10-E06 remains EN COURS with no mutating provider.",
     "alpha.0.123 DCIM catalogue and business-form corrective: restores pointer-to-editable-field focus for authenticated business CRUD forms while explicitly excluding login/search; adds centralized 15-category/97-type equipment taxonomy with category-filtered types and rack-mountability invariants, server-side memorable code generation, repeatable heterogeneous model port templates, explicit Equipment A/Port A and Equipment B/Port B cabling selectors, cable type/length/manufacturer metadata, paired migration 0040 and PostgreSQL/Oracle persistence. PGM-10-E05 remains NON TERMINÉ pending exact JDK25/JaCoCo/PostgreSQL 17/18 gates and PGM-10-E06 remains EN COURS with no mutating provider.",
     "alpha.0.122 PGM-10-E06 governance-admission increment: adds configurable provider-neutral connector authority mappings keyed only to existing Jira Assets/ServiceNow connectors, with provider identity derived from provider configuration, explicit executionEnabled admission, prepared-vs-active semantics, field-level authority and rollback validation, bidirectional fail-closed Server startup admission between active policies and approved ConnectorSyncHandler registrations, API/audit exposure and five-locale Web execution gating. Jira Assets and ServiceNow still register no mutating handler; no new route, capability, RBAC permission or migration is added and OpenService remains unimplemented without an authoritative provider contract. PGM-10-E05 remains formally NON TERMINÉ until exact JDK25/JaCoCo/PostgreSQL 17/18 gates pass; PGM-10-E06 remains EN COURS.",
@@ -385,5 +386,21 @@
   "source_integrity_prepack_alpha122": "EXECUTED_45_OF_45_COVERAGE100_ZERO_VIOLATIONS_CANONICAL_INVENTORY_1553_PATHS",
   "source_integrity_alpha122": "EXECUTED_STRICT_STAGED_SNAPSHOT_1555_TRACKED_PATHS_1554_GIT_BLOB_CHECKSUMS_1553_CANONICAL_INVENTORY_ZERO_VIOLATIONS",
   "archive_compatibility_unit_alpha122": "EXECUTED_12_OF_12_COVERAGE100_ZERO_VIOLATIONS",
-  "archive_candidate_alpha122": "EXECUTED_GIT_ARCHIVE_1555_FILES_ZERO_ARCHIVE_COMPATIBILITY_VIOLATIONS_POST_EXTRACTION_SOURCE_INTEGRITY_ZERO_VIOLATIONS_WEB_PROCESS_SMOKE_PASS_AND_4_TARGETED_ARCHITECTURE_TESTS_PASS"
+  "archive_candidate_alpha122": "EXECUTED_GIT_ARCHIVE_1555_FILES_ZERO_ARCHIVE_COMPATIBILITY_VIOLATIONS_POST_EXTRACTION_SOURCE_INTEGRITY_ZERO_VIOLATIONS_WEB_PROCESS_SMOKE_PASS_AND_4_TARGETED_ARCHITECTURE_TESTS_PASS",
+  "validation": {
+    "web_local_runtime_alpha127": "EXECUTED_249_OF_249_LINE99_78_BRANCH98_60_FUNCTION100_PROCESS_SMOKE_PASS",
+    "redoc_targeted_alpha127": "EXECUTED_15_OF_15_MANAGED_ACTIVE_SECTION_DYNAMIC_GROW_SHRINK_HEIGHT_AND_LOCAL_VENDOR_BOUNDARY",
+    "source_inventory_paths_alpha127": 1574,
+    "packaging_tracked_files_alpha127": 1576,
+    "git_blob_checksums_alpha127": 1575,
+    "source_integrity_alpha127": "EXECUTED_45_OF_45_100_PERCENT_STRICT_STAGED_SNAPSHOT_1576_TRACKED_PATHS_1575_GIT_BLOB_CHECKSUMS_1574_CANONICAL_INVENTORY_ZERO_VIOLATIONS",
+    "api_contract_unit_alpha127": "EXECUTED_48_OF_48_98_PERCENT_NO_API_BEHAVIOR_CHANGE_PRODUCT_SPEC_EMISSION_RUNNER_TIMEOUT_NOT_CLAIMED",
+    "pgm10e05_alpha127": "FORMALLY_NON_TERMINE_EXACT_JDK25_JACOCO_AND_POSTGRESQL17_18_GATES_STILL_REQUIRED",
+    "pgm10e06_alpha127": "EN_COURS_EXISTING_GOVERNANCE_AND_DURABLE_SYNC_PRESERVED_NO_MUTATING_PROVIDER_ACTIVATED",
+    "compose_contract_alpha127": "EXECUTED_69_OF_69",
+    "toolchains_alpha127": "EXECUTED_25_OF_25_99_PERCENT_ZERO_VIOLATIONS",
+    "architecture_check_alpha127": "EXECUTED_PASS_ZERO_VIOLATIONS",
+    "api_contracts_alpha127": "EXECUTED_UNIT_48_OF_48_98_PERCENT_DIRECT_CHECK_15_FRAGMENTS_201_OPERATIONS_DEBT_0_0_0_0_PRODUCT_SPEC_EMISSION_RUNNER_TIMEOUT_NOT_CLAIMED",
+    "archive_compatibility_alpha127": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS"
+  }
 }

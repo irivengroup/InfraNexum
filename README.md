@@ -1,21 +1,15 @@
-# InfraNexum 2.0.0-alpha.0.126 — ReDoc bootstrap/runtime corrective
+# InfraNexum 2.0.0-alpha.0.127 — ReDoc/DCIM/Integrations Web corrective
 
-> **Corrective post-alpha.0.125 — NON PUBLIÉE :** le chemin ReDoc est désormais conçu en self-hosted strict. Le runtime référence uniquement `/assets/vendor/redoc/2.5.3/redoc.standalone.js`, la CSP de l’iframe est limitée à `script-src 'self'`, et aucun fallback ReDoc Internet n’est autorisé. Le shell dimensionne l’iframe à `max(hauteur intrinsèque ReDoc, viewport)` sans plafond arbitraire ; le bridge `postMessage` reste actif après `ready`, tandis que `ResizeObserver` et `MutationObserver` suivent les changements dynamiques. Le démarrage Web est fail-closed via un manifeste SHA-256/taille/licence local vérifié avant l’ouverture du listener HTTP. La release reste non publiable tant que le bundle ReDoc 2.5.3 authentique n’a pas été acquis et attesté dans un runner build autorisé.
+**InfraNexum — Infrastructure Control & Governance Platform**
 
-> **alpha.0.125 corrective:** fixes the ReDoc bootstrap dependency-wiring defect that passed the Swagger asset loader as the ReDoc iframe factory, eliminates Promise leakage in documentation errors, handles ReDoc callback/promise failures explicitly, and introduces a phase-aware iframe handshake with pinned official Redocly loading plus bounded jsDelivr fallback. The certified OpenAPI contract remains local and accessible independently of the presentation engine.
+`alpha.0.127` is a Web/UX corrective over the vendored ReDoc 2.5.3 / Node 24.19.0 baseline. It does not add an API operation, migration, RBAC permission, capability or mutating connector provider.
 
-## ReDoc reliability boundary
+- **ReDoc:** the lateral menu has natural expandable/collapsible height; the document column keeps only the active API section visible; the iframe follows intrinsic height upward and downward after startup, without a viewport minimum ratchet, nested vertical scrolling or active-text truncation.
+- **DCIM:** Location CRUD panels are explicitly wired to the shared enterprise CRUD controller, restoring `+ New`; the contextual navigation uses the same visual contract as Identity & Access.
+- **Integrations:** Governance, Synchronization, Jira Assets, ServiceNow and Notifications are presented as vertical tabs on the IAM/DCIM model while preserving their existing forms, IDs and provider behavior.
+- **Source integrity:** `business-form-focus.mjs` remains intentionally absent following the alpha.0.124 root-cause correction. Any stale tracked/staged copy in an older checkout must be removed, not added to the canonical inventory.
 
-- `initializeApiDocumentation()` keeps Swagger asset loading and ReDoc frame creation as distinct dependencies.
-- ReDoc frame lifecycle is explicit: `boot` → `contract` → `renderer` → `render` → `ready`/`error`.
-- The frame has a short boot deadline and a separate rendering deadline; renderer loading no longer races the parent initialization timeout.
-- ReDoc 2.5.3 callback errors and returned Promise rejections are both fail-closed.
-- Renderer failures are normalized and never expose `[object Promise]` or raw object stringification.
-- The frame loads the pinned official Redocly distribution first and falls back to the same pinned version on jsDelivr. Failed/timeout script elements are removed before the next candidate.
-- The authenticated InfraNexum shell CSP remains unchanged; only the isolated ReDoc frame permits the two pinned renderer fallback origins and inline style injection required by ReDoc's styling runtime.
-
-The local OpenAPI 3.1 contract remains the source of truth. If all renderer candidates are unavailable, the raw local contract remains accessible and the error state is explicit.
-
+Validation evidence and remaining qualification gates are recorded in `docs/implementation-status.md` and `src/distribution/release-manifest.json`. PGM-10-E05 remains formally **NON TERMINÉ** pending the exact JDK25/JaCoCo/PostgreSQL 17/18 gates; PGM-10-E06 remains **EN COURS** with no mutating provider activated.
 
 ---
 

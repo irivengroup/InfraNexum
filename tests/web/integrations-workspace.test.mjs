@@ -20,10 +20,18 @@ test('Integrations workspace is capability gated and exposes Jira Assets plus Se
   }
   assert.match(template, /maxlength="4096"/);
   assert.doesNotMatch(template, /password|bearer|token|credential/i);
+  for (const tab of ['governance', 'sync', 'jira-assets', 'service-now', 'notifications']) {
+    assert.match(template, new RegExp(`data-integrations-tab="${tab}"`));
+    assert.match(template, new RegExp(`data-integrations-panel="${tab}"`));
+  }
+  assert.match(template, /aria-selected="true"[^>]+data-integrations-tab="governance"/);
+  assert.match(template, /data-integrations-panel="governance"[^>]+aria-hidden="false"/);
+  assert.match(template, /data-integrations-panel="sync"[^>]+hidden aria-hidden="true"/);
 });
 
 test('Integrations workspace keeps providers read-only while exposing governed generic sync runtime', async () => {
   const source = await readFile(new URL('../../src/applications/web/public/assets/integrations-workspace.mjs', import.meta.url), 'utf8');
+  assert.match(source, /bindTabSet\(documentObject, '\[data-integrations-tab\]', '\[data-integrations-panel\]', 'data-integrations-tab'\)/);
   assert.match(source, /new JiraAssetsClient/);
   assert.match(source, /new NotificationClient/);
   assert.match(source, /new ConnectorGovernanceClient/);
