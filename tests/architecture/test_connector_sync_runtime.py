@@ -59,29 +59,33 @@ class ConnectorSyncRuntimeArchitectureTest(unittest.TestCase):
         directions=doc['components']['schemas']['ConnectorSyncExecutionRequest']['properties']['direction']['enum']
         self.assertNotIn('FEDERATED_READ',directions)
 
-    def test_jira_mutation_is_admitted_only_by_exact_governance_and_servicenow_stays_read_only(self):
+    def test_jira_and_servicenow_mutation_are_admitted_only_by_exact_governance(self):
         governance=(SERVER/'ConfiguredConnectorGovernanceRegistry.java').read_text(encoding='utf-8')
         self.assertIn('externalFederatedRead',governance)
 
-        catalog=(SERVER/'ConfiguredJiraAssetsSyncHandlerCatalog.java').read_text(encoding='utf-8')
-        for guard in (
-            'ConnectorSyncDirection.OUTBOUND',
-            'ConnectorDataAuthority.INFRANEXUM',
-            'ConnectorConflictStrategy.PREFER_AUTHORITY',
-            'ConnectorDeletionPolicy.IGNORE',
-            'ConnectorRollbackStrategy.MANUAL',
-            'policy.executionEnabled()',
-            'governed.equals(mutation.attributeIds().keySet())',
-        ):
-            self.assertIn(guard,catalog)
-        self.assertIn('new JiraAssetsSyncHandler',catalog)
+        jira=(SERVER/'ConfiguredJiraAssetsSyncHandlerCatalog.java').read_text(encoding='utf-8')
+        service_now=(SERVER/'ConfiguredServiceNowSyncHandlerCatalog.java').read_text(encoding='utf-8')
+        for catalog, field_guard in ((jira, 'governed.equals(mutation.attributeIds().keySet())'),
+                                     (service_now, 'governed.equals(mutation.fieldNames().keySet())')):
+            for guard in (
+                'ConnectorSyncDirection.OUTBOUND',
+                'ConnectorDataAuthority.INFRANEXUM',
+                'ConnectorConflictStrategy.PREFER_AUTHORITY',
+                'ConnectorDeletionPolicy.IGNORE',
+                'ConnectorRollbackStrategy.MANUAL',
+                'policy.executionEnabled()',
+                field_guard,
+            ):
+                self.assertIn(guard,catalog)
+        self.assertIn('new JiraAssetsSyncHandler',jira)
+        self.assertIn('new ServiceNowSyncHandler',service_now)
 
         config=(SERVER/'IntegrationRuntimeConfiguration.java').read_text(encoding='utf-8')
         self.assertIn('ConfiguredJiraAssetsSyncHandlerCatalog',config)
+        self.assertIn('ConfiguredServiceNowSyncHandlerCatalog',config)
         self.assertIn('values.addAll(jiraHandlers.handlers())',config)
+        self.assertIn('values.addAll(serviceNowHandlers.handlers())',config)
         self.assertIn('direction().mutating()',config)
-        self.assertNotIn('new ServiceNowSyncHandler',config)
-        self.assertFalse((SERVER/'ConfiguredServiceNowSyncHandlerCatalog.java').exists())
 
     def test_java_empty_collection_fallbacks_are_explicitly_typed_and_registry_is_in_preflight(self):
         registry=(SERVER/'ImmutableConnectorSyncHandlerRegistry.java').read_text(encoding='utf-8')

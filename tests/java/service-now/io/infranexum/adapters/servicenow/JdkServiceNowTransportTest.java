@@ -34,6 +34,24 @@ class JdkServiceNowTransportTest {
         assertEquals(Duration.ofSeconds(2), sent[0].timeout().orElseThrow());
     }
 
+
+    @Test
+    void sendsGovernedMutationMethodsWithExactBodies() {
+        java.util.List<HttpRequest> sent = new java.util.ArrayList<>();
+        JdkServiceNowTransport transport = new JdkServiceNowTransport(req -> {
+            sent.add(req);
+            return response(200, "{}".getBytes());
+        }, 32);
+        byte[] body = "{\"u_name\":\"server\"}".getBytes();
+        for (String method : List.of("POST", "PATCH")) {
+            ServiceNowTransport.Request request = new ServiceNowTransport.Request(
+                    URI.create("https://tenant.service-now.com/api/now/table/cmdb_ci"),
+                    method, Map.of("Content-Type", "application/json"), body, Duration.ofSeconds(2));
+            transport.execute(request);
+        }
+        assertEquals(List.of("POST", "PATCH"), sent.stream().map(HttpRequest::method).toList());
+    }
+
     @Test
     void rejectsOversizedResponsesAndMapsTransportFailures() {
         assertThrows(ServiceNowProtocolException.class, () -> new JdkServiceNowTransport(req -> response(200, new byte[] {1,2}), 1).execute(request()));

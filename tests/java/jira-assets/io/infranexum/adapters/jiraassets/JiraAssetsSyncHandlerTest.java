@@ -116,6 +116,9 @@ class JiraAssetsSyncHandlerTest {
         assertThrows(io.infranexum.core.contracts.ConfigurationException.class,
                 () -> new JiraAssetsMutationSettings(KEY, "23", "InfraNexum ID", "id", Map.of("asset_type", "1"), 1));
         assertThrows(io.infranexum.core.contracts.ConfigurationException.class,
+                () -> new JiraAssetsMutationSettings(KEY, "23", "InfraNexum ID", "id",
+                        Map.of("id", "1", "asset_type", "1"), 1));
+        assertThrows(io.infranexum.core.contracts.ConfigurationException.class,
                 () -> new JiraAssetsMutationSettings(KEY, "23", "InfraNexum ID", "id", Map.of("id", "1"), 201));
     }
 

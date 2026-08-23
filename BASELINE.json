@@ -1,7 +1,7 @@
 {
   "schema": "infranexum.source-baseline/v1",
   "product": "InfraNexum — Infrastructure Control & Governance Platform",
-  "implementation_version": "2.0.0-alpha.0.129",
+  "implementation_version": "2.0.0-alpha.0.130",
   "architecture_baseline": "2.0.0-draft.21",
   "roadmap_baseline": "2.0.0-draft.21",
   "architecture_archive_sha256": "372cf19929f8ea3b7586c3af3e7c5004e590cf746ff2d6d59d4d0b88912aea64",
@@ -404,5 +404,8 @@
     "architecture_check_alpha127": "EXECUTED_PASS_ZERO_VIOLATIONS",
     "api_contracts_alpha127": "EXECUTED_UNIT_48_OF_48_98_PERCENT_DIRECT_CHECK_15_FRAGMENTS_201_OPERATIONS_DEBT_0_0_0_0_PRODUCT_SPEC_EMISSION_RUNNER_TIMEOUT_NOT_CLAIMED",
     "archive_compatibility_alpha127": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS"
-  }
+  },
+  "history": [
+    "alpha.0.130 governed ServiceNow CMDB outbound synchronization: preserves federated read as the default and adds an exact-governance outbound ITAM upsert handler through the durable connector sync runtime. Mutations are restricted to ServiceNow Table API POST/PATCH on https://*.service-now.com, use canonical InfraNexum UUIDv7 identity mapped to an explicit custom u_* field, reject duplicate remote identities and non-bijective provider mappings fail-closed, do not propagate deletes, and retain MANUAL compensation. Jira Assets mapping is simultaneously hardened to reject duplicate provider attribute targets. No provider-specific write endpoint, new database migration, browser credential path or OpenService behavior is introduced. Server/JDBC Maven JaCoCo and PostgreSQL 17/18 live qualification remain externally required because this runner lacks the complete Maven dependency repository and PostgreSQL runtime."
+  ]
 }

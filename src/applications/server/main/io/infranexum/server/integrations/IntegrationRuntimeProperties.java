@@ -171,6 +171,19 @@ public record IntegrationRuntimeProperties(
     }
 
 
+    Map<ConnectorKey, io.infranexum.adapters.servicenow.ServiceNowMutationSettings> serviceNowMutationDefinitions() {
+        Map<ConnectorKey, io.infranexum.adapters.servicenow.ServiceNowMutationSettings> result = new LinkedHashMap<>();
+        serviceNow.connectors().forEach((key, value) -> {
+            if (value.mutation() == null) return;
+            ConnectorKey connectorKey = new ConnectorKey(key);
+            ServiceNowMutationProperties mutation = value.mutation();
+            result.put(connectorKey, new io.infranexum.adapters.servicenow.ServiceNowMutationSettings(
+                    connectorKey, mutation.identitySourceField(), mutation.fieldNames(), mutation.batchSize()));
+        });
+        return Map.copyOf(result);
+    }
+
+
     Map<ConnectorKey, GovernanceProperties> governanceDefinitions() {
         Map<ConnectorKey, GovernanceProperties> result = new LinkedHashMap<>();
         governance.forEach((key, value) -> result.put(new ConnectorKey(key), value));
@@ -277,9 +290,28 @@ public record IntegrationRuntimeProperties(
             String tableName,
             String bearerTokenReference,
             Duration requestTimeout,
-            boolean enabled) {
+            boolean enabled,
+            ServiceNowMutationProperties mutation) {
+        /** Compatibility constructor for read-only connector definitions predating provider mutation admission. */
+        public ServiceNowConnectorProperties(
+                String instanceHost, String tableName, String bearerTokenReference, Duration requestTimeout, boolean enabled) {
+            this(instanceHost, tableName, bearerTokenReference, requestTimeout, enabled, null);
+        }
+
         public ServiceNowConnectorProperties {
             new ServiceNowSettings(new ConnectorKey("validation.connector"), instanceHost, tableName, bearerTokenReference, requestTimeout, enabled);
+            if (mutation != null) mutation.validate();
+        }
+    }
+
+    /** Exact local-to-CMDB field mapping required before ServiceNow outbound mutation can be registered. */
+    public record ServiceNowMutationProperties(
+            String identitySourceField,
+            Map<String, String> fieldNames,
+            int batchSize) {
+        private void validate() {
+            new io.infranexum.adapters.servicenow.ServiceNowMutationSettings(
+                    new ConnectorKey("validation.connector"), identitySourceField, fieldNames, batchSize);
         }
     }
 

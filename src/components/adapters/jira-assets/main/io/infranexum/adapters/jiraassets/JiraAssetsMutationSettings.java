@@ -39,11 +39,15 @@ public record JiraAssetsMutationSettings(
             throw new ConfigurationException("Jira Assets outbound identitySourceField must be id");
         }
         Map<String, String> normalized = new LinkedHashMap<>();
+        java.util.Set<String> providerAttributes = new java.util.HashSet<>();
         for (Map.Entry<String, String> entry : Objects.requireNonNull(attributeIds, "attributeIds").entrySet()) {
             String field = new ConnectorFieldAuthority(entry.getKey(), ConnectorDataAuthority.INFRANEXUM).field();
             String attributeId = providerId(entry.getValue(), "attribute id");
             if (normalized.putIfAbsent(field, attributeId) != null) {
                 throw new ConfigurationException("duplicate Jira Assets mutation field: " + field);
+            }
+            if (!providerAttributes.add(attributeId)) {
+                throw new ConfigurationException("duplicate Jira Assets mutation attribute id: " + attributeId);
             }
         }
         if (!normalized.containsKey(identitySourceField)) {

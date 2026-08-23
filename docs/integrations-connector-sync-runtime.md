@@ -2,7 +2,7 @@
 
 ## Scope
 
-The provider-neutral synchronization runtime provides durable runs, revisioned checkpoints, bounded batch execution, pause/resume, active-run fencing and governed compensation. PGM-10-E06 phase 6 adds the first provider implementation on top of it: an ITAM → Jira Assets OUTBOUND upsert handler admitted only by exact Jira mutation mapping and `INFRANEXUM/PREFER_AUTHORITY/IGNORE/MANUAL` governance. ServiceNow remains without a mutating handler.
+The provider-neutral synchronization runtime provides durable runs, revisioned checkpoints, bounded batch execution, pause/resume, active-run fencing and governed compensation. PGM-10-E06 now layers two provider implementations on top of it: ITAM → Jira Assets and ITAM → ServiceNow OUTBOUND upsert handlers, each admitted only by an exact provider mapping plus `INFRANEXUM/PREFER_AUTHORITY/IGNORE/MANUAL` governance.
 
 The runtime implements the roadmap requirements for cursor-based resume, idempotence, deduplication and checkpoints without claiming exactly-once execution.
 
@@ -59,7 +59,7 @@ A successful compensation appends a new `COMPENSATION` checkpoint whose cursor r
 
 `ConnectorSyncHandlerRegistry` is the only execution bridge to provider-specific mutation code. Startup validation rejects a registered handler whose connector governance policy is not mutating.
 
-`ConfiguredJiraAssetsSyncHandlerCatalog` is the only current provider-specific mutating catalog. It registers a handler only when the Jira provider is enabled, an explicit mutation mapping exists, persistence is PostgreSQL/Oracle, execution is enabled and direction/authority/conflict/deletion/rollback/field mappings match exactly. ServiceNow remains federated read-only and has no mutating catalog.
+`ConfiguredJiraAssetsSyncHandlerCatalog` and `ConfiguredServiceNowSyncHandlerCatalog` are the current provider-specific mutating catalogs. Each registers a handler only when its provider is enabled, an explicit mutation mapping exists, persistence is PostgreSQL/Oracle, execution is enabled and direction/authority/conflict/deletion/rollback/field mappings match exactly. ServiceNow additionally requires the immutable local `id` to map to a custom `u_*` CMDB column.
 
 ## API and RBAC
 
@@ -114,6 +114,6 @@ A safe test plan is:
 
 ## Remaining PGM-10-E06 work
 
-The runtime plus the first governed Jira OUTBOUND handler are implemented, but PGM-10-E06 remains **EN COURS**. Remaining work includes Jira inbound/bidirectional contracts if required, ServiceNow mutation only after explicit authority/rollback design, controlled remote deletion propagation, end-to-end live provider certification, and OpenService once an authoritative provider/API contract exists.
+The runtime plus governed Jira Assets and ServiceNow OUTBOUND handlers are implemented, but PGM-10-E06 remains **EN COURS**. Remaining work includes inbound/bidirectional contracts if required, controlled remote deletion propagation, end-to-end live provider certification, and OpenService once an authoritative provider/API contract exists.
 
 PGM-10-E05 also remains formally open until its exact hosted JDK25/JaCoCo and PostgreSQL 17/18 gates are proven.

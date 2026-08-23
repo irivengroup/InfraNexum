@@ -36,8 +36,13 @@ public final class JdkServiceNowTransport implements ServiceNowTransport {
     @Override
     public Response execute(Request request) {
         Objects.requireNonNull(request, "request");
-        HttpRequest.Builder builder = HttpRequest.newBuilder(request.uri()).timeout(request.timeout()).GET();
+        HttpRequest.Builder builder = HttpRequest.newBuilder(request.uri()).timeout(request.timeout());
         request.headers().forEach(builder::header);
+        if (request.method().equals("GET")) {
+            builder.GET();
+        } else {
+            builder.method(request.method(), HttpRequest.BodyPublishers.ofByteArray(request.body()));
+        }
         try {
             HttpResponse<InputStream> response = sender.send(builder.build());
             try (InputStream stream = Objects.requireNonNull(response.body(), "response body")) {

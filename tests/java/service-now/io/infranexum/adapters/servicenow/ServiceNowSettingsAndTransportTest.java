@@ -35,6 +35,23 @@ class ServiceNowSettingsAndTransportTest {
         assertThrows(ConfigurationException.class, () -> new ServiceNowSettings(KEY, "tenant.service-now.com", "cmdb_ci", "env:SN_TOKEN", Duration.ofSeconds(61), true));
     }
 
+
+    @Test
+    void mutationSettingsRequireImmutableIdAndSafeProviderColumns() {
+        ServiceNowMutationSettings settings = new ServiceNowMutationSettings(
+                KEY, "id", Map.of("id", "u_infranexum_id", "asset_type", "u_asset_type"), 50);
+        assertEquals("u_infranexum_id", settings.identityField());
+        assertEquals(2, settings.fieldNames().size());
+        assertThrows(ConfigurationException.class, () -> new ServiceNowMutationSettings(
+                KEY, "id", Map.of("id", "sys_id"), 50));
+        assertThrows(ConfigurationException.class, () -> new ServiceNowMutationSettings(
+                KEY, "id", Map.of("id", "name"), 50));
+        assertThrows(ConfigurationException.class, () -> new ServiceNowMutationSettings(
+                KEY, "id", Map.of("id", "u_infranexum_id", "asset_type", "u-bad"), 50));
+        assertThrows(ConfigurationException.class, () -> new ServiceNowMutationSettings(
+                KEY, "id", Map.of("id", "u_infranexum_id", "asset_type", "u_infranexum_id"), 50));
+    }
+
     @Test
     void requestAndResponseAreDefensiveAndTransportIsSaasHostPinned() {
         byte[] body = new byte[0];
@@ -54,10 +71,20 @@ class ServiceNowSettingsAndTransportTest {
                 URI.create("/relative"))) {
             assertThrows(IllegalArgumentException.class, () -> new ServiceNowTransport.Request(uri, "GET", Map.of(), new byte[0], Duration.ofSeconds(1)));
         }
+        assertDoesNotThrow(() -> new ServiceNowTransport.Request(
+                URI.create("https://tenant.service-now.com/api/now/table/cmdb_ci"), "POST", Map.of(), new byte[] {1}, Duration.ofSeconds(1)));
+        assertDoesNotThrow(() -> new ServiceNowTransport.Request(
+                URI.create("https://tenant.service-now.com/api/now/table/cmdb_ci/0123456789abcdef0123456789abcdef"), "PATCH", Map.of(), new byte[] {1}, Duration.ofSeconds(1)));
         assertThrows(IllegalArgumentException.class, () -> new ServiceNowTransport.Request(
-                URI.create("https://tenant.service-now.com/path"), "POST", Map.of(), new byte[0], Duration.ofSeconds(1)));
+                URI.create("https://tenant.service-now.com/api/now/import/x"), "POST", Map.of(), new byte[] {1}, Duration.ofSeconds(1)));
         assertThrows(IllegalArgumentException.class, () -> new ServiceNowTransport.Request(
-                URI.create("https://tenant.service-now.com/path"), "GET", Map.of(), new byte[] {1}, Duration.ofSeconds(1)));
+                URI.create("https://tenant.service-now.com/api/now/table/cmdb_ci#fragment"), "GET", Map.of(), new byte[0], Duration.ofSeconds(1)));
+        assertThrows(IllegalArgumentException.class, () -> new ServiceNowTransport.Request(
+                URI.create("https://tenant.service-now.com/api/now/table/cmdb_ci"), "POST", Map.of(), new byte[0], Duration.ofSeconds(1)));
+        assertThrows(IllegalArgumentException.class, () -> new ServiceNowTransport.Request(
+                URI.create("https://tenant.service-now.com/api/now/table/cmdb_ci"), "PUT", Map.of(), new byte[] {1}, Duration.ofSeconds(1)));
+        assertThrows(IllegalArgumentException.class, () -> new ServiceNowTransport.Request(
+                URI.create("https://tenant.service-now.com/api/now/table/cmdb_ci"), "GET", Map.of(), new byte[] {1}, Duration.ofSeconds(1)));
         assertThrows(IllegalArgumentException.class, () -> new ServiceNowTransport.Response(99, Map.of(), new byte[0]));
         assertThrows(NullPointerException.class, () -> new ServiceNowTransport.Request(null, "GET", Map.of(), new byte[0], Duration.ofSeconds(1)));
     }

@@ -63,6 +63,7 @@ class JiraAssetsFederatedReadArchitectureTest(unittest.TestCase):
         self.assertIn('startsWith("env:")', settings)
         self.assertIn('startsWith("file:")', settings)
         self.assertIn('identitySourceField must be id', mutation)
+        self.assertIn('providerAttributes.add(attributeId)', mutation)
         self.assertIn('settings.attributeIds()', handler)
         self.assertIn('ConnectorSyncDirection.OUTBOUND', handler)
         self.assertIn("Arrays.fill(credential, (byte) 0)", connector)

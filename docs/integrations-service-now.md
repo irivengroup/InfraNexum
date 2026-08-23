@@ -1,94 +1,146 @@
-# ServiceNow CMDB federated read — PGM-10-E06 phase 2
+# ServiceNow CMDB integration — PGM-10-E06 phase 7
 
 ## Scope
 
-`components.adapters.service-now` adds the second provider-specific slice of PGM-10-E06. The adapter is deliberately limited to **federated read** against the ServiceNow Table API for `cmdb_ci` or one explicit `cmdb_ci_*` subclass. ServiceNow remains the external authority; InfraNexum does not create, update, delete, reconcile or persist remote configuration items in RSOT/ITAM in this phase.
+`components.adapters.service-now` preserves the bounded **federated-read** Table API surface and adds one deliberately narrow mutating path: **ITAM asset → ServiceNow CMDB upsert**. Read-only remains the default. A connector without both an explicit mutation mapping and an exactly matching active governance policy stays `FEDERATED_READ / EXTERNAL / REJECT / IGNORE / NONE_REQUIRED`, with synchronization execution disabled.
 
-The supported product contract is intentionally smaller than the full ServiceNow Table API:
+The read contract remains intentionally smaller than the full ServiceNow Table API:
 
 - one configured `*.service-now.com` instance hostname per connector;
 - one configured CMDB CI table (`cmdb_ci` or `cmdb_ci_*`) per connector;
 - health verification through a one-row bounded read;
-- name search only, with a 1–256 character allow-list (`A-Z`, `a-z`, digits, space, `- _ . / :`);
+- name search only, with a 1–256 character allow-list;
 - offset pagination with `0 <= offset <= 1,000,000` and `1 <= limit <= 200`;
 - projection limited to `sys_id`, `name`, `sys_class_name` and `sys_updated_on`;
 - no arbitrary provider encoded query supplied by an InfraNexum caller.
 
-## Governance and trust boundary
+The outbound path is limited to create-or-partial-update of the configured CMDB table. Remote deletion, inbound import, bidirectional reconciliation and arbitrary ServiceNow scripting remain unavailable.
 
-Each connector declares:
+## Governance and mutation admission
 
-- provider: `service-now`;
-- direction: `FEDERATED_READ`;
-- authority: `EXTERNAL`.
+ServiceNow mutation is registered only when all of the following are true for the same connector key:
 
-The adapter depends only on the Integrations domain and Core contracts. It has no dependency on RSOT or ITAM. `alpha.0.122` can prepare a provider-neutral authority/rollback mapping with execution disabled, but ServiceNow still has no approved mutating handler; import, reconciliation and write-back therefore remain unavailable.
+- provider connector is enabled;
+- a ServiceNow mutation mapping exists;
+- governance `direction=OUTBOUND`;
+- object authority is `INFRANEXUM`;
+- conflict strategy is `PREFER_AUTHORITY`;
+- deletion policy is `IGNORE`;
+- rollback strategy is `MANUAL`;
+- `execution-enabled=true`;
+- every governed field is `INFRANEXUM`-authoritative;
+- the governed local field set exactly equals the configured ServiceNow field mapping.
 
-## Authentication and secrets
+Any mismatch fails Server composition. The adapter still depends only on the Integrations domain and Core contracts; the provider-specific module does not depend on ITAM or RSOT. The provider-neutral `ConnectorOutboundSource` supplies the governed ITAM projection.
 
-InfraNexum accepts only a pre-provisioned bearer token referenced by `env:` or `file:`. No bearer token, OAuth client secret, refresh token or ServiceNow credential is persisted in product configuration or returned to the browser.
+## Stable identity and field mapping
 
-A machine identity should be provisioned in ServiceNow with the minimum Table API/ACL rights needed to read the configured CMDB table. Token acquisition and renewal remain external to InfraNexum until the product Secret Service/PKI/KMS boundary is delivered. For backend integrations, ServiceNow supports OAuth flows including Client Credentials; that is the recommended source of the bearer token when compatible with the target instance's policy.
+The only supported local identity source is `id`, the canonical InfraNexum UUIDv7. It must map to a ServiceNow **custom column** beginning with `u_`, for example `u_infranexum_id`. This prevents a built-in operational field such as `sys_id` or `sys_updated_on` from being repurposed as the reconciliation key.
 
-Example server configuration:
+All mapped provider columns must be lowercase ServiceNow-style identifiers. `sys_*` columns are reserved and rejected at configuration admission. The configured identity field must be part of the exact governed field set.
+
+Before every write, InfraNexum performs a bounded two-row identity lookup constructed internally as:
+
+```text
+<configured-u-field>=<canonical-uuidv7>^ORDERBYsys_id
+```
+
+Zero matches result in create, exactly one match results in update, and two matches fail closed as an identity conflict. The caller cannot supply an encoded query.
+
+## Provider protocol
+
+InfraNexum uses the ServiceNow Table API on the configured `cmdb_ci`/`cmdb_ci_*` table:
+
+- `GET /api/now/table/{table}` for health, search and identity lookup;
+- `POST /api/now/table/{table}` to create one governed CI;
+- `PATCH /api/now/table/{table}/{sys_id}` to update only the governed fields of an existing CI.
+
+`PUT` is deliberately not used for the outbound handler because this phase requires partial field mutation rather than replacement semantics. `DELETE` is not admitted by the transport. Mutation responses are reduced to the validated 32-hex-character `sys_id`; provider payloads do not escape the adapter.
+
+## Configuration
+
+No ServiceNow connector or mutation mapping is configured by default. Example:
 
 ```yaml
 infranexum:
   integrations:
+    enabled: true
     service-now:
       maximum-response-bytes: 2097152
       connectors:
         cmdb-production:
           instance-host: example.service-now.com
-          table-name: cmdb_ci
+          table-name: cmdb_ci_server
           bearer-token-reference: file:/run/secrets/infranexum-service-now-token
           request-timeout: PT15S
           enabled: true
+          mutation:
+            identity-source-field: id
+            batch-size: 50
+            field-names:
+              id: u_infranexum_id
+              asset_type: u_asset_type
+    governance:
+      cmdb-production:
+        direction: OUTBOUND
+        authority: INFRANEXUM
+        conflict-strategy: PREFER_AUTHORITY
+        deletion-policy: IGNORE
+        rollback-strategy: MANUAL
+        execution-enabled: true
+        fields:
+          id: INFRANEXUM
+          asset_type: INFRANEXUM
 ```
 
-The example hostname and secret path are non-production examples. The secret file itself must be provisioned outside the repository and mounted with least privilege.
+The hostname, table and custom columns are illustrative deployment values. The custom identity column must exist in the target ServiceNow schema, be writable by the integration account and should have a tenant-side uniqueness constraint or equivalent data policy. InfraNexum still detects duplicate identities independently and refuses to choose one.
 
-## Provider request policy
+## Authentication and secrets
 
-The Server constructs Table API requests itself. A caller cannot submit `sysparm_query` directly. Search is normalized to:
+InfraNexum accepts only a pre-provisioned bearer token referenced by `env:` or `file:`. The Server secret provider restricts `file:` to absolute, regular, non-symlink files and bounds resolved secrets to 32..4096 bytes. Resolved bearer-token buffers are zeroed after each request. No bearer token, OAuth client secret, refresh token or ServiceNow credential is returned to the browser.
 
-```text
-nameLIKE<validated-term>^ORDERBYsys_id
-```
+The ServiceNow machine identity must receive only the Table API/ACL rights required for the configured table and governed fields. Token acquisition and renewal remain external until the InfraNexum Secret Service/PKI/KMS boundary is delivered.
 
-The request also sets:
-
-```text
-sysparm_fields=sys_id,name,sys_class_name,sys_updated_on
-sysparm_limit=<bounded-limit>
-sysparm_offset=<bounded-offset>
-sysparm_exclude_reference_link=true
-sysparm_display_value=false
-sysparm_no_count=true
-```
-
-This policy is important because ServiceNow encoded queries are a provider-specific expression language and invalid query fragments can be handled according to instance configuration. InfraNexum therefore exposes a narrow search term rather than a general encoded-query proxy.
-
-## Network and resilience controls
+## Network, payload and query controls
 
 The JDK transport enforces:
 
-- HTTPS only;
-- destination host suffix `.service-now.com`;
-- no userinfo or explicit port in the provider URI;
-- `HttpClient.Redirect.NEVER`;
+- HTTPS only and `*.service-now.com` host pinning;
+- no userinfo, explicit port or redirect following;
+- Table API path only;
+- HTTP methods limited to `GET`, `POST` and `PATCH`;
+- GET bodies forbidden; mutation request bodies bounded to 256 KiB;
 - per-connector request timeout in `(0s, 60s]`;
-- bounded response bodies: 2 MiB by default, configurable up to 8 MiB;
-- 401/403 mapped to provider authentication failure;
-- 429 mapped to rate limiting;
-- 5xx mapped to provider unavailability;
-- provider payloads excluded from public error details.
+- response bodies 2 MiB by default, configurable up to 8 MiB;
+- mutation cardinality 1..64 fields and value length at most 4096 printable characters;
+- 401/403 → authentication/authorization failure;
+- 429 → retryable provider rate limiting;
+- 5xx/transport failure → retryable provider unavailability;
+- other mutation rejections → permanent provider/protocol failure without remote response-body disclosure.
 
-ServiceNow documents `sysparm_limit` and `sysparm_offset` for Table API pagination and cautions that large limits can have a performance impact. InfraNexum applies a stricter product-side maximum of 200 records per page.
+Federated name search still generates only `nameLIKE<validated-term>^ORDERBYsys_id` and continues to set bounded `sysparm_fields`, `sysparm_limit`, `sysparm_offset`, `sysparm_exclude_reference_link`, `sysparm_display_value=false` and `sysparm_no_count=true`.
 
-## InfraNexum API
+## Incremental source and checkpoint semantics
 
-All operations require capability `integrations.connectors` and permission `integrations.connector.read`:
+ServiceNow reuses the provider-neutral durable synchronization runtime and the same ITAM outbound keyset source already admitted for Jira Assets. Records are ordered by `(updated_at, id)` and continuation uses the existing `updated_at|UUIDv7` cursor/checkpoint. No offset scan and no new database migration are introduced by this phase.
+
+A batch with `propagateDeletions=true` is rejected as a governance mismatch. A deleted outbound record is counted as rejected and never converted into a ServiceNow delete.
+
+## Failure, retry and compensation
+
+InfraNexum does not claim exactly-once ServiceNow execution. Replay is convergent because every attempt searches the immutable local UUID before deciding create versus patch.
+
+- `429`, provider `5xx` and transport unavailability are retryable; the run pauses without requesting compensation.
+- permanent provider/protocol/mapping failures fail the run; if an earlier record in the batch was written, `compensationRequired=true`.
+- identity duplication is permanent and fail-closed.
+- rollback strategy for this phase is `MANUAL`; no automatic inverse CMDB mutation is fabricated.
+- remote deletion is never attempted.
+
+Operational rollback is to disable connector execution, preserve checkpoints, inspect target CIs by the configured InfraNexum identity column, perform approved manual correction and revoke the provider token if the integration is being retired.
+
+## InfraNexum API and Web
+
+The provider-specific HTTP surface remains read-only and unchanged:
 
 ```text
 GET  /api/v1/integrations/providers/service-now
@@ -96,29 +148,25 @@ GET  /api/v1/integrations/providers/service-now/{connectorKey}/health
 POST /api/v1/integrations/providers/service-now/{connectorKey}/configuration-items/search
 ```
 
-The list and search operations use bounded offset pagination. The POST search is semantically repeatable and is not a provider mutation.
+All three operations retain capability `integrations.connectors` and permission `integrations.connector.read`. Outbound mutation is exposed only through the existing generic governed synchronization operations (`execute`, `resume`, `compensate`), with their existing RBAC and idempotency requirements.
 
-## Web behavior
-
-The existing `Integrations` workspace gains a ServiceNow section only when `integrations.connectors` is available. The browser talks only to the InfraNexum Server over the authenticated same-origin session, uses CSRF protection for POST, and never receives or constructs the provider bearer token.
-
-The workspace provides:
-
-- configured connector catalogue;
-- health check action;
-- bounded name search;
-- paginated minimal CMDB result table;
-- DE/EN/ES/FR/IT localized labels and states.
+The browser continues to use only the authenticated same-origin InfraNexum API and never constructs a ServiceNow authorization header. Governance and synchronization state are shown through the generic Integrations workspace.
 
 ## Operational verification
 
-After configuring a non-production ServiceNow connector, verify:
+For a non-production connector, verify at minimum:
 
-1. Server startup fails explicitly if an enabled connector references an unreadable/missing token source.
-2. The connector catalogue is visible only to an actor with `integrations.connector.read`.
-3. Health succeeds with the minimum ServiceNow ACLs intended for the integration account.
-4. A valid name search returns at most the configured page limit and exposes only the four governed fields.
-5. Query characters outside the allow-list are rejected before egress.
-6. Removing Table API/CMDB read rights produces the stable InfraNexum authentication/provider error without leaking the ServiceNow response body.
-7. A 429 or provider outage is translated to a stable service-unavailable contract and remains observable through Integration metrics/audit.
-8. The Web browser contains no ServiceNow authorization header or bearer credential.
+1. Server startup fails if an enabled connector token cannot be resolved.
+2. A prepared mutation policy with `execution-enabled=false` remains non-executable.
+3. An active policy without an exact mutation mapping fails startup.
+4. Duplicate remote values for the configured identity column fail closed.
+5. First replay creates at most one CI and later replay patches the same `sys_id`.
+6. Only configured fields are present in POST/PATCH payloads.
+7. 429/5xx do not request compensation and preserve replayability.
+8. A permanent second-record failure after a successful first write marks manual compensation required.
+9. No DELETE request can be emitted.
+10. The Web browser contains no ServiceNow bearer credential.
+
+## Status
+
+PGM-10-E06 remains **EN COURS**. Jira Assets and ServiceNow now each have one governed ITAM OUTBOUND upsert path. Inbound/bidirectional synchronization, controlled remote deletion, live-provider certification and OpenService remain outside this phase.

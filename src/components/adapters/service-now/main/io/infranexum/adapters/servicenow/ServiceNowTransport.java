@@ -13,8 +13,10 @@ import java.util.Objects;
 public interface ServiceNowTransport {
     Response execute(Request request);
 
-    /** HTTPS-only GET request restricted to the official ServiceNow SaaS domain. */
+    /** HTTPS-only request restricted to one official ServiceNow SaaS hostname. */
     record Request(URI uri, String method, Map<String, String> headers, byte[] body, Duration timeout) {
+        private static final int MAX_REQUEST_BYTES = 262_144;
+
         public Request {
             Objects.requireNonNull(uri, "uri");
             Objects.requireNonNull(method, "method");
@@ -27,10 +29,22 @@ public interface ServiceNowTransport {
                     || !(host.endsWith(".service-now.com") && host.length() > ".service-now.com".length())) {
                 throw new IllegalArgumentException("ServiceNow transport is restricted to https://*.service-now.com");
             }
-            if (!method.equals("GET") || body.length != 0) {
-                throw new IllegalArgumentException("ServiceNow federated-read transport supports GET without a body only");
+            String path = uri.getPath();
+            if (path == null || !path.startsWith("/api/now/table/") || path.length() <= "/api/now/table/".length()
+                    || uri.getFragment() != null) {
+                throw new IllegalArgumentException("ServiceNow transport is restricted to the Table API");
+            }
+            if (!(method.equals("GET") || method.equals("POST") || method.equals("PATCH"))) {
+                throw new IllegalArgumentException("unsupported ServiceNow HTTP method");
+            }
+            if (method.equals("GET") && body.length != 0) {
+                throw new IllegalArgumentException("ServiceNow GET requests cannot contain a body");
+            }
+            if (!method.equals("GET") && (body.length == 0 || body.length > MAX_REQUEST_BYTES)) {
+                throw new IllegalArgumentException("ServiceNow mutation body must contain 1..262144 bytes");
             }
         }
+
         @Override public byte[] body() { return Arrays.copyOf(body, body.length); }
     }
 

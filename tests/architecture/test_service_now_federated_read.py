@@ -1,4 +1,4 @@
-"""Architecture regressions for PGM-10-E06 ServiceNow CMDB federated read."""
+"""Architecture regressions for governed ServiceNow CMDB read and outbound synchronization."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ import yaml
 
 
 class ServiceNowFederatedReadArchitectureTest(unittest.TestCase):
-    """Keep the ServiceNow slice read-only, secret-safe, bounded and capability-gated."""
+    """Keep provider read safe while admitting only explicitly governed outbound CMDB writes."""
 
     ROOT = Path(__file__).resolve().parents[2]
     ADAPTER = ROOT / "src/components/adapters/service-now"
@@ -52,19 +52,26 @@ class ServiceNowFederatedReadArchitectureTest(unittest.TestCase):
         self.assertIn('host.endsWith(".service-now.com")', request_contract)
         self.assertIn('service-now\\\\.com', settings)
 
-    def test_governance_is_external_authority_federated_read_only(self) -> None:
+    def test_default_read_is_external_but_outbound_mutation_requires_explicit_safe_mapping(self) -> None:
         settings = (self.ADAPTER / "main/io/infranexum/adapters/servicenow/ServiceNowSettings.java").read_text(encoding="utf-8")
+        mutation = (self.ADAPTER / "main/io/infranexum/adapters/servicenow/ServiceNowMutationSettings.java").read_text(encoding="utf-8")
         connector = (self.ADAPTER / "main/io/infranexum/adapters/servicenow/ServiceNowConnector.java").read_text(encoding="utf-8")
+        handler = (self.ADAPTER / "main/io/infranexum/adapters/servicenow/ServiceNowSyncHandler.java").read_text(encoding="utf-8")
 
         self.assertIn('DIRECTION = "FEDERATED_READ"', settings)
         self.assertIn('AUTHORITY = "EXTERNAL"', settings)
         self.assertIn('startsWith("env:")', settings)
         self.assertIn('startsWith("file:")', settings)
+        self.assertIn('CUSTOM_IDENTITY_COLUMN', mutation)
+        self.assertIn('"id".equals(identitySourceField)', mutation)
+        self.assertIn('value.startsWith("sys_")', mutation)
+        self.assertIn('providerColumns.add(column)', mutation)
         self.assertIn("Arrays.fill(credential, (byte) 0)", connector)
         self.assertIn('FIELDS = "sys_id,name,sys_class_name,sys_updated_on"', connector)
         self.assertIn('"nameLIKE" + normalized + "^ORDERBYsys_id"', connector)
-        self.assertIn('Pattern.compile("[A-Za-z0-9 _./:-]{1,256}")', connector)
-        self.assertNotIn("sysparm_query=" + '" + term', connector)
+        self.assertIn('method.equals("PATCH")', (self.ADAPTER / "main/io/infranexum/adapters/servicenow/ServiceNowTransport.java").read_text(encoding="utf-8"))
+        self.assertIn('SERVICE_NOW_GOVERNANCE_MISMATCH', handler)
+        self.assertIn('MANUAL_COMPENSATION_REQUIRED', handler)
         self.assertNotIn("rsot", connector.lower())
         self.assertNotIn("itam", connector.lower())
 

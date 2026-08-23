@@ -1,3 +1,23 @@
+# InfraNexum 2.0.0-alpha.0.130 — état d’implémentation
+
+## alpha.0.130 — ServiceNow CMDB outbound gouverné
+
+PGM-10-E06 avance sans modifier les frontières publiques de lecture ServiceNow. Le runtime durable de synchronisation accepte désormais un handler ServiceNow uniquement lorsque la gouvernance active est exactement `OUTBOUND / INFRANEXUM / PREFER_AUTHORITY / IGNORE / MANUAL` et que le mapping local→fournisseur est bijectif. L’identité distante repose sur l’UUIDv7 canonique InfraNexum projeté dans une colonne ServiceNow custom `u_*`; zéro résultat crée le CI, un résultat déclenche un `PATCH`, plusieurs résultats provoquent un arrêt fail-closed. Les suppressions ne sont pas propagées et la compensation reste manuelle.
+
+Le transport est limité à `https://*.service-now.com/api/now/table/...` et aux méthodes GET/POST/PATCH. Aucun endpoint d’écriture ServiceNow spécifique, aucune migration, aucun secret navigateur et aucun comportement OpenService non contracté ne sont introduits. Jira Assets refuse désormais lui aussi deux champs locaux ciblant le même attribut fournisseur.
+
+### Qualification alpha.0.130
+
+- **EXÉCUTÉ** — tests d’architecture Jira/ServiceNow/runtime/gouvernance ciblés : verts.
+- **EXÉCUTÉ** — Architecture-as-Code : 0 violation.
+- **EXÉCUTÉ** — Source Integrity : 0 violation.
+- **NON EXÉCUTÉ** — Maven/JDK25 Server/JDBC/JaCoCo : repository Maven offline incomplet, compilation non atteinte.
+- **NON EXÉCUTÉ** — PostgreSQL 17/18 live : runtime PostgreSQL absent.
+
+Statut : **NON TERMINÉ** jusqu’à exécution des gates Java 98/98 et PostgreSQL live.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.129 — état d’implémentation
 
 ## alpha.0.129 — Server CLI JSON boundary hardening & qualification snapshot

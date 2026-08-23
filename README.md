@@ -1,3 +1,13 @@
+# InfraNexum 2.0.0-alpha.0.130 — governed ServiceNow CMDB outbound synchronization
+
+`alpha.0.130` extends PGM-10-E06 with the first governed ServiceNow CMDB outbound mutation path while preserving federated read as the default. ITAM asset upserts execute only through the durable connector synchronization runtime and only under an exact active governance mapping: `OUTBOUND / INFRANEXUM / PREFER_AUTHORITY / IGNORE / MANUAL`.
+
+The ServiceNow transport is pinned to `https://*.service-now.com/api/now/table/...`, permits only GET/POST/PATCH, rejects redirects through the existing bounded transport, uses an explicit custom `u_*` field for canonical InfraNexum UUIDv7 identity, fails closed on duplicate remote identities, rejects duplicate provider-column mappings, never propagates deletes, and keeps compensation manual. The Jira Assets mapping receives the same bijective-target protection. No provider-specific write endpoint, database migration, browser credential path or invented OpenService contract is added.
+
+**Qualification status:** Source Integrity and Architecture-as-Code are executed and green for the current source. JDK 25/Maven execution remains blocked before compilation by the incomplete offline Maven dependency cache; PostgreSQL 17/18 live validation is unavailable in this runner. The mandatory JaCoCo thresholds are unchanged and this snapshot remains `NON_TERMINE` until those external gates are run.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.129 — Server CLI JSON boundary hardening & qualification snapshot
 
 **InfraNexum — Infrastructure Control & Governance Platform**

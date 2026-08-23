@@ -179,10 +179,24 @@ public class IntegrationRuntimeConfiguration {
     }
 
     @Bean
+    ConfiguredServiceNowSyncHandlerCatalog serviceNowSyncHandlerCatalog(
+            IntegrationRuntimeProperties properties,
+            ConfiguredServiceNowConnectorRegistry connectors,
+            ConnectorGovernanceRegistry governance,
+            DataSource dataSource,
+            PersistenceRuntimeProperties persistence) {
+        return new ConfiguredServiceNowSyncHandlerCatalog(
+                properties.serviceNowMutationDefinitions(), connectors, governance, dataSource, persistence);
+    }
+
+    @Bean
     ImmutableConnectorSyncHandlerRegistry connectorSyncHandlerRegistry(
-            ObjectProvider<ConnectorSyncHandler> handlers, ConfiguredJiraAssetsSyncHandlerCatalog jiraHandlers) {
+            ObjectProvider<ConnectorSyncHandler> handlers,
+            ConfiguredJiraAssetsSyncHandlerCatalog jiraHandlers,
+            ConfiguredServiceNowSyncHandlerCatalog serviceNowHandlers) {
         java.util.List<ConnectorSyncHandler> values = new java.util.ArrayList<>(handlers.orderedStream().toList());
         values.addAll(jiraHandlers.handlers());
+        values.addAll(serviceNowHandlers.handlers());
         return new ImmutableConnectorSyncHandlerRegistry(values);
     }
 
