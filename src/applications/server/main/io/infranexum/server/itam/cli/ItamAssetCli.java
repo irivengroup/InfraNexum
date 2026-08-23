@@ -43,6 +43,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -256,12 +257,18 @@ public final class ItamAssetCli {
     private JsonNode readJson(String pathValue) {
         Path path = Path.of(pathValue);
         if (!path.isAbsolute()) throw new IllegalArgumentException("--input-file must be an absolute path");
+        final String payload;
         try {
-            JsonNode root = json.readTree(Files.readString(path, StandardCharsets.UTF_8));
+            payload = Files.readString(path, StandardCharsets.UTF_8);
+        } catch (IOException failure) {
+            throw new IllegalArgumentException("--input-file is unreadable", failure);
+        }
+        try {
+            JsonNode root = json.readTree(payload);
             if (root == null || !root.isObject()) throw new IllegalArgumentException("--input-file root must be a JSON object");
             return root;
-        } catch (IOException failure) {
-            throw new IllegalArgumentException("--input-file is unreadable or invalid JSON", failure);
+        } catch (JacksonException failure) {
+            throw new IllegalArgumentException("--input-file contains invalid JSON", failure);
         }
     }
 

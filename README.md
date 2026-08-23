@@ -1,3 +1,19 @@
+# InfraNexum 2.0.0-alpha.0.129 — Server CLI JSON boundary hardening & qualification snapshot
+
+**InfraNexum — Infrastructure Control & Governance Platform**
+
+`alpha.0.129` is a qualification snapshot intended to keep implementation work moving without weakening the mandatory quality gates. It preserves the governed ITAM → Jira Assets synchronization delivered in `alpha.0.128` and hardens six Server CLI JSON-input boundaries against Jackson 3 parsing failures.
+
+- **CLI JSON boundary:** `ItamAssetCli`, `ItamPartnerCli`, `ItamComplianceCli`, `DcimFacilityCli`, `DcimPhysicalCli` and `IpamCli` now distinguish unreadable files from malformed/truncated JSON. `JacksonException` is translated to a deterministic usage error; invalid input no longer falls through to the internal-error boundary.
+- **Regression governance:** an Architecture-as-Code regression test requires the split file-read/JSON-parse boundary and forbids the unsafe `readTree(Files.readString(...))` composition on those six CLIs.
+- **Agent qualification:** exact Go 1.26.5 `vet`, race-enabled tests, 98.4% coverage and build are executed successfully.
+- **Web/ReDoc qualification:** exact Node 24.19.0, vendored ReDoc 2.5.3 verification, 249/249 Web tests, 99.78% lines / 98.60% branches / 100% functions and process smoke are executed successfully.
+- **Java qualification limit:** JDK 25.0.4.1 and Maven 3.9.16 are executable, but the runner has no complete Maven dependency repository (notably Spring Boot 4.1.0 and Spring Modulith 2.1.0 BOMs). Server/JDBC Maven compile/test/JaCoCo therefore remain non-executed here. PostgreSQL 17/18 live tests also remain non-executed because no PostgreSQL runtime is available.
+
+No JaCoCo threshold is reduced, no exclusion is introduced, and no unavailable test is counted as successful. This source snapshot is deliberately published with release status **NON TERMINÉ** so the remaining Maven/JDBC/PostgreSQL qualification can be performed downstream on the exact archive.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.128 — PGM-10-E06 governed ITAM → Jira Assets synchronization
 
 **InfraNexum — Infrastructure Control & Governance Platform**

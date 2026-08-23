@@ -1,3 +1,37 @@
+# InfraNexum 2.0.0-alpha.0.129 — état d’implémentation
+
+## alpha.0.129 — Server CLI JSON boundary hardening & qualification snapshot
+
+**Statut : NON TERMINÉ — snapshot source livrable pour qualification aval.**
+
+Cette tranche conserve les fonctions de `alpha.0.128` et corrige une frontière Jackson 3 commune à six CLI Server. La lecture du fichier est désormais traitée séparément du décodage JSON dans `ItamAssetCli`, `ItamPartnerCli`, `ItamComplianceCli`, `DcimFacilityCli`, `DcimPhysicalCli` et `IpamCli`. Un fichier illisible reste une erreur d’entrée distincte ; un JSON tronqué ou malformé est capturé via `JacksonException` et traduit comme erreur d’usage ; une racine JSON de type incorrect reste validée séparément. Le motif `readTree(Files.readString(...))` est bloqué par un test d’architecture de non-régression.
+
+### Qualification exécutée sur alpha.0.129
+
+- **EXÉCUTÉ — Source Integrity :** 45/45, 100 % lignes/branches, checker à zéro violation avant finalisation de l’archive ; l’inventaire/checksum est régénéré après le bump final.
+- **EXÉCUTÉ — Architecture-as-Code checker :** zéro violation ; test de frontière CLI JSON 3/3.
+- **EXÉCUTÉ — Toolchains :** 25/25, 99 %, checker à zéro violation.
+- **EXÉCUTÉ — Migrations :** 118/118, 99 %, checker à zéro violation.
+- **EXÉCUTÉ — Eventing :** 10/10, 100 %, checker à zéro violation.
+- **EXÉCUTÉ — Persistence :** 12/12, 98 %, checker à zéro violation.
+- **EXÉCUTÉ — Capabilities :** 10/10, 99 %, checker à zéro violation.
+- **EXÉCUTÉ — Entitlements :** 10/10, 100 %, checker à zéro violation.
+- **EXÉCUTÉ — Audit :** 8/8, 100 %, checker à zéro violation.
+- **EXÉCUTÉ — Connector SDK :** 19/19, 99 %.
+- **EXÉCUTÉ — API contract checker :** 15 fragments / 201 opérations, dette idempotency/pagination/capability/permission = 0/0/0/0.
+- **EXÉCUTÉ — Agent cible :** Go 1.26.5, `go vet`, tests avec race detector, couverture 98,4 %, build réussi.
+- **EXÉCUTÉ — Web/ReDoc cible :** Node 24.19.0 ; ReDoc 2.5.3/commit `1b2591e` vérifié ; 249/249 tests ; 99,78 % lignes / 98,60 % branches / 100 % fonctions ; process smoke réussi.
+
+### Qualification restant à exécuter
+
+- **NON EXÉCUTÉ — Server/JDBC Maven/JUnit/JaCoCo :** JDK 25.0.4.1 et Maven 3.9.16 sont opérationnels, mais le repository Maven local ne contient pas `org.springframework.boot:spring-boot-dependencies:4.1.0` ni `org.springframework.modulith:spring-modulith-bom:2.1.0`; le runner n’a pas d’accès réseau permettant de compléter le graphe. Procédure : exécuter `./mvnw --batch-mode --no-transfer-progress --fail-at-end verify` avec un repository Maven complet. Résultat attendu : tous les tests verts et chaque bundle Java à au moins 98 % lignes et 98 % branches. Risque restant : compilation ou scénario Server/JDBC non observé localement.
+- **NON EXÉCUTÉ — PostgreSQL 17/18 live :** aucun `postgres`, `initdb`, `psql` ni Docker utilisable n’est présent. Procédure : provisionner PostgreSQL 17 puis 18, appliquer le catalogue canonique via `make postgresql-test-schema`, puis exécuter les tests JDBC PostgreSQL définis par la CI. Résultat attendu : zéro échec/abort. Risque restant : comportement dialecte/transaction/concurrence live non requalifié sur ce snapshot.
+- **NON EXÉCUTÉ intégralement — suite architecture monolithique :** l’exécution agrégée dépasse la fenêtre du runner ; les checkers et les suites directement affectées sont verts. La CI doit exécuter la suite complète sur le snapshot publié.
+
+Aucun seuil JaCoCo, contrôle de sécurité ou contrat public n’est affaibli pour permettre cette livraison. La version reste **NON TERMINÉE** jusqu’à réception des preuves Maven/JaCoCo et PostgreSQL 17/18.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.128 — PGM-10-E06 phase 6: governed ITAM → Jira Assets outbound upsert
 
 **Statut : NON TERMINÉ.** Cette tranche active le premier handler fournisseur mutateur uniquement derrière le moteur de gouvernance et de synchronisation livré dans les phases précédentes. La source canonique reste ITAM ; Jira Assets n'est jamais admis comme autorité pour ce flux.

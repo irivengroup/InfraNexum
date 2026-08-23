@@ -40,6 +40,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -194,7 +195,7 @@ public final class DcimFacilityCli {
         for(PolicyObligation obligation:advanced.obligations()){if(obligation==PolicyObligation.REQUIRE_JUSTIFICATION&&justification)continue;throw new CliAuthorizationException("required authorization obligation is not satisfied: "+obligation.name());}
     }
 
-    private JsonNode readJson(String pathValue){Path path=Path.of(pathValue);if(!path.isAbsolute())throw new IllegalArgumentException("--input-file must be an absolute path");try{JsonNode root=json.readTree(Files.readString(path,StandardCharsets.UTF_8));if(root==null||!root.isObject())throw new IllegalArgumentException("--input-file root must be a JSON object");return root;}catch(IOException failure){throw new IllegalArgumentException("--input-file is unreadable or invalid JSON",failure);}}
+    private JsonNode readJson(String pathValue){Path path=Path.of(pathValue);if(!path.isAbsolute())throw new IllegalArgumentException("--input-file must be an absolute path");final String payload;try{payload=Files.readString(path,StandardCharsets.UTF_8);}catch(IOException failure){throw new IllegalArgumentException("--input-file is unreadable",failure);}try{JsonNode root=json.readTree(payload);if(root==null||!root.isObject())throw new IllegalArgumentException("--input-file root must be a JSON object");return root;}catch(JacksonException failure){throw new IllegalArgumentException("--input-file contains invalid JSON",failure);}}
     private String render(Arguments args,Object value){if(!args.json())return value.toString();try{return json.writeValueAsString(value);}catch(Exception failure){throw new IllegalStateException("cannot render CLI JSON",failure);}}
     private static Map<String,Object> facilityMap(FacilityNode n){Map<String,Object> r=new LinkedHashMap<>();r.put("id",n.id().toString());r.put("kind",n.kind().wireValue());r.put("organizationId",n.organizationId().toString());r.put("subdivisionId",n.subdivisionId().toString());r.put("parentId",text(n.parentId()));r.put("code",n.code().value());r.put("displayName",n.displayName());r.put("status",n.status().wireValue());r.put("addressLine1",n.addressLine1());r.put("addressLine2",n.addressLine2());r.put("postalCode",n.postalCode());r.put("city",n.city());r.put("countryCode",n.countryCode());r.put("timezone",n.timezone());r.put("floorCount",n.floorCount());r.put("levelNumber",n.levelNumber());r.put("areaM2",n.areaM2());r.put("capacityKw",n.capacityKw());r.put("version",n.version());return r;}
     private static String text(DomainIdentifier v){return v==null?null:v.toString();}

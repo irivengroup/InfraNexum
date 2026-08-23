@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.128",
-  "profile": "alpha128-pgm10e06-governed-itam-jira-assets-sync",
+  "version": "2.0.0-alpha.0.129",
+  "profile": "alpha129-server-cli-json-boundary-hardening-qualification-snapshot",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -14,15 +14,15 @@
     },
     {
       "id": "infranexum-server",
-      "status": "alpha128-pgm10e06-governed-itam-to-jira-assets-outbound-upsert-admitted-fail-closed-by-exact-authority-direction-conflict-deletion-rollback-and-field-mapping; servicenow-remains-readonly; jacoco98-and-postgresql17-18-live-gates-open"
+      "status": "alpha129-preserves-alpha128-governed-itam-to-jira-assets-sync-and-hardens-six-cli-json-input-boundaries-by-separating-file-io-from-jackson3-parsing; malformed-json-is-usage-error-not-internal-error; server-jacoco98-maven-qualification-remains-open-because-offline-dependency-cache-is-incomplete"
     },
     {
       "id": "infranexum-agent",
-      "status": "source-unchanged-functional-runtime; go1.26.5-vet-race-tests-98.4-percent-coverage-and-static-build-executed-alpha128"
+      "status": "source-functionally-unchanged-alpha129; exact-go1.26.5-vet-race-tests-98.4-percent-coverage-and-build-executed-pass"
     },
     {
       "id": "infranexum-web",
-      "status": "alpha128-versioned-openapi-projection-preserves-alpha127-redoc-managed-active-section-dynamic-height-dcim-location-crud-and-shared-iam-dcim-integrations-tab-contract"
+      "status": "source-functionally-unchanged-except-version-projection-alpha129; exact-node24.19.0-redoc2.5.3-vendor-verification-249-of-249-tests-99.78-lines-98.60-branches-100-functions-and-process-smoke-executed-pass"
     },
     {
       "id": "connector-sdk-v1",
@@ -46,7 +46,7 @@
     },
     {
       "id": "ci-foundation",
-      "status": "unix-source-integrity-reactor-independent-module-postgresql17-18-and-jacoco-gates-preserved; alpha128-jdk25-functional-junit-execution-green-but-unchanged-jacoco98-and-postgresql17-18-live-qualification-remain-open"
+      "status": "unix-quality-gates-preserved; alpha129-jdk25.0.4.1-and-maven3.9.16-executables-verified-but-server-jdbc-maven-run-blocked-by-missing-spring-boot4.1.0-and-spring-modulith2.1.0-boms; postgresql17-18-live-runtime-unavailable; no-threshold-or-exclusion-weakened"
     },
     {
       "id": "deployment-boundary",
@@ -114,7 +114,7 @@
     },
     {
       "id": "api-platform-contract-v5",
-      "status": "pgm-05-e01-preserved; alpha128-15-openapi-fragments-201-operations-debt-zero-no-new-route-capability-or-permission"
+      "status": "pgm-05-e01-preserved; alpha129-15-openapi-fragments-201-operations-debt-zero-no-new-route-capability-or-permission"
     },
     {
       "id": "adapter-jira-assets-v1",
@@ -653,26 +653,54 @@
     "java_junit_tests_failed_alpha128": 0,
     "java_junit_tests_postgresql_aborted_alpha128": 24,
     "java_jacoco_gate_alpha128": "FAILED_98_LINE_BRANCH_THRESHOLD_NOT_MET",
-    "postgresql_17_18_live_alpha128": "NON_EXECUTED_NO_RUNTIME"
+    "postgresql_17_18_live_alpha128": "NON_EXECUTED_NO_RUNTIME",
+    "source_integrity_alpha129_pre_release": "EXECUTED_45_OF_45_100_PERCENT_CHECKER_ZERO_VIOLATIONS_FINAL_STRICT_SNAPSHOT_RERUN_REQUIRED_AFTER_VERSION_BUMP",
+    "architecture_checker_alpha129": "EXECUTED_ZERO_VIOLATIONS",
+    "architecture_cli_json_boundary_alpha129": "EXECUTED_3_OF_3_PASS",
+    "architecture_full_suite_alpha129": "NON_EXECUTED_INTEGRATED_RUNNER_TIMEOUT_SELECTED_AFFECTED_SUITES_AND_CHECKER_PASS",
+    "toolchain_alpha129": "EXECUTED_25_OF_25_99_PERCENT_CHECKER_ZERO_VIOLATIONS",
+    "migration_alpha129": "EXECUTED_118_OF_118_99_PERCENT_CHECKER_ZERO_VIOLATIONS",
+    "eventing_alpha129": "EXECUTED_10_OF_10_100_PERCENT_CHECKER_ZERO_VIOLATIONS",
+    "persistence_alpha129": "EXECUTED_12_OF_12_98_PERCENT_CHECKER_ZERO_VIOLATIONS",
+    "capabilities_alpha129": "EXECUTED_10_OF_10_99_PERCENT_CHECKER_ZERO_VIOLATIONS",
+    "entitlements_alpha129": "EXECUTED_10_OF_10_100_PERCENT_CHECKER_ZERO_VIOLATIONS",
+    "audit_alpha129": "EXECUTED_8_OF_8_100_PERCENT_CHECKER_ZERO_VIOLATIONS",
+    "connector_sdk_alpha129": "EXECUTED_19_OF_19_99_PERCENT",
+    "api_contract_checker_alpha129": "EXECUTED_15_FRAGMENTS_201_OPERATIONS_ZERO_VIOLATIONS_DEBT_0_0_0_0",
+    "api_contract_tests_alpha129": "NON_EXECUTED_COMPLETE_INTEGRATED_RUNNER_TIMEOUT_AFTER_PARTIAL_PROGRESS_CHECKER_PASS",
+    "agent_target_alpha129": "EXECUTED_GO1.26.5_VET_RACE_TESTS_98.4_PERCENT_BUILD_PASS",
+    "web_target_alpha129": "EXECUTED_NODE24.19.0_REDOC2.5.3_249_OF_249_LINE99.78_BRANCH98.60_FUNCTION100_SMOKE_PASS",
+    "redoc_vendor_alpha129": "EXECUTED_VERSION2.5.3_COMMIT1b2591e_FAIL_CLOSED_VENDOR_CHECK_PASS",
+    "jdk_maven_toolchain_alpha129": "EXECUTED_JDK25.0.4.1_MAVEN3.9.16_BINARIES_OPERATIONAL",
+    "server_maven_junit_jacoco_alpha129": "NON_EXECUTED_OFFLINE_REPOSITORY_MISSING_SPRING_BOOT_DEPENDENCIES_4.1.0_AND_SPRING_MODULITH_BOM_2.1.0",
+    "jdbc_maven_junit_jacoco_alpha129": "NON_EXECUTED_OFFLINE_MAVEN_DEPENDENCY_REPOSITORY_INCOMPLETE_AND_POSTGRESQL_RUNTIME_UNAVAILABLE",
+    "postgresql_17_18_live_alpha129": "NON_EXECUTED_NO_POSTGRES_INITDB_PSQL_OR_DOCKER_RUNTIME",
+    "source_integrity_alpha129": "EXECUTED_STRICT_STAGED_SNAPSHOT_1596_TRACKED_PATHS_1595_GIT_BLOB_CHECKSUMS_1594_CANONICAL_INVENTORY_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
+    "source_integrity_prepack_alpha129": "EXECUTED_45_OF_45_COVERAGE100_ZERO_VIOLATIONS_CANONICAL_INVENTORY_1594_PATHS",
+    "archive_compatibility_unit_alpha129": "EXECUTED_12_OF_12_COVERAGE100_ZERO_VIOLATIONS",
+    "archive_compatibility_alpha129": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS_POST_EXTRACTION_SOURCE_INTEGRITY_ZERO_VIOLATIONS_AND_BYTE_REPRODUCIBLE_TWO_BUILDS",
+    "java_offline_attempt_alpha129": "EXECUTED_TOOLCHAIN_STARTUP_PASS_PROJECT_MODEL_BLOCKED_ONLY_BY_MISSING_SPRING_BOOT_4.1.0_AND_SPRING_MODULITH_2.1.0_IMPORT_BOMS",
+    "web_post_bump_alpha129": "EXECUTED_NODE24.19.0_249_OF_249_LINE99.78_BRANCH98.60_FUNCTION100_VENDOR_AND_SMOKE_PASS",
+    "agent_post_bump_alpha129": "EXECUTED_GO1.26.5_VET_RACE_TESTS_98.4_PERCENT_BUILD_PASS"
   },
   "source_layout": "All production solution spaces are contained below src/; Java, Go and Web tests are repository-level under tests/; canonical relative paths are limited to 120 characters and path components to 80 characters.",
   "source_integrity": {
     "canonical_inventory": "source-inventory.json",
-    "git_blob_checksums": 1594,
-    "tracked_files": 1595,
-    "source_recorded_files": 1593,
+    "git_blob_checksums": 1595,
+    "tracked_files": 1596,
+    "source_recorded_files": 1594,
     "staged_snapshot_required": true,
     "pre_commit_hook": ".githooks/pre-commit",
-    "inventory_paths": 1593
+    "inventory_paths": 1594
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.128",
-    "archive_entries": 1595,
+    "prefix": "infranexum-2.0.0-alpha.0.129",
+    "archive_entries": 1596,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
-    "source_recorded_files": 1594,
+    "source_recorded_files": 1595,
     "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
-    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.128-validation-evidence.zip"
+    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.129-validation-evidence.zip"
   },
   "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.128-validation-evidence.zip",
   "runtime_validation": {

@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Qualifier;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -357,8 +358,11 @@ public final class ItamComplianceCli {
 
     private JsonNode readJson(String pathValue) {
         Path path = Path.of(pathValue); if (!path.isAbsolute()) throw new IllegalArgumentException("--input-file must be an absolute path");
-        try { JsonNode root = json.readTree(Files.readString(path, StandardCharsets.UTF_8)); if (root == null || !root.isObject()) throw new IllegalArgumentException("--input-file root must be a JSON object"); return root; }
-        catch (IOException failure) { throw new IllegalArgumentException("--input-file is unreadable or invalid JSON", failure); }
+        final String payload;
+        try { payload = Files.readString(path, StandardCharsets.UTF_8); }
+        catch (IOException failure) { throw new IllegalArgumentException("--input-file is unreadable", failure); }
+        try { JsonNode root = json.readTree(payload); if (root == null || !root.isObject()) throw new IllegalArgumentException("--input-file root must be a JSON object"); return root; }
+        catch (JacksonException failure) { throw new IllegalArgumentException("--input-file contains invalid JSON", failure); }
     }
     private static void rejectRawLicenseKeys(JsonNode root) { for (String field : RAW_LICENSE_KEY_FIELDS) if (root.get(field) != null) throw new IllegalArgumentException("raw software license keys are not accepted until Secret Service is available"); }
     private static String reason(Arguments args, JsonNode input) { return input.get("reason") == null ? args.required("reason") : requiredText(input, "reason"); }

@@ -1217,6 +1217,7 @@
     "tests/architecture/test_bootstrap_native_frontend.py",
     "tests/architecture/test_checker.py",
     "tests/architecture/test_cli.py",
+    "tests/architecture/test_cli_json_input_boundary.py",
     "tests/architecture/test_clock_ownership.py",
     "tests/architecture/test_connector_governance_contract.py",
     "tests/architecture/test_connector_sync_runtime.py",

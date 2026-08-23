@@ -259,7 +259,7 @@ test('ReDoc frame loads the certified local contract and pinned renderer inside 
   };
   const specLoader = async (_window, url) => {
     assert.equal(url, OPENAPI_RENDER_SPEC_URL);
-    return { openapi: '3.1.0', info: { version: '2.0.0-alpha.0.128' }, paths: {} };
+    return { openapi: '3.1.0', info: { version: '2.0.0-alpha.0.129' }, paths: {} };
   };
 
   assert.equal(await initializeRedocFrame(documentObject, windowObject, assetLoader, specLoader), true);
