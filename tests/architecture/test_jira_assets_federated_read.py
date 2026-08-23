@@ -55,6 +55,7 @@ class JiraAssetsFederatedReadArchitectureTest(unittest.TestCase):
     def test_read_defaults_remain_external_while_mutation_requires_explicit_mapping(self) -> None:
         settings = (self.ADAPTER / "main/io/infranexum/adapters/jiraassets/JiraAssetsSettings.java").read_text(encoding="utf-8")
         mutation = (self.ADAPTER / "main/io/infranexum/adapters/jiraassets/JiraAssetsMutationSettings.java").read_text(encoding="utf-8")
+        tombstone = (self.ADAPTER / "main/io/infranexum/adapters/jiraassets/JiraAssetsTombstoneSettings.java").read_text(encoding="utf-8")
         connector = (self.ADAPTER / "main/io/infranexum/adapters/jiraassets/JiraAssetsConnector.java").read_text(encoding="utf-8")
         handler = (self.ADAPTER / "main/io/infranexum/adapters/jiraassets/JiraAssetsSyncHandler.java").read_text(encoding="utf-8")
 
@@ -64,7 +65,10 @@ class JiraAssetsFederatedReadArchitectureTest(unittest.TestCase):
         self.assertIn('startsWith("file:")', settings)
         self.assertIn('identitySourceField must be id', mutation)
         self.assertIn('providerAttributes.add(attributeId)', mutation)
+        self.assertIn('tombstone attribute cannot overwrite the immutable identity attribute', mutation)
+        self.assertIn('tombstone value is invalid', tombstone)
         self.assertIn('settings.attributeIds()', handler)
+        self.assertIn('settings.tombstone()', handler)
         self.assertIn('ConnectorSyncDirection.OUTBOUND', handler)
         self.assertIn("Arrays.fill(credential, (byte) 0)", connector)
         self.assertIn("record RemoteObject(String id, String globalId, String objectKey, String label, String objectTypeId, String objectTypeName)", connector)

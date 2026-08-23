@@ -63,6 +63,10 @@ infranexum:
             attribute-ids:
               id: "135"
               asset_type: "144"
+            # Optional, only with deletion-policy: TOMBSTONE
+            # tombstone:
+            #   attribute-id: "155"
+            #   value: disposed
     governance:
       jira-prod:
         direction: OUTBOUND
@@ -104,7 +108,8 @@ InfraNexum does not claim exactly-once provider execution. The upsert is designe
 - `429`, provider `5xx` and transport unavailability are retryable; the run pauses and **does not** request compensation, even if earlier records in that batch were written.
 - permanent provider or mapping failures fail the run; if an earlier record was already written, `compensationRequired=true`.
 - because this phase is governed with `rollback-strategy=MANUAL`, no automatic remote inverse mutation is fabricated. Operator compensation is explicit.
-- remote deletion is never attempted.
+- `DISPOSED` assets may be propagated only as an explicitly configured tombstone update when both the connector policy is `TOMBSTONE` and the run sets `propagateDeletions=true`;
+- InfraNexum never sends a physical Jira Assets delete from this synchronization path.
 
 The rollback procedure for an operational incident is to disable execution or the connector, preserve the durable checkpoints, inspect Jira objects by the InfraNexum identity attribute, and perform the approved manual correction. Revoking the provider token remains appropriate when retiring the integration.
 
@@ -120,4 +125,4 @@ Outbound mutation is not exposed as a new Jira-specific endpoint. It runs only t
 
 ## Remaining PGM-10-E06 work
 
-This phase does not implement bidirectional Jira synchronization, inbound Jira import, provider webhooks, remote deletion propagation, ServiceNow mutation or OpenService. Those require their own explicit authority, identity, conflict and rollback contracts before a mutating handler can be registered.
+This phase does not implement bidirectional Jira synchronization, inbound Jira import, provider webhooks, physical remote deletion or OpenService. Controlled tombstoning is implemented; destructive provider deletion remains deliberately unsupported. The remaining mutating directions require their own explicit authority, identity, conflict and rollback contracts before a handler can be registered.

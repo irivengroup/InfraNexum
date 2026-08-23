@@ -80,6 +80,10 @@ infranexum:
             field-names:
               id: u_infranexum_id
               asset_type: u_asset_type
+            # Optional, only with deletion-policy: TOMBSTONE
+            # tombstone:
+            #   field-name: u_infranexum_state
+            #   value: disposed
     governance:
       cmdb-production:
         direction: OUTBOUND
@@ -124,7 +128,7 @@ Federated name search still generates only `nameLIKE<validated-term>^ORDERBYsys_
 
 ServiceNow reuses the provider-neutral durable synchronization runtime and the same ITAM outbound keyset source already admitted for Jira Assets. Records are ordered by `(updated_at, id)` and continuation uses the existing `updated_at|UUIDv7` cursor/checkpoint. No offset scan and no new database migration are introduced by this phase.
 
-A batch with `propagateDeletions=true` is rejected as a governance mismatch. A deleted outbound record is counted as rejected and never converted into a ServiceNow delete.
+The ITAM source treats only lifecycle state `DISPOSED` as a deletion marker. `RETIRED` remains a normal business state. With `deletion-policy=IGNORE`, disposed records are counted as rejected and no provider mutation occurs. With an explicit tombstone mapping, `deletion-policy=TOMBSTONE` and a run request `propagateDeletions=true`, an existing CI is patched with only the configured tombstone field/value. If no matching CI exists, InfraNexum does not create one merely to tombstone it. A physical ServiceNow `DELETE` is never issued by this path.
 
 ## Failure, retry and compensation
 
@@ -134,7 +138,8 @@ InfraNexum does not claim exactly-once ServiceNow execution. Replay is convergen
 - permanent provider/protocol/mapping failures fail the run; if an earlier record in the batch was written, `compensationRequired=true`.
 - identity duplication is permanent and fail-closed.
 - rollback strategy for this phase is `MANUAL`; no automatic inverse CMDB mutation is fabricated.
-- remote deletion is never attempted.
+- controlled tombstone propagation is replay-safe because identity resolution precedes every patch;
+- physical remote deletion is never attempted.
 
 Operational rollback is to disable connector execution, preserve checkpoints, inspect target CIs by the configured InfraNexum identity column, perform approved manual correction and revoke the provider token if the integration is being retired.
 
@@ -169,4 +174,4 @@ For a non-production connector, verify at minimum:
 
 ## Status
 
-PGM-10-E06 remains **EN COURS**. Jira Assets and ServiceNow now each have one governed ITAM OUTBOUND upsert path. Inbound/bidirectional synchronization, controlled remote deletion, live-provider certification and OpenService remain outside this phase.
+PGM-10-E06 remains **EN COURS**. Jira Assets and ServiceNow each have a governed ITAM OUTBOUND upsert path plus optional controlled tombstone propagation for locally `DISPOSED` assets. Inbound/bidirectional synchronization, physical remote deletion, live-provider certification and OpenService remain outside this phase.

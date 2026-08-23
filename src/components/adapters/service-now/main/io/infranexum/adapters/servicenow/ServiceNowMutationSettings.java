@@ -15,7 +15,17 @@ public record ServiceNowMutationSettings(
         ConnectorKey connectorKey,
         String identitySourceField,
         Map<String, String> fieldNames,
-        int batchSize) {
+        int batchSize,
+        ServiceNowTombstoneSettings tombstone) {
+    /** Compatibility constructor for mutation mappings created before controlled tombstones existed. */
+    public ServiceNowMutationSettings(
+            ConnectorKey connectorKey,
+            String identitySourceField,
+            Map<String, String> fieldNames,
+            int batchSize) {
+        this(connectorKey, identitySourceField, fieldNames, batchSize, null);
+    }
+
     private static final Pattern COLUMN = Pattern.compile("^[a-z][a-z0-9_]{0,63}$");
     private static final Pattern CUSTOM_IDENTITY_COLUMN = Pattern.compile("^u_[a-z0-9_]{1,61}$");
     private static final Set<String> RESERVED_COLUMNS = Set.of(
@@ -52,6 +62,9 @@ public record ServiceNowMutationSettings(
         }
         if (!CUSTOM_IDENTITY_COLUMN.matcher(identityColumn).matches()) {
             throw new ConfigurationException("ServiceNow outbound identity must map to a custom u_* column");
+        }
+        if (tombstone != null && tombstone.fieldName().equals(identityColumn)) {
+            throw new ConfigurationException("ServiceNow tombstone field cannot overwrite the immutable identity column");
         }
         fieldNames = Map.copyOf(normalized);
         if (batchSize < 1 || batchSize > 200) {

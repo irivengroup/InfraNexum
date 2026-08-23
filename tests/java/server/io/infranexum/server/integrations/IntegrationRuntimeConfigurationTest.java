@@ -95,6 +95,48 @@ class IntegrationRuntimeConfigurationTest {
     }
 
     @Test
+    void providerTombstoneMappingsBindExplicitlyWithoutChangingReadOnlyDefaults() {
+        new ApplicationContextRunner()
+                .withInitializer(new ConfigDataApplicationContextInitializer())
+                .withUserConfiguration(IntegrationPropertiesBindingConfiguration.class)
+                .withPropertyValues(
+                        "infranexum.integrations.jira-assets.connectors.jira-prod.cloud-id=cloud",
+                        "infranexum.integrations.jira-assets.connectors.jira-prod.workspace-id=workspace",
+                        "infranexum.integrations.jira-assets.connectors.jira-prod.bearer-token-reference=env:JIRA_TOKEN",
+                        "infranexum.integrations.jira-assets.connectors.jira-prod.request-timeout=PT5S",
+                        "infranexum.integrations.jira-assets.connectors.jira-prod.enabled=true",
+                        "infranexum.integrations.jira-assets.connectors.jira-prod.mutation.object-type-id=23",
+                        "infranexum.integrations.jira-assets.connectors.jira-prod.mutation.identity-attribute-name=InfraNexum ID",
+                        "infranexum.integrations.jira-assets.connectors.jira-prod.mutation.identity-source-field=id",
+                        "infranexum.integrations.jira-assets.connectors.jira-prod.mutation.attribute-ids.id=135",
+                        "infranexum.integrations.jira-assets.connectors.jira-prod.mutation.batch-size=50",
+                        "infranexum.integrations.jira-assets.connectors.jira-prod.mutation.tombstone.attribute-id=155",
+                        "infranexum.integrations.jira-assets.connectors.jira-prod.mutation.tombstone.value=disposed",
+                        "infranexum.integrations.service-now.connectors.cmdb-prod.instance-host=example.service-now.com",
+                        "infranexum.integrations.service-now.connectors.cmdb-prod.table-name=cmdb_ci_server",
+                        "infranexum.integrations.service-now.connectors.cmdb-prod.bearer-token-reference=env:SN_TOKEN",
+                        "infranexum.integrations.service-now.connectors.cmdb-prod.request-timeout=PT5S",
+                        "infranexum.integrations.service-now.connectors.cmdb-prod.enabled=true",
+                        "infranexum.integrations.service-now.connectors.cmdb-prod.mutation.identity-source-field=id",
+                        "infranexum.integrations.service-now.connectors.cmdb-prod.mutation.field-names.id=u_infranexum_id",
+                        "infranexum.integrations.service-now.connectors.cmdb-prod.mutation.batch-size=50",
+                        "infranexum.integrations.service-now.connectors.cmdb-prod.mutation.tombstone.field-name=u_infranexum_state",
+                        "infranexum.integrations.service-now.connectors.cmdb-prod.mutation.tombstone.value=disposed")
+                .run(context -> {
+                    assertNull(context.getStartupFailure());
+                    IntegrationRuntimeProperties properties = context.getBean(IntegrationRuntimeProperties.class);
+                    var jira = properties.jiraAssetsMutationDefinitions().get(new ConnectorKey("jira-prod"));
+                    var serviceNow = properties.serviceNowMutationDefinitions().get(new ConnectorKey("cmdb-prod"));
+                    assertNotNull(jira);
+                    assertNotNull(serviceNow);
+                    assertEquals("155", jira.tombstone().attributeId());
+                    assertEquals("disposed", jira.tombstone().value());
+                    assertEquals("u_infranexum_state", serviceNow.tombstone().fieldName());
+                    assertEquals("disposed", serviceNow.tombstone().value());
+                });
+    }
+
+    @Test
     void durableRepositorySupportsOnlyPostgresqlAndOracle() {
         DataSource dataSource = mock(DataSource.class);
         assertInstanceOf(JdbcConnectorInboxRepository.class, configuration.connectorInboxRepository(
@@ -211,7 +253,7 @@ class IntegrationRuntimeConfigurationTest {
                     inbox, mock(AuditJournal.class), observer, ids, CLOCK);
             var dispatcher = configuration.connectorInboxDispatcher(
                     inbox, endpointRegistry, handlerRegistry, observer, CLOCK,
-                    new ServerRuntimeProperties("server-a", RuntimeMode.REGIONAL, "eu-west", "paris", "2.0.0-alpha.0.131", "2.0.0-draft.21"),
+                    new ServerRuntimeProperties("server-a", RuntimeMode.REGIONAL, "eu-west", "paris", "2.0.0-alpha.0.132", "2.0.0-draft.21"),
                     properties);
 
             assertNotNull(webhook);

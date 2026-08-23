@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 
-import { initializeIntegrationsWorkspace, integrationsWorkspaceTemplate, isExecutableMutator } from '../../src/applications/web/public/assets/integrations-workspace.mjs';
+import { initializeIntegrationsWorkspace, integrationsWorkspaceTemplate, isExecutableMutator, syncExecutionRequest } from '../../src/applications/web/public/assets/integrations-workspace.mjs';
 
 test('Integrations workspace is capability gated and exposes Jira Assets plus ServiceNow federated-read UI', async () => {
   const root = { attributes: {}, setAttribute(name, value) { this.attributes[name] = String(value); } };
@@ -12,7 +12,7 @@ test('Integrations workspace is capability gated and exposes Jira Assets plus Se
   assert.equal(root.attributes['data-capability-enabled'], 'false');
 
   const template = integrationsWorkspaceTemplate();
-  for (const id of ['jira-assets-connectors', 'jira-assets-search', 'jira-assets-connector', 'jira-assets-aql', 'jira-assets-results', 'service-now-connectors', 'service-now-search', 'service-now-connector', 'service-now-query', 'service-now-results', 'connector-governance-policies', 'connector-governance-page', 'connector-sync-runs', 'connector-sync-checkpoints', 'connector-sync-execute', 'connector-sync-connector', 'connector-sync-direction', 'connector-sync-reason', 'notification-endpoints', 'notification-publish', 'notification-endpoint', 'notification-event-id', 'notification-event-type', 'notification-payload', 'notification-dlq']) {
+  for (const id of ['jira-assets-connectors', 'jira-assets-search', 'jira-assets-connector', 'jira-assets-aql', 'jira-assets-results', 'service-now-connectors', 'service-now-search', 'service-now-connector', 'service-now-query', 'service-now-results', 'connector-governance-policies', 'connector-governance-page', 'connector-sync-runs', 'connector-sync-checkpoints', 'connector-sync-execute', 'connector-sync-connector', 'connector-sync-direction', 'connector-sync-reason', 'connector-sync-propagate-deletions', 'notification-endpoints', 'notification-publish', 'notification-endpoint', 'notification-event-id', 'notification-event-type', 'notification-payload', 'notification-dlq']) {
     assert.match(template, new RegExp(`id="${id}"`));
   }
   for (const key of ['integrations.connector', 'integrations.direction', 'integrations.authority', 'integrations.governance.execution', 'integrations.search.title']) {
@@ -56,4 +56,19 @@ test('Synchronization execution is admitted only for explicitly enabled mutating
   assert.equal(isExecutableMutator({ direction: 'FEDERATED_READ', mutating: false, executionEnabled: false }), false);
   assert.equal(isExecutableMutator({ direction: 'OUTBOUND', mutating: true }), false);
   assert.equal(isExecutableMutator(null), false);
+});
+
+test('Synchronization execution derives direction and fields from governance and requires explicit tombstone opt-in', () => {
+  const policy = {
+    connectorKey: 'jira-prod', direction: 'OUTBOUND', mutating: true, executionEnabled: true,
+    deletionPolicy: 'TOMBSTONE', fields: [{ field: 'id' }, { field: 'asset_type' }],
+  };
+  assert.deepEqual(syncExecutionRequest(policy, false), {
+    direction: 'OUTBOUND', fields: ['id', 'asset_type'], propagateDeletions: false,
+  });
+  assert.deepEqual(syncExecutionRequest(policy, true), {
+    direction: 'OUTBOUND', fields: ['id', 'asset_type'], propagateDeletions: true,
+  });
+  assert.throws(() => syncExecutionRequest({ ...policy, deletionPolicy: 'IGNORE' }, true), /tombstone/);
+  assert.throws(() => syncExecutionRequest({ ...policy, fields: [] }, false), /governed fields/);
 });

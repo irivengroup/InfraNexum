@@ -56,10 +56,17 @@ final class ConfiguredJiraAssetsSyncHandlerCatalog {
                 || policy.direction() != ConnectorSyncDirection.OUTBOUND
                 || policy.authority() != ConnectorDataAuthority.INFRANEXUM
                 || policy.conflictStrategy() != ConnectorConflictStrategy.PREFER_AUTHORITY
-                || policy.deletionPolicy() != ConnectorDeletionPolicy.IGNORE
                 || policy.rollbackStrategy() != ConnectorRollbackStrategy.MANUAL) {
             throw new ConfigurationException(
-                    "Jira Assets mutation requires OUTBOUND/INFRANEXUM/PREFER_AUTHORITY/IGNORE/MANUAL governance: "
+                    "Jira Assets mutation requires OUTBOUND/INFRANEXUM/PREFER_AUTHORITY/MANUAL governance: "
+                            + policy.connectorKey().value());
+        }
+        boolean tombstoneConfigured = mutation.tombstone() != null;
+        if ((policy.deletionPolicy() == ConnectorDeletionPolicy.IGNORE && tombstoneConfigured)
+                || (policy.deletionPolicy() == ConnectorDeletionPolicy.TOMBSTONE && !tombstoneConfigured)
+                || (policy.deletionPolicy() == ConnectorDeletionPolicy.MANUAL)) {
+            throw new ConfigurationException(
+                    "Jira Assets deletion policy must match the explicit tombstone mapping: "
                             + policy.connectorKey().value());
         }
         Set<String> governed = policy.fields().stream()

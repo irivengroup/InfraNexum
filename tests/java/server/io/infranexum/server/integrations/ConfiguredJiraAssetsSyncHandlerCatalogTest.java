@@ -5,6 +5,7 @@ import static org.mockito.Mockito.mock;
 
 import io.infranexum.adapters.jiraassets.JiraAssetsMutationSettings;
 import io.infranexum.adapters.jiraassets.JiraAssetsSettings;
+import io.infranexum.adapters.jiraassets.JiraAssetsTombstoneSettings;
 import io.infranexum.core.contracts.ConfigurationException;
 import io.infranexum.integrations.ConnectorConflictStrategy;
 import io.infranexum.integrations.ConnectorDataAuthority;
@@ -30,6 +31,9 @@ class ConfiguredJiraAssetsSyncHandlerCatalogTest {
     private static final ConnectorKey KEY = new ConnectorKey("jira-prod");
     private static final JiraAssetsMutationSettings MUTATION = new JiraAssetsMutationSettings(
             KEY, "23", "InfraNexum ID", "id", Map.of("id", "135", "asset_type", "144"), 50);
+    private static final JiraAssetsMutationSettings TOMBSTONE_MUTATION = new JiraAssetsMutationSettings(
+            KEY, "23", "InfraNexum ID", "id", Map.of("id", "135", "asset_type", "144"), 50,
+            new JiraAssetsTombstoneSettings("155", "disposed"));
 
     @Test
     void registersOnlyWhenProviderMappingAndGovernanceMatchExactly() {
@@ -73,6 +77,30 @@ class ConfiguredJiraAssetsSyncHandlerCatalogTest {
         assertTrue(catalog.handlers().isEmpty());
     }
 
+    @Test
+    void tombstoneAdmissionRequiresExactDeletionPolicyAndExplicitProviderMarker() {
+        var fields = List.of(
+                field("id", ConnectorDataAuthority.INFRANEXUM),
+                field("asset_type", ConnectorDataAuthority.INFRANEXUM));
+        ConfiguredJiraAssetsSyncHandlerCatalog catalog = new ConfiguredJiraAssetsSyncHandlerCatalog(
+                Map.of(KEY, TOMBSTONE_MUTATION), connectors(),
+                governance(policy(true, fields, ConnectorDeletionPolicy.TOMBSTONE)),
+                mock(DataSource.class), persistence(PersistenceMode.POSTGRESQL));
+        assertEquals(1, catalog.handlers().size());
+
+        assertThrows(ConfigurationException.class, () -> new ConfiguredJiraAssetsSyncHandlerCatalog(
+                Map.of(KEY, TOMBSTONE_MUTATION), connectors(), governance(policy(true, fields)),
+                mock(DataSource.class), persistence(PersistenceMode.POSTGRESQL)));
+        assertThrows(ConfigurationException.class, () -> new ConfiguredJiraAssetsSyncHandlerCatalog(
+                Map.of(KEY, MUTATION), connectors(),
+                governance(policy(true, fields, ConnectorDeletionPolicy.TOMBSTONE)),
+                mock(DataSource.class), persistence(PersistenceMode.POSTGRESQL)));
+        assertThrows(ConfigurationException.class, () -> new ConfiguredJiraAssetsSyncHandlerCatalog(
+                Map.of(KEY, TOMBSTONE_MUTATION), connectors(),
+                governance(policy(true, fields, ConnectorDeletionPolicy.MANUAL)),
+                mock(DataSource.class), persistence(PersistenceMode.POSTGRESQL)));
+    }
+
     private static ConfiguredJiraAssetsConnectorRegistry connectors() {
         JiraAssetsSettings settings = new JiraAssetsSettings(
                 KEY, "cloud", "workspace", "env:JIRA_TOKEN", Duration.ofSeconds(5), true);
@@ -94,9 +122,14 @@ class ConfiguredJiraAssetsSyncHandlerCatalogTest {
     }
 
     private static ConnectorGovernancePolicy policy(boolean enabled, List<ConnectorFieldAuthority> fields) {
+        return policy(enabled, fields, ConnectorDeletionPolicy.IGNORE);
+    }
+
+    private static ConnectorGovernancePolicy policy(
+            boolean enabled, List<ConnectorFieldAuthority> fields, ConnectorDeletionPolicy deletionPolicy) {
         return new ConnectorGovernancePolicy(
                 KEY, "jira-assets", ConnectorSyncDirection.OUTBOUND, ConnectorDataAuthority.INFRANEXUM,
-                ConnectorConflictStrategy.PREFER_AUTHORITY, ConnectorDeletionPolicy.IGNORE,
+                ConnectorConflictStrategy.PREFER_AUTHORITY, deletionPolicy,
                 ConnectorRollbackStrategy.MANUAL, enabled, fields);
     }
 

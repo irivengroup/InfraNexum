@@ -22,7 +22,19 @@ public record JiraAssetsMutationSettings(
         String identityAttributeName,
         String identitySourceField,
         Map<String, String> attributeIds,
-        int batchSize) {
+        int batchSize,
+        JiraAssetsTombstoneSettings tombstone) {
+    /** Compatibility constructor for mutation mappings created before controlled tombstones existed. */
+    public JiraAssetsMutationSettings(
+            ConnectorKey connectorKey,
+            String objectTypeId,
+            String identityAttributeName,
+            String identitySourceField,
+            Map<String, String> attributeIds,
+            int batchSize) {
+        this(connectorKey, objectTypeId, identityAttributeName, identitySourceField, attributeIds, batchSize, null);
+    }
+
     private static final Pattern PROVIDER_ID = Pattern.compile("^[A-Za-z0-9-]{1,128}$");
     private static final Pattern AQL_ATTRIBUTE = Pattern.compile("^[A-Za-z][A-Za-z0-9 _.:-]{0,127}$");
 
@@ -57,6 +69,9 @@ public record JiraAssetsMutationSettings(
             throw new ConfigurationException("Jira Assets mutation attributes must contain 1..64 entries");
         }
         attributeIds = Map.copyOf(normalized);
+        if (tombstone != null && tombstone.attributeId().equals(attributeIds.get(identitySourceField))) {
+            throw new ConfigurationException("Jira Assets tombstone attribute cannot overwrite the immutable identity attribute");
+        }
         if (batchSize < 1 || batchSize > 200) {
             throw new ConfigurationException("Jira Assets mutation batchSize must be between 1 and 200");
         }

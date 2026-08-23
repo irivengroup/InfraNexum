@@ -55,6 +55,7 @@ class ServiceNowFederatedReadArchitectureTest(unittest.TestCase):
     def test_default_read_is_external_but_outbound_mutation_requires_explicit_safe_mapping(self) -> None:
         settings = (self.ADAPTER / "main/io/infranexum/adapters/servicenow/ServiceNowSettings.java").read_text(encoding="utf-8")
         mutation = (self.ADAPTER / "main/io/infranexum/adapters/servicenow/ServiceNowMutationSettings.java").read_text(encoding="utf-8")
+        tombstone = (self.ADAPTER / "main/io/infranexum/adapters/servicenow/ServiceNowTombstoneSettings.java").read_text(encoding="utf-8")
         connector = (self.ADAPTER / "main/io/infranexum/adapters/servicenow/ServiceNowConnector.java").read_text(encoding="utf-8")
         handler = (self.ADAPTER / "main/io/infranexum/adapters/servicenow/ServiceNowSyncHandler.java").read_text(encoding="utf-8")
 
@@ -66,11 +67,14 @@ class ServiceNowFederatedReadArchitectureTest(unittest.TestCase):
         self.assertIn('"id".equals(identitySourceField)', mutation)
         self.assertIn('value.startsWith("sys_")', mutation)
         self.assertIn('providerColumns.add(column)', mutation)
+        self.assertIn('tombstone field cannot overwrite the immutable identity column', mutation)
+        self.assertIn('tombstone value is invalid', tombstone)
         self.assertIn("Arrays.fill(credential, (byte) 0)", connector)
         self.assertIn('FIELDS = "sys_id,name,sys_class_name,sys_updated_on"', connector)
         self.assertIn('"nameLIKE" + normalized + "^ORDERBYsys_id"', connector)
         self.assertIn('method.equals("PATCH")', (self.ADAPTER / "main/io/infranexum/adapters/servicenow/ServiceNowTransport.java").read_text(encoding="utf-8"))
         self.assertIn('SERVICE_NOW_GOVERNANCE_MISMATCH', handler)
+        self.assertIn('settings.tombstone()', handler)
         self.assertIn('MANUAL_COMPENSATION_REQUIRED', handler)
         self.assertNotIn("rsot", connector.lower())
         self.assertNotIn("itam", connector.lower())

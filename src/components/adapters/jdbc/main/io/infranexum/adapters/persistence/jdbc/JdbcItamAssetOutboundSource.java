@@ -90,6 +90,7 @@ public final class JdbcItamAssetOutboundSource implements ConnectorOutboundSourc
     private String sql(List<String> fields, boolean afterCursor) {
         List<String> projection = new ArrayList<>(fields);
         if (!projection.contains("id")) projection.add("id");
+        if (!projection.contains("lifecycle_status")) projection.add("lifecycle_status");
         if (!projection.contains("updated_at")) projection.add("updated_at");
         projection.sort(Comparator.naturalOrder());
         StringBuilder sql = new StringBuilder("SELECT ").append(String.join(",", projection))
@@ -103,12 +104,13 @@ public final class JdbcItamAssetOutboundSource implements ConnectorOutboundSourc
     private Row readRow(ResultSet resultSet, List<String> fields) throws SQLException {
         DomainIdentifier id = dialect.readIdentifier(resultSet, "id");
         Instant updatedAt = JdbcTemporal.readRequired(resultSet, "updated_at");
+        boolean deleted = "DISPOSED".equals(resultSet.getString("lifecycle_status"));
         Map<String, String> values = new LinkedHashMap<>();
         for (String field : fields) {
             String value = value(resultSet, field, FIELDS.get(field));
             if (value != null) values.put(field, value);
         }
-        return new Row(new ConnectorOutboundRecord(id.toString(), values, false), new Cursor(updatedAt, id));
+        return new Row(new ConnectorOutboundRecord(id.toString(), values, deleted), new Cursor(updatedAt, id));
     }
 
     private String value(ResultSet resultSet, String field, FieldKind kind) throws SQLException {

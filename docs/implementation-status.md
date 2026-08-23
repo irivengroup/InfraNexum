@@ -1,4 +1,20 @@
-# InfraNexum 2.0.0-alpha.0.131 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.132 — état d’implémentation
+
+## 2.0.0-alpha.0.132 — tombstones fournisseurs contrôlés et exécution Web gouvernée
+
+**Statut : snapshot de qualification ; PGM-10-E06 reste EN COURS.**
+
+Cette tranche étend le moteur outbound Jira Assets/ServiceNow sans introduire de suppression physique distante. Un actif ITAM n’est considéré comme suppression logique qu’au statut `DISPOSED`; `RETIRED` reste un état métier normal. La propagation distante n’est admise que si la policy active porte `deletionPolicy=TOMBSTONE`, si le provider possède un mapping tombstone explicite et distinct de son identité immuable, et si l’exécution demande explicitement `propagateDeletions=true`. Une cible distante absente n’est jamais créée uniquement pour recevoir un tombstone. `IGNORE` et `MANUAL` restent fail-closed face à une configuration de tombstone incompatible.
+
+Le Web Integrations corrige en parallèle une anomalie fonctionnelle : Execute envoyait auparavant une liste `fields` vide alors que l’admission mutante exige les champs gouvernés. La requête est désormais dérivée de la policy active (direction verrouillée + liste exacte de champs) et la case de propagation tombstone est désactivée par défaut et uniquement disponible pour une policy `TOMBSTONE`.
+
+**EXÉCUTÉ — contrôles pré-bump :** Source Integrity 45/45, couverture 100 %, zéro violation ; Architecture-as-Code PASS ; architecture sync/Jira/ServiceNow + Compose 90/90 ; Web Node 24.19.0 250/250, 99,78 % lignes / 98,60 % branches / 100 % fonctions, ReDoc vendor et smoke PASS ; JDBC `JdbcItamAssetOutboundSourceTest` 5/5 sous JDK 25 avec `-Xlint:all -Werror`; configuration tombstone Jira/ServiceNow compilée sous JDK 25 avec smoke d’invariants PASS ; API checker 15 fragments / 201 opérations / dette 0/0/0/0 ; toolchains, migrations, eventing, persistence, capabilities, entitlements, audit et SDK verts.
+
+**NON EXÉCUTÉ intégralement — Architecture instrumentée :** le target monolithique dépasse la fenêtre de 180 s ; les suites directement affectées et le checker fail-closed sont verts.
+
+**NON EXÉCUTÉ localement — full Server/JDBC Maven + JaCoCo et PostgreSQL 17/18 live :** le repository Maven complet et le runtime PostgreSQL ne sont pas disponibles dans ce runner. Les gates downstream restent obligatoires sans abaissement de seuil.
+
+---
 
 ## 2.0.0-alpha.0.131 — corrective ServiceNow/Compose et observabilité sync
 

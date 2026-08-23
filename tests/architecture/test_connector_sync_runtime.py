@@ -73,8 +73,10 @@ class ConnectorSyncRuntimeArchitectureTest(unittest.TestCase):
                 'ConnectorDataAuthority.INFRANEXUM',
                 'ConnectorConflictStrategy.PREFER_AUTHORITY',
                 'ConnectorDeletionPolicy.IGNORE',
+                'ConnectorDeletionPolicy.TOMBSTONE',
                 'ConnectorRollbackStrategy.MANUAL',
                 'policy.executionEnabled()',
+                'tombstoneConfigured',
                 field_guard,
             ):
                 self.assertIn(guard,catalog)
@@ -90,6 +92,18 @@ class ConnectorSyncRuntimeArchitectureTest(unittest.TestCase):
         self.assertIn('values.addAll(jiraHandlers.handlers())',config)
         self.assertIn('values.addAll(serviceNowHandlers.handlers())',config)
         self.assertIn('direction().mutating()',config)
+
+    def test_remote_deletion_is_tombstone_only_and_disposed_is_the_only_local_trigger(self):
+        outbound=(ROOT/'src/components/adapters/jdbc/main/io/infranexum/adapters/persistence/jdbc/JdbcItamAssetOutboundSource.java').read_text(encoding='utf-8')
+        jira=(ROOT/'src/components/adapters/jira-assets/main/io/infranexum/adapters/jiraassets/JiraAssetsSyncHandler.java').read_text(encoding='utf-8')
+        service_now=(ROOT/'src/components/adapters/service-now/main/io/infranexum/adapters/servicenow/ServiceNowSyncHandler.java').read_text(encoding='utf-8')
+        self.assertIn('"DISPOSED".equals(resultSet.getString("lifecycle_status"))',outbound)
+        self.assertNotIn('"RETIRED".equals(resultSet.getString("lifecycle_status"))',outbound)
+        for handler in (jira,service_now):
+            self.assertIn('context.propagateDeletions()',handler)
+            self.assertIn('settings.tombstone()',handler)
+            self.assertNotIn('.delete(',handler)
+            self.assertNotIn('"DELETE"',handler)
 
     def test_java_empty_collection_fallbacks_are_explicitly_typed_and_registry_is_in_preflight(self):
         registry=(SERVER/'ImmutableConnectorSyncHandlerRegistry.java').read_text(encoding='utf-8')

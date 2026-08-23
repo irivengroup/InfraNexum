@@ -23,6 +23,9 @@ class ServiceNowSyncHandlerTest {
     private static final String ASSET = "018f0d34-2c00-7000-8000-000000000002";
     private static final ServiceNowMutationSettings SETTINGS = new ServiceNowMutationSettings(
             KEY, "id", Map.of("id", "u_infranexum_id", "asset_type", "u_asset_type"), 50);
+    private static final ServiceNowMutationSettings TOMBSTONE_SETTINGS = new ServiceNowMutationSettings(
+            KEY, "id", Map.of("id", "u_infranexum_id", "asset_type", "u_asset_type"), 50,
+            new ServiceNowTombstoneSettings("u_infranexum_state", "disposed"));
 
     @Test
     void createsThenReplaysAsPatchUsingStableIdentity() {
@@ -114,6 +117,31 @@ class ServiceNowSyncHandlerTest {
     }
 
     @Test
+    void controlledTombstonePatchesExistingCiButNeverCreatesOne() {
+        RecordingMutationPort serviceNow = new RecordingMutationPort();
+        serviceNow.matches.add(Optional.of(new ServiceNowConnector.RemoteMutationObject(
+                "0123456789abcdef0123456789abcdef")));
+        serviceNow.matches.add(Optional.empty());
+        ConnectorOutboundRecord disposed = new ConnectorOutboundRecord(
+                ASSET, Map.of("id", ASSET, "asset_type", "HARDWARE"), true);
+        ServiceNowSyncHandler handler = new ServiceNowSyncHandler(
+                TOMBSTONE_SETTINGS,
+                new StaticSource(new ConnectorOutboundPage(List.of(disposed), "next", true)), serviceNow);
+        ConnectorSyncBatchContext deletionContext = new ConnectorSyncBatchContext(
+                RUN, KEY, ConnectorSyncDirection.OUTBOUND, null, 0, 1,
+                TOMBSTONE_SETTINGS.fieldNames().keySet(), true);
+
+        ConnectorSyncBatchResult first = handler.synchronize(deletionContext);
+        ConnectorSyncBatchResult absentReplay = handler.synchronize(deletionContext);
+
+        assertEquals(1, first.changedCount());
+        assertEquals(Map.of("u_infranexum_state", "disposed"), serviceNow.updated.getFirst());
+        assertTrue(serviceNow.created.isEmpty());
+        assertEquals(0, absentReplay.changedCount());
+        assertEquals(0, absentReplay.rejectedCount());
+    }
+
+    @Test
     void mutationSettingsRejectUnsafeIdentityColumnsMappingsAndBatchSizes() {
         assertThrows(io.infranexum.core.contracts.ConfigurationException.class, () ->
                 new ServiceNowMutationSettings(KEY, "serial_number", Map.of("serial_number", "u_serial"), 1));
@@ -130,6 +158,13 @@ class ServiceNowSyncHandlerTest {
                         Map.of("id", "u_infranexum_id", "asset_type", "u_infranexum_id"), 1));
         assertThrows(io.infranexum.core.contracts.ConfigurationException.class, () ->
                 new ServiceNowMutationSettings(KEY, "id", Map.of("id", "u_infranexum_id"), 201));
+        assertThrows(io.infranexum.core.contracts.ConfigurationException.class, () ->
+                new ServiceNowMutationSettings(KEY, "id", Map.of("id", "u_infranexum_id"), 1,
+                        new ServiceNowTombstoneSettings("u_infranexum_id", "disposed")));
+        assertThrows(io.infranexum.core.contracts.ConfigurationException.class, () ->
+                new ServiceNowTombstoneSettings("sys_updated_on", "disposed"));
+        assertThrows(io.infranexum.core.contracts.ConfigurationException.class, () ->
+                new ServiceNowTombstoneSettings("u_state", " disposed "));
     }
 
     private static ConnectorSyncBatchContext context() {

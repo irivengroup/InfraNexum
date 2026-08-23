@@ -22,7 +22,8 @@ import java.util.Set;
  * <p>Every retry first searches the immutable InfraNexum UUID stored in the configured custom
  * ServiceNow column. Transient outcomes therefore remain replayable without claiming exactly-once
  * provider execution. Permanent failures after a prior write require the configured MANUAL
- * compensation workflow; remote deletion is deliberately unsupported in this phase.</p>
+ * compensation workflow. Controlled deletion propagation is a tombstone update only; this handler
+ * never performs a physical remote DELETE.</p>
  */
 public final class ServiceNowSyncHandler implements ConnectorSyncHandler {
     private final ServiceNowMutationSettings settings;
@@ -47,7 +48,8 @@ public final class ServiceNowSyncHandler implements ConnectorSyncHandler {
             return ConnectorSyncBatchResult.failed("SERVICE_NOW_GOVERNANCE_MISMATCH", false, false);
         }
         Set<String> expectedFields = settings.fieldNames().keySet();
-        if (!context.fields().equals(expectedFields) || context.propagateDeletions()) {
+        if (!context.fields().equals(expectedFields)
+                || (context.propagateDeletions() && settings.tombstone() == null)) {
             return ConnectorSyncBatchResult.failed("SERVICE_NOW_GOVERNANCE_MISMATCH", false, false);
         }
 
@@ -64,7 +66,28 @@ public final class ServiceNowSyncHandler implements ConnectorSyncHandler {
         for (ConnectorOutboundRecord record : page.records()) {
             processed++;
             if (record.deleted()) {
-                rejected++;
+                if (!context.propagateDeletions()) {
+                    rejected++;
+                    continue;
+                }
+                try {
+                    String identity = record.fields().get(settings.identitySourceField());
+                    Optional<ServiceNowConnector.RemoteMutationObject> existing =
+                            serviceNow.findUnique(settings.identityField(), identity);
+                    if (existing.isPresent()) {
+                        ServiceNowTombstoneSettings tombstone = Objects.requireNonNull(
+                                settings.tombstone(), "ServiceNow tombstone settings");
+                        serviceNow.update(existing.orElseThrow().sysId(),
+                                Map.of(tombstone.fieldName(), tombstone.value()));
+                        changed++;
+                    }
+                } catch (ServiceNowRateLimitedException | ServiceNowUnavailableException transientFailure) {
+                    return ConnectorSyncBatchResult.failed("SERVICE_NOW_RETRYABLE_FAILURE", true, false);
+                } catch (ServiceNowConnectorException permanentFailure) {
+                    return ConnectorSyncBatchResult.failed("SERVICE_NOW_PERMANENT_FAILURE", false, changed > 0);
+                } catch (IllegalArgumentException invalidRecord) {
+                    return ConnectorSyncBatchResult.failed("SERVICE_NOW_MAPPING_INVALID", false, changed > 0);
+                }
                 continue;
             }
             try {

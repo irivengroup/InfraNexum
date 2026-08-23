@@ -45,7 +45,8 @@ public final class JiraAssetsSyncHandler implements ConnectorSyncHandler {
             return ConnectorSyncBatchResult.failed("JIRA_GOVERNANCE_MISMATCH", false, false);
         }
         Set<String> expectedFields = settings.attributeIds().keySet();
-        if (!context.fields().equals(expectedFields) || context.propagateDeletions()) {
+        if (!context.fields().equals(expectedFields)
+                || (context.propagateDeletions() && settings.tombstone() == null)) {
             return ConnectorSyncBatchResult.failed("JIRA_GOVERNANCE_MISMATCH", false, false);
         }
 
@@ -62,7 +63,27 @@ public final class JiraAssetsSyncHandler implements ConnectorSyncHandler {
         for (ConnectorOutboundRecord record : page.records()) {
             processed++;
             if (record.deleted()) {
-                rejected++;
+                if (!context.propagateDeletions()) {
+                    rejected++;
+                    continue;
+                }
+                try {
+                    Optional<JiraAssetsConnector.RemoteObject> existing = jira.findUnique(identityAql(
+                            record.fields().get(settings.identitySourceField())));
+                    if (existing.isPresent()) {
+                        JiraAssetsTombstoneSettings tombstone = Objects.requireNonNull(
+                                settings.tombstone(), "Jira Assets tombstone settings");
+                        jira.update(existing.orElseThrow().id(), settings.objectTypeId(),
+                                Map.of(tombstone.attributeId(), tombstone.value()));
+                        changed++;
+                    }
+                } catch (JiraAssetsRateLimitedException | JiraAssetsUnavailableException transientFailure) {
+                    return ConnectorSyncBatchResult.failed("JIRA_RETRYABLE_FAILURE", true, false);
+                } catch (JiraAssetsConnectorException permanentFailure) {
+                    return ConnectorSyncBatchResult.failed("JIRA_PERMANENT_FAILURE", false, changed > 0);
+                } catch (IllegalArgumentException invalidRecord) {
+                    return ConnectorSyncBatchResult.failed("JIRA_MAPPING_INVALID", false, changed > 0);
+                }
                 continue;
             }
             try {

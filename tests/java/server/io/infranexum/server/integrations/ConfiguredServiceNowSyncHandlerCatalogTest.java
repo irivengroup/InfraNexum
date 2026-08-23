@@ -5,6 +5,7 @@ import static org.mockito.Mockito.mock;
 
 import io.infranexum.adapters.servicenow.ServiceNowMutationSettings;
 import io.infranexum.adapters.servicenow.ServiceNowSettings;
+import io.infranexum.adapters.servicenow.ServiceNowTombstoneSettings;
 import io.infranexum.core.contracts.ConfigurationException;
 import io.infranexum.integrations.ConnectorConflictStrategy;
 import io.infranexum.integrations.ConnectorDataAuthority;
@@ -30,6 +31,9 @@ class ConfiguredServiceNowSyncHandlerCatalogTest {
     private static final ConnectorKey KEY = new ConnectorKey("service-now-prod");
     private static final ServiceNowMutationSettings MUTATION = new ServiceNowMutationSettings(
             KEY, "id", Map.of("id", "u_infranexum_id", "asset_type", "u_asset_type"), 50);
+    private static final ServiceNowMutationSettings TOMBSTONE_MUTATION = new ServiceNowMutationSettings(
+            KEY, "id", Map.of("id", "u_infranexum_id", "asset_type", "u_asset_type"), 50,
+            new ServiceNowTombstoneSettings("u_infranexum_state", "disposed"));
 
     @Test
     void registersOnlyWhenProviderMappingAndGovernanceMatchExactly() {
@@ -82,6 +86,30 @@ class ConfiguredServiceNowSyncHandlerCatalogTest {
         assertThrows(NullPointerException.class, () -> registry.require((ConnectorKey) null));
     }
 
+    @Test
+    void tombstoneAdmissionRequiresExactDeletionPolicyAndExplicitProviderMarker() {
+        var fields = List.of(
+                field("id", ConnectorDataAuthority.INFRANEXUM),
+                field("asset_type", ConnectorDataAuthority.INFRANEXUM));
+        ConfiguredServiceNowSyncHandlerCatalog catalog = new ConfiguredServiceNowSyncHandlerCatalog(
+                Map.of(KEY, TOMBSTONE_MUTATION), connectors(),
+                governance(policy(true, fields, ConnectorDeletionPolicy.TOMBSTONE)),
+                mock(DataSource.class), persistence(PersistenceMode.POSTGRESQL));
+        assertEquals(1, catalog.handlers().size());
+
+        assertThrows(ConfigurationException.class, () -> new ConfiguredServiceNowSyncHandlerCatalog(
+                Map.of(KEY, TOMBSTONE_MUTATION), connectors(), governance(policy(true, fields)),
+                mock(DataSource.class), persistence(PersistenceMode.POSTGRESQL)));
+        assertThrows(ConfigurationException.class, () -> new ConfiguredServiceNowSyncHandlerCatalog(
+                Map.of(KEY, MUTATION), connectors(),
+                governance(policy(true, fields, ConnectorDeletionPolicy.TOMBSTONE)),
+                mock(DataSource.class), persistence(PersistenceMode.POSTGRESQL)));
+        assertThrows(ConfigurationException.class, () -> new ConfiguredServiceNowSyncHandlerCatalog(
+                Map.of(KEY, TOMBSTONE_MUTATION), connectors(),
+                governance(policy(true, fields, ConnectorDeletionPolicy.MANUAL)),
+                mock(DataSource.class), persistence(PersistenceMode.POSTGRESQL)));
+    }
+
     private static ConfiguredServiceNowConnectorRegistry connectors() {
         ServiceNowSettings settings = new ServiceNowSettings(
                 KEY, "tenant.service-now.com", "cmdb_ci_server", "env:SN_TOKEN", Duration.ofSeconds(5), true);
@@ -104,9 +132,14 @@ class ConfiguredServiceNowSyncHandlerCatalogTest {
     }
 
     private static ConnectorGovernancePolicy policy(boolean enabled, List<ConnectorFieldAuthority> fields) {
+        return policy(enabled, fields, ConnectorDeletionPolicy.IGNORE);
+    }
+
+    private static ConnectorGovernancePolicy policy(
+            boolean enabled, List<ConnectorFieldAuthority> fields, ConnectorDeletionPolicy deletionPolicy) {
         return new ConnectorGovernancePolicy(
                 KEY, "service-now", ConnectorSyncDirection.OUTBOUND, ConnectorDataAuthority.INFRANEXUM,
-                ConnectorConflictStrategy.PREFER_AUTHORITY, ConnectorDeletionPolicy.IGNORE,
+                ConnectorConflictStrategy.PREFER_AUTHORITY, deletionPolicy,
                 ConnectorRollbackStrategy.MANUAL, enabled, fields);
     }
 

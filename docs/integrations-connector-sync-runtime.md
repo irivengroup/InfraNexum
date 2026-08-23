@@ -126,8 +126,12 @@ A safe test plan is:
 9. advance the connector with a later run, then verify compensation of the older run is refused;
 10. inspect browser/API output and confirm raw cursors and credentials are absent.
 
+## Controlled tombstones
+
+The provider-neutral request already carries `propagateDeletions`. Jira Assets and ServiceNow now admit that flag only when their execution policy is `TOMBSTONE` and an explicit provider tombstone marker is configured. The ITAM outbound source marks only `DISPOSED` assets as deleted. A matching remote object is updated with the single configured marker; no remote object is created solely to represent a deletion and no physical `DELETE` is issued. With the flag disabled, disposed records are rejected and the checkpoint counters make that visible.
+
 ## Remaining PGM-10-E06 work
 
-The runtime plus governed Jira Assets and ServiceNow OUTBOUND handlers are implemented, but PGM-10-E06 remains **EN COURS**. Remaining work includes inbound/bidirectional contracts if required, controlled remote deletion propagation, end-to-end live provider certification, and OpenService once an authoritative provider/API contract exists.
+The runtime plus governed Jira Assets and ServiceNow OUTBOUND handlers, including controlled tombstones, are implemented, but PGM-10-E06 remains **EN COURS**. Remaining work includes inbound/bidirectional contracts if required, end-to-end live provider certification, and OpenService once an authoritative provider/API contract exists.
 
 PGM-10-E05 also remains formally open until its exact hosted JDK25/JaCoCo and PostgreSQL 17/18 gates are proven.

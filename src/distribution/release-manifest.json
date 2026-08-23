@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.131",
-  "profile": "alpha131-sync-observability-compose-corrective-qualification-snapshot",
+  "version": "2.0.0-alpha.0.132",
+  "profile": "alpha132-controlled-provider-tombstone-and-governed-web-sync-qualification-snapshot",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -14,15 +14,15 @@
     },
     {
       "id": "infranexum-server",
-      "status": "alpha131-fixes-servicenow-typed-connector-registry-wiring-and-adds-low-cardinality-durable-sync-runtime-observability; preserves-alpha130-governed-servicenow-outbound-and-alpha129-cli-json-hardening; server-jacoco98-maven-qualification-remains-open-where-full-dependency-cache-is-required"
+      "status": "alpha132-adds-governed-disposed-only-provider-tombstone-projection-for-jira-assets-and-servicenow-with-explicit-policy-mapping-and-per-run-opt-in; no-provider-delete-no-tombstone-only-create; preserves-alpha131-sync-observability-and-servicenow-wiring-corrective; full-server-jacoco98-maven-qualification-remains-open"
     },
     {
       "id": "infranexum-agent",
-      "status": "source-functionally-unchanged-alpha129; exact-go1.26.5-vet-race-tests-98.4-percent-coverage-and-build-executed-pass"
+      "status": "source-functionally-unchanged-alpha129; exact-go1.26.5-vet-race-tests-98.4-percent-coverage-and-build-executed-pass-alpha132"
     },
     {
       "id": "infranexum-web",
-      "status": "source-functionally-unchanged-except-version-projection-alpha129; exact-node24.19.0-redoc2.5.3-vendor-verification-249-of-249-tests-99.78-lines-98.60-branches-100-functions-and-process-smoke-executed-pass"
+      "status": "alpha132-governed-sync-execution-derives-policy-direction-and-exact-fields-and-exposes-explicit-tombstone-opt-in-only-for-tombstone-policies; node24.19.0-250-of-250-tests-99.78-lines-98.60-branches-100-functions-redoc-vendor-and-smoke-executed-pass"
     },
     {
       "id": "connector-sdk-v1",
@@ -46,7 +46,7 @@
     },
     {
       "id": "ci-foundation",
-      "status": "unix-quality-gates-preserved; alpha131-jdk25-integration-smoke-and-structural-gates-executed; full-server-jdbc-maven-jacoco-run-still-environment-dependent; postgresql17-18-live-runtime-required; no-threshold-or-exclusion-weakened"
+      "status": "unix-quality-gates-preserved; alpha132-jdk25-targeted-tombstone-contracts-and-structural-gates-executed; full-server-jdbc-maven-jacoco-run-and-postgresql17-18-live-runtime-remain-required; no-threshold-or-exclusion-weakened"
     },
     {
       "id": "deployment-boundary",
@@ -114,15 +114,15 @@
     },
     {
       "id": "api-platform-contract-v5",
-      "status": "pgm-05-e01-preserved; alpha130-adds-no-public-route-capability-or-permission; existing-generic-connector-sync-api-remains-the-only-mutation-entrypoint"
+      "status": "pgm-05-e01-preserved; alpha132-adds-no-public-route-capability-permission-or-schema-operation; generic-connector-sync-api-remains-the-only-provider-mutation-entrypoint"
     },
     {
       "id": "adapter-jira-assets-v1",
-      "status": "pgm-10-e06-alpha130-preserves-governed-outbound-itam-upsert-and-adds-fail-closed-bijective-provider-attribute-mapping-to-prevent-silent-payload-overwrite"
+      "status": "pgm-10-e06-alpha132-preserves-governed-outbound-itam-upsert-and-adds-disposed-only-explicit-tombstone-attribute-projection-without-physical-delete-or-tombstone-only-create"
     },
     {
       "id": "adapter-service-now-v1",
-      "status": "pgm-10-e06-alpha130-federated-read-default-plus-governed-outbound-itam-upsert-through-durable-sync-runtime-table-api-post-patch-custom-u-uuidv7-identity-unique-remote-match-bijective-mapping-no-delete-manual-compensation"
+      "status": "pgm-10-e06-alpha132-federated-read-default-plus-governed-outbound-itam-upsert-and-disposed-only-explicit-tombstone-field-patch; no-physical-delete-no-tombstone-only-create-manual-compensation"
     },
     {
       "id": "adapter-outbound-webhook-v1",
@@ -130,12 +130,12 @@
     },
     {
       "id": "connector-sync-runtime-v1",
-      "status": "pgm-10-e06-alpha131-durable-run-checkpoint-compensation-runtime-with-jira-assets-and-servicenow-mutating-handlers-admitted-only-by-exact-active-governance-plus-engine-owned-low-cardinality-runtime-observability; compensation-remains-manual"
+      "status": "pgm-10-e06-alpha132-durable-run-checkpoint-compensation-runtime-with-jira-assets-and-servicenow-mutating-handlers-exact-governance-low-cardinality-observability-and-explicit-controlled-tombstone-opt-in; compensation-remains-manual"
     }
   ],
   "validation_reports": [],
   "validation_summary": {
-    "source_inventory_paths": 1593,
+    "source_inventory_paths": 1608,
     "source_integrity_tests": 45,
     "source_integrity_coverage_percent": 100,
     "source_integrity_violations": 0,
@@ -169,7 +169,7 @@
     "jdbc_workers_junit_tests_defined": 11,
     "jdbc_workers_postgresql_live_tests_defined": 5,
     "agent_local_coverage_percent": 98.4,
-    "web_tests": 249,
+    "web_tests": 250,
     "web_line_coverage_percent": 99.78,
     "web_branch_coverage_percent": 98.6,
     "web_function_coverage_percent": 100,
@@ -196,7 +196,7 @@
     "jdbc_postgresql_live_tests_defined": 18,
     "server_module_tests_defined": 154,
     "server_capability_configuration_contract_local": "EXECUTED_JAVA21_STRICT_HARNESS",
-    "agent_target_toolchain_status": "NON_EXECUTED_TARGET_GO_1_26_5_LOCAL_GO_1_23_2",
+    "agent_target_toolchain_status": "EXECUTED_GO_1_26_5_VET_RACE_TESTS_BUILD_PASS",
     "jdbc_deterministic_harness_tests_executed": 43,
     "jdbc_explicit_source_branch_gaps_diagnostic": 0,
     "server_workers_runtime_tests_defined": 10,
@@ -702,23 +702,23 @@
   "source_layout": "All production solution spaces are contained below src/; Java, Go and Web tests are repository-level under tests/; canonical relative paths are limited to 120 characters and path components to 80 characters.",
   "source_integrity": {
     "canonical_inventory": "source-inventory.json",
-    "git_blob_checksums": 1603,
-    "tracked_files": 1604,
-    "source_recorded_files": 1602,
+    "git_blob_checksums": 1609,
+    "tracked_files": 1610,
+    "source_recorded_files": 1608,
     "staged_snapshot_required": true,
     "pre_commit_hook": ".githooks/pre-commit",
-    "inventory_paths": 1602
+    "inventory_paths": 1608
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.131",
-    "archive_entries": 1604,
+    "prefix": "infranexum-2.0.0-alpha.0.132",
+    "archive_entries": 1610,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
-    "source_recorded_files": 1603,
+    "source_recorded_files": 1609,
     "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
-    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.130-validation-evidence.zip"
+    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.132-validation-evidence.zip"
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.131-validation-evidence.zip",
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.132-validation-evidence.zip",
   "runtime_validation": {
     "web_local_runtime_alpha058": "EXECUTED_38_OF_38_LINE_99_67_BRANCH_98_33_FUNCTION_100_PROCESS_SMOKE_PASS_LOCAL_NODE22_BOOTSTRAP5_3_6_PROFESSIONAL_ADMIN_DASHBOARD_THEME_TOGGLE_TRUTHFUL_KPI_SAME_ORIGIN_ORGANIZATION_UI",
     "architecture_functional_alpha058": "EXECUTED_57_OF_57",
@@ -1767,13 +1767,41 @@
     "postgresql_live_alpha131": "NON_EXECUTED_NO_LOCAL_DOCKER_POSTGRES_INITDB_OR_PSQL_RUNTIME",
     "packaging_tracked_files_alpha131": "1608",
     "source_inventory_paths_alpha131": "1606",
-    "git_blob_checksums_alpha131": "1607"
+    "git_blob_checksums_alpha131": "1607",
+    "controlled_tombstone_architecture_alpha132": "EXECUTED_TARGETED_SYNC_JIRA_SERVICENOW_PLUS_COMPOSE_90_OF_90_AND_ARCHITECTURE_AS_CODE_ZERO_VIOLATIONS_PRE_BUMP",
+    "jdbc_itam_outbound_tombstone_jdk25_alpha132": "EXECUTED_JDK25_XLINT_ALL_WERROR_5_OF_5_JUNIT6_STANDALONE",
+    "provider_tombstone_settings_jdk25_alpha132": "EXECUTED_JDK25_XLINT_ALL_WERROR_JIRA_SERVICENOW_CONFIGURATION_INVARIANT_SMOKE_PASS",
+    "web_target_alpha132": "EXECUTED_POST_BUMP_NODE24.19.0_REDOC2.5.3_250_OF_250_LINE99.78_BRANCH98.60_FUNCTION100_VENDOR_AND_SMOKE_PASS",
+    "api_contract_checker_alpha132": "EXECUTED_POST_BUMP_15_FRAGMENTS_201_OPERATIONS_ZERO_VIOLATIONS_DEBT_0_0_0_0",
+    "architecture_full_alpha132": "NON_EXECUTED_INTEGRATED_RUNNER_TIMEOUT_180S_CHECKER_AND_DIRECTLY_AFFECTED_SUITES_PASS",
+    "server_maven_junit_jacoco_alpha132": "NON_EXECUTED_FULL_REACTOR_LOCAL_OFFLINE_REPOSITORY_INCOMPLETE_DOWNSTREAM_REQUIRED",
+    "postgresql_17_18_live_alpha132": "NON_EXECUTED_LOCAL_NO_POSTGRESQL_DOCKER_RUNTIME_DOWNSTREAM_REQUIRED",
+    "source_integrity_alpha132": "EXECUTED_POST_BUMP_45_OF_45_COVERAGE100_CHECKER_ZERO_VIOLATIONS",
+    "architecture_alpha132": "EXECUTED_POST_BUMP_ARCHITECTURE_AS_CODE_ZERO_VIOLATIONS_AND_DIRECTLY_AFFECTED_SYNC_JIRA_SERVICENOW_PLUS_COMPOSE_90_OF_90",
+    "agent_target_alpha132": "EXECUTED_POST_BUMP_GO1.26.5_VET_RACE_TESTS_98.4_PERCENT_BUILD_PASS",
+    "integration_runtime_properties_javac25_alpha132": "EXECUTED_JDK25_XLINT_ALL_WERROR_REAL_INFRANEXUM_TYPES_WITH_ONLY_SPRING_ANNOTATION_COMPILE_STUBS_PASS",
+    "toolchains_alpha132": "EXECUTED_25_OF_25_COVERAGE99_CHECKER_ZERO_VIOLATIONS",
+    "migrations_alpha132": "EXECUTED_118_OF_118_COVERAGE99_CHECKER_ZERO_VIOLATIONS_NO_NEW_MIGRATION",
+    "eventing_alpha132": "EXECUTED_10_OF_10_COVERAGE100_CHECKER_ZERO_VIOLATIONS",
+    "persistence_alpha132": "EXECUTED_12_OF_12_COVERAGE98_CHECKER_ZERO_VIOLATIONS",
+    "capabilities_alpha132": "EXECUTED_10_OF_10_COVERAGE99_CHECKER_ZERO_VIOLATIONS",
+    "entitlements_alpha132": "EXECUTED_10_OF_10_COVERAGE100_CHECKER_ZERO_VIOLATIONS",
+    "audit_alpha132": "EXECUTED_8_OF_8_COVERAGE100_CHECKER_ZERO_VIOLATIONS",
+    "connector_sdk_alpha132": "EXECUTED_19_OF_19_COVERAGE99",
+    "maven_offline_alpha132": "EXECUTED_JDK25.0.4.1_MAVEN3.9.16_STARTUP_PROJECT_MODEL_BLOCKED_BEFORE_COMPILATION_ONLY_BY_MISSING_SPRING_BOOT_4.1.0_AND_SPRING_MODULITH_2.1.0_BOMS",
+    "packaging_tracked_files_alpha132": "1610",
+    "git_blob_checksums_alpha132": "1609",
+    "source_inventory_paths_alpha132": "1608",
+    "source_integrity_strict_alpha132": "EXECUTED_1610_TRACKED_PATHS_1609_GIT_BLOB_CHECKSUMS_1608_CANONICAL_INVENTORY_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
+    "archive_compatibility_unit_alpha132": "EXECUTED_12_OF_12_COVERAGE100_ZERO_VIOLATIONS",
+    "archive_compatibility_candidate_alpha132": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS"
   },
   "archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.131",
-    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.131-validation-evidence.zip"
+    "prefix": "infranexum-2.0.0-alpha.0.132",
+    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.132-validation-evidence.zip"
   },
   "history": [
-    "alpha.0.131 corrective and operability increment: fixes ServiceNow ConnectorKey/String Server wiring exposed by the Docker Maven compile, makes standalone seed fail fast on missing/failed PostgreSQL topology or migrations instead of surfacing a misleading DNS error, and instruments the durable connector sync engine with bounded low-cardinality Micrometer metrics. No public API or database migration is added."
+    "alpha.0.131 corrective and operability increment: fixes ServiceNow ConnectorKey/String Server wiring exposed by the Docker Maven compile, makes standalone seed fail fast on missing/failed PostgreSQL topology or migrations instead of surfacing a misleading DNS error, and instruments the durable connector sync engine with bounded low-cardinality Micrometer metrics. No public API or database migration is added.",
+    "alpha.0.132 PGM-10-E06 increment: adds explicit DISPOSED-only controlled tombstone projection for Jira Assets and ServiceNow, never physical provider DELETE, and fixes the Integrations Web Execute flow to derive governed direction/fields from the active policy with tombstone propagation opt-in only for TOMBSTONE policies. No migration or new public API operation is added."
   ]
 }

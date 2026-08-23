@@ -68,7 +68,21 @@ infranexum:
           asset_type: INFRANEXUM
 ```
 
-The example is executable only because the provider mapping and governance are exact. The IDs are illustrative deployment values. Jira mutation currently requires `identity-source-field=id`, `deletion-policy=IGNORE` and `rollback-strategy=MANUAL`; every configured mutation field must be governed by `INFRANEXUM`. Field names satisfy the canonical connector field-name contract and governance cardinality remains bounded.
+The example is executable only because the provider mapping and governance are exact. The IDs are illustrative deployment values. Jira mutation requires `identity-source-field=id` and `rollback-strategy=MANUAL`; every configured mutation field must be governed by `INFRANEXUM`. With `deletion-policy=IGNORE`, no tombstone mapping may be configured. Field names satisfy the canonical connector field-name contract and governance cardinality remains bounded.
+
+Controlled remote deletion is an explicit **tombstone update**, never a physical provider delete. To admit it, configure both the provider marker and `deletion-policy=TOMBSTONE`:
+
+```yaml
+mutation:
+  tombstone:
+    attribute-id: "155"
+    value: disposed
+governance:
+  jira-prod:
+    deletion-policy: TOMBSTONE
+```
+
+The tombstone attribute cannot be the immutable identity attribute. A synchronization run must also explicitly request `propagateDeletions=true`; the Web checkbox is disabled by default and is enabled only for a `TOMBSTONE` policy.
 
 Equivalent ServiceNow admission uses an explicit local-to-CMDB field mapping and an immutable custom identity column:
 
@@ -102,7 +116,19 @@ infranexum:
           asset_type: INFRANEXUM
 ```
 
-ServiceNow also requires `identity-source-field=id`; its provider identity target must be a custom `u_*` column, and `sys_*` columns are excluded from mutation mappings. The Server requires exact equality between the local mapping keys and the governed `INFRANEXUM` fields.
+ServiceNow also requires `identity-source-field=id`; its provider identity target must be a custom `u_*` column, and `sys_*` columns are excluded from mutation mappings. The Server requires exact equality between the local mapping keys and the governed `INFRANEXUM` fields. Controlled tombstoning uses the same exact admission contract:
+
+```yaml
+mutation:
+  tombstone:
+    field-name: u_infranexum_state
+    value: disposed
+governance:
+  cmdb-production:
+    deletion-policy: TOMBSTONE
+```
+
+The tombstone field cannot overwrite the custom identity column. `MANUAL` deletion policy does not register an automatic propagation handler.
 
 Startup fails when:
 
@@ -111,6 +137,7 @@ Startup fails when:
 - a mutating policy lacks field mappings or a compatible rollback strategy;
 - federated read attempts to enable synchronization execution;
 - execution is enabled while the provider connector itself is disabled;
+- a tombstone mapping is configured under `IGNORE`, or `TOMBSTONE` is selected without an explicit provider tombstone mapping;
 - a synchronization handler is registered for a policy that is read-only or execution-disabled;
 - an execution-enabled mutating policy has no registered synchronization handler.
 

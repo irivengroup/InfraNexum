@@ -23,6 +23,9 @@ class JiraAssetsSyncHandlerTest {
     private static final String ASSET = "018f0d34-2c00-7000-8000-000000000002";
     private static final JiraAssetsMutationSettings SETTINGS = new JiraAssetsMutationSettings(
             KEY, "23", "InfraNexum ID", "id", Map.of("id", "135", "asset_type", "144"), 50);
+    private static final JiraAssetsMutationSettings TOMBSTONE_SETTINGS = new JiraAssetsMutationSettings(
+            KEY, "23", "InfraNexum ID", "id", Map.of("id", "135", "asset_type", "144"), 50,
+            new JiraAssetsTombstoneSettings("155", "disposed"));
 
     @Test
     void createsThenReplaysAsUpdateUsingStableIdentity() {
@@ -106,6 +109,30 @@ class JiraAssetsSyncHandlerTest {
     }
 
     @Test
+    void controlledTombstoneUpdatesExistingRemoteObjectButNeverCreatesOne() {
+        RecordingMutationPort jira = new RecordingMutationPort();
+        jira.matches.add(Optional.of(remote("100")));
+        jira.matches.add(Optional.empty());
+        ConnectorOutboundRecord disposed = new ConnectorOutboundRecord(
+                ASSET, Map.of("id", ASSET, "asset_type", "HARDWARE"), true);
+        JiraAssetsSyncHandler handler = new JiraAssetsSyncHandler(
+                TOMBSTONE_SETTINGS,
+                new StaticSource(new ConnectorOutboundPage(List.of(disposed), "next", true)), jira);
+        ConnectorSyncBatchContext deletionContext = new ConnectorSyncBatchContext(
+                RUN, KEY, ConnectorSyncDirection.OUTBOUND, null, 0, 1,
+                TOMBSTONE_SETTINGS.attributeIds().keySet(), true);
+
+        ConnectorSyncBatchResult first = handler.synchronize(deletionContext);
+        ConnectorSyncBatchResult absentReplay = handler.synchronize(deletionContext);
+
+        assertEquals(1, first.changedCount());
+        assertEquals(Map.of("155", "disposed"), jira.updated.getFirst());
+        assertTrue(jira.created.isEmpty());
+        assertEquals(0, absentReplay.changedCount());
+        assertEquals(0, absentReplay.rejectedCount());
+    }
+
+    @Test
     void mutationSettingsRejectUnsafeOrIncompleteMappings() {
         assertThrows(io.infranexum.core.contracts.ConfigurationException.class,
                 () -> new JiraAssetsMutationSettings(KEY, "23", "InfraNexum ID", "serial_number", Map.of("serial_number", "1"), 1));
@@ -120,6 +147,13 @@ class JiraAssetsSyncHandlerTest {
                         Map.of("id", "1", "asset_type", "1"), 1));
         assertThrows(io.infranexum.core.contracts.ConfigurationException.class,
                 () -> new JiraAssetsMutationSettings(KEY, "23", "InfraNexum ID", "id", Map.of("id", "1"), 201));
+        assertThrows(io.infranexum.core.contracts.ConfigurationException.class,
+                () -> new JiraAssetsMutationSettings(KEY, "23", "InfraNexum ID", "id", Map.of("id", "1"), 1,
+                        new JiraAssetsTombstoneSettings("1", "disposed")));
+        assertThrows(io.infranexum.core.contracts.ConfigurationException.class,
+                () -> new JiraAssetsTombstoneSettings("bad/id", "disposed"));
+        assertThrows(io.infranexum.core.contracts.ConfigurationException.class,
+                () -> new JiraAssetsTombstoneSettings("2", " disposed "));
     }
 
     private static ConnectorSyncBatchContext context() {

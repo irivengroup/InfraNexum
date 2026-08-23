@@ -154,7 +154,9 @@ public record IntegrationRuntimeProperties(
             JiraAssetsMutationProperties mutation = value.mutation();
             result.put(connectorKey, new io.infranexum.adapters.jiraassets.JiraAssetsMutationSettings(
                     connectorKey, mutation.objectTypeId(), mutation.identityAttributeName(), mutation.identitySourceField(),
-                    mutation.attributeIds(), mutation.batchSize()));
+                    mutation.attributeIds(), mutation.batchSize(), mutation.tombstone() == null ? null
+                            : new io.infranexum.adapters.jiraassets.JiraAssetsTombstoneSettings(
+                                    mutation.tombstone().attributeId(), mutation.tombstone().value())));
         });
         return Map.copyOf(result);
     }
@@ -178,7 +180,10 @@ public record IntegrationRuntimeProperties(
             ConnectorKey connectorKey = new ConnectorKey(key);
             ServiceNowMutationProperties mutation = value.mutation();
             result.put(connectorKey, new io.infranexum.adapters.servicenow.ServiceNowMutationSettings(
-                    connectorKey, mutation.identitySourceField(), mutation.fieldNames(), mutation.batchSize()));
+                    connectorKey, mutation.identitySourceField(), mutation.fieldNames(), mutation.batchSize(),
+                    mutation.tombstone() == null ? null
+                            : new io.infranexum.adapters.servicenow.ServiceNowTombstoneSettings(
+                                    mutation.tombstone().fieldName(), mutation.tombstone().value())));
         });
         return Map.copyOf(result);
     }
@@ -258,13 +263,29 @@ public record IntegrationRuntimeProperties(
             String identityAttributeName,
             String identitySourceField,
             Map<String, String> attributeIds,
-            int batchSize) {
+            int batchSize,
+            JiraAssetsTombstoneProperties tombstone) {
+        /** Compatibility constructor for configurations predating controlled tombstones. */
+        public JiraAssetsMutationProperties(
+                String objectTypeId,
+                String identityAttributeName,
+                String identitySourceField,
+                Map<String, String> attributeIds,
+                int batchSize) {
+            this(objectTypeId, identityAttributeName, identitySourceField, attributeIds, batchSize, null);
+        }
+
         private void validate() {
             new io.infranexum.adapters.jiraassets.JiraAssetsMutationSettings(
                     new ConnectorKey("validation.connector"), objectTypeId, identityAttributeName, identitySourceField,
-                    attributeIds, batchSize);
+                    attributeIds, batchSize, tombstone == null ? null
+                            : new io.infranexum.adapters.jiraassets.JiraAssetsTombstoneSettings(
+                                    tombstone.attributeId(), tombstone.value()));
         }
     }
+
+    /** Explicit Jira Assets provider tombstone marker; no physical delete endpoint is used. */
+    public record JiraAssetsTombstoneProperties(String attributeId, String value) {}
 
     /** ServiceNow provider configuration. Connector count is bounded to keep metric cardinality controlled. */
     public record ServiceNowProperties(int maximumResponseBytes, Map<String, ServiceNowConnectorProperties> connectors) {
@@ -308,12 +329,27 @@ public record IntegrationRuntimeProperties(
     public record ServiceNowMutationProperties(
             String identitySourceField,
             Map<String, String> fieldNames,
-            int batchSize) {
+            int batchSize,
+            ServiceNowTombstoneProperties tombstone) {
+        /** Compatibility constructor for configurations predating controlled tombstones. */
+        public ServiceNowMutationProperties(
+                String identitySourceField,
+                Map<String, String> fieldNames,
+                int batchSize) {
+            this(identitySourceField, fieldNames, batchSize, null);
+        }
+
         private void validate() {
             new io.infranexum.adapters.servicenow.ServiceNowMutationSettings(
-                    new ConnectorKey("validation.connector"), identitySourceField, fieldNames, batchSize);
+                    new ConnectorKey("validation.connector"), identitySourceField, fieldNames, batchSize,
+                    tombstone == null ? null
+                            : new io.infranexum.adapters.servicenow.ServiceNowTombstoneSettings(
+                                    tombstone.fieldName(), tombstone.value()));
         }
     }
+
+    /** Explicit ServiceNow provider tombstone marker; no physical delete endpoint is used. */
+    public record ServiceNowTombstoneProperties(String fieldName, String value) {}
 
     /**
      * Explicit provider-independent authority mapping. A mutating mapping may be prepared with execution disabled;

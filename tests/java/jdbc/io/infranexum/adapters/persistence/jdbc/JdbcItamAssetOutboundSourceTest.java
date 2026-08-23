@@ -40,9 +40,10 @@ class JdbcItamAssetOutboundSourceTest {
         assertEquals(ASSET_1.toString(), page.records().getFirst().sourceIdentity());
         assertEquals(Map.of("id", ASSET_1.toString(), "asset_type", "HARDWARE"),
                 page.records().getFirst().fields());
+        assertFalse(page.records().getFirst().deleted());
         assertEquals(T1 + "|" + ASSET_1, page.nextCursor());
         assertTrue(connection.sql().getFirst().startsWith(
-                "SELECT asset_type,id,updated_at FROM infranexum_itam.asset"));
+                "SELECT asset_type,id,lifecycle_status,updated_at FROM infranexum_itam.asset"));
         assertTrue(connection.sql().getFirst().contains("ORDER BY updated_at,id LIMIT ?"));
         assertEquals(Map.of(1, 2), connection.parameters().getFirst());
     }
@@ -72,6 +73,7 @@ class JdbcItamAssetOutboundSourceTest {
         LinkedHashMap<String, Object> row = new LinkedHashMap<>();
         row.put("id", ASSET_2.toString());
         row.put("asset_type", "SOFTWARE");
+        row.put("lifecycle_status", "DEPLOYED");
         row.put("updated_at", T2);
         var connection = JdbcScriptedSupport.connection(JdbcScriptedSupport.query(row));
         var source = new JdbcItamAssetOutboundSource(
@@ -84,6 +86,21 @@ class JdbcItamAssetOutboundSourceTest {
                 "FROM INFRANEXUM_ITAM_ASSET WHERE (updated_at>? OR (updated_at=? AND id>?))"));
         assertTrue(connection.sql().getFirst().endsWith("ORDER BY updated_at,id FETCH NEXT ? ROWS ONLY"));
         assertEquals(ASSET_1.toString(), connection.parameters().getFirst().get(3));
+    }
+
+    @Test
+    void disposedAssetsAreEmittedAsTombstonesWithoutLeakingUngovernedLifecycleField() {
+        var connection = JdbcScriptedSupport.connection(JdbcScriptedSupport.query(
+                row(ASSET_1, T1, "HARDWARE", "DISPOSED")));
+        var source = new JdbcItamAssetOutboundSource(
+                JdbcScriptedSupport.dataSource(connection.connection()), JdbcDatabaseDialect.POSTGRESQL, 10);
+
+        ConnectorOutboundPage page = source.read(context(null, Set.of("id", "asset_type")));
+
+        assertTrue(page.records().getFirst().deleted());
+        assertEquals(Map.of("id", ASSET_1.toString(), "asset_type", "HARDWARE"),
+                page.records().getFirst().fields());
+        assertFalse(page.records().getFirst().fields().containsKey("lifecycle_status"));
     }
 
     @Test
@@ -107,9 +124,15 @@ class JdbcItamAssetOutboundSourceTest {
     }
 
     private static Map<String, Object> row(DomainIdentifier id, Instant updatedAt, String assetType) {
+        return row(id, updatedAt, assetType, "DEPLOYED");
+    }
+
+    private static Map<String, Object> row(
+            DomainIdentifier id, Instant updatedAt, String assetType, String lifecycleStatus) {
         LinkedHashMap<String, Object> row = new LinkedHashMap<>();
         row.put("id", id.value());
         row.put("asset_type", assetType);
+        row.put("lifecycle_status", lifecycleStatus);
         row.put("updated_at", updatedAt);
         return row;
     }
