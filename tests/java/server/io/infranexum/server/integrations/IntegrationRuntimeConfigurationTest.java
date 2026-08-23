@@ -66,8 +66,41 @@ class IntegrationRuntimeConfigurationTest {
                     assertTrue(properties.jiraAssets().connectors().isEmpty());
                     assertTrue(properties.serviceNow().connectors().isEmpty());
                     assertTrue(properties.notifications().endpoints().isEmpty());
+                    assertTrue(properties.notifications().syncEndpointKeys().isEmpty());
                     assertTrue(properties.governance().isEmpty());
                 });
+    }
+
+    @Test
+    void notificationSyncSubscriptionsBindAndFailClosedOnInvalidTargets() {
+        new ApplicationContextRunner()
+                .withInitializer(new ConfigDataApplicationContextInitializer())
+                .withUserConfiguration(IntegrationPropertiesBindingConfiguration.class)
+                .withPropertyValues(
+                        "infranexum.integrations.notifications.endpoints.ops-webhook.destination=https://hooks.example.test/infranexum",
+                        "infranexum.integrations.notifications.endpoints.ops-webhook.secret-reference=env:OPS_WEBHOOK_SECRET",
+                        "infranexum.integrations.notifications.endpoints.ops-webhook.request-timeout=PT3S",
+                        "infranexum.integrations.notifications.endpoints.ops-webhook.enabled=true",
+                        "infranexum.integrations.notifications.sync-endpoint-keys[0]=ops-webhook")
+                .run(context -> {
+                    assertNull(context.getStartupFailure());
+                    IntegrationRuntimeProperties properties = context.getBean(IntegrationRuntimeProperties.class);
+                    assertEquals(List.of("ops-webhook"), properties.notifications().syncEndpointKeys());
+                    assertEquals(List.of(new ConnectorKey("ops-webhook")),
+                            properties.notifications().syncEndpointDefinitions());
+                });
+
+        var enabled = new IntegrationRuntimeProperties.NotificationEndpointProperties(
+                "https://hooks.example.test/infranexum", "env:OPS_WEBHOOK_SECRET", Duration.ofSeconds(3), true);
+        var disabled = new IntegrationRuntimeProperties.NotificationEndpointProperties(
+                "https://hooks.example.test/infranexum", "env:OPS_WEBHOOK_SECRET", Duration.ofSeconds(3), false);
+
+        assertThrows(ConfigurationException.class, () -> new IntegrationRuntimeProperties.NotificationsProperties(
+                1024, Map.of(), List.of("missing")));
+        assertThrows(ConfigurationException.class, () -> new IntegrationRuntimeProperties.NotificationsProperties(
+                1024, Map.of("ops-webhook", disabled), List.of("ops-webhook")));
+        assertThrows(ConfigurationException.class, () -> new IntegrationRuntimeProperties.NotificationsProperties(
+                1024, Map.of("ops-webhook", enabled), List.of("ops-webhook", "ops-webhook")));
     }
 
     @Test
@@ -253,7 +286,7 @@ class IntegrationRuntimeConfigurationTest {
                     inbox, mock(AuditJournal.class), observer, ids, CLOCK);
             var dispatcher = configuration.connectorInboxDispatcher(
                     inbox, endpointRegistry, handlerRegistry, observer, CLOCK,
-                    new ServerRuntimeProperties("server-a", RuntimeMode.REGIONAL, "eu-west", "paris", "2.0.0-alpha.0.132", "2.0.0-draft.21"),
+                    new ServerRuntimeProperties("server-a", RuntimeMode.REGIONAL, "eu-west", "paris", "2.0.0-alpha.0.133", "2.0.0-draft.21"),
                     properties);
 
             assertNotNull(webhook);

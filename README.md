@@ -1,3 +1,19 @@
+# InfraNexum 2.0.0-alpha.0.133 — connector-sync operational notifications
+
+**InfraNexum — Infrastructure Control & Governance Platform**
+
+`alpha.0.133` continues PGM-10-E06 by connecting critical durable connector-sync states to the existing signed outbound-notification outbox. The coupling is strictly opt-in through `infranexum.integrations.notifications.sync-endpoint-keys`; absent configuration emits nothing, and unknown, disabled or duplicated subscriptions fail Server startup closed.
+
+- **Events:** only `PAUSED`, `FAILED`, `COMPENSATED` and `COMPENSATION_FAILED` are automatically emitted. `RUNNING`, `SUCCEEDED` and `COMPENSATING` remain silent to avoid routine noise.
+- **Durability/idempotency:** deterministic event IDs are derived from the persisted run projection and enter the existing notification natural-key/outbox/DLQ/replay path.
+- **Data minimization:** payloads contain only bounded operational state and correlation; actor identity, provider credentials, raw cursors/checkpoints, idempotency keys, request hashes and governed field lists are excluded.
+- **Failure isolation:** notification admission cannot rewrite an already durable connector-sync result. Admission/notifier failures are observable through bounded `infranexum.integrations.sync.notifications` metrics and safe warning metadata.
+- **Compatibility:** no migration, public API operation, RBAC permission or capability is added. Jira Assets/ServiceNow governance and controlled `DISPOSED` tombstones from `alpha.0.132` are preserved. OpenService remains intentionally unimplemented until an authoritative provider/API/authentication/schema contract exists.
+
+The exact Server/JDBC JaCoCo 98/98 and PostgreSQL 17/18 live gates remain mandatory downstream where the complete Maven repository and database runtimes are available. No threshold or security control is weakened by this qualification snapshot.
+
+---
+
 # InfraNexum 2.0.0-alpha.0.132 — controlled provider tombstones & governed sync execution
 
 `alpha.0.132` advances PGM-10-E06 without introducing irreversible provider deletion. Canonical ITAM assets become deletion candidates only when their lifecycle reaches `DISPOSED`; `RETIRED` remains a normal business state. Jira Assets and ServiceNow may project that terminal state only to one explicitly configured provider tombstone marker, and only when both the active connector policy uses `deletionPolicy=TOMBSTONE` and the individual sync execution explicitly requests `propagateDeletions=true`.

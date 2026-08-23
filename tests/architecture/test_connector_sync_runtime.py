@@ -142,6 +142,30 @@ class ConnectorSyncRuntimeArchitectureTest(unittest.TestCase):
             self.assertNotIn('tag("'+forbidden+'"',micrometer)
         self.assertNotIn('result.failureCode()',micrometer)
 
+    def test_critical_sync_notifications_are_opt_in_durable_and_secret_free(self):
+        properties=(SERVER/'IntegrationRuntimeProperties.java').read_text(encoding='utf-8')
+        notifier=(SERVER/'OutboundConnectorSyncOperationalNotifier.java').read_text(encoding='utf-8')
+        operations=(SERVER/'ConnectorSyncOperationsService.java').read_text(encoding='utf-8')
+        config=(SERVER/'IntegrationRuntimeConfiguration.java').read_text(encoding='utf-8')
+
+        self.assertIn('List<String> syncEndpointKeys',properties)
+        self.assertIn('notification sync endpoint is not configured',properties)
+        self.assertIn('notification sync endpoint must be enabled',properties)
+        self.assertIn('syncEndpointDefinitions()',properties)
+        self.assertIn('OutboundConnectorSyncOperationalNotifier',config)
+        self.assertIn('properties.notifications().syncEndpointDefinitions()',config)
+        self.assertIn('notifySafely(run)',operations)
+        self.assertIn('outcome", "notifier-failure',operations)
+
+        for event_type in ('integrations.sync.paused','integrations.sync.failed',
+                           'integrations.sync.compensated','integrations.sync.compensation-failed'):
+            self.assertIn(event_type,notifier)
+        for forbidden in ('actorId', 'idempotencyKey', 'requestSha256', 'fields', 'cursorSha256'):
+            self.assertNotIn(forbidden,notifier)
+        self.assertIn('outcome", "failed',notifier)
+        self.assertIn('endpointKeys.isEmpty()',notifier)
+        self.assertIn('OutboundNotificationPublisher',notifier)
+
     def test_browser_never_receives_raw_cursor_or_provider_credentials(self):
         client=(WEB/'connector-sync.mjs').read_text(encoding='utf-8')
         workspace=(WEB/'integrations-workspace.mjs').read_text(encoding='utf-8')

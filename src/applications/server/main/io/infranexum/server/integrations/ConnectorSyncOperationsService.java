@@ -20,19 +20,29 @@ import org.springframework.beans.factory.annotation.Qualifier;
 
 /** Audited operator service for durable connector sync execution, resume and compensation. */
 final class ConnectorSyncOperationsService {
+    private static final System.Logger LOGGER = System.getLogger(ConnectorSyncOperationsService.class.getName());
     private final ConnectorSyncEngine engine;
     private final ConnectorSyncRepository repository;
     private final AuditJournal audit;
     private final UuidV7Generator ids;
     private final Clock clock;
     private final MeterRegistry meters;
+    private final ConnectorSyncOperationalNotifier notifier;
 
     ConnectorSyncOperationsService(
             ConnectorSyncEngine engine, ConnectorSyncRepository repository, AuditJournal audit,
             UuidV7Generator ids, @Qualifier("platformClock") Clock clock, MeterRegistry meters) {
+        this(engine, repository, audit, ids, clock, meters, ConnectorSyncOperationalNotifier.NOOP);
+    }
+
+    ConnectorSyncOperationsService(
+            ConnectorSyncEngine engine, ConnectorSyncRepository repository, AuditJournal audit,
+            UuidV7Generator ids, @Qualifier("platformClock") Clock clock, MeterRegistry meters,
+            ConnectorSyncOperationalNotifier notifier) {
         this.engine=Objects.requireNonNull(engine,"engine"); this.repository=Objects.requireNonNull(repository,"repository");
         this.audit=Objects.requireNonNull(audit,"audit"); this.ids=Objects.requireNonNull(ids,"ids");
         this.clock=Objects.requireNonNull(clock,"clock"); this.meters=Objects.requireNonNull(meters,"meters");
+        this.notifier=Objects.requireNonNull(notifier,"notifier");
     }
 
     List<ConnectorSyncRun> runs(String connectorKey,int offset,int limit){return repository.listRuns(connectorKey==null||connectorKey.isBlank()?null:new ConnectorKey(connectorKey),offset,limit);}
@@ -49,12 +59,24 @@ final class ConnectorSyncOperationsService {
         try{
             ConnectorSyncRun run=action.run();
             audit(run,operation,"SUCCESS",stableReason,actor,correlation,null);
+            notifySafely(run);
             meters.counter("infranexum.integrations.sync.operations","operation",operation,"outcome","success").increment();
             return run;
         }catch(RuntimeException failure){
             meters.counter("infranexum.integrations.sync.operations","operation",operation,"outcome","failure").increment();
             audit(null,operation,"FAILURE",stableReason,actor,correlation,failure.getClass().getSimpleName());
             throw failure;
+        }
+    }
+
+    private void notifySafely(ConnectorSyncRun run) {
+        try {
+            notifier.publish(run);
+        } catch (RuntimeException failure) {
+            meters.counter("infranexum.integrations.sync.notifications", "status", run.status().name().toLowerCase(java.util.Locale.ROOT).replace('_', '-'), "outcome", "notifier-failure").increment();
+            LOGGER.log(System.Logger.Level.WARNING,
+                    "Connector sync notifier failed after durable mutation: run={0} connector={1} status={2} failure={3}",
+                    run.runId(), run.connectorKey().value(), run.status().name(), failure.getClass().getSimpleName());
         }
     }
 

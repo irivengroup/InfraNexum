@@ -155,6 +155,12 @@ This makes a prepared policy observable without turning configuration into an im
 
 Once Jira Assets or ServiceNow execution is legitimately admitted, the existing `ConnectorSyncEngine` provides the `alpha.0.116` durability guarantees: bounded batches, idempotent replay expectations, active-run fencing, append-only checkpoints, pause/resume and governed compensation. No exactly-once guarantee is inferred. The Jira handler receives the exact governed field set and deletion-propagation flag in its batch context and refuses any mismatch.
 
+## Operational notification coupling
+
+Critical lifecycle transitions may be routed into the existing durable signed-webhook notification outbox through `infranexum.integrations.notifications.sync-endpoint-keys`. This subscription is opt-in and startup-validates every target as a configured enabled notification endpoint. The sync mutation remains authoritative: notification admission occurs only after the durable run result and audit have been produced, and a notification failure cannot roll back or rewrite that connector-sync result.
+
+Automatic events are limited to `PAUSED`, `FAILED`, `COMPENSATED` and `COMPENSATION_FAILED`. Their payload deliberately excludes actor identity, raw cursors/checkpoints, provider credentials, idempotency keys, request hashes and field lists. Re-admission of the same durable run projection is idempotent through the notification outbox natural key.
+
 ## API and Web behavior
 
 The governance API remains:
@@ -199,6 +205,6 @@ PGM-10-E06 still names **OpenService**, but `draft.21` does not provide an autho
 
 ## Status
 
-PGM-10-E06 remains **EN COURS**. Jira Assets and ServiceNow each expose one OUTBOUND upsert path under exact governance. Inbound/bidirectional flows, controlled remote deletion, live-provider certification and OpenService remain unavailable until their contracts are explicitly defined and implemented.
+PGM-10-E06 remains **EN COURS**. Jira Assets and ServiceNow each expose one OUTBOUND upsert path under exact governance, controlled `DISPOSED` tombstone projection is available through explicit per-run opt-in, and critical sync states can enter the durable notification outbox through explicit subscriptions. Inbound/bidirectional provider flows, live-provider certification and OpenService remain unavailable until their contracts are explicitly defined and implemented.
 
 PGM-10-E05 remains formally **NON TERMINÉ** until the exact target JDK25/JaCoCo/PostgreSQL 17/18 gates succeed on the release snapshot.

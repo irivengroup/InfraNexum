@@ -1,4 +1,22 @@
-# InfraNexum 2.0.0-alpha.0.132 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.133 — état d’implémentation
+
+## 2.0.0-alpha.0.133 — notifications opérationnelles des synchronisations durables
+
+**Statut : snapshot de qualification ; PGM-10-E06 reste EN COURS.**
+
+Cette tranche raccorde les états critiques du runtime de synchronisation aux notifications HTTPS signées déjà durables. L’activation est explicitement opt-in via `notifications.sync-endpoint-keys`; une cible absente, désactivée ou dupliquée fait échouer la configuration Server. Seuls `PAUSED`, `FAILED`, `COMPENSATED` et `COMPENSATION_FAILED` sont automatiquement admis ; les états nominaux `RUNNING`, `SUCCEEDED` et `COMPENSATING` ne génèrent pas de bruit opérationnel.
+
+L’identifiant d’événement est déterministe à partir de la projection durable du run afin que la répétition d’une même opération idempotente réutilise la clé naturelle de l’outbox. Le payload est volontairement minimal : run, connecteur, provider, direction, rollback, état, révision de checkpoint, failure code borné, corrélation et horodatage. Il exclut acteur, secrets/credentials fournisseur, curseurs, clés d’idempotence, hash de requête et champs gouvernés.
+
+Une panne d’admission notification ne peut pas transformer une synchronisation déjà durable en échec applicatif. Le notifier et le service opérateur contiennent cette frontière et publient des métriques `infranexum.integrations.sync.notifications` à cardinalité bornée (`status`, `outcome`) ainsi qu’un warning sans message fournisseur ni secret. L’événement peut alors être manquant, mais cette perte est explicitement observable.
+
+**Impact :** aucune migration, aucune route OpenAPI, aucune permission RBAC ni capability nouvelle. Le runtime d’outbox/DLQ/replay des notifications et les contrats Jira Assets/ServiceNow de `alpha.0.132` sont réutilisés. OpenService reste non implémenté : le matériel `draft.21` nomme le connecteur mais ne fournit aucun contrat fournisseur/API/authentification/schéma suffisamment autoritatif pour une implémentation sûre.
+
+**Qualification en cours :** les compile-contracts JDK 25 du notifier, du service d’opérations et de `IntegrationRuntimeProperties` sont verts ; Source Integrity et les architectures ciblées sont vertes avant bump. Les résultats post-bump et les limites Maven/PostgreSQL sont enregistrés dans le manifeste de livraison.
+
+---
+
+## Historique alpha.0.132
 
 ## 2.0.0-alpha.0.132 — tombstones fournisseurs contrôlés et exécution Web gouvernée
 

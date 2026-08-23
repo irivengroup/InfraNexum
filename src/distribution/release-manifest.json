@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.132",
-  "profile": "alpha132-controlled-provider-tombstone-and-governed-web-sync-qualification-snapshot",
+  "version": "2.0.0-alpha.0.133",
+  "profile": "alpha133-durable-connector-sync-operational-notifications-qualification-snapshot",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -14,7 +14,7 @@
     },
     {
       "id": "infranexum-server",
-      "status": "alpha132-adds-governed-disposed-only-provider-tombstone-projection-for-jira-assets-and-servicenow-with-explicit-policy-mapping-and-per-run-opt-in; no-provider-delete-no-tombstone-only-create; preserves-alpha131-sync-observability-and-servicenow-wiring-corrective; full-server-jacoco98-maven-qualification-remains-open"
+      "status": "alpha133-adds-opt-in-critical-connector-sync-operational-notifications-through-existing-durable-outbox-with-deterministic-event-ids-secret-free-payloads-and-failure-isolation; preserves-alpha132-governed-tombstones; full-server-jacoco98-maven-qualification-remains-open"
     },
     {
       "id": "infranexum-agent",
@@ -46,7 +46,7 @@
     },
     {
       "id": "ci-foundation",
-      "status": "unix-quality-gates-preserved; alpha132-jdk25-targeted-tombstone-contracts-and-structural-gates-executed; full-server-jdbc-maven-jacoco-run-and-postgresql17-18-live-runtime-remain-required; no-threshold-or-exclusion-weakened"
+      "status": "unix-quality-gates-preserved; alpha133-targeted-jdk25-sync-notification-contracts-and-structural-gates-executed; full-server-jdbc-maven-jacoco-run-and-postgresql17-18-live-runtime-remain-required; no-threshold-or-exclusion-weakened"
     },
     {
       "id": "deployment-boundary",
@@ -54,7 +54,7 @@
     },
     {
       "id": "platform-observability-v1",
-      "status": "pgm-12-e01-preserved; alpha131-adds-low-cardinality-connector-sync-admission-batch-record-pause-compensation-terminal-and-duration-metrics-without-cursor-payload-idempotency-or-failure-code-labels"
+      "status": "pgm-12-e01-preserved; alpha133-adds-low-cardinality-sync-notification-admission-and-failure-outcome-metrics-without-cursors-payloads-idempotency-material-or-dynamic-failure-labels"
     },
     {
       "id": "organization-foundation-v1",
@@ -114,7 +114,7 @@
     },
     {
       "id": "api-platform-contract-v5",
-      "status": "pgm-05-e01-preserved; alpha132-adds-no-public-route-capability-permission-or-schema-operation; generic-connector-sync-api-remains-the-only-provider-mutation-entrypoint"
+      "status": "pgm-05-e01-preserved; alpha133-adds-no-public-route-capability-permission-or-schema-operation; generic-connector-sync-api-remains-the-only-provider-mutation-entrypoint"
     },
     {
       "id": "adapter-jira-assets-v1",
@@ -126,16 +126,16 @@
     },
     {
       "id": "adapter-outbound-webhook-v1",
-      "status": "pgm-10-e06-phase3-infranexum-authority-outbound-durable-at-least-once-signed-https-webhook-hmac-sha256-external-secret-bounded-retry-dlq-suspension-explicit-replay-resume"
+      "status": "pgm-10-e06-durable-at-least-once-signed-https-webhook-preserved; alpha133-allows-explicitly-subscribed-critical-sync-operational-events-to-enter-the-same-outbox-with-deterministic-event-ids"
     },
     {
       "id": "connector-sync-runtime-v1",
-      "status": "pgm-10-e06-alpha132-durable-run-checkpoint-compensation-runtime-with-jira-assets-and-servicenow-mutating-handlers-exact-governance-low-cardinality-observability-and-explicit-controlled-tombstone-opt-in; compensation-remains-manual"
+      "status": "pgm-10-e06-alpha133-durable-run-checkpoint-compensation-runtime-with-jira-assets-and-servicenow-mutating-handlers-controlled-tombstones-low-cardinality-observability-and-opt-in-critical-operational-notification-admission; compensation-remains-manual"
     }
   ],
   "validation_reports": [],
   "validation_summary": {
-    "source_inventory_paths": 1608,
+    "source_inventory_paths": 1611,
     "source_integrity_tests": 45,
     "source_integrity_coverage_percent": 100,
     "source_integrity_violations": 0,
@@ -702,23 +702,23 @@
   "source_layout": "All production solution spaces are contained below src/; Java, Go and Web tests are repository-level under tests/; canonical relative paths are limited to 120 characters and path components to 80 characters.",
   "source_integrity": {
     "canonical_inventory": "source-inventory.json",
-    "git_blob_checksums": 1609,
-    "tracked_files": 1610,
-    "source_recorded_files": 1608,
+    "git_blob_checksums": 1612,
+    "tracked_files": 1613,
+    "source_recorded_files": 1611,
     "staged_snapshot_required": true,
     "pre_commit_hook": ".githooks/pre-commit",
-    "inventory_paths": 1608
+    "inventory_paths": 1611
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.132",
-    "archive_entries": 1610,
+    "prefix": "infranexum-2.0.0-alpha.0.133",
+    "archive_entries": 1613,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
-    "source_recorded_files": 1609,
+    "source_recorded_files": 1612,
     "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
-    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.132-validation-evidence.zip"
+    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.133-validation-evidence.zip"
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.132-validation-evidence.zip",
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.133-validation-evidence.zip",
   "runtime_validation": {
     "web_local_runtime_alpha058": "EXECUTED_38_OF_38_LINE_99_67_BRANCH_98_33_FUNCTION_100_PROCESS_SMOKE_PASS_LOCAL_NODE22_BOOTSTRAP5_3_6_PROFESSIONAL_ADMIN_DASHBOARD_THEME_TOGGLE_TRUTHFUL_KPI_SAME_ORIGIN_ORGANIZATION_UI",
     "architecture_functional_alpha058": "EXECUTED_57_OF_57",
@@ -1165,9 +1165,30 @@
     "toolchains_alpha127": "EXECUTED_25_OF_25_99_PERCENT_ZERO_VIOLATIONS",
     "architecture_check_alpha127": "EXECUTED_PASS_ZERO_VIOLATIONS",
     "api_contracts_alpha127": "EXECUTED_UNIT_48_OF_48_98_PERCENT_DIRECT_CHECK_15_FRAGMENTS_201_OPERATIONS_DEBT_0_0_0_0_PRODUCT_SPEC_EMISSION_RUNNER_TIMEOUT_NOT_CLAIMED",
-    "archive_compatibility_alpha127": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS"
+    "archive_compatibility_alpha127": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS",
+    "source_integrity_alpha133": "EXECUTED_45_OF_45_100_PERCENT_STRICT_1613_TRACKED_1612_GIT_BLOB_CHECKSUMS_1611_INVENTORY_PATHS_ZERO_VIOLATIONS",
+    "architecture_sync_alpha133": "EXECUTED_10_OF_10",
+    "architecture_check_alpha133": "EXECUTED_PASS_ZERO_VIOLATIONS",
+    "compose_contract_alpha133": "EXECUTED_69_OF_69",
+    "toolchain_alpha133": "EXECUTED_25_OF_25_99_PERCENT_AND_ZERO_VIOLATIONS",
+    "migration_alpha133": "EXECUTED_118_OF_118_99_PERCENT_AND_ZERO_VIOLATIONS",
+    "eventing_alpha133": "EXECUTED_10_OF_10_100_PERCENT_AND_ZERO_VIOLATIONS",
+    "persistence_alpha133": "EXECUTED_12_OF_12_98_PERCENT_AND_ZERO_VIOLATIONS",
+    "capabilities_alpha133": "EXECUTED_10_OF_10_99_PERCENT_AND_ZERO_VIOLATIONS",
+    "entitlements_alpha133": "EXECUTED_10_OF_10_100_PERCENT_AND_ZERO_VIOLATIONS",
+    "audit_alpha133": "EXECUTED_8_OF_8_100_PERCENT_AND_ZERO_VIOLATIONS",
+    "connector_sdk_alpha133": "EXECUTED_19_OF_19_99_PERCENT_AND_ZERO_VIOLATIONS",
+    "api_contract_alpha133": "EXECUTED_15_FRAGMENTS_201_OPERATIONS_DEBT_0_0_0_0",
+    "web_target_node24_alpha133": "EXECUTED_NODE24_19_0_250_OF_250_LINE_99_78_BRANCH_98_60_FUNCTION_100_REDOC_VENDOR_AND_PROCESS_SMOKE_PASS",
+    "agent_target_go1265_alpha133": "EXECUTED_GO1_26_5_VET_RACE_TEST_BUILD_PASS_COVERAGE_98_4_PERCENT",
+    "connector_sync_notifier_jdk25_alpha133": "EXECUTED_JDK25_0_4_1_XLINT_ALL_WERROR_COMPILE_CONTRACT_PASS",
+    "maven_target_jdk25_alpha133": "NON_EXECUTED_BEYOND_MODEL_RESOLUTION_JDK25_0_4_1_MAVEN3_9_16_OFFLINE_REPOSITORY_MISSING_SPRING_BOOT_4_1_0_AND_SPRING_MODULITH_2_1_0_BOMS",
+    "postgresql_live_alpha133": "NON_EXECUTED_RUNNER_HAS_NO_POSTGRES_INITDB_PSQL_OR_DOCKER",
+    "architecture_monolithic_alpha133": "NON_EXECUTED_TO_FINAL_VERDICT_RUNNER_TIMEOUT_SPLIT_AFFECTED_TESTS_AND_FAIL_CLOSED_CHECKER_PASS",
+    "archive_compatibility_unit_alpha133": "EXECUTED_12_OF_12_100_PERCENT",
+    "archive_compatibility_candidate_alpha133": "EXECUTED_ZERO_VIOLATIONS"
   },
-  "runtime_validation_note": "alpha.0.128 advances PGM-10-E06 with a governed ITAM-to-Jira Assets OUTBOUND upsert backed by durable (updated_at, UUID) continuation and paired migration 0041. JDK25 functional JUnit execution is green for all discoverable tests; 24 PostgreSQL integration tests are conditionally aborted because no live PostgreSQL runtime exists in this runner. The unchanged Java JaCoCo 98% line/branch gate remains red, so PGM-10-E05 and the overall release remain NON_TERMINE. ServiceNow stays read-only and OpenService remains unimplemented without an authoritative provider contract.",
+  "runtime_validation_note": "alpha.0.133 advances PGM-10-E06 by routing opt-in critical connector-sync lifecycle events (paused, failed, compensated, compensation-failed) into the existing durable outbound notification outbox. Subscription is fail-closed against configured enabled endpoints, event identities are deterministic, payloads exclude secrets, cursors, idempotency material and governed field lists, and notification admission failures cannot rewrite an already-durable synchronization outcome. No public API, RBAC capability or database migration is added. OpenService remains unimplemented because draft.21 provides no authoritative provider API contract. Full Server/JDBC Maven JaCoCo 98/98 and PostgreSQL 17/18 live qualification remain required downstream.",
   "pgm08e01_ddi_ipam_alpha083": "EXECUTED_DOMAIN_JDBC_API_CLI_WEB_MIGRATION_ARCHITECTURE_AND_OFFLINE_SMOKE_TARGET_JDK25_MAVEN_AND_LIVE_DATABASES_PENDING",
   "architecture_functional_alpha083": "EXECUTED_151_OF_151_SPLIT_DETERMINISTIC_GROUPS",
   "architecture_check_alpha083": "EXECUTED_PASS_ZERO_VIOLATIONS",
@@ -1794,14 +1815,20 @@
     "source_inventory_paths_alpha132": "1608",
     "source_integrity_strict_alpha132": "EXECUTED_1610_TRACKED_PATHS_1609_GIT_BLOB_CHECKSUMS_1608_CANONICAL_INVENTORY_ZERO_VIOLATIONS_EPHEMERAL_PACKAGING_GIT",
     "archive_compatibility_unit_alpha132": "EXECUTED_12_OF_12_COVERAGE100_ZERO_VIOLATIONS",
-    "archive_compatibility_candidate_alpha132": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS"
+    "archive_compatibility_candidate_alpha132": "EXECUTED_COMMITTED_GIT_ARCHIVE_ZERO_VIOLATIONS",
+    "connector_sync_notifications_architecture_alpha133": "EXECUTED_10_OF_10_TARGETED_POST_BUMP",
+    "connector_sync_notifications_javac25_alpha133": "EXECUTED_JDK25_XLINT_ALL_WERROR_NOTIFIER_OPERATIONS_SERVICE_AND_INTEGRATION_RUNTIME_PROPERTIES_COMPILE_CONTRACTS_PASS",
+    "java_integrations_smoke_alpha133": "EXECUTED_JDK25_CONNECTOR_RUNTIME_NOTIFICATION_GOVERNANCE_SYNC_AND_HANDLER_REGISTRY_SMOKES_PASS_PRE_BUMP_REPLAY_REQUIRED_POST_BUMP",
+    "server_maven_junit_jacoco_alpha133": "NON_EXECUTED_FULL_REACTOR_LOCAL_OFFLINE_REPOSITORY_INCOMPLETE_DOWNSTREAM_REQUIRED",
+    "postgresql_17_18_live_alpha133": "NON_EXECUTED_LOCAL_NO_POSTGRESQL_DOCKER_RUNTIME_DOWNSTREAM_REQUIRED"
   },
   "archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.132",
-    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.132-validation-evidence.zip"
+    "prefix": "infranexum-2.0.0-alpha.0.133",
+    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.133-validation-evidence.zip"
   },
   "history": [
     "alpha.0.131 corrective and operability increment: fixes ServiceNow ConnectorKey/String Server wiring exposed by the Docker Maven compile, makes standalone seed fail fast on missing/failed PostgreSQL topology or migrations instead of surfacing a misleading DNS error, and instruments the durable connector sync engine with bounded low-cardinality Micrometer metrics. No public API or database migration is added.",
-    "alpha.0.132 PGM-10-E06 increment: adds explicit DISPOSED-only controlled tombstone projection for Jira Assets and ServiceNow, never physical provider DELETE, and fixes the Integrations Web Execute flow to derive governed direction/fields from the active policy with tombstone propagation opt-in only for TOMBSTONE policies. No migration or new public API operation is added."
+    "alpha.0.132 PGM-10-E06 increment: adds explicit DISPOSED-only controlled tombstone projection for Jira Assets and ServiceNow, never physical provider DELETE, and fixes the Integrations Web Execute flow to derive governed direction/fields from the active policy with tombstone propagation opt-in only for TOMBSTONE policies. No migration or new public API operation is added.",
+    "alpha.0.133 PGM-10-E06 increment: routes explicitly subscribed critical connector-sync lifecycle transitions into the existing durable outbound notification outbox with deterministic identities, secret-free payloads, low-cardinality failure observability and strict failure isolation. No migration, new public API operation, permission or capability is added; OpenService remains unimplemented without an authoritative provider contract."
   ]
 }

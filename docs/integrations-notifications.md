@@ -2,7 +2,7 @@
 
 ## Scope and ownership
 
-This phase adds durable **outbound** InfraNexum notifications delivered as signed HTTPS webhooks. InfraNexum is the authority for the emitted event and the durable delivery state. The destination remains an external consumer; this feature does not import provider data, write into Jira Assets/ServiceNow, or create a synchronization contract with RSOT/ITAM.
+This phase adds durable **outbound** InfraNexum notifications delivered as signed HTTPS webhooks. InfraNexum is the authority for the emitted event and the durable delivery state. The destination remains an external consumer; the notification transport does not import provider data or write into Jira Assets/ServiceNow. Starting with `alpha.0.133`, the governed connector-sync runtime may also admit selected **operational lifecycle events** into this same durable notification outbox; that coupling is explicit and opt-in, not a provider synchronization contract.
 
 Each configured endpoint declares only the information required by the Server runtime: a stable endpoint key, an HTTPS destination, an external secret reference, a bounded request timeout and an enabled flag. The authenticated Web UI deliberately exposes neither the destination URI nor the secret reference.
 
@@ -25,6 +25,8 @@ infranexum:
           secret-reference: file:/run/secrets/infranexum-notification-hmac
           request-timeout: PT10S
           enabled: true
+      sync-endpoint-keys:
+        - operations-webhook
 ```
 
 The example domain and secret path are non-production examples. Provision the secret outside the repository and mount/read it with the least privilege required by the Server process. Endpoint destinations are operator configuration: public APIs cannot submit or override a destination URL.
@@ -40,6 +42,26 @@ Publication requires:
 - between 1 and 64 distinct configured endpoint keys.
 
 The durable natural idempotency key is `(endpoint_key, event_id)`. Re-admitting the same event type and payload is recognized as a duplicate. Reusing the same event ID for different semantics is rejected as a conflict. The HTTP mutation boundary additionally requires an `Idempotency-Key` so network retries cannot accidentally amplify a caller operation.
+
+
+## Automatic connector-sync operational events
+
+`sync-endpoint-keys` is deliberately empty by default. Every configured key must identify an existing **enabled** notification endpoint; an unknown, disabled or duplicated subscription fails Server configuration closed. This prevents a pre-existing notification destination from silently receiving a new event class after upgrade.
+
+The connector-sync operator boundary automatically admits only operationally significant states:
+
+```text
+integrations.sync.paused
+integrations.sync.failed
+integrations.sync.compensated
+integrations.sync.compensation-failed
+```
+
+`RUNNING`, `SUCCEEDED` and `COMPENSATING` do not generate automatic notifications, avoiding routine success noise. The event ID is deterministically derived from the durable run ID, state, checkpoint revision and run update timestamp, so re-executing the same idempotent operator request re-admits the same notification event rather than amplifying deliveries.
+
+The JSON payload is schema version `1.0` and is intentionally restricted to operational state: run ID, connector key, provider, direction, rollback strategy, status, checkpoint revision, bounded failure code, correlation ID and occurrence time. It excludes actor identity, provider credentials, cursor/checkpoint data, idempotency keys, request hashes and governed field lists.
+
+Notification admission is **non-blocking relative to the already durable sync result**. A notification repository/configuration failure cannot rewrite a successful/paused/failed sync transition into an API mutation failure. Instead, admission failure increments `infranexum.integrations.sync.notifications{status,outcome=failed}` and emits a warning containing only safe identifiers and the exception class. The Server operations boundary also contains an unexpected notifier implementation failure and records `outcome=notifier-failure`. Operators should alert on either outcome because the operational event may not have entered the outbox.
 
 ## HTTP signature contract
 
@@ -138,6 +160,7 @@ infranexum.integrations.notifications.dead_letters
 infranexum.integrations.notifications.admissions{outcome=accepted|duplicate}
 infranexum.integrations.notifications.deliveries{outcome=delivered|retry|dead_letter}
 infranexum.integrations.notifications.replays{outcome=requested}
+infranexum.integrations.sync.notifications{status=paused|failed|compensated|compensation-failed,outcome=admitted|failed|notifier-failure}
 ```
 
 Audit records cover publication, replay and resume. Payload bodies and secret material are excluded from operator API representations, audit metadata and metric labels.
@@ -170,6 +193,8 @@ After configuring a non-production endpoint, verify:
 8. A suspended endpoint requires explicit `resume`; replay alone does not clear suspension.
 9. The Web UI/API never exposes destination URIs, secret references, secret values or payload bodies from DLQ records.
 10. Backlog/dead-letter gauges and publication/replay/resume audits remain observable during the test.
+11. With `sync-endpoint-keys` configured, a paused/failed/compensated run admits exactly one durable event per endpoint for the same durable run projection; success states remain silent.
+12. Force notification admission failure and confirm the sync operation keeps its durable result while the `sync.notifications` failure metric becomes observable.
 
 ## OpenService boundary
 

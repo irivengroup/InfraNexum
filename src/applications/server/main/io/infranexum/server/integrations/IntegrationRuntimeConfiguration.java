@@ -243,11 +243,20 @@ public class IntegrationRuntimeConfiguration {
     }
 
     @Bean
+    ConnectorSyncOperationalNotifier connectorSyncOperationalNotifier(
+            OutboundNotificationPublisher publisher, tools.jackson.databind.ObjectMapper json, MeterRegistry meters,
+            IntegrationRuntimeProperties properties) {
+        return new OutboundConnectorSyncOperationalNotifier(
+                publisher, json, meters, properties.notifications().syncEndpointDefinitions());
+    }
+
+    @Bean
     @ConditionalOnExpression("\'${infranexum.persistence.mode:MEMORY}\' == \'POSTGRESQL\' || \'${infranexum.persistence.mode:MEMORY}\' == \'ORACLE\'")
     ConnectorSyncOperationsService connectorSyncOperationsService(
             ConnectorSyncEngine engine, ConnectorSyncRepository repository, AuditJournal audit,
-            @Qualifier("integrationIdentifiers") UuidV7Generator ids, @Qualifier("platformClock") Clock clock, MeterRegistry meters) {
-        return new ConnectorSyncOperationsService(engine, repository, audit, ids, clock, meters);
+            @Qualifier("integrationIdentifiers") UuidV7Generator ids, @Qualifier("platformClock") Clock clock,
+            MeterRegistry meters, ConnectorSyncOperationalNotifier notifier) {
+        return new ConnectorSyncOperationsService(engine, repository, audit, ids, clock, meters, notifier);
     }
 
     @Bean

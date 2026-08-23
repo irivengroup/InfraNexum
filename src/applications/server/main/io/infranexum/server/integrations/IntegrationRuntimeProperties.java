@@ -65,7 +65,7 @@ public record IntegrationRuntimeProperties(
             ServiceNowProperties serviceNow) {
         this(enabled, webhookMaxPayloadBytes, claimBatchSize, pollInterval, leaseDuration, maximumAttempts,
                 initialRetryDelay, maximumRetryDelay, jitterRatio, suspendAfterDeadLetters, suspensionDuration,
-                endpoints, jiraAssets, serviceNow, new NotificationsProperties(1_048_576, Map.of()), Map.of());
+                endpoints, jiraAssets, serviceNow, new NotificationsProperties(1_048_576, Map.of(), List.of()), Map.of());
     }
 
     /** Compatibility constructor for callers created before connector governance became configurable. */
@@ -106,7 +106,7 @@ public record IntegrationRuntimeProperties(
         endpoints = Map.copyOf(normalized);
         jiraAssets = Objects.requireNonNullElseGet(jiraAssets, () -> new JiraAssetsProperties(2_097_152, Map.of()));
         serviceNow = Objects.requireNonNullElseGet(serviceNow, () -> new ServiceNowProperties(2_097_152, Map.of()));
-        notifications = Objects.requireNonNullElseGet(notifications, () -> new NotificationsProperties(1_048_576, Map.of()));
+        notifications = Objects.requireNonNullElseGet(notifications, () -> new NotificationsProperties(1_048_576, Map.of(), List.of()));
         Map<String, GovernanceProperties> normalizedGovernance = new LinkedHashMap<>();
         for (Map.Entry<String, GovernanceProperties> entry : Objects.requireNonNullElse(
                 governance, Map.<String, GovernanceProperties>of()).entrySet()) {
@@ -404,8 +404,17 @@ public record IntegrationRuntimeProperties(
         }
     }
 
-    /** Outbound notification configuration with bounded endpoint cardinality. */
-    public record NotificationsProperties(int maximumPayloadBytes, Map<String, NotificationEndpointProperties> endpoints) {
+    /** Outbound notification configuration with bounded endpoint cardinality and explicit sync subscriptions. */
+    public record NotificationsProperties(
+            int maximumPayloadBytes,
+            Map<String, NotificationEndpointProperties> endpoints,
+            List<String> syncEndpointKeys) {
+
+        /** Compatibility constructor used by callers that do not subscribe sync lifecycle events. */
+        public NotificationsProperties(int maximumPayloadBytes, Map<String, NotificationEndpointProperties> endpoints) {
+            this(maximumPayloadBytes, endpoints, List.of());
+        }
+
         public NotificationsProperties {
             if (maximumPayloadBytes < 1 || maximumPayloadBytes > 1_048_576) {
                 throw new ConfigurationException("integrations.notifications.maximumPayloadBytes must be between 1 and 1048576");
@@ -419,6 +428,26 @@ public record IntegrationRuntimeProperties(
             }
             if (normalized.size() > 64) throw new ConfigurationException("at most 64 notification endpoints may be configured per Server runtime");
             endpoints = Map.copyOf(normalized);
+
+            java.util.LinkedHashSet<String> subscriptions = new java.util.LinkedHashSet<>();
+            for (String rawKey : Objects.requireNonNullElse(syncEndpointKeys, List.<String>of())) {
+                String key = new ConnectorKey(rawKey).value();
+                if (!subscriptions.add(key)) {
+                    throw new ConfigurationException("duplicate notification sync endpoint: " + key);
+                }
+                NotificationEndpointProperties endpoint = endpoints.get(key);
+                if (endpoint == null) {
+                    throw new ConfigurationException("notification sync endpoint is not configured: " + key);
+                }
+                if (!endpoint.enabled()) {
+                    throw new ConfigurationException("notification sync endpoint must be enabled: " + key);
+                }
+            }
+            syncEndpointKeys = List.copyOf(subscriptions);
+        }
+
+        List<ConnectorKey> syncEndpointDefinitions() {
+            return syncEndpointKeys.stream().map(ConnectorKey::new).toList();
         }
     }
 

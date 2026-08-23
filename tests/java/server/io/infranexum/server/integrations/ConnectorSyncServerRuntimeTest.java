@@ -83,6 +83,25 @@ final class ConnectorSyncServerRuntimeTest {
         }
     }
 
+    @Test void notifierFailureCannotRewriteDurableSyncOutcome(){
+        ConnectorSyncEngine engine=mock(ConnectorSyncEngine.class); ConnectorSyncRepository repo=mock(ConnectorSyncRepository.class); AuditJournal audit=mock(AuditJournal.class);
+        when(engine.resume(RUN)).thenReturn(run(ConnectorSyncRunStatus.PAUSED));
+        ConnectorSyncOperationalNotifier notifier=ignored->{throw new IllegalStateException("notification unavailable");};
+        SimpleMeterRegistry meters=new SimpleMeterRegistry();
+        try {
+            ConnectorSyncOperationsService service=new ConnectorSyncOperationsService(
+                    engine,repo,audit,new UuidV7Generator(CLOCK,new SecureRandom()),CLOCK,meters,notifier);
+            assertEquals(ConnectorSyncRunStatus.PAUSED,service.resume(RUN,"resume safely",ACTOR,CORRELATION).status());
+            verify(audit).append(any());
+            assertEquals(1.0,meters.find("infranexum.integrations.sync.notifications")
+                    .tag("status","paused").tag("outcome","notifier-failure").counter().count());
+            assertEquals(1.0,meters.find("infranexum.integrations.sync.operations")
+                    .tag("operation","resume").tag("outcome","success").counter().count());
+        } finally {
+            meters.close();
+        }
+    }
+
     @Test void controllerPaginatesRedactsCursorAndExecutesMutations(){
         ConnectorSyncOperationsService operations=mock(ConnectorSyncOperationsService.class); ConnectorSyncController controller=new ConnectorSyncController(operations);
         when(operations.runs(null,0,3)).thenReturn(List.of(run(ConnectorSyncRunStatus.SUCCEEDED),run(ConnectorSyncRunStatus.PAUSED),run(ConnectorSyncRunStatus.FAILED)));
