@@ -154,6 +154,28 @@ final class ConnectorSyncEngineTest {
         assertThrows(IllegalArgumentException.class,()->new ConnectorSyncRun(ACTOR,KEY,"lab",ConnectorSyncDirection.INBOUND,ConnectorRollbackStrategy.LOCAL_CHECKPOINT,ConnectorSyncRunStatus.COMPENSATED,"sync-test-0001","a".repeat(64),Set.of(),false,1,0,2,null,ACTOR,CORR,NOW,NOW,NOW,1L));
     }
 
+
+    @Test void emitsOnlyBoundedLifecycleTelemetryForDurableSynchronization(){
+        InMemoryConnectorSyncRepository repo=new InMemoryConnectorSyncRepository();RecordingSyncObserver observer=new RecordingSyncObserver();AtomicInteger calls=new AtomicInteger();
+        ConnectorSyncHandler handler=handler(ctx->{int n=calls.incrementAndGet();return ConnectorSyncBatchResult.applied("o"+n,2,1,1,n==2);},c->ConnectorSyncCompensationResult.succeeded());
+        ConnectorSyncEngine engine=engine(new MutableRegistry(policy(ConnectorRollbackStrategy.LOCAL_CHECKPOINT)),handler,repo,observer);
+        ConnectorSyncExecutionRequest request=request(3);
+        ConnectorSyncRun succeeded=engine.execute(KEY,request,"sync-observer-0001",ACTOR,CORR);
+        assertEquals(ConnectorSyncRunStatus.SUCCEEDED,succeeded.status());
+        assertEquals(1,observer.created);assertEquals(0,observer.duplicates);assertEquals(2,observer.batches);assertEquals(4,observer.processed);assertEquals(2,observer.changed);assertEquals(2,observer.rejected);assertEquals(1,observer.completedBatches);assertEquals(1,observer.succeeded);
+        engine.execute(KEY,request,"sync-observer-0001",ACTOR,CORR);assertEquals(1,observer.duplicates);
+
+        InMemoryConnectorSyncRepository pauseRepo=new InMemoryConnectorSyncRepository();RecordingSyncObserver pauseObserver=new RecordingSyncObserver();AtomicInteger pauseCalls=new AtomicInteger();
+        ConnectorSyncEngine pausing=engine(new MutableRegistry(policy(ConnectorRollbackStrategy.LOCAL_CHECKPOINT)),handler(ctx->{int n=pauseCalls.incrementAndGet();return ConnectorSyncBatchResult.applied("p"+n,1,1,0,n>1);},c->ConnectorSyncCompensationResult.succeeded()),pauseRepo,pauseObserver);
+        ConnectorSyncRun paused=pausing.execute(KEY,request(1),"sync-observer-0002",ACTOR,CORR);assertEquals(1,pauseObserver.budgetPauses);pausing.resume(paused.runId());assertEquals(1,pauseObserver.resumed);assertEquals(1,pauseObserver.succeeded);
+
+        RecordingSyncObserver retryObserver=new RecordingSyncObserver();ConnectorSyncEngine retrying=engine(new MutableRegistry(policy(ConnectorRollbackStrategy.LOCAL_CHECKPOINT)),handler(c->ConnectorSyncBatchResult.failed("REMOTE_503",true,false),c->ConnectorSyncCompensationResult.succeeded()),new InMemoryConnectorSyncRepository(),retryObserver);
+        retrying.execute(KEY,request(1),"sync-observer-0003",ACTOR,CORR);assertEquals(1,retryObserver.retryPauses);assertEquals(0,retryObserver.failed);
+
+        RecordingSyncObserver compensationObserver=new RecordingSyncObserver();ConnectorSyncEngine compensating=engine(new MutableRegistry(policy(ConnectorRollbackStrategy.DUAL_COMPENSATION)),handler(c->ConnectorSyncBatchResult.failed("PARTIAL_WRITE",false,true),c->ConnectorSyncCompensationResult.succeeded()),new InMemoryConnectorSyncRepository(),compensationObserver);
+        compensating.execute(KEY,request(1),"sync-observer-0004",ACTOR,CORR);assertEquals(1,compensationObserver.compensationStarted);assertEquals(1,compensationObserver.compensated);
+    }
+
     @Test void governanceAndHandlerRegistrationStayFailClosed(){
         ConnectorGovernancePolicy read=ConnectorGovernancePolicy.externalFederatedRead(KEY,"jira-assets");InMemoryConnectorSyncRepository repo=new InMemoryConnectorSyncRepository();ConnectorSyncHandler handler=handler(c->ConnectorSyncBatchResult.applied(null,0,0,0,true),c->ConnectorSyncCompensationResult.succeeded());
         assertThrows(ConnectorSyncPolicyDeniedException.class,()->engine(read,handler,repo).execute(KEY,new ConnectorSyncExecutionRequest(ConnectorSyncDirection.FEDERATED_READ,Set.of(),false,1),"sync-deny-0001",ACTOR,CORR));
@@ -165,7 +187,18 @@ final class ConnectorSyncEngineTest {
     private static ConnectorGovernancePolicy policy(ConnectorRollbackStrategy rollback){return new ConnectorGovernancePolicy(KEY,"lab",ConnectorSyncDirection.INBOUND,ConnectorDataAuthority.EXTERNAL,ConnectorConflictStrategy.REJECT,ConnectorDeletionPolicy.IGNORE,rollback,List.of(new ConnectorFieldAuthority("name",ConnectorDataAuthority.EXTERNAL)));}
     private static ConnectorSyncHandler handler(java.util.function.Function<ConnectorSyncBatchContext,ConnectorSyncBatchResult> sync,java.util.function.Function<ConnectorSyncCompensationContext,ConnectorSyncCompensationResult> compensate){return new ConnectorSyncHandler(){public ConnectorKey connectorKey(){return KEY;}public ConnectorSyncBatchResult synchronize(ConnectorSyncBatchContext c){return sync.apply(c);}public ConnectorSyncCompensationResult compensate(ConnectorSyncCompensationContext c){return compensate.apply(c);}};}
     private static ConnectorSyncEngine engine(ConnectorGovernancePolicy policy,ConnectorSyncHandler handler,InMemoryConnectorSyncRepository repo){return engine(new MutableRegistry(policy),handler,repo);}
-    private static ConnectorSyncEngine engine(ConnectorGovernanceRegistry registry,ConnectorSyncHandler handler,InMemoryConnectorSyncRepository repo){ConnectorSyncHandlerRegistry handlers=key->{if(handler==null||!KEY.equals(key))throw new ConnectorSyncHandlerUnavailableException(key);return handler;};return new ConnectorSyncEngine(registry,new ConnectorGovernancePlanner(),handlers,repo,new UuidV7Generator(CLOCK,new SecureRandom(new byte[]{4,3,2,1})),CLOCK);}
+    private static ConnectorSyncEngine engine(ConnectorGovernanceRegistry registry,ConnectorSyncHandler handler,InMemoryConnectorSyncRepository repo){return engine(registry,handler,repo,ConnectorSyncRuntimeObserver.NOOP);}
+    private static ConnectorSyncEngine engine(ConnectorGovernanceRegistry registry,ConnectorSyncHandler handler,InMemoryConnectorSyncRepository repo,ConnectorSyncRuntimeObserver observer){ConnectorSyncHandlerRegistry handlers=key->{if(handler==null||!KEY.equals(key))throw new ConnectorSyncHandlerUnavailableException(key);return handler;};return new ConnectorSyncEngine(registry,new ConnectorGovernancePlanner(),handlers,repo,new UuidV7Generator(CLOCK,new SecureRandom(new byte[]{4,3,2,1})),CLOCK,observer);}
     private static ConnectorSyncRun run(ConnectorSyncRunStatus status,long initial,long last,String failure,Long compensation){return new ConnectorSyncRun(ACTOR,KEY,"lab",ConnectorSyncDirection.INBOUND,ConnectorRollbackStrategy.LOCAL_CHECKPOINT,status,"sync-test-0001","a".repeat(64),Set.of("name"),false,1,initial,last,failure,ACTOR,CORR,NOW,NOW,status==ConnectorSyncRunStatus.PAUSED?null:NOW,compensation);}
+    private static final class RecordingSyncObserver implements ConnectorSyncRuntimeObserver {
+        int created;int duplicates;int resumed;int batches;long processed;long changed;long rejected;int completedBatches;int retryPauses;int budgetPauses;int compensationStarted;int succeeded;int failed;int compensated;int compensationFailed;
+        @Override public void admitted(ConnectorKey key,ConnectorSyncDirection direction,boolean duplicate){assertEquals(KEY,key);assertEquals(ConnectorSyncDirection.INBOUND,direction);if(duplicate)duplicates++;else created++;}
+        @Override public void resumed(ConnectorKey key,ConnectorSyncDirection direction){assertEquals(KEY,key);assertEquals(ConnectorSyncDirection.INBOUND,direction);resumed++;}
+        @Override public void batchApplied(ConnectorKey key,ConnectorSyncDirection direction,long processed,long changed,long rejected,boolean completed){assertEquals(KEY,key);assertEquals(ConnectorSyncDirection.INBOUND,direction);batches++;this.processed+=processed;this.changed+=changed;this.rejected+=rejected;if(completed)completedBatches++;}
+        @Override public void paused(ConnectorKey key,ConnectorSyncDirection direction,ConnectorSyncPauseCause cause){assertEquals(KEY,key);assertEquals(ConnectorSyncDirection.INBOUND,direction);if(cause==ConnectorSyncPauseCause.RETRYABLE_FAILURE)retryPauses++;else if(cause==ConnectorSyncPauseCause.BATCH_BUDGET_EXHAUSTED)budgetPauses++;else fail("unexpected pause cause");}
+        @Override public void compensationStarted(ConnectorKey key,ConnectorRollbackStrategy rollback){assertEquals(KEY,key);assertEquals(ConnectorRollbackStrategy.DUAL_COMPENSATION,rollback);compensationStarted++;}
+        @Override public void terminal(ConnectorKey key,ConnectorSyncDirection direction,ConnectorSyncRunStatus status,java.time.Duration elapsed){assertEquals(KEY,key);assertEquals(ConnectorSyncDirection.INBOUND,direction);assertFalse(elapsed.isNegative());switch(status){case SUCCEEDED->succeeded++;case FAILED->failed++;case COMPENSATED->compensated++;case COMPENSATION_FAILED->compensationFailed++;default->fail("unexpected terminal status: "+status);}}
+    }
+
     private static final class MutableRegistry implements ConnectorGovernanceRegistry{ConnectorGovernancePolicy policy;MutableRegistry(ConnectorGovernancePolicy p){policy=p;}public List<ConnectorGovernancePolicy> policies(){return List.of(policy);}public ConnectorGovernancePolicy require(ConnectorKey key){if(!KEY.equals(key))throw new ConnectorGovernanceNotFoundException("missing");return policy;}}
 }

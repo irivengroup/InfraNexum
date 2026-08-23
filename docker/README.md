@@ -93,6 +93,12 @@ Replay the fixtures explicitly without recreating volumes:
 ./docker/dev-compose.sh seed
 ```
 
+The standalone `seed` command requires a healthy `postgres` router and the
+one-shot `migrate` service to have completed with exit code 0. If `up` failed
+during image build or startup, `seed` now stops at that precondition with an
+actionable topology/migration diagnostic instead of launching an isolated
+maintenance container that cannot resolve the `postgres` service alias.
+
 A direct `docker compose up ...` invocation does **not** run this post-start seed; use the developer wrapper when fixtures are required.
 
 If the canonical local `admin` account is suspended or locked, use the bounded recovery command:

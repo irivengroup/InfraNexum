@@ -73,6 +73,15 @@ class ConfiguredServiceNowSyncHandlerCatalogTest {
         assertTrue(catalog.handlers().isEmpty());
     }
 
+    @Test
+    void connectorRegistryPreservesTypedConnectorKeysAcrossServerWiring() {
+        ConfiguredServiceNowConnectorRegistry registry = connectors();
+
+        assertEquals(KEY, registry.require(KEY).settings().connectorKey());
+        assertEquals(KEY, registry.require(KEY.value()).settings().connectorKey());
+        assertThrows(NullPointerException.class, () -> registry.require((ConnectorKey) null));
+    }
+
     private static ConfiguredServiceNowConnectorRegistry connectors() {
         ServiceNowSettings settings = new ServiceNowSettings(
                 KEY, "tenant.service-now.com", "cmdb_ci_server", "env:SN_TOKEN", Duration.ofSeconds(5), true);

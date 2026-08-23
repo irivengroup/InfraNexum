@@ -150,7 +150,7 @@ function Assert-ComposeServiceHealthy {
     try { $cid = ((Invoke-ComposeCapture ps -q $Service) | Out-String).Trim() } catch {}
     if (-not $cid) {
         try { Invoke-Compose ps } catch {}
-        throw "Service $Service is not running: no container exists. Run '.\docker\dev-compose.ps1 up' successfully before smoke/ha-smoke and resolve any build/start failure first."
+        throw "Service $Service is not running: no container exists. Run '.\docker\dev-compose.ps1 up' successfully before commands that require the running topology, and resolve any build/start failure first."
     }
 
     $health = 'unknown'
@@ -160,6 +160,21 @@ function Assert-ComposeServiceHealthy {
     try { Invoke-Compose ps } catch {}
     try { Invoke-Compose logs --no-color --tail=200 $Service } catch {}
     throw "Service $Service is not healthy (container=$cid health=$health)"
+}
+function Assert-ComposeServiceCompletedSuccessfully {
+    param([Parameter(Mandatory=$true)][string]$Service)
+    $cid = ''
+    try { $cid = ((Invoke-ComposeCapture ps --all -q $Service) | Out-String).Trim() } catch {}
+    if (-not $cid) {
+        try { Invoke-Compose ps --all } catch {}
+        throw "Service $Service has not completed successfully: no container exists. Run '.\docker\dev-compose.ps1 up' successfully before replaying developer seed data."
+    }
+
+    $state = (& docker inspect --format '{{.State.Status}}:{{.State.ExitCode}}' $cid 2>&1 | Out-String).Trim()
+    if ($LASTEXITCODE -eq 0 -and $state -eq 'exited:0') { return }
+    try { Invoke-Compose ps --all } catch {}
+    try { Invoke-Compose logs --no-color --tail=200 $Service } catch {}
+    throw "Service $Service has not completed successfully (container=$cid state=$state). Resolve the failed startup/migration before replaying developer seed data."
 }
 function Invoke-DatabaseScalar {
     param([Parameter(Mandatory=$true)][string]$Sql)
@@ -209,6 +224,11 @@ END;
 
 function Invoke-DeveloperSeedData {
     Assert-Repository
+    # A standalone seed must never create an isolated maintenance container and
+    # then fail later with a misleading DNS error. The PostgreSQL router must be
+    # healthy and the canonical migration job must have completed successfully.
+    Assert-ComposeServiceHealthy -Service 'postgres'
+    Assert-ComposeServiceCompletedSuccessfully -Service 'migrate'
     # Developer fixtures are intentionally outside the migration catalogue and
     # run only after the application topology is ready. The application DB role
     # is used so the seed cannot rely on superuser-only privileges.
@@ -296,7 +316,7 @@ function Invoke-Smoke {
     $cid='018bcfe5-6800-7001-8000-000000000001'; $response=Invoke-WebRequest -Uri "http://127.0.0.1:$port/api/v1/system/build" -Headers @{'X-Correlation-ID'=$cid} -TimeoutSec 10
     $build=$response.Content | ConvertFrom-Json; if ($build.instanceId -notmatch '^server-pro-[1-4]$') { throw "Unexpected routed instance $($build.instanceId)" }; if ($response.Headers['X-Correlation-ID'] -ne $cid) { throw 'Correlation was not propagated' }
     $webReady=Invoke-RestMethod -Uri "http://127.0.0.1:$webPort/health/ready" -TimeoutSec 10; if ($webReady.status -ne 'UP') { throw 'Web router readiness is not UP' }
-    $runtime=Invoke-RestMethod -Uri "http://127.0.0.1:$webPort/runtime-config.json" -TimeoutSec 10; if ($runtime.component -ne 'web' -or $runtime.version -ne '2.0.0-alpha.0.130' -or $runtime.apiBaseUrl -ne '/api') { throw 'Web runtime configuration is inconsistent with Compose bindings' }
+    $runtime=Invoke-RestMethod -Uri "http://127.0.0.1:$webPort/runtime-config.json" -TimeoutSec 10; if ($runtime.component -ne 'web' -or $runtime.version -ne '2.0.0-alpha.0.131' -or $runtime.apiBaseUrl -ne '/api') { throw 'Web runtime configuration is inconsistent with Compose bindings' }
     $iamHistory=[int](Invoke-ApplicationDatabaseAdminScalar "SELECT count(*) FROM infranexum_core.schema_history WHERE migration_id IN ('0011','0012','0013')")
     if ($iamHistory -ne 3) { throw "IAM migration history is incomplete; expected 0011, 0012 and 0013, observed $iamHistory" }
     $accountTable=[int](Invoke-ApplicationDatabaseAdminScalar "SELECT CASE WHEN to_regclass('infranexum_iam.local_account') IS NOT NULL THEN 1 ELSE 0 END")

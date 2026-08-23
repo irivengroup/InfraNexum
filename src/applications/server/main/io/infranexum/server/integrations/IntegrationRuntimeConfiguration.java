@@ -228,12 +228,18 @@ public class IntegrationRuntimeConfiguration {
     }
 
     @Bean
+    ConnectorSyncRuntimeObserver connectorSyncRuntimeObserver(MeterRegistry registry) {
+        return new MicrometerConnectorSyncRuntimeObserver(registry);
+    }
+
+    @Bean
     @ConditionalOnExpression("\'${infranexum.persistence.mode:MEMORY}\' == \'POSTGRESQL\' || \'${infranexum.persistence.mode:MEMORY}\' == \'ORACLE\'")
     ConnectorSyncEngine connectorSyncEngine(
             ConnectorGovernanceRegistry governance, ConnectorGovernancePlanner planner,
             ConnectorSyncHandlerRegistry handlers, ConnectorSyncRepository repository,
-            @Qualifier("integrationIdentifiers") UuidV7Generator ids, @Qualifier("platformClock") Clock clock) {
-        return new ConnectorSyncEngine(governance, planner, handlers, repository, ids, clock);
+            @Qualifier("integrationIdentifiers") UuidV7Generator ids, @Qualifier("platformClock") Clock clock,
+            ConnectorSyncRuntimeObserver observer) {
+        return new ConnectorSyncEngine(governance, planner, handlers, repository, ids, clock, observer);
     }
 
     @Bean

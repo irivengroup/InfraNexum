@@ -30,8 +30,11 @@ final class ConfiguredServiceNowConnectorRegistry {
     }
 
     ServiceNowConnector require(String connectorKey) {
-        ConnectorKey key = new ConnectorKey(connectorKey);
-        ServiceNowConnector connector = connectors.get(key);
+        return require(new ConnectorKey(connectorKey));
+    }
+
+    ServiceNowConnector require(ConnectorKey key) {
+        ServiceNowConnector connector = connectors.get(Objects.requireNonNull(key, "connectorKey"));
         if (connector == null) throw new ConnectorEndpointUnavailableException("ServiceNow connector is not configured");
         return connector;
     }

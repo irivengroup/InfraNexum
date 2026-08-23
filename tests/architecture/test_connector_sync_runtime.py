@@ -65,6 +65,7 @@ class ConnectorSyncRuntimeArchitectureTest(unittest.TestCase):
 
         jira=(SERVER/'ConfiguredJiraAssetsSyncHandlerCatalog.java').read_text(encoding='utf-8')
         service_now=(SERVER/'ConfiguredServiceNowSyncHandlerCatalog.java').read_text(encoding='utf-8')
+        service_now_registry=(SERVER/'ConfiguredServiceNowConnectorRegistry.java').read_text(encoding='utf-8')
         for catalog, field_guard in ((jira, 'governed.equals(mutation.attributeIds().keySet())'),
                                      (service_now, 'governed.equals(mutation.fieldNames().keySet())')):
             for guard in (
@@ -79,6 +80,9 @@ class ConnectorSyncRuntimeArchitectureTest(unittest.TestCase):
                 self.assertIn(guard,catalog)
         self.assertIn('new JiraAssetsSyncHandler',jira)
         self.assertIn('new ServiceNowSyncHandler',service_now)
+        self.assertIn('connectors.require(key)',service_now)
+        self.assertIn('ServiceNowConnector require(ConnectorKey key)',service_now_registry)
+        self.assertIn('return require(new ConnectorKey(connectorKey));',service_now_registry)
 
         config=(SERVER/'IntegrationRuntimeConfiguration.java').read_text(encoding='utf-8')
         self.assertIn('ConfiguredJiraAssetsSyncHandlerCatalog',config)
@@ -105,6 +109,24 @@ class ConnectorSyncRuntimeArchitectureTest(unittest.TestCase):
                 if re.search(r'\b(?:List|Set|Map)\.of\(\)',line):
                     offenders.append(f'{source.relative_to(ROOT)}:{lineno}')
         self.assertEqual([],offenders,"untyped empty collection fallback(s): "+", ".join(offenders))
+
+    def test_sync_runtime_metrics_are_low_cardinality_and_engine_owned(self):
+        observer=(DOMAIN/'ConnectorSyncRuntimeObserver.java').read_text(encoding='utf-8')
+        engine=(DOMAIN/'ConnectorSyncEngine.java').read_text(encoding='utf-8')
+        micrometer=(SERVER/'MicrometerConnectorSyncRuntimeObserver.java').read_text(encoding='utf-8')
+        config=(SERVER/'IntegrationRuntimeConfiguration.java').read_text(encoding='utf-8')
+        for method in ('admitted(', 'resumed(', 'batchApplied(', 'paused(', 'compensationStarted(', 'terminal('):
+            self.assertIn(method,observer)
+            self.assertIn(method,engine)
+        self.assertIn('ConnectorSyncPauseCause',observer)
+        self.assertIn('MicrometerConnectorSyncRuntimeObserver',config)
+        self.assertIn('ConnectorSyncRuntimeObserver observer',config)
+        self.assertIn('PREFIX = "infranexum.integrations.sync."',micrometer)
+        for suffix in ('admissions','activations','batches','records','pauses','compensations','terminal','duration'):
+            self.assertIn('PREFIX + "'+suffix+'"',micrometer)
+        for forbidden in ('failureCode', 'idempotencyKey', 'cursorSha256', 'payload'):
+            self.assertNotIn('tag("'+forbidden+'"',micrometer)
+        self.assertNotIn('result.failureCode()',micrometer)
 
     def test_browser_never_receives_raw_cursor_or_provider_credentials(self):
         client=(WEB/'connector-sync.mjs').read_text(encoding='utf-8')

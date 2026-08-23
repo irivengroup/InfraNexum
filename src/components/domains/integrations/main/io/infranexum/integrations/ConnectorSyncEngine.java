@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -27,17 +28,26 @@ public final class ConnectorSyncEngine {
     private final ConnectorSyncRepository repository;
     private final UuidV7Generator ids;
     private final Clock clock;
+    private final ConnectorSyncRuntimeObserver observer;
 
     public ConnectorSyncEngine(
             ConnectorGovernanceRegistry governance, ConnectorGovernancePlanner planner,
             ConnectorSyncHandlerRegistry handlers, ConnectorSyncRepository repository,
             UuidV7Generator ids, Clock clock) {
+        this(governance, planner, handlers, repository, ids, clock, ConnectorSyncRuntimeObserver.NOOP);
+    }
+
+    public ConnectorSyncEngine(
+            ConnectorGovernanceRegistry governance, ConnectorGovernancePlanner planner,
+            ConnectorSyncHandlerRegistry handlers, ConnectorSyncRepository repository,
+            UuidV7Generator ids, Clock clock, ConnectorSyncRuntimeObserver observer) {
         this.governance = Objects.requireNonNull(governance, "governance");
         this.planner = Objects.requireNonNull(planner, "planner");
         this.handlers = Objects.requireNonNull(handlers, "handlers");
         this.repository = Objects.requireNonNull(repository, "repository");
         this.ids = Objects.requireNonNull(ids, "ids");
         this.clock = Objects.requireNonNull(clock, "clock");
+        this.observer = Objects.requireNonNull(observer, "observer");
     }
 
     public ConnectorSyncRun execute(
@@ -53,6 +63,7 @@ public final class ConnectorSyncEngine {
                 ids.next(), connectorKey, policy.provider(), request.direction(), policy.rollbackStrategy(),
                 idempotencyKey, hash, request.fields(), request.propagateDeletions(), request.maxBatches(),
                 actorId, correlationId, now);
+        observer.admitted(connectorKey, request.direction(), !begin.created());
         if (!begin.created()) return begin.run();
         return process(begin.run(), begin.cursor(), begin.revision(), handler);
     }
@@ -60,9 +71,10 @@ public final class ConnectorSyncEngine {
     public ConnectorSyncRun resume(DomainIdentifier runId) {
         ConnectorSyncRepository.Activation activation = repository.activate(Objects.requireNonNull(runId, "runId"), clock.instant());
         ConnectorSyncRun run = activation.run();
+        observer.resumed(run.connectorKey(), run.direction());
         ConnectorGovernancePolicy policy = governance.require(run.connectorKey());
         if (policy.direction() != run.direction() || policy.rollbackStrategy() != run.rollbackStrategy()) {
-            return repository.fail(run.runId(), "POLICY_CHANGED", clock.instant());
+            return terminal(repository.fail(run.runId(), "POLICY_CHANGED", clock.instant()));
         }
         ConnectorSyncHandler handler = handlers.require(run.connectorKey());
         return process(run, activation.cursor(), activation.revision(), handler);
@@ -70,6 +82,7 @@ public final class ConnectorSyncEngine {
 
     public ConnectorSyncRun compensate(DomainIdentifier runId) {
         ConnectorSyncRepository.CompensationStart start = repository.beginCompensation(Objects.requireNonNull(runId, "runId"), clock.instant());
+        observer.compensationStarted(start.run().connectorKey(), start.run().rollbackStrategy());
         return compensateStarted(start, handlers.require(start.run().connectorKey()), "OPERATOR_REQUEST");
     }
 
@@ -97,38 +110,55 @@ public final class ConnectorSyncEngine {
             if (result.outcome() == ConnectorSyncBatchResult.Outcome.FAILED) {
                 if (result.compensationRequired()) {
                     if (!automaticCompensation(run.rollbackStrategy())) {
-                        return repository.fail(run.runId(), "MANUAL_COMPENSATION_REQUIRED", clock.instant());
+                        return terminal(repository.fail(run.runId(), "MANUAL_COMPENSATION_REQUIRED", clock.instant()));
                     }
                     ConnectorSyncRepository.CompensationStart start = repository.beginCompensation(run.runId(), clock.instant());
+                    observer.compensationStarted(run.connectorKey(), run.rollbackStrategy());
                     return compensateStarted(start, handler, result.failureCode());
                 }
-                return result.retryable()
-                        ? repository.pause(run.runId(), result.failureCode(), clock.instant())
-                        : repository.fail(run.runId(), result.failureCode(), clock.instant());
+                if (result.retryable()) {
+                    ConnectorSyncRun paused = repository.pause(run.runId(), result.failureCode(), clock.instant());
+                    observer.paused(run.connectorKey(), run.direction(), ConnectorSyncPauseCause.RETRYABLE_FAILURE);
+                    return paused;
+                }
+                return terminal(repository.fail(run.runId(), result.failureCode(), clock.instant()));
             }
             String nextCursor = result.nextCursor() == null ? currentCursor : result.nextCursor();
             ConnectorSyncCheckpoint checkpoint = repository.appendCheckpoint(
                     ids.next(), run.runId(), currentRevision, ConnectorSyncCheckpointKind.PROGRESS,
                     nextCursor, sha256(nextCursor), result.processedCount(), result.changedCount(), result.rejectedCount(), clock.instant());
+            observer.batchApplied(
+                    run.connectorKey(), run.direction(), result.processedCount(), result.changedCount(),
+                    result.rejectedCount(), result.completed());
             currentCursor = nextCursor;
             currentRevision = checkpoint.revision();
-            if (result.completed()) return repository.succeed(run.runId(), clock.instant());
+            if (result.completed()) return terminal(repository.succeed(run.runId(), clock.instant()));
         }
-        return repository.pause(run.runId(), "BATCH_BUDGET_EXHAUSTED", clock.instant());
+        ConnectorSyncRun paused = repository.pause(run.runId(), "BATCH_BUDGET_EXHAUSTED", clock.instant());
+        observer.paused(run.connectorKey(), run.direction(), ConnectorSyncPauseCause.BATCH_BUDGET_EXHAUSTED);
+        return paused;
     }
 
     private ConnectorSyncRun compensateStarted(
             ConnectorSyncRepository.CompensationStart start, ConnectorSyncHandler handler, String failureCode) {
         ConnectorSyncRun run = start.run();
         if (!automaticCompensation(run.rollbackStrategy())) {
-            return repository.compensationFailed(run.runId(), "MANUAL_COMPENSATION_REQUIRED", clock.instant());
+            return terminal(repository.compensationFailed(run.runId(), "MANUAL_COMPENSATION_REQUIRED", clock.instant()));
         }
         ConnectorSyncCompensationResult result = Objects.requireNonNull(
                 handler.compensate(new ConnectorSyncCompensationContext(run, start.initialCursor(), start.currentCursor(), failureCode)),
                 "connector compensation result");
-        if (!result.success()) return repository.compensationFailed(run.runId(), result.failureCode(), clock.instant());
-        return repository.finishCompensation(
-                run.runId(), start.currentRevision(), ids.next(), start.initialCursor(), sha256(start.initialCursor()), clock.instant());
+        if (!result.success()) return terminal(repository.compensationFailed(run.runId(), result.failureCode(), clock.instant()));
+        return terminal(repository.finishCompensation(
+                run.runId(), start.currentRevision(), ids.next(), start.initialCursor(), sha256(start.initialCursor()), clock.instant()));
+    }
+
+    private ConnectorSyncRun terminal(ConnectorSyncRun run) {
+        Instant finishedAt = run.completedAt() == null ? run.updatedAt() : run.completedAt();
+        Duration elapsed = Duration.between(run.startedAt(), finishedAt);
+        if (elapsed.isNegative()) elapsed = Duration.ZERO;
+        observer.terminal(run.connectorKey(), run.direction(), run.status(), elapsed);
+        return run;
     }
 
     private static boolean automaticCompensation(ConnectorRollbackStrategy strategy) {

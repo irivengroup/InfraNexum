@@ -1,4 +1,22 @@
-# InfraNexum 2.0.0-alpha.0.130 — état d’implémentation
+# InfraNexum 2.0.0-alpha.0.131 — état d’implémentation
+
+## 2.0.0-alpha.0.131 — corrective ServiceNow/Compose et observabilité sync
+
+**Statut : snapshot de qualification ; PGM-10-E06 reste EN COURS.**
+
+Le build Docker/Maven downstream de `alpha.0.130` a identifié une régression de compilation réelle dans `ConfiguredServiceNowSyncHandlerCatalog` : le catalogue passait un `ConnectorKey` au registre ServiceNow dont l’unique méthode `require` acceptait une `String`. `ConfiguredServiceNowConnectorRegistry` expose désormais le même contrat typé que Jira Assets (`require(ConnectorKey)`), et `require(String)` délègue vers ce chemin. Le catalogue conserve donc le value object jusqu’à la frontière du registre. Un test JUnit de non-régression couvre les deux formes de lookup et le null fail-closed.
+
+Le second défaut observé (`seed` après un `up` avorté) était une conséquence de l’exécution `db-admin --no-deps` sans service `postgres` présent sur le réseau Compose. Les wrappers PowerShell et POSIX vérifient désormais avant seed : **(1)** `postgres` running + healthy ; **(2)** le job `migrate` existe et est `exited:0`. L’échec est donc précoce et actionnable, et le SQL seed ne démarre jamais dans un conteneur de maintenance isolé. `smoke` et `ha-smoke` conservent leur comportement : ils refusent correctement une stack jamais démarrée.
+
+L’observabilité du moteur durable de synchronisation est complétée par un port domaine `ConnectorSyncRuntimeObserver` et un adaptateur Micrometer Server. Les compteurs/timers couvrent admission, activation/reprise, batches, records, pauses, compensation, état terminal et durée. Les labels sont bornés et ne contiennent ni curseur/checkpoint brut, payload, clé d’idempotence, acteur, corrélation ni code d’échec dynamique.
+
+**EXÉCUTÉ — contrôles locaux ciblés :** Source Integrity **45/45**, 0 violation ; Architecture sync **8/8** ; Compose contract **69/69** ; Architecture-as-Code **PASS** ; `sh -n docker/dev-compose.sh` **PASS** ; JDK 25 `java-integrations-smoke` avec `-Xlint:all -Werror` **PASS** pour runtime, notifications, gouvernance, synchronisation et registry typé.
+
+**NON EXÉCUTÉ localement — full Server/JDBC Maven + JaCoCo :** le repository Maven complet n’est pas disponible dans ce runner. Le build Docker de l’environnement utilisateur a cependant atteint la compilation Server et fourni la régression exacte corrigée ici. Le reactor complet doit être rejoué downstream.
+
+**NON EXÉCUTÉ localement — PostgreSQL 17/18 live et Compose runtime :** aucun daemon Docker/PostgreSQL n’est disponible ici. La séquence de qualification downstream est `up -> seed -> smoke -> ha-smoke`.
+
+---
 
 ## alpha.0.130 — ServiceNow CMDB outbound gouverné
 

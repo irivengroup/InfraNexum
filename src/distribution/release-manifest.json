@@ -2,8 +2,8 @@
   "schema": "infranexum.release-manifest/v1",
   "product": "InfraNexum",
   "positioning": "InfraNexum — Infrastructure Control & Governance Platform",
-  "version": "2.0.0-alpha.0.130",
-  "profile": "alpha130-servicenow-governed-outbound-qualification-snapshot",
+  "version": "2.0.0-alpha.0.131",
+  "profile": "alpha131-sync-observability-compose-corrective-qualification-snapshot",
   "overall_status": "NON_TERMINE",
   "baseline": "../../BASELINE.json",
   "delivery_contents": "exact tracked source snapshot only; generated validation evidence is delivered separately and is not part of the source ZIP",
@@ -14,7 +14,7 @@
     },
     {
       "id": "infranexum-server",
-      "status": "alpha130-adds-governed-servicenow-itam-outbound-upsert-via-existing-sync-runtime-and-preserves-alpha129-cli-json-hardening; no-new-provider-write-api-or-db-migration; server-jacoco98-maven-qualification-remains-open-because-offline-dependency-cache-is-incomplete"
+      "status": "alpha131-fixes-servicenow-typed-connector-registry-wiring-and-adds-low-cardinality-durable-sync-runtime-observability; preserves-alpha130-governed-servicenow-outbound-and-alpha129-cli-json-hardening; server-jacoco98-maven-qualification-remains-open-where-full-dependency-cache-is-required"
     },
     {
       "id": "infranexum-agent",
@@ -46,15 +46,15 @@
     },
     {
       "id": "ci-foundation",
-      "status": "unix-quality-gates-preserved; alpha130-jdk25-and-maven3.9.16-executables-available-but-server-jdbc-maven-run-blocked-before-compilation-by-incomplete-offline-dependency-cache; postgresql17-18-live-runtime-unavailable; no-threshold-or-exclusion-weakened"
+      "status": "unix-quality-gates-preserved; alpha131-jdk25-integration-smoke-and-structural-gates-executed; full-server-jdbc-maven-jacoco-run-still-environment-dependent; postgresql17-18-live-runtime-required; no-threshold-or-exclusion-weakened"
     },
     {
       "id": "deployment-boundary",
-      "status": "standalone-baremetal-vm-production-target; root-docker-compose-remains-local-dev-test-only; alpha109-enables-integrations-capability-in-pro-dev-profile-with-zero-jira-or-servicenow-credential-or-connector-by-default; alpha107-seed-admin-recovery-preserved"
+      "status": "standalone-baremetal-vm-production-target; root-docker-compose-remains-local-dev-test-only; alpha131-seed-command-fails-fast-unless-postgres-is-healthy-and-migrate-exited-zero-preventing-misleading-postgres-dns-errors-after-failed-up"
     },
     {
       "id": "platform-observability-v1",
-      "status": "pgm-12-e01-http-and-durable-worker-uuidv7-correlation-mdc-mandatory-ecs-structured-value-redaction-bounded-stacktraces-fixed-cardinality-metrics-opentelemetry-dashboards-and-target-export-certification-pending"
+      "status": "pgm-12-e01-preserved; alpha131-adds-low-cardinality-connector-sync-admission-batch-record-pause-compensation-terminal-and-duration-metrics-without-cursor-payload-idempotency-or-failure-code-labels"
     },
     {
       "id": "organization-foundation-v1",
@@ -130,7 +130,7 @@
     },
     {
       "id": "connector-sync-runtime-v1",
-      "status": "pgm-10-e06-alpha130-durable-run-checkpoint-compensation-runtime-with-jira-assets-and-servicenow-mutating-handlers-admitted-only-by-exact-active-governance-and-bijective-provider-mapping; compensation-remains-manual"
+      "status": "pgm-10-e06-alpha131-durable-run-checkpoint-compensation-runtime-with-jira-assets-and-servicenow-mutating-handlers-admitted-only-by-exact-active-governance-plus-engine-owned-low-cardinality-runtime-observability; compensation-remains-manual"
     }
   ],
   "validation_reports": [],
@@ -710,7 +710,7 @@
     "inventory_paths": 1602
   },
   "source_archive": {
-    "prefix": "infranexum-2.0.0-alpha.0.130",
+    "prefix": "infranexum-2.0.0-alpha.0.131",
     "archive_entries": 1604,
     "reproducible": true,
     "source_checksum_manifest": "src/distribution/source-files.sha256",
@@ -718,7 +718,7 @@
     "release_checksum_manifest": "../../artifacts/validation/release-files.sha256",
     "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.130-validation-evidence.zip"
   },
-  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.130-validation-evidence.zip",
+  "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.131-validation-evidence.zip",
   "runtime_validation": {
     "web_local_runtime_alpha058": "EXECUTED_38_OF_38_LINE_99_67_BRANCH_98_33_FUNCTION_100_PROCESS_SMOKE_PASS_LOCAL_NODE22_BOOTSTRAP5_3_6_PROFESSIONAL_ADMIN_DASHBOARD_THEME_TOGGLE_TRUTHFUL_KPI_SAME_ORIGIN_ORGANIZATION_UI",
     "architecture_functional_alpha058": "EXECUTED_57_OF_57",
@@ -1741,6 +1741,39 @@
     "packaging_tracked_files_alpha128": 1595,
     "git_blob_checksums_alpha128": 1594,
     "source_integrity_alpha128": "EXECUTED_45_OF_45_100_PERCENT_STRICT_STAGED_SNAPSHOT_1595_TRACKED_PATHS_1594_GIT_BLOB_CHECKSUMS_1593_CANONICAL_INVENTORY_ZERO_VIOLATIONS",
-    "archive_compatibility_alpha128": "EXECUTED_12_OF_12_100_PERCENT_ZERO_VIOLATIONS_COMMITTED_GIT_ARCHIVE"
-  }
+    "archive_compatibility_alpha128": "EXECUTED_12_OF_12_100_PERCENT_ZERO_VIOLATIONS_COMMITTED_GIT_ARCHIVE",
+    "servicenow_wiring_regression_alpha131": "IMPLEMENTED_TYPED_CONNECTORKEY_REGISTRY_OVERLOAD_STRING_DELEGATES_TO_TYPED_LOOKUP_CATALOG_WIRING_PRESERVES_DOMAIN_KEY",
+    "compose_seed_regression_alpha131": "EXECUTED_STATIC_CONTRACT_69_OF_69_PLUS_SHELL_PARSE; SEED_REQUIRES_HEALTHY_POSTGRES_AND_MIGRATE_EXITED_ZERO_BEFORE_DB_ADMIN",
+    "connector_sync_architecture_alpha131": "EXECUTED_8_OF_8_TARGETED_PLUS_ARCHITECTURE_AS_CODE_ZERO_VIOLATIONS",
+    "java_integrations_smoke_alpha131": "EXECUTED_JDK25_XLINT_ALL_WERROR_CONNECTOR_RUNTIME_NOTIFICATION_GOVERNANCE_SYNC_AND_TYPED_HANDLER_REGISTRY_SMOKES_PASS",
+    "source_integrity_prepack_alpha131": "EXECUTED_45_OF_45_ZERO_VIOLATIONS_BEFORE_FINAL_GIT_CHECKSUM_REGENERATION",
+    "server_maven_junit_jacoco_alpha131": "NON_EXECUTED_LOCAL_OFFLINE_REPOSITORY_INCOMPLETE; USER_DOCKER_MAVEN_BUILD_PREVIOUSLY_REACHED_SERVER_AND_EXPOSED_THE_TYPED_REGISTRY_COMPILE_REGRESSION_FIXED_HERE",
+    "postgresql_17_18_live_alpha131": "NON_EXECUTED_LOCAL_NO_POSTGRESQL_DOCKER_RUNTIME; USER_COMPOSE_RETEST_REQUIRED_AFTER_SUCCESSFUL_SERVER_BUILD",
+    "source_integrity_alpha131": "EXECUTED_45_OF_45_COVERAGE100_CHECKER_ZERO_VIOLATIONS_POST_BUMP",
+    "toolchains_alpha131": "EXECUTED_25_OF_25_COVERAGE99_CHECKER_ZERO_VIOLATIONS",
+    "migrations_alpha131": "EXECUTED_118_OF_118_COVERAGE99_CHECKER_ZERO_VIOLATIONS_NO_NEW_MIGRATION",
+    "eventing_alpha131": "EXECUTED_10_OF_10_COVERAGE100_ZERO_VIOLATIONS",
+    "persistence_alpha131": "EXECUTED_12_OF_12_COVERAGE98_ZERO_VIOLATIONS",
+    "capabilities_alpha131": "EXECUTED_10_OF_10_COVERAGE99_ZERO_VIOLATIONS",
+    "entitlements_alpha131": "EXECUTED_10_OF_10_COVERAGE100_ZERO_VIOLATIONS",
+    "audit_alpha131": "EXECUTED_8_OF_8_COVERAGE100_ZERO_VIOLATIONS",
+    "connector_sdk_alpha131": "EXECUTED_19_OF_19_COVERAGE99",
+    "api_contract_checker_alpha131": "EXECUTED_15_FRAGMENTS_201_OPERATIONS_ZERO_VIOLATIONS_DEBT_0_0_0_0; INSTRUMENTED_UNIT_TARGET_TIMED_OUT_BEFORE_FINAL_VERDICT_AND_IS_NOT_CLAIMED",
+    "agent_target_alpha131": "EXECUTED_GO1.26.5_VET_RACE_TESTS_98.4_PERCENT_BUILD_PASS",
+    "web_target_alpha131": "EXECUTED_NODE24.19.0_REDOC2.5.3_249_OF_249_LINE99.78_BRANCH98.60_FUNCTION100_VENDOR_AND_SMOKE_PASS",
+    "connector_sync_engine_junit_alpha131": "EXECUTED_JDK25_XLINT_ALL_WERROR_10_OF_10_JUNIT6_STANDALONE",
+    "servicenow_wiring_javac25_alpha131": "EXECUTED_JDK25_XLINT_ALL_WERROR_REAL_CONFIGURED_SERVICENOW_REGISTRY_AND_SYNC_CATALOG_SOURCES_COMPILE_TOGETHER_IN_TARGETED_CONTRACT_HARNESS",
+    "maven_offline_alpha131": "EXECUTED_JDK25.0.4.1_MAVEN3.9.16_STARTUP; PROJECT_MODEL_BLOCKED_BEFORE_COMPILATION_BY_MISSING_SPRING_BOOT_4.1.0_AND_SPRING_MODULITH_2.1.0_BOMS",
+    "postgresql_live_alpha131": "NON_EXECUTED_NO_LOCAL_DOCKER_POSTGRES_INITDB_OR_PSQL_RUNTIME",
+    "packaging_tracked_files_alpha131": "1608",
+    "source_inventory_paths_alpha131": "1606",
+    "git_blob_checksums_alpha131": "1607"
+  },
+  "archive": {
+    "prefix": "infranexum-2.0.0-alpha.0.131",
+    "external_validation_evidence": "InfraNexum-2.0.0-alpha.0.131-validation-evidence.zip"
+  },
+  "history": [
+    "alpha.0.131 corrective and operability increment: fixes ServiceNow ConnectorKey/String Server wiring exposed by the Docker Maven compile, makes standalone seed fail fast on missing/failed PostgreSQL topology or migrations instead of surfacing a misleading DNS error, and instruments the durable connector sync engine with bounded low-cardinality Micrometer metrics. No public API or database migration is added."
+  ]
 }

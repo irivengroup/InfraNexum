@@ -1,10 +1,12 @@
-# InfraNexum 2.0.0-alpha.0.130 — governed ServiceNow CMDB outbound synchronization
+# InfraNexum 2.0.0-alpha.0.131 — ServiceNow wiring corrective & connector-sync observability
 
-`alpha.0.130` extends PGM-10-E06 with the first governed ServiceNow CMDB outbound mutation path while preserving federated read as the default. ITAM asset upserts execute only through the durable connector synchronization runtime and only under an exact active governance mapping: `OUTBOUND / INFRANEXUM / PREFER_AUTHORITY / IGNORE / MANUAL`.
+`alpha.0.131` fixes the Server compilation regression exposed by the Docker Maven build in `ConfiguredServiceNowSyncHandlerCatalog`: `ConfiguredServiceNowConnectorRegistry` now preserves the domain `ConnectorKey` through a typed overload, while the legacy string lookup delegates to that same path. This aligns ServiceNow with the already-correct Jira Assets registry contract and removes the invalid `ConnectorKey -> String` conversion boundary.
 
-The ServiceNow transport is pinned to `https://*.service-now.com/api/now/table/...`, permits only GET/POST/PATCH, rejects redirects through the existing bounded transport, uses an explicit custom `u_*` field for canonical InfraNexum UUIDv7 identity, fails closed on duplicate remote identities, rejects duplicate provider-column mappings, never propagates deletes, and keeps compensation manual. The Jira Assets mapping receives the same bijective-target protection. No provider-specific write endpoint, database migration, browser credential path or invented OpenService contract is added.
+The developer `seed` wrappers are also hardened on Windows and POSIX. A standalone seed now requires the `postgres` router to be healthy and the one-shot `migrate` service to have exited with code 0 before launching `db-admin`; after a failed `up`, the command therefore fails with a topology/migration diagnostic instead of an isolated-container DNS error for `postgres`. The SQL seed itself remains idempotent, non-destructive and executed as the `infranexum` application role.
 
-**Qualification status:** Source Integrity and Architecture-as-Code are executed and green for the current source. JDK 25/Maven execution remains blocked before compilation by the incomplete offline Maven dependency cache; PostgreSQL 17/18 live validation is unavailable in this runner. The mandatory JaCoCo thresholds are unchanged and this snapshot remains `NON_TERMINE` until those external gates are run.
+PGM-10-E06 also gains engine-owned, low-cardinality synchronization observability: admission, activation/resume, applied batches, processed/changed/rejected records, pauses, compensations, terminal outcomes and duration. Labels are intentionally bounded and exclude cursors, payloads, idempotency keys and failure codes. No public API operation or database migration is added.
+
+**Qualification status:** Source Integrity, Architecture-as-Code, Compose contracts and JDK 25 integration smokes are executed locally. The full Server/JDBC Maven + JaCoCo reactor and PostgreSQL 17/18 live matrix still require an environment with the complete Maven repository and database runtime; those gates remain mandatory and are not counted as passed here.
 
 ---
 

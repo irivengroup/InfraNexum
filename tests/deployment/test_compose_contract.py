@@ -62,7 +62,7 @@ class ComposeContractTest(unittest.TestCase):
     def test_web_cluster_is_two_private_nodes_behind_loopback_router(self) -> None:
         for name in WEB:
             service = self.services[name]
-            self.assertEqual("infranexum/web:${INFRANEXUM_VERSION:-2.0.0-alpha.0.130}", service["image"])
+            self.assertEqual("infranexum/web:${INFRANEXUM_VERSION:-2.0.0-alpha.0.131}", service["image"])
             self.assertEqual("service_healthy", service["depends_on"]["server"]["condition"])
             self.assertNotIn("ports", service)
             self.assertEqual("local", service["environment"]["INFRANEXUM_WEB_ENVIRONMENT"])
@@ -488,7 +488,7 @@ case "$url" in
     [ -z "$output" ] || printf '%s' "$body" > "$output"
     if [ -n "$writeout" ]; then printf '%s' '401'; else printf '%s' "$body"; fi ;;
   */health/ready) printf '%s' '{"status":"UP"}' ;;
-  */runtime-config.json) printf '%s' '{"component":"web","version":"2.0.0-alpha.0.130","apiBaseUrl":"/api"}' ;;
+  */runtime-config.json) printf '%s' '{"component":"web","version":"2.0.0-alpha.0.131","apiBaseUrl":"/api"}' ;;
   *) echo "unexpected curl URL: $url" >&2; exit 70 ;;
 esac
 '''), encoding="utf-8")
@@ -659,7 +659,7 @@ case "$url" in
     [ -z "$output" ] || printf '%s' "$body" > "$output"
     if [ -n "$writeout" ]; then printf '%s' '401'; else printf '%s' "$body"; fi ;;
   */health/ready) printf '%s' '{"status":"UP"}' ;;
-  */runtime-config.json) printf '%s' '{"component":"web","version":"2.0.0-alpha.0.130","apiBaseUrl":"/api"}' ;;
+  */runtime-config.json) printf '%s' '{"component":"web","version":"2.0.0-alpha.0.131","apiBaseUrl":"/api"}' ;;
   *) echo "unexpected curl URL: $url" >&2; exit 70 ;;
 esac
 '''), encoding="utf-8")
@@ -901,6 +901,12 @@ esac
         sh = (DOCKER / "dev-compose.sh").read_text(encoding="utf-8")
         self.assertIn("'seed' { Invoke-DeveloperSeedData }", ps)
         self.assertIn("seed) seed_dev_data ;;", sh)
+        self.assertIn("Assert-ComposeServiceHealthy -Service 'postgres'", ps)
+        self.assertIn("Assert-ComposeServiceCompletedSuccessfully -Service 'migrate'", ps)
+        self.assertIn("assert_service_healthy postgres", sh)
+        self.assertIn("assert_service_completed_successfully migrate", sh)
+        self.assertIn("ps --all -q $Service", ps)
+        self.assertIn('compose ps --all -q "$service"', sh)
         ps_up = next(line for line in ps.splitlines() if line.lstrip().startswith("'up'"))
         sh_up = next(line for line in sh.splitlines() if line.strip().startswith("up)"))
         self.assertLess(ps_up.index("--wait web"), ps_up.index("Invoke-DeveloperSeedData"))

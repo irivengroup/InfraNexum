@@ -41,6 +41,14 @@ assert_service_healthy() {
   test "$health" = healthy || { compose logs --no-color --tail=200 "$service" >&2 || true; echo "Service $service health=$health" >&2; exit 69; }
 }
 
+assert_service_completed_successfully() {
+  service=$1
+  cid=$(compose ps --all -q "$service")
+  test -n "$cid" || { compose ps --all >&2 || true; echo "Service $service has not completed successfully: no container exists. Run './docker/dev-compose.sh up' successfully before replaying developer seed data." >&2; exit 69; }
+  state=$(docker inspect --format '{{.State.Status}}:{{.State.ExitCode}}' "$cid")
+  test "$state" = 'exited:0' || { compose ps --all >&2 || true; compose logs --no-color --tail=200 "$service" >&2 || true; echo "Service $service has not completed successfully (container=$cid state=$state). Resolve the failed startup/migration before replaying developer seed data." >&2; exit 69; }
+}
+
 db_scalar() {
   sql=$1
   compose run --rm --no-deps --entrypoint /bin/sh migrate -eu -c \
@@ -89,6 +97,11 @@ SQL
 
 seed_dev_data() {
   require_repo
+  # A standalone seed requires the same ready database boundary as `up`.
+  # Fail before launching db-admin so a failed build/start cannot masquerade as
+  # a PostgreSQL DNS-resolution error from an isolated maintenance container.
+  assert_service_healthy postgres
+  assert_service_completed_successfully migrate
   # Developer fixtures are not migrations. Use the application role and a
   # read-only mounted SQL file so this path cannot acquire hidden DB privileges.
   compose --profile maintenance run --rm --no-deps --entrypoint /bin/sh db-admin -eu -c \
@@ -141,7 +154,7 @@ smoke() {
   curl --fail --silent --show-error "http://127.0.0.1:$web_port/health/ready" | grep -q '"status":"UP"'
   curl --fail --silent --show-error "http://127.0.0.1:$web_port/runtime-config.json" > "$tmp"
   grep -Fq '"component":"web"' "$tmp"
-  grep -Fq '"version":"2.0.0-alpha.0.130"' "$tmp"
+  grep -Fq '"version":"2.0.0-alpha.0.131"' "$tmp"
   grep -Fq '"apiBaseUrl":"/api"' "$tmp"
   rm -f "$tmp"; trap - EXIT HUP INT TERM
   iam_history=$(application_admin_db_scalar "SELECT count(*) FROM infranexum_core.schema_history WHERE migration_id IN ('0011','0012','0013')")

@@ -85,7 +85,21 @@ Public run responses exclude idempotency keys, request hashes and raw cursors. P
 
 ## Audit and observability
 
-Execute, resume and compensate are audited with actor and correlation context. Operator reasons are mandatory and bounded to 3–500 characters. Metrics use the bounded `infranexum.integrations.sync.operations` series with operation/outcome labels; provider credentials, cursors and payloads are not used as metric labels.
+Execute, resume and compensate are audited with actor and correlation context. Operator reasons are mandatory and bounded to 3–500 characters.
+
+The synchronization engine now emits provider-neutral runtime telemetry through `ConnectorSyncRuntimeObserver`, with a Micrometer adapter in the Server process. Metrics cover admission/deduplication, resume activations, applied batches, processed/changed/rejected record counts, bounded pause causes, compensation starts, terminal states and terminal duration. The emitted series are:
+
+- `infranexum.integrations.sync.operations`;
+- `infranexum.integrations.sync.admissions`;
+- `infranexum.integrations.sync.activations`;
+- `infranexum.integrations.sync.batches`;
+- `infranexum.integrations.sync.records`;
+- `infranexum.integrations.sync.pauses`;
+- `infranexum.integrations.sync.compensations`;
+- `infranexum.integrations.sync.terminal`;
+- `infranexum.integrations.sync.duration`.
+
+Metric dimensions are deliberately restricted to configured connector keys and enums owned by InfraNexum (`direction`, terminal `status`, pause `cause`, rollback strategy and fixed outcomes). Raw cursors, provider failure messages/codes, payloads, request hashes, idempotency keys, actor IDs and correlation IDs are never metric labels. This prevents provider-controlled or per-request values from creating unbounded time-series cardinality.
 
 ## Web behavior
 
